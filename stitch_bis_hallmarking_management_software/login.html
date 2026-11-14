@@ -84,6 +84,34 @@
       -webkit-text-fill-color: transparent;
       filter: drop-shadow(0 4px 18px rgba(212, 175, 55, 0.35));
     }
+    .gold-foil-text {
+      background: linear-gradient(135deg, #ffffff 0%, #fff1ba 18%, #f3c760 38%, #d49f34 58%, #8a5a0f 82%, #ffd978 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 24px rgba(243, 199, 96, 0.45));
+    }
+    .gold-beveled-card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(14, 25, 42, 0.75) 50%, rgba(4, 9, 19, 0.95) 100%);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(245, 206, 114, 0.35);
+      box-shadow: 0 16px 45px -10px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 -1px 1px rgba(212, 175, 55, 0.2);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .gold-beveled-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(245, 206, 114, 0.7);
+      box-shadow: 0 20px 50px -10px rgba(212, 175, 55, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+    }
+    .gold-btn-luxury {
+      background: linear-gradient(135deg, #ffe599 0%, #f6ca65 30%, #e0a32b 70%, #fff0ad 100%);
+      box-shadow: 0 8px 30px rgba(224, 163, 43, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -2px 4px rgba(138, 90, 15, 0.4);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .gold-btn-luxury:hover {
+      background: linear-gradient(135deg, #fff2ba 0%, #ffd777 30%, #eaab34 70%, #fff7cc 100%);
+      box-shadow: 0 12px 40px rgba(224, 163, 43, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.9);
+      transform: translateY(-1px) scale(1.015);
+    }
     .gold-glow-box {
       background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.12) 0%, rgba(14, 28, 47, 0.6) 100%);
       backdrop-filter: blur(16px);
@@ -106,38 +134,38 @@
   <!-- ========================================================================= -->
   <div 
     id="welcome-splash" 
-    class="fixed inset-0 z-50 flex flex-col items-center justify-between p-3 sm:p-6 lg:p-8 bg-[#040913] text-white transition-all duration-700 ease-out overflow-hidden"
+    class="fixed inset-0 z-50 flex flex-col items-center justify-between p-3 sm:p-5 lg:p-7 bg-[#030712] text-white transition-all duration-700 ease-out overflow-hidden"
   >
     <!-- Background Guilloche Security Lattice with Center Radial Mask -->
-    <div class="absolute inset-0 opacity-20 pointer-events-none" style="mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 80%); -webkit-mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 80%);">
+    <div class="absolute inset-0 opacity-15 pointer-events-none" style="mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 85%); -webkit-mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 85%);">
       <svg class="w-full h-full" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern height="64" id="splash-guilloche" patternUnits="userSpaceOnUse" width="64">
-            <circle cx="32" cy="32" fill="none" r="30" stroke="#eab308" stroke-dasharray="1 3" stroke-width="0.75"></circle>
-            <circle cx="32" cy="32" fill="none" r="20" stroke="#ca8a04" stroke-width="0.5"></circle>
-            <circle cx="32" cy="32" fill="none" r="10" stroke="#ffd700" stroke-width="0.35"></circle>
-            <path d="M0 32h64M32 0v64" stroke="#ca8a04" stroke-opacity="0.25" stroke-width="0.5"></path>
+            <circle cx="32" cy="32" fill="none" r="30" stroke="#f59e0b" stroke-dasharray="1 3" stroke-width="0.75"></circle>
+            <circle cx="32" cy="32" fill="none" r="20" stroke="#d97706" stroke-width="0.5"></circle>
+            <circle cx="32" cy="32" fill="none" r="10" stroke="#fbbf24" stroke-width="0.35"></circle>
+            <path d="M0 32h64M32 0v64" stroke="#d97706" stroke-opacity="0.25" stroke-width="0.5"></path>
           </pattern>
         </defs>
         <rect fill="url(#splash-guilloche)" height="100%" width="100%"></rect>
       </svg>
     </div>
 
-    <!-- Sovereign Radiant Glow Beams -->
-    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] sm:w-[750px] h-[550px] sm:h-[750px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.22)_0%,rgba(26,42,68,0.25)_45%,transparent_75%)] blur-3xl pointer-events-none"></div>
-    <div class="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-amber-600/15 blur-3xl pointer-events-none"></div>
-    <div class="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-blue-600/20 blur-3xl pointer-events-none"></div>
+    <!-- Sovereign Radiant Volumetric Glow Orbs -->
+    <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] sm:w-[850px] h-[600px] sm:h-[850px] rounded-full bg-[radial-gradient(circle,rgba(245,158,11,0.20)_0%,rgba(30,58,138,0.22)_40%,transparent_75%)] blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-28 -left-28 w-96 h-96 rounded-full bg-amber-500/12 blur-3xl pointer-events-none"></div>
+    <div class="absolute -top-28 -right-28 w-96 h-96 rounded-full bg-blue-700/15 blur-3xl pointer-events-none"></div>
 
     <!-- Splash Top Status Bar -->
-    <header class="relative z-10 w-full max-w-5xl flex items-center justify-between gap-2 pt-1 text-xs">
-      <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-amber-400/30 text-amber-200 shadow-sm">
+    <header class="relative z-10 w-full max-w-5xl flex items-center justify-between gap-2 pt-1 text-xs shrink-0">
+      <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-amber-400/30 text-amber-200 shadow-sm">
         <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse ring-2 ring-emerald-500/30"></span>
-        <span class="font-mono tracking-wider text-[10px] sm:text-xs font-black uppercase">BIS ACCREDITED LAB #AHC-88492</span>
+        <span class="font-data-mono tracking-wider text-[9.5px] sm:text-xs font-black uppercase">BIS ACCREDITED LAB #AHC-88492</span>
         <span class="text-white/30 hidden sm:inline">&bull;</span>
-        <span class="font-mono text-[10px] sm:text-xs text-slate-300 hidden sm:inline font-bold">NODE #0842 ONLINE</span>
+        <span class="font-data-mono text-[9.5px] sm:text-xs text-slate-300 hidden sm:inline font-bold">NODE #0842 ONLINE</span>
       </div>
-      <div class="inline-flex items-center gap-2 text-slate-300 font-mono text-[10px] sm:text-xs bg-white/5 border border-white/10 px-3 py-1 sm:py-1.5 rounded-full">
-        <span class="material-symbols-outlined text-[15px] sm:text-[17px] text-amber-400">shield_lock</span>
+      <div class="inline-flex items-center gap-1.5 text-slate-300 font-data-mono text-[9.5px] sm:text-xs bg-slate-900/60 backdrop-blur-md border border-white/10 px-3 py-1 sm:py-1.5 rounded-full shadow-sm">
+        <span class="material-symbols-outlined text-[15px] sm:text-[17px] text-amber-400">verified_user</span>
         <span class="font-bold text-amber-300 tracking-wider">AES-256 SECURE GATEWAY</span>
       </div>
     </header>
@@ -145,86 +173,94 @@
     <!-- Splash Centerpiece (Grand Sovereign Hallmark Presentation) -->
     <div class="relative z-10 my-auto flex flex-col items-center text-center max-w-4xl px-3 py-1 w-full">
       
-      <!-- Concentric Gold Assay Emblem & Official SSR Bullion Logo -->
-      <div class="relative w-24 h-24 sm:w-32 sm:h-32 lg:w-36 lg:h-36 mb-3 sm:mb-4 flex items-center justify-center">
-        <!-- Outer Glowing Pulse Bezel -->
-        <div class="absolute inset-0 rounded-full border-2 border-amber-400/40 animate-ping" style="animation-duration: 3.5s;"></div>
-        <!-- Rotating Precision Compass Bezel -->
-        <div class="absolute -inset-3 rounded-full border-2 border-amber-400/30 border-dashed animate-spin-slow"></div>
-        <div class="absolute -inset-1.5 rounded-full border border-amber-300/40"></div>
+      <!-- Sovereign 3D Bullion Medallion & Official SSR Logo -->
+      <div class="relative w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-44 lg:h-44 mb-3 sm:mb-4 flex items-center justify-center shrink-0">
+        <!-- Ambient Gold Flare Glow -->
+        <div class="absolute -inset-4 rounded-full bg-amber-400/20 blur-xl animate-pulse"></div>
+        <!-- Outer Precision Radial Compass Track -->
+        <div class="absolute -inset-2 rounded-full border border-amber-400/40 border-dashed animate-spin-slow"></div>
+        <!-- Chamfered Golden Coin Edge -->
+        <div class="absolute inset-0 rounded-full border-2 border-amber-300/60 shadow-[0_0_40px_rgba(234,179,8,0.35)]"></div>
+        <div class="absolute inset-1.5 rounded-full border border-amber-400/30"></div>
         
-        <!-- Bullion Mint Coin Cartouche -->
-        <div class="w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full bg-gradient-to-br from-amber-400/30 via-slate-950 to-black backdrop-blur-md p-1.5 flex items-center justify-center shadow-[0_0_45px_rgba(234,179,8,0.45)] ring-2 ring-amber-400/80 overflow-hidden relative group">
+        <!-- Central Mint Coin Cartouche with Official SSR Emblem -->
+        <div class="w-22 h-22 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-34 lg:h-34 rounded-full bg-gradient-to-br from-[#1a2942] via-[#09121f] to-[#040813] p-2 flex items-center justify-center shadow-[inset_0_2px_8px_rgba(255,255,255,0.25),0_10px_35px_rgba(0,0,0,0.8)] ring-2 ring-amber-400/80 overflow-hidden relative group">
           <img 
             src="assets/ssr-logo.jpg" 
-            alt="SSR Bullion Hallmark Logo" 
+            alt="SSR Hallmark Official Emblem" 
             class="w-full h-full object-cover rounded-full" 
             onerror="this.onerror=null; this.src='assets/ssr-logo-bw.png';" 
           />
-          <!-- Coin Glaze Sheen -->
-          <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none"></div>
+          <!-- Specular Gold Sheen Reflection -->
+          <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-white/25 via-transparent to-transparent pointer-events-none"></div>
         </div>
       </div>
 
-      <!-- Grand Metallic Typography -->
-      <div class="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
-        <div class="inline-block px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-500/10 via-amber-400/20 to-amber-500/10 border border-amber-400/40 text-amber-300 font-mono text-[9px] sm:text-xs font-black tracking-[0.2em] uppercase shadow-sm">
-          BUREAU OF INDIAN STANDARDS &bull; RECOGNIZED ASSAY FACILITY
+      <!-- Grand Sovereign Classical Typography -->
+      <div class="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
+        <!-- National Accreditation Pill -->
+        <div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 font-mono text-[9px] sm:text-[10px] md:text-xs font-black tracking-[0.2em] uppercase shadow-xs">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span>BUREAU OF INDIAN STANDARDS &bull; RECOGNIZED ASSAY FACILITY</span>
         </div>
-        <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight gold-metallic-text font-headline leading-tight">
+        
+        <!-- Brand Name in Royal Cinzel Font with 24K Gold Foil Gradient -->
+        <h1 class="font-cinzel text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-[0.06em] gold-foil-text leading-tight drop-shadow-lg uppercase">
           SSR HALLMARK CENTER
         </h1>
-        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-amber-400/40 text-amber-200 font-mono text-[9px] sm:text-xs font-black uppercase tracking-widest mt-1">
-          <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+        
+        <!-- Strategically Directed By Kunal Badge -->
+        <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-gradient-to-r from-amber-500/15 via-white/10 to-amber-500/15 border border-amber-400/40 text-amber-200 font-mono text-[9px] sm:text-xs font-black uppercase tracking-[0.25em] shadow-sm mt-0.5">
+          <span class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]"></span>
           <span>STRATEGICALLY DIRECTED BY KUNAL</span>
         </div>
       </div>
 
       <!-- Sovereign Value Motto -->
-      <div class="flex items-center justify-center gap-3 sm:gap-5 text-[10.5px] sm:text-xs lg:text-sm font-mono text-amber-400/90 tracking-[0.25em] uppercase mb-4 sm:mb-5 font-black">
+      <div class="flex items-center justify-center gap-3 sm:gap-6 text-[10px] sm:text-xs md:text-sm font-mono text-amber-300/90 tracking-[0.3em] uppercase mb-3.5 sm:mb-5 font-black">
         <span>PRECISION</span>
-        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+        <span class="text-amber-500 text-[10px]">&bull;</span>
         <span>PURITY</span>
-        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+        <span class="text-amber-500 text-[10px]">&bull;</span>
         <span>TRUST</span>
       </div>
 
-      <!-- 3 Glassmorphic Metrology & Certification Cards -->
-      <div class="grid grid-cols-3 gap-2 sm:gap-3.5 w-full max-w-xl mb-4 sm:mb-6">
-        <!-- Card 1 -->
-        <div class="gold-glow-box rounded-xl p-2 sm:p-3 text-center transition-all">
-          <div class="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-400/15 text-amber-300 mb-1">
-            <span class="material-symbols-outlined text-[15px] sm:text-[18px]">verified</span>
+      <!-- 3 Glassmorphic Metrology & Certification Ingots -->
+      <div class="grid grid-cols-3 gap-2 sm:gap-3.5 md:gap-4 w-full max-w-2xl mb-3.5 sm:mb-5">
+        <!-- Ingot 1: Fineness -->
+        <div class="gold-beveled-card rounded-2xl p-2.5 sm:p-3.5 md:p-4 text-center group cursor-default">
+          <div class="inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-xl bg-amber-400/15 text-amber-300 mb-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] border border-amber-400/30 group-hover:scale-110 transition-transform">
+            <span class="material-symbols-outlined text-[17px] sm:text-[20px] md:text-[22px]">verified</span>
           </div>
           <div class="text-[8px] sm:text-[9.5px] font-mono text-amber-300 uppercase font-black tracking-wider">AU FINENESS</div>
-          <div class="text-xs sm:text-base lg:text-lg font-black text-white font-mono mt-0.5">999.9 &permil;</div>
-          <div class="text-[7.5px] sm:text-[9px] text-slate-400 font-medium hidden sm:block">Fire Assay Certified</div>
+          <div class="text-sm sm:text-lg md:text-xl font-black text-white font-mono mt-0.5 tracking-tight">999.9 &permil;</div>
+          <div class="text-[8px] sm:text-[10px] text-slate-300 font-medium hidden sm:block mt-0.5">Fire Assay Certified</div>
         </div>
         
-        <!-- Card 2 -->
-        <div class="gold-glow-box rounded-xl p-2 sm:p-3 text-center transition-all">
-          <div class="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-400/15 text-amber-300 mb-1">
-            <span class="material-symbols-outlined text-[15px] sm:text-[18px]">scale</span>
+        <!-- Ingot 2: Scale Resolution -->
+        <div class="gold-beveled-card rounded-2xl p-2.5 sm:p-3.5 md:p-4 text-center group cursor-default">
+          <div class="inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-xl bg-amber-400/15 text-amber-300 mb-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] border border-amber-400/30 group-hover:scale-110 transition-transform">
+            <span class="material-symbols-outlined text-[17px] sm:text-[20px] md:text-[22px]">scale</span>
           </div>
           <div class="text-[8px] sm:text-[9.5px] font-mono text-amber-300 uppercase font-black tracking-wider">SCALE RES.</div>
-          <div class="text-xs sm:text-base lg:text-lg font-black text-white font-mono mt-0.5">0.001 mg</div>
-          <div class="text-[7.5px] sm:text-[9px] text-slate-400 font-medium hidden sm:block">Dual Range Mettler</div>
+          <div class="text-sm sm:text-lg md:text-xl font-black text-white font-mono mt-0.5 tracking-tight">0.001 mg</div>
+          <div class="text-[8px] sm:text-[10px] text-slate-300 font-medium hidden sm:block mt-0.5">Dual Range Mettler</div>
         </div>
 
-        <!-- Card 3 -->
-        <div class="gold-glow-box rounded-xl p-2 sm:p-3 text-center transition-all">
-          <div class="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-400/15 text-amber-300 mb-1">
-            <span class="material-symbols-outlined text-[15px] sm:text-[18px]">fingerprint</span>
+        <!-- Ingot 3: Central Gateway -->
+        <div class="gold-beveled-card rounded-2xl p-2.5 sm:p-3.5 md:p-4 text-center group cursor-default">
+          <div class="inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-xl bg-amber-400/15 text-amber-300 mb-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] border border-amber-400/30 group-hover:scale-110 transition-transform">
+            <span class="material-symbols-outlined text-[17px] sm:text-[20px] md:text-[22px]">fingerprint</span>
           </div>
           <div class="text-[8px] sm:text-[9.5px] font-mono text-amber-300 uppercase font-black tracking-wider">CENTRAL GATEWAY</div>
-          <div class="text-xs sm:text-base lg:text-lg font-black text-white font-mono mt-0.5">HUID / XRF</div>
-          <div class="text-[7.5px] sm:text-[9px] text-slate-400 font-medium hidden sm:block">IS 1417:2019 Standard</div>
+          <div class="text-sm sm:text-lg md:text-xl font-black text-white font-mono mt-0.5 tracking-tight">HUID / XRF</div>
+          <div class="text-[8px] sm:text-[10px] text-slate-300 font-medium hidden sm:block mt-0.5">IS 1417:2019 Standard</div>
         </div>
       </div>
 
       <!-- Dynamic Security Initialization Progress Console -->
-      <div class="w-full max-w-md space-y-2">
-        <div class="flex items-center justify-between text-[10.5px] sm:text-xs font-mono text-slate-200 px-1">
+      <div class="w-full max-w-md space-y-1.5 sm:space-y-2">
+        <div class="flex items-center justify-between text-[10px] sm:text-xs font-mono text-slate-300 px-1">
           <span id="splash-status-text" class="flex items-center gap-2 truncate">
             <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse ring-2 ring-amber-400/40 shrink-0"></span>
             <span class="tracking-wide">Initializing Cryptographic Lab Node #0842...</span>
@@ -233,7 +269,7 @@
         </div>
         
         <!-- Animated Golden Progress Track -->
-        <div class="w-full h-2 sm:h-2.5 rounded-full bg-slate-900/80 overflow-hidden p-0.5 border border-amber-400/40 shadow-inner relative">
+        <div class="w-full h-2 sm:h-2.5 rounded-full bg-slate-950/90 overflow-hidden p-0.5 border border-amber-400/40 shadow-inner relative">
           <div 
             id="splash-progress-bar" 
             class="h-full rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 w-0 transition-all duration-200 ease-out shadow-[0_0_15px_rgba(234,179,8,0.9)] relative overflow-hidden"
@@ -244,12 +280,12 @@
         </div>
       </div>
 
-      <!-- Immediate Enter / Proceed Button -->
-      <div class="mt-4 sm:mt-5">
+      <!-- Immediate Enter / Proceed Button (24K Gold Bullion Ingot CTA) -->
+      <div class="mt-3.5 sm:mt-5">
         <button 
           type="button" 
           onclick="dismissWelcomeSplash()" 
-          class="inline-flex items-center gap-3 px-7 sm:px-9 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-[#ffd700] via-[#f3c859] to-[#d4af37] hover:from-[#fff099] hover:to-[#ffd700] active:scale-[0.98] text-slate-950 font-headline text-xs sm:text-sm font-black tracking-widest uppercase shadow-[0_0_35px_rgba(234,179,8,0.5)] transition-all cursor-pointer group border border-amber-200"
+          class="gold-btn-luxury inline-flex items-center gap-3 px-8 sm:px-10 py-2.5 sm:py-3.5 rounded-xl text-slate-950 font-outfit text-xs sm:text-sm font-black tracking-widest uppercase cursor-pointer group border border-amber-200"
         >
           <span>Enter Laboratory Workspace</span>
           <span class="material-symbols-outlined text-[18px] sm:text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -257,8 +293,8 @@
       </div>
     </div>
 
-    <!-- Splash Bottom Legal Cluster -->
-    <footer class="relative z-10 w-full max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-1 text-[9.5px] sm:text-xs text-slate-400 font-mono pb-1">
+    <!-- Splash Bottom Statutory Accreditation Footer -->
+    <footer class="relative z-10 w-full max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-1 text-[9px] sm:text-xs text-slate-400 font-mono pb-1 shrink-0">
       <div>SSR Metallurgical &amp; Refinery Holdings &copy; 2025</div>
       <div class="flex items-center gap-2">
         <span class="text-amber-300 font-bold">IS 1417:2019 COMPLIANT</span>

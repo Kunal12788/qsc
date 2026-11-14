@@ -722,6 +722,34 @@ button[type="submit"]#btn-save-receive-entry.final-step-glow {
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 4px 18px rgba(212, 175, 55, 0.35));
 }
+.gold-foil-text {
+  background: linear-gradient(135deg, #ffffff 0%, #fff1ba 18%, #f3c760 38%, #d49f34 58%, #8a5a0f 82%, #ffd978 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 24px rgba(243, 199, 96, 0.45));
+}
+.gold-beveled-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(14, 25, 42, 0.75) 50%, rgba(4, 9, 19, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(245, 206, 114, 0.35);
+  box-shadow: 0 16px 45px -10px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 -1px 1px rgba(212, 175, 55, 0.2);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.gold-beveled-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(245, 206, 114, 0.7);
+  box-shadow: 0 20px 50px -10px rgba(212, 175, 55, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+.gold-btn-luxury {
+  background: linear-gradient(135deg, #ffe599 0%, #f6ca65 30%, #e0a32b 70%, #fff0ad 100%);
+  box-shadow: 0 8px 30px rgba(224, 163, 43, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -2px 4px rgba(138, 90, 15, 0.4);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.gold-btn-luxury:hover {
+  background: linear-gradient(135deg, #fff2ba 0%, #ffd777 30%, #eaab34 70%, #fff7cc 100%);
+  box-shadow: 0 12px 40px rgba(224, 163, 43, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px) scale(1.015);
+}
 .gold-glow-box {
   background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.12) 0%, rgba(14, 28, 47, 0.6) 100%);
   backdrop-filter: blur(16px);
