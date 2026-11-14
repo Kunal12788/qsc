@@ -1,5 +1,5 @@
-# SSR Bullion Management System
-### SSR Bullion, Hallmark & Assay Center
+# SSR Hallmark Center Management System
+### Strategically Directed by Kunal &bull; BIS IS 1417:2019 Compliant
 
 A comprehensive, fully responsive enterprise web application integrating all 6 Bureau of Indian Standards (BIS) IS 1417:2019 compliant modules designed in Google Stitch.
 
