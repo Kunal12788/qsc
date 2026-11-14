@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Manrope:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"error-container":"#ffdad6","error":"#ba1a1a","tertiary-fixed-dim":"#bcc7de","primary":"#000000","surface-container":"#e5eeff","inverse-on-surface":"#eaf1ff","on-tertiary-fixed":"#111c2d","on-primary-fixed-variant":"#3a475c","on-secondary-container":"#785a1a","outline-variant":"#c5c6cd","on-surface-variant":"#44474c","on-tertiary-container":"#79849a","on-background":"#0b1c30","on-secondary-fixed-variant":"#5d4201","surface-container-highest":"#d3e4fe","secondary-container":"#fed488","primary-fixed-dim":"#bac7e1","on-error":"#ffffff","surface-tint":"#525f75","on-secondary-fixed":"#261900","outline":"#75777d","on-secondary":"#ffffff","secondary-fixed":"#ffdea5","surface-dim":"#cbdbf5","tertiary-fixed":"#d8e3fb","tertiary-container":"#111c2d","surface-container-low":"#eff4ff","primary-container":"#0e1c2f","primary-fixed":"#d6e3fe","background":"#f8f9ff","on-surface":"#0b1c30","surface-container-high":"#dce9ff","surface":"#f8f9ff","inverse-surface":"#213145","on-primary-container":"#77849c","surface-bright":"#f8f9ff","on-primary-fixed":"#0e1c2f","on-tertiary-fixed-variant":"#3c475a","secondary":"#775a19","surface-container-lowest":"#ffffff","on-error-container":"#93000a","surface-variant":"#d3e4fe","secondary-fixed-dim":"#e9c176","tertiary":"#000000","inverse-primary":"#bac7e1","on-tertiary":"#ffffff","on-primary":"#ffffff"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"margin":"1rem","margin-tablet":"1.5rem","gutter":"1.25rem","space-lg":"1.5rem","gutter-desktop":"1.5rem","space-xl":"2.5rem","space-sm":"0.5rem","space-md":"1rem","space-xs":"0.25rem","margin-desktop":"2rem"},"fontFamily":{"label-sm":["Inter"],"headline-sm":["Manrope"],"body-lg":["Inter"],"data-mono":["Inter"],"label-md":["Inter"],"body-md":["Inter"],"headline-lg":["Manrope"],"display-lg-mobile":["Manrope"],"headline-lg-mobile":["Manrope"],"display-lg":["Manrope"],"body-sm":["Inter"],"headline-md":["Manrope"]},"fontSize":{"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-sm":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"400"}],"data-mono":["13px",{"lineHeight":"18px","letterSpacing":"0.02em","fontWeight":"500"}],"label-md":["13px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"500"}],"body-md":["14px",{"lineHeight":"20px","letterSpacing":"0em","fontWeight":"400"}],"headline-lg":["28px",{"lineHeight":"36px","letterSpacing":"-0.015em","fontWeight":"600"}],"display-lg-mobile":["30px",{"lineHeight":"38px","letterSpacing":"-0.015em","fontWeight":"700"}],"headline-lg-mobile":["22px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}],"display-lg":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"400"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-primary-container text-on-primary-fixed z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.06)]"><div class="flex flex-col"><div class="p-space-lg flex items-start gap-space-sm bg-tertiary-container"><img alt="SSR Hallmark Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrBhPWxWNxBaRmEu1MARMbOcW8c176f3KOB76FHNUzVXWvUCJyKGNDC2KpHCxeOllZGqj3In1AYgM-hHFa4n589ALgpn7aytQg3hnCBliposFvjZ6UP4GJzJYwLWSGVcrp1URyR0PHx1g4YCr3nQygFnHPufzopJmntx55cmGuAmxaoeCGZNjNs89MB1_fEUfXVMFcG8OTeYPCop01NHBVghyzPniTA3qrBD6cMSTOj8"/><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm font-semibold tracking-tight text-surface-container-lowest truncate">SSR BULLION</span><span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary-fixed font-bold truncate">HALLMARK & ASSAY CENTER</span><div class="mt-space-xs inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed"></span><span class="font-data-mono text-[10px] text-on-primary-container tracking-wider uppercase">BIS LAB #AHC-88492</span></div></div></div><div class="px-space-md pt-space-md pb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-wider text-on-primary-container px-space-sm">Laboratory Operations</span></div><nav class="flex flex-col gap-1 px-space-md py-space-xs" data-active-classes="bg-surface-container-lowest text-on-surface font-semibold shadow-sm"><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">dashboard</span><span class="font-label-md text-label-md">Dashboard</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="receive" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">move_to_inbox</span><span class="font-label-md text-label-md">Receive Batch</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="customer-information" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">storefront</span><span class="font-label-md text-label-md">Customer Information</span></a><a aria-current="page" class="flex items-center gap-3 px-space-md py-2.5 rounded-lg transition-colors bg-surface-container-lowest text-on-surface font-semibold shadow-sm" data-path="bill-generation" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">receipt_long</span><span class="font-label-md text-label-md">Bill Generation</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="records-history" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">history_edu</span><span class="font-label-md text-label-md">Records / History</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">settings</span><span class="font-label-md text-label-md">Settings</span></a></nav></div><div class="p-space-md m-space-md rounded-xl bg-inverse-surface/60"><div class="flex items-center justify-between mb-1.5"><span class="font-label-sm text-label-sm text-secondary-fixed font-semibold uppercase tracking-wider">Assay Standards</span><span class="font-data-mono text-[10px] text-on-primary-container">IS 1417:2019</span></div><div class="flex items-center gap-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary-container text-on-secondary-container">916 (22K)</span><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary-container text-on-secondary-container">999 (24K)</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md z-40 px-gutter-desktop shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex items-center justify-between"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-2"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-outline text-[18px]">search</span><input class="w-80 h-9 pl-9 pr-14 text-body-sm font-body-sm bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest" placeholder="Quick search Job #, BIS Lic, or Customer..." type="text"/><kbd class="absolute right-2.5 px-1.5 py-0.5 text-[10px] font-data-mono bg-surface-container text-on-surface-variant rounded">⌘K</kbd></div></div><div class="hidden xl:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-low"><span class="material-symbols-outlined text-secondary text-[16px]">calendar_today</span><span class="font-body-sm text-body-sm text-on-surface-variant font-medium">Thursday, October 24, 2024</span></div></div><div class="flex items-center gap-space-md"><div class="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/40 text-on-secondary-container"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="font-label-sm text-label-sm font-semibold tracking-wide uppercase">BIS Lab Active • Shift A</span></div><button aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-secondary ring-2 ring-surface-container-lowest"></span></button><div class="flex items-center gap-3 pl-space-sm"><div class="flex flex-col text-right hidden sm:flex"><span class="font-label-md text-label-md font-semibold text-on-surface leading-tight">Sarah Jenkins, Assay Master</span><span class="font-label-sm text-label-sm text-on-surface-variant leading-tight">Lab Superintendent</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYIfV4DElZjxFyDFYtrAoxY6kwVl-7DXb8Y9kHhzMvfoOFDXw_jDXwb0HDkGf4le8mCGegmNlmov8dCIoDq_OUaADelsSqVW2jiutf-RZqDzFnj-zlg6TnuolO4uCRSe2Xfbpc_7RBYAUh7ZEJH7LrT-iPH9MJwhgWvhhgitbxctt7W3ES-GDbMHz2lGxHpyjitRM4-TVVFtZ2Utr1NvFna68f_YFrGvpmQT55djs"/></div></div></header><main class="relative pt-16 bg-surface w-full px-gutter-desktop min-h-screen"><div class="flex flex-col w-full pb-16">
+<!-- Top Operational Banner & Quick Status Bar -->
+<div class="flex flex-wrap items-center justify-between gap-4 py-4 px-1">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-10 h-10 rounded-xl bg-primary-container text-secondary-fixed shadow-sm">
+<span class="material-symbols-outlined text-[24px]">receipt_long</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Tax Invoice & Settlement Center</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-label-sm font-semibold bg-secondary-container/60 text-on-secondary-container">BIS Compliant IS 1417</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Generate statutory invoices, calculate CGST/SGST, and bind cryptographically verifiable HUID certificates.</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface-variant font-data-mono text-data-mono">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>Series: FY24-25 / GSTN State: 27 (MH)</span>
+</div>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">history</span>
+<span>Recent Bills</span>
+</button>
+</div>
+</div>
+<!-- Workspace Grid: 45% Form, 55% Live Synchronized Tax Invoice Preview -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter-desktop items-start mt-2">
+<!-- LEFT COLUMN: Intake & Dynamic Billing Builder (5 Cols on 12-col grid = ~42-45%) -->
+<div class="xl:col-span-5 flex flex-col gap-5">
+<!-- Meta & Intake Parameters Card -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-bold">Metadata & Source Batch</span>
+<span class="text-on-surface-variant font-data-mono text-[11px]">• Step 1/2</span>
+</div>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-label-sm font-semibold bg-surface-container text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-secondary">verified</span> Auto-Numbered
+          </span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+<!-- Bill Number -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface">Bill Number</label>
+<div class="relative">
+<input class="w-full h-10 px-3 pr-8 rounded-lg bg-surface-container-low font-data-mono text-data-mono text-on-surface font-semibold focus:outline-none cursor-default" id="inputBillNo" readonly="" type="text" value="BILL-2024-04192"/>
+<span class="material-symbols-outlined absolute right-2.5 top-2.5 text-outline text-[18px]">lock</span>
+</div>
+</div>
+<!-- Request Number (Searchable link) -->
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-on-surface">Request Job #</label>
+<span class="font-label-sm text-[10px] text-secondary font-semibold hover:underline cursor-pointer">Linked Lot</span>
+</div>
+<div class="relative">
+<input class="w-full h-10 pl-8 pr-3 rounded-lg bg-surface-container-low text-on-surface font-data-mono text-data-mono font-medium focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container transition-all" id="inputReqNo" type="text" value="REQ-8831-A"/>
+<span class="material-symbols-outlined absolute left-2.5 top-2.5 text-secondary text-[18px]">link</span>
+</div>
+</div>
+<!-- Customer / Jeweller Selector -->
+<div class="sm:col-span-2 flex flex-col gap-1.5">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-on-surface">Client Jeweller / Bullion Entity</label>
+<span class="font-data-mono text-[11px] text-on-surface-variant">BIS Lic: #JWL-99210-W</span>
+</div>
+<div class="relative">
+<select class="w-full h-10 pl-9 pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container transition-all appearance-none cursor-pointer" id="clientSelect">
+<option value="tanishq">Tanishq Luxury Guild (Flagship Zaveri Bazar)</option>
+<option value="kalyan">Kalyan Jewellers Heritage Division</option>
+<option value="malabar">Malabar Gold & Diamonds Trade Hub</option>
+<option value="custom">Custom Wholesale Bullion Account</option>
+</select>
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">storefront</span>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-outline text-[18px] pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Date & Time -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface">Invoice Timestamp</label>
+<div class="relative">
+<input class="w-full h-10 pl-8 pr-3 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container transition-all" id="inputDate" type="text" value="24 Oct 2024, 02:45 PM"/>
+<span class="material-symbols-outlined absolute left-2.5 top-2.5 text-outline text-[18px]">calendar_today</span>
+</div>
+</div>
+<!-- Job Classification Segmented Switch -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface">Job Classification</label>
+<div class="flex h-10 p-1 rounded-lg bg-surface-container-low">
+<button class="flex-1 rounded-md bg-surface-container-lowest shadow-sm text-on-surface font-label-md text-label-md font-semibold transition-all" id="btnMainSide" type="button">
+                Main
+              </button>
+<button class="flex-1 rounded-md text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" id="btnOffSide" type="button">
+                Off Side
+              </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Flexible Extensible Billing Items Table -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-bold">Assay & Hallmarking Particulars</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] font-data-mono font-semibold bg-surface-container-low text-on-surface-variant" id="itemsBadgeCount">3 Items</span>
+</div>
+<button class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm font-semibold transition-colors" id="btnAddRow" type="button">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span>Add Item Row</span>
+</button>
+</div>
+<!-- Table Container -->
+<div class="overflow-x-auto rounded-lg bg-surface-container-lowest">
+<table class="w-full text-left" id="itemsTable">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-[11px] uppercase tracking-wider">
+<th class="py-2.5 px-3 w-10 text-center">#</th>
+<th class="py-2.5 px-3 min-w-[190px]">Particulars</th>
+<th class="py-2.5 px-2 w-16 text-right">Qty</th>
+<th class="py-2.5 px-2 w-20 text-right">Wt (g)</th>
+<th class="py-2.5 px-2 w-24 text-right">Rate (₹)</th>
+<th class="py-2.5 px-3 w-28 text-right">Total (₹)</th>
+<th class="py-2.5 px-2 w-8 text-center"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low font-body-sm text-body-sm text-on-surface" id="itemsBody">
+<!-- Item 1 -->
+<tr class="hover:bg-surface-container-low/40 transition-colors" data-row-id="1">
+<td class="py-2.5 px-3 text-center font-data-mono text-[12px] text-on-surface-variant">1</td>
+<td class="py-2.5 px-3">
+<input class="w-full bg-transparent font-medium text-on-surface focus:outline-none focus:bg-surface-container-low rounded px-1.5 py-0.5 text-body-sm" onchange="recalculate()" type="text" value="BIS Hallmarking Laser Inscription (Gold 22K 916)"/>
+<span class="block text-[10px] font-data-mono text-secondary px-1.5">SAC Code: 998346 • HUID Laser Gen</span>
+</td>
+<td class="py-2.5 px-2 text-right">
+<input class="w-14 text-right bg-surface-container-low/60 rounded px-1.5 py-1 font-data-mono text-data-mono text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" oninput="calculateRow(this)" type="number" value="85"/>
+</td>
+<td class="py-2.5 px-2 text-right">
+<input class="w-16 text-right bg-surface-container-low/60 rounded px-1.5 py-1 font-data-mono text-data-mono text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" oninput="calculateRow(this)" step="0.01" type="number" value="482.40"/>
+</td>
+<td class="py-2.5 px-2 text-right">
+<input class="w-20 text-right bg-surface-container-low/60 rounded px-1.5 py-1 font-data-mono text-data-mono text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" oninput="calculateRow(this)" step="0.5" type="number" value="45.00"/>
+</td>
+<td class="py-2.5 px-3 text-right font-data-mono text-data-mono font-semibold text-on-surface row-total">3,825.00</td>
+<td class="py-2.5 px-1 text-center">
+<button class="text-outline hover:text-error transition-colors p-1" onclick="deleteRow(this)" title="Remove line" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</td>
+</tr>
+<!-- Item 2 -->
+<tr class="hover:bg-surface-container-low/40 transition-colors" data-row-id="2">
+<td class="py-2.5 px-3 text-center font-data-mono text-[12px] text-on-surface-variant">2</td>
+<td class="py-2.5 px-3">
+<input class="w-full bg-transparent font-medium text-on-surface focus:outline-none focus:bg-surface-container-low rounded px-1.5 py-0.5 text-body-sm" onchange="recalculate()" type="text" value="Fire Assay Purity Verification Certification"/>
+<span class="block text-[10px] font-data-mono text-secondary px-1.5">IS 1418:2009 Cupellation Protocol</span>
+</td>
+<td class="py-2.5 px-2 text-right">
+<input class="w-14 text-right bg-surface-container-low/60 rounded px-1.5 py-1 font-data-mono text-data-mono text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" oninput="calculateRow(this)" type="number" value="1"/>
+</td>
+<td class="py-2.5 px-2 text-right">
+<input class="w-16 text-right bg-surface-container-low/60 rounded px-1.5 py-1 font-data-mono text-data-mono text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" oninput="calculateRow(this)" step="0.01" type="number" value="2.50"/>
+</td>
+<td class="py-2.5 px-2 text-right">
+<input class="w-20 text-right bg-surface-container-low/60 rounded px-1.5 py-1 font-data-mono text-data-mono text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" oninput="calculateRow(this)" step="0.5" type="number" value="750.00"/>
+</td>
+<td class="py-2.5 px-3 text-right font-data-mono text-data-mono font-semibold text-on-surface row-total">750.00</td>
+<td class="py-2.5 px-1 text-center">
+<button class="text-outline hover:text-error transition-colors p-1" onclick="deleteRow(this)" title="Remove line" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</td>
+</tr>
+<!-- Item 3 -->
+<tr class="hover:bg-surface-container-low/40 transition-colors" data-row-id="3">
+<td class="py-2.5 px-3 text-center font-data-mono text-[12px] text-on-surface-variant">3</td>
+<td class="py-2.5 px-3">
+<input class="w-full bg-transparent font-medium text-on-surface focus:outline-none focus:bg-surface-container-low rounded px-1.5 py-0.5 text-body-sm" onchange="recalculate()" type="text" value="Secure Vault Handling & Tamper-Evident Packaging"/>
+<span class="block text-[10px] font-data-mono text-on-surface-variant px-1.5">Armored Logistics Seals #SSR-9941</span>
+</td>
+<td class="py-2.5 px-2 text-right">
+<input class="w-14 text-right bg-surface-container-low/60 rounded px-1.5 py-1 font-data-mono text-data-mono text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" oninput="calculateRow(this)" type="number" value="1"/>
+</td>
+<td class="py-2.5 px-2 text-right">
+<input class="w-16 text-right bg-surface-container-low/60 rounded px-1.5 py-1 font-data-mono text-data-mono text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" oninput="calculateRow(this)" step="0.01" type="number" value="0.00"/>
+</td>
+<td class="py-2.5 px-2 text-right">
+<input class="w-20 text-right bg-surface-container-low/60 rounded px-1.5 py-1 font-data-mono text-data-mono text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" oninput="calculateRow(this)" step="0.5" type="number" value="250.00"/>
+</td>
+<td class="py-2.5 px-3 text-right font-data-mono text-data-mono font-semibold text-on-surface row-total">250.00</td>
+<td class="py-2.5 px-1 text-center">
+<button class="text-outline hover:text-error transition-colors p-1" onclick="deleteRow(this)" title="Remove line" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Quick Summary Mini Cards -->
+<div class="grid grid-cols-3 gap-2.5 pt-2">
+<div class="p-3 rounded-lg bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-[11px] text-on-surface-variant uppercase tracking-wider">Subtotal</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface mt-1" id="formSubtotal">₹4,825.00</span>
+<span class="font-data-mono text-[10px] text-on-surface-variant">Taxable base</span>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-[11px] text-on-surface-variant uppercase tracking-wider">GST (18%)</span>
+<span class="font-headline-sm text-headline-sm font-bold text-secondary mt-1" id="formGst">₹868.50</span>
+<span class="font-data-mono text-[10px] text-on-surface-variant">CGST 9% + SGST 9%</span>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-high flex flex-col">
+<span class="font-label-sm text-[11px] text-on-secondary-fixed-variant uppercase tracking-wider font-semibold">Grand Total</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface mt-1" id="formGrandTotal">₹5,693.50</span>
+<span class="font-data-mono text-[10px] text-secondary font-semibold">Net Payable</span>
+</div>
+</div>
+</div>
+<!-- Action Controls Command Deck -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-3">
+<div class="flex items-center justify-between pb-1">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">Execution Actions</span>
+<span class="inline-flex items-center gap-1 text-[11px] font-data-mono text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Auto-Sync Active
+          </span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+<!-- Primary: Generate Bill -->
+<button class="sm:col-span-2 h-11 px-4 rounded-lg bg-primary-container hover:bg-inverse-surface text-on-primary-fixed font-label-md text-label-md font-semibold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98]" id="btnGenerate" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>Generate Official Bill</span>
+</button>
+<!-- Gold Accent: Export PDF -->
+<button class="h-11 px-3 rounded-lg bg-secondary-container hover:bg-secondary-fixed text-on-secondary-container font-label-md text-label-md font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-all" onclick="alert('Exporting cryptographically signed Tax Invoice PDF for ' + document.getElementById('inputBillNo').value)" type="button">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+<span>Export PDF</span>
+</button>
+<!-- Preview & Print -->
+<div class="flex gap-2">
+<button class="flex-1 h-11 px-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-medium flex items-center justify-center gap-1 transition-colors" onclick="previewBillPulse()" title="Refresh Live Document Preview" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+<span class="hidden sm:inline">Preview</span>
+</button>
+<button class="h-11 w-11 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center justify-center transition-colors" onclick="window.print()" title="Print Tax Invoice (Physical)" type="button">
+<span class="material-symbols-outlined text-[20px]">print</span>
+</button>
+</div>
+</div>
+<!-- Verification Micro-audit Footer -->
+<div class="flex items-center justify-between pt-2 px-1 text-[11px] font-data-mono text-on-surface-variant">
+<span class="inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-secondary">shield</span>
+            SHA-256 Ledger Timestamp Ready
+          </span>
+<span>Shift A • Operator: #AHC-SJ</span>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Interactive Live Tax Invoice Preview (7 Cols on 12-col grid = ~55-58%) -->
+<div class="xl:col-span-7 flex flex-col">
+<!-- Preview Container Card styled as crisp archival paper sheet -->
+<div class="relative bg-surface-container-lowest rounded-xl p-6 sm:p-8 shadow-md transition-all duration-300" id="invoiceSheet">
+<!-- Live Synchronized Watermark Badge -->
+<div class="absolute right-6 top-6 flex items-center gap-2">
+<div class="px-2.5 py-1 rounded-full bg-secondary-container/40 text-on-secondary-container font-label-sm text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+            Original Tax Invoice
+          </div>
+</div>
+<!-- INVOICE HEADER: SSR Bullion Hallmark Center Credentials -->
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6">
+<div class="flex items-start gap-3">
+<img alt="SSR Logo" class="h-10 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrBhPWxWNxBaRmEu1MARMbOcW8c176f3KOB76FHNUzVXWvUCJyKGNDC2KpHCxeOllZGqj3In1AYgM-hHFa4n589ALgpn7aytQg3hnCBliposFvjZ6UP4GJzJYwLWSGVcrp1URyR0PHx1g4YCr3nQygFnHPufzopJmntx55cmGuAmxaoeCGZNjNs89MB1_fEUfXVMFcG8OTeYPCop01NHBVghyzPniTA3qrBD6cMSTOj8"/>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm font-bold tracking-tight text-on-surface">SSR BULLION ASSAY & HALLMARKING CENTRE</span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold tracking-wider uppercase">BIS Recognized Assaying and Hallmarking Centre</span>
+<div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 font-data-mono text-[11px] text-on-surface-variant">
+<span>BIS LAB CODE: <strong class="text-on-surface">AHC-88492</strong></span>
+<span>•</span>
+<span>GSTIN: <strong class="text-on-surface">27AAHCS1948Q1Z4</strong></span>
+<span>•</span>
+<span>CIN: U36911MH2012PTC228190</span>
+</div>
+<span class="font-body-sm text-[11px] text-on-surface-variant mt-0.5">Plot 44-B, Precious Metals Special Economic Zone, Zaveri Compound, Mumbai 400002</span>
+</div>
+</div>
+<!-- Gold Foil Authenticity Emblem Badge -->
+<div class="self-end sm:self-auto flex flex-col items-center justify-center p-2 rounded-xl bg-surface-container-low text-center min-w-[90px]">
+<span class="material-symbols-outlined text-[28px] text-secondary">workspace_premium</span>
+<span class="font-data-mono text-[9px] uppercase tracking-wider text-secondary font-bold">BIS Standard</span>
+<span class="font-data-mono text-[10px] font-bold text-on-surface">IS 1417:2019</span>
+</div>
+</div>
+<!-- Document Metadata Dual Header Bars -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 my-2 bg-surface-container-low/60 rounded-xl px-4">
+<!-- Left: Bill To -->
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-[10px] uppercase tracking-wider text-secondary font-bold">Billed To (Licensed Jeweller)</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface" id="previewClientName">Tanishq Luxury Guild</span>
+<div class="flex flex-col text-[12px] text-on-surface-variant">
+<span>Branch / Showroom: Flagship Zaveri Bazar, Mumbai - 400002</span>
+<span class="font-data-mono">GSTIN: 27AABCT3920F1ZV | BIS Reg: #JWL-99210-W</span>
+<span>State: Maharashtra (State Code 27)</span>
+</div>
+</div>
+<!-- Right: Invoice Specifics -->
+<div class="flex flex-col gap-1 sm:text-right sm:items-end">
+<span class="font-label-sm text-[10px] uppercase tracking-wider text-secondary font-bold">Invoice Details</span>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-[11px] text-on-surface-variant">Tax Invoice No:</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface font-data-mono" id="previewBillNo">BILL-2024-04192</span>
+</div>
+<div class="flex items-center gap-2 text-[12px] text-on-surface-variant">
+<span>Date & Time:</span>
+<span class="font-data-mono text-on-surface font-medium" id="previewDateTime">24 Oct 2024, 02:45 PM</span>
+</div>
+<div class="flex items-center gap-2 text-[12px] text-on-surface-variant">
+<span>Lab Request Ref:</span>
+<span class="font-data-mono text-secondary font-semibold" id="previewReqNo">REQ-8831-A</span>
+<span class="px-1.5 py-0.2 rounded text-[10px] bg-surface-container text-on-surface font-semibold" id="previewClassificationTag">MAIN JOB</span>
+</div>
+</div>
+</div>
+<!-- Rendered Live Billing Table -->
+<div class="mt-4 overflow-x-auto">
+<table class="w-full text-left" id="previewTable">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-[11px] uppercase tracking-wider">
+<th class="py-2.5 px-3 w-10 text-center">Sr.</th>
+<th class="py-2.5 px-3">Description of Assay / Service</th>
+<th class="py-2.5 px-2 text-right">Qty</th>
+<th class="py-2.5 px-3 text-right">Net Wt (g)</th>
+<th class="py-2.5 px-3 text-right">Rate (₹)</th>
+<th class="py-2.5 px-3 text-right">Amount (₹)</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low font-body-sm text-body-sm text-on-surface" id="previewTableBody">
+<!-- Dynamically populated or rendered from initial state -->
+<tr>
+<td class="py-2.5 px-3 text-center font-data-mono text-[12px]">1</td>
+<td class="py-2.5 px-3">
+<div class="font-medium text-on-surface">BIS Hallmarking Laser Inscription (Gold 22K 916)</div>
+<div class="font-data-mono text-[10px] text-on-surface-variant">SAC 998346 • 85 Articles Serialized with HUID</div>
+</td>
+<td class="py-2.5 px-2 text-right font-data-mono">85</td>
+<td class="py-2.5 px-3 text-right font-data-mono">482.40</td>
+<td class="py-2.5 px-3 text-right font-data-mono">45.00</td>
+<td class="py-2.5 px-3 text-right font-data-mono font-medium">3,825.00</td>
+</tr>
+<tr>
+<td class="py-2.5 px-3 text-center font-data-mono text-[12px]">2</td>
+<td class="py-2.5 px-3">
+<div class="font-medium text-on-surface">Fire Assay Purity Verification Certification</div>
+<div class="font-data-mono text-[10px] text-on-surface-variant">IS 1418:2009 Cupellation • Destructive Sample Lot 1</div>
+</td>
+<td class="py-2.5 px-2 text-right font-data-mono">1</td>
+<td class="py-2.5 px-3 text-right font-data-mono">2.50</td>
+<td class="py-2.5 px-3 text-right font-data-mono">750.00</td>
+<td class="py-2.5 px-3 text-right font-data-mono font-medium">750.00</td>
+</tr>
+<tr>
+<td class="py-2.5 px-3 text-center font-data-mono text-[12px]">3</td>
+<td class="py-2.5 px-3">
+<div class="font-medium text-on-surface">Secure Vault Handling & Tamper-Evident Packaging</div>
+<div class="font-data-mono text-[10px] text-on-surface-variant">Tamper Evident Seal Security Box #SSR-9941</div>
+</td>
+<td class="py-2.5 px-2 text-right font-data-mono">1</td>
+<td class="py-2.5 px-3 text-right font-data-mono">0.00</td>
+<td class="py-2.5 px-3 text-right font-data-mono">250.00</td>
+<td class="py-2.5 px-3 text-right font-data-mono font-medium">250.00</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Calculations & Tax Breakup Grid -->
+<div class="mt-4 pt-3 flex flex-col md:flex-row justify-between items-start gap-6">
+<!-- Left side: Amount in Words & Mandatory Declaration -->
+<div class="flex-1 flex flex-col gap-3">
+<div class="p-3 rounded-lg bg-surface-container-low/70 flex flex-col gap-1">
+<span class="font-label-sm text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Amount Chargeable (in words)</span>
+<span class="font-body-md text-body-md font-semibold text-on-surface" id="previewWords">Indian Rupees Five Thousand Six Hundred Ninety-Three and Fifty Paise Only</span>
+</div>
+<!-- BIS Statutory Declaration -->
+<div class="text-[11px] text-on-surface-variant flex flex-col gap-0.5 leading-relaxed">
+<span class="font-semibold text-on-surface">BIS Hallmarking Regulatory Undertaking:</span>
+<p>We certify that the gold articles indicated above have been duly assayed via Bureau of Indian Standards approved methods and marked with unique 6-digit alphanumeric HUID stamps in strict concordance with IS 1417:2019 standards.</p>
+</div>
+</div>
+<!-- Right side: Mathematical Settlement Summary -->
+<div class="w-full md:w-72 flex flex-col gap-2 bg-surface-container-low/40 p-3.5 rounded-xl">
+<div class="flex justify-between items-center text-[12px] font-body-sm">
+<span class="text-on-surface-variant">Taxable Subtotal:</span>
+<span class="font-data-mono font-medium text-on-surface" id="previewSubtotal">₹4,825.00</span>
+</div>
+<div class="flex justify-between items-center text-[12px] font-body-sm">
+<span class="text-on-surface-variant">CGST (9.0%):</span>
+<span class="font-data-mono font-medium text-on-surface" id="previewCgst">₹434.25</span>
+</div>
+<div class="flex justify-between items-center text-[12px] font-body-sm">
+<span class="text-on-surface-variant">SGST (9.0%):</span>
+<span class="font-data-mono font-medium text-on-surface" id="previewSgst">₹434.25</span>
+</div>
+<div class="flex justify-between items-center text-[12px] font-body-sm text-on-surface-variant">
+<span>Rounding Adjustment:</span>
+<span class="font-data-mono">₹0.00</span>
+</div>
+<div class="pt-2 mt-1 flex justify-between items-center">
+<span class="font-label-md text-label-md font-bold text-on-surface">Total Payable:</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface font-data-mono" id="previewGrandTotal">₹5,693.50</span>
+</div>
+</div>
+</div>
+<!-- Verification Signatures & Authentic BIS QR Verification Section -->
+<div class="mt-8 pt-6 grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
+<!-- Authentic Dynamic QR Code -->
+<div class="flex items-center gap-3">
+<div class="p-2 rounded-lg bg-surface-container-lowest shadow-sm flex flex-col items-center">
+<!-- Visual High Precision QR Code SVG -->
+<svg class="w-20 h-20 text-on-surface" fill="currentColor" viewbox="0 0 100 100">
+<!-- Outer Corners -->
+<rect fill="none" height="24" rx="2" stroke="currentColor" stroke-width="4" width="24" x="10" y="10"></rect>
+<rect height="10" rx="1" width="10" x="17" y="17"></rect>
+<rect fill="none" height="24" rx="2" stroke="currentColor" stroke-width="4" width="24" x="66" y="10"></rect>
+<rect height="10" rx="1" width="10" x="73" y="17"></rect>
+<rect fill="none" height="24" rx="2" stroke="currentColor" stroke-width="4" width="24" x="10" y="66"></rect>
+<rect height="10" rx="1" width="10" x="17" y="73"></rect>
+<!-- Synthetic QR Patterns -->
+<rect height="6" width="6" x="42" y="12"></rect>
+<rect height="6" width="6" x="52" y="12"></rect>
+<rect height="6" width="6" x="42" y="24"></rect>
+<rect height="12" width="6" x="52" y="30"></rect>
+<rect height="6" width="8" x="12" y="44"></rect>
+<rect height="6" width="6" x="28" y="44"></rect>
+<rect height="6" width="16" x="42" y="46"></rect>
+<rect height="6" width="10" x="64" y="42"></rect>
+<rect height="8" width="8" x="80" y="44"></rect>
+<rect height="8" width="8" x="44" y="64"></rect>
+<rect height="16" width="6" x="58" y="60"></rect>
+<rect height="6" width="18" x="70" y="68"></rect>
+<rect height="8" width="16" x="44" y="80"></rect>
+<rect height="6" width="10" x="68" y="82"></rect>
+<rect height="10" width="6" x="84" y="78"></rect>
+</svg>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] uppercase font-bold text-secondary">Verify on BIS Care</span>
+<span class="font-data-mono text-[10px] text-on-surface-variant">Scan to validate HUID batch on National Hallmark Registry</span>
+<span class="font-data-mono text-[9px] text-secondary mt-0.5">AUTH: BIS-AHC-88492-OK</span>
+</div>
+</div>
+<!-- Center: Assay Officer Seal / Audit Tag -->
+<div class="flex flex-col items-center justify-center text-center">
+<div class="w-16 h-16 rounded-full bg-secondary-container/30 flex items-center justify-center p-1 text-secondary">
+<span class="material-symbols-outlined text-[32px]">military_tech</span>
+</div>
+<span class="font-data-mono text-[10px] font-semibold text-secondary mt-1">OFFICIALLY TESTED</span>
+<span class="font-data-mono text-[9px] text-on-surface-variant">CALIBRATION ISO/IEC 17025</span>
+</div>
+<!-- Authorized Lab Signatory Stamp -->
+<div class="flex flex-col items-end text-right">
+<div class="relative w-44 h-16 flex items-center justify-center">
+<!-- Digital Signature representation -->
+<svg class="w-36 h-12 text-primary/70" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 200 60">
+<path d="M10 40 Q 30 10, 50 30 T 90 20 T 130 45 Q 160 5, 180 35 Q 150 55, 130 40" stroke-linecap="round"></path>
+<path d="M40 38 Q 70 50, 110 45" stroke-linecap="round"></path>
+</svg>
+<!-- Certified Stamp ring -->
+<span class="absolute right-0 top-1 text-[9px] font-data-mono px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-semibold">DIGITALLY SIGNED</span>
+</div>
+<span class="font-label-md text-label-md font-semibold text-on-surface">Sarah Jenkins, M.Sc.</span>
+<span class="font-label-sm text-[11px] text-on-surface-variant">Assay Superintendent & Quality In-Charge</span>
+<span class="font-data-mono text-[10px] text-secondary">SSR Bullion Laboratory Operations</span>
+</div>
+</div>
+<!-- Footnote Statutory Legal Bar -->
+<div class="mt-6 pt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] font-data-mono text-on-surface-variant">
+<span>This is a digitally generated Tax Invoice under Section 31 of CGST Act.</span>
+<span>Subject to Mumbai Jurisdiction Only • Page 1 of 1</span>
+</div>
+</div>
+<!-- Quick Action Toolbar under Invoice Sheet -->
+<div class="flex items-center justify-between mt-3 px-2 text-on-surface-variant font-body-sm text-[12px]">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">cloud_done</span>
+<span>All edits synchronized in real time with Cloud Core Ledger</span>
+</span>
+<button class="hover:text-on-surface inline-flex items-center gap-1 font-medium transition-colors" onclick="previewBillPulse()" type="button">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+<span>Force Refresh Preview</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Dynamic Interactivity & Calculation Script -->
+<script>
+  // Simple reactive bindings for items, taxes, and preview sync
+  function recalculate() {
+    const tableBody = document.getElementById('itemsBody');
+    const rows = tableBody.querySelectorAll('tr');
+    let subtotal = 0;
+    
+    // Clear preview table
+    const previewBody = document.getElementById('previewTableBody');
+    previewBody.innerHTML = '';
+
+    rows.forEach((row, index) => {
+      const desc = row.querySelector('td:nth-child(2) input').value;
+      const qty = parseFloat(row.querySelector('td:nth-child(3) input').value) || 0;
+      const wt = parseFloat(row.querySelector('td:nth-child(4) input').value) || 0;
+      const rate = parseFloat(row.querySelector('td:nth-child(5) input').value) || 0;
+      const amount = qty * rate;
+      
+      row.querySelector('.row-total').textContent = amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      subtotal += amount;
+
+      // Add to Preview table
+      const previewRow = document.createElement('tr');
+      previewRow.innerHTML = `
+        <td class="py-2.5 px-3 text-center font-data-mono text-[12px]">${index + 1}</td>
+        <td class="py-2.5 px-3">
+          <div class="font-medium text-on-surface">${escapeHtml(desc)}</div>
+          <div class="font-data-mono text-[10px] text-on-surface-variant">BIS IS 1417 Assayed</div>
+        </td>
+        <td class="py-2.5 px-2 text-right font-data-mono">${qty}</td>
+        <td class="py-2.5 px-3 text-right font-data-mono">${wt.toFixed(2)}</td>
+        <td class="py-2.5 px-3 text-right font-data-mono">${rate.toFixed(2)}</td>
+        <td class="py-2.5 px-3 text-right font-data-mono font-medium">${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      `;
+      previewBody.appendChild(previewRow);
+    });
+
+    const gst = subtotal * 0.18;
+    const cgst = gst / 2;
+    const sgst = gst / 2;
+    const grandTotal = subtotal + gst;
+
+    // Update Form Summaries
+    document.getElementById('formSubtotal').textContent = '₹' + subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('formGst').textContent = '₹' + gst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('formGrandTotal').textContent = '₹' + grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // Update Preview Summaries
+    document.getElementById('previewSubtotal').textContent = '₹' + subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('previewCgst').textContent = '₹' + cgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('previewSgst').textContent = '₹' + sgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('previewGrandTotal').textContent = '₹' + grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // Update Amount in Words (simple generator)
+    document.getElementById('previewWords').textContent = `Indian Rupees ${toWords(Math.round(grandTotal))} Only`;
+
+    // Update item badge
+    document.getElementById('itemsBadgeCount').textContent = `${rows.length} ${rows.length === 1 ? 'Item' : 'Items'}`;
+  }
+
+  function calculateRow(inputElem) {
+    recalculate();
+  }
+
+  function deleteRow(btn) {
+    const row = btn.closest('tr');
+    const tableBody = document.getElementById('itemsBody');
+    if (tableBody.querySelectorAll('tr').length > 1) {
+      row.remove();
+      // Renumber rows
+      tableBody.querySelectorAll('tr').forEach((r, idx) => {
+        r.querySelector('td:first-child').textContent = idx + 1;
+      });
+      recalculate();
+    } else {
+      alert('Invoice must contain at least one billing item row.');
+    }
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """).replace(/'/g, "'");
+  }
+
+  // Quick word formatter for standard amounts
+  function toWords(num) {
+    const a = ['','One ','Two ','Three ','Four ', 'Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
+    const b = ['', '', 'Twenty','Thirty','Forty','Fifty', 'Sixty','Seventy','Eighty','Ninety'];
+    if ((num = num.toString()).length > 9) return 'Overflow';
+    let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+    if (!n) return ''; 
+    let str = '';
+    str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+    str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+    str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
+    str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
+    str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
+    return str.trim();
+  }
+
+  // Dynamic Add Row Listener
+  document.getElementById('btnAddRow').addEventListener('click', function() {
+    const tableBody = document.getElementById('itemsBody');
+    const newIdx = tableBody.querySelectorAll('tr').length + 1;
+    const tr = document.createElement('tr');
+    tr.className = "hover:bg-surface-container-low/40 transition-colors";
+    tr.innerHTML = `
+      <td class="py-2.5 px-3 text-center font-data-mono text-[12px] text-on-surface-variant">${newIdx}</td>
+      <td class="py-2.5 px-3">
+        <input type="text" class="w-full bg-transparent font-medium text-on-surface focus:outline-none focus:bg-surface-container-low rounded px-1.5 py-0.5 text-body-sm" value="XRF Spectrometry & Additional Testing Fee" onchange="recalculate()">
+        <span class="block text-[10px] font-data-mono text-on-surface-variant px-1.5">SAC Code: 998346</span>
+      </td>
+      <td class="py-2.5 px-2 text-right">
+        <input type="number" class="w-14 text-right bg-surface-container-low/60 rounded px-1.5 py-1 font-data-mono text-data-mono text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" value="1" oninput="calculateRow(this)">
+      </td>
+      <td class="py-2.5 px-2 text-right">
+        <input type="number" step="0.01" class="w-16 text-right bg-surface-container-low/60 rounded px-1.5 py-1 font-data-mono text-data-mono text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" value="10.00" oninput="calculateRow(this)">
+      </td>
+      <td class="py-2.5 px-2 text-right">
+        <input type="number" step="0.5" class="w-20 text-right bg-surface-container-low/60 rounded px-1.5 py-1 font-data-mono text-data-mono text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" value="350.00" oninput="calculateRow(this)">
+      </td>
+      <td class="py-2.5 px-3 text-right font-data-mono text-data-mono font-semibold text-on-surface row-total">350.00</td>
+      <td class="py-2.5 px-1 text-center">
+        <button type="button" onclick="deleteRow(this)" class="text-outline hover:text-error transition-colors p-1" title="Remove line">
+          <span class="material-symbols-outlined text-[16px]">close</span>
+        </button>
+      </td>
+    `;
+    tableBody.appendChild(tr);
+    recalculate();
+  });
+
+  // Client Selection update in Preview
+  document.getElementById('clientSelect').addEventListener('change', function(e) {
+    const val = e.target.value;
+    const names = {
+      'tanishq': 'Tanishq Luxury Guild',
+      'kalyan': 'Kalyan Jewellers Heritage Division',
+      'malabar': 'Malabar Gold & Diamonds Trade Hub',
+      'custom': 'Custom Wholesale Bullion Account'
+    };
+    document.getElementById('previewClientName').textContent = names[val] || 'Licensed Bullion Client';
+  });
+
+  // Request Number input sync
+  document.getElementById('inputReqNo').addEventListener('input', function(e) {
+    document.getElementById('previewReqNo').textContent = e.target.value;
+  });
+
+  // Date input sync
+  document.getElementById('inputDate').addEventListener('input', function(e) {
+    document.getElementById('previewDateTime').textContent = e.target.value;
+  });
+
+  // Main / Off-Side segmented control toggle
+  const btnMain = document.getElementById('btnMainSide');
+  const btnOff = document.getElementById('btnOffSide');
+  const tag = document.getElementById('previewClassificationTag');
+
+  btnMain.addEventListener('click', function() {
+    btnMain.className = "flex-1 rounded-md bg-surface-container-lowest shadow-sm text-on-surface font-label-md text-label-md font-semibold transition-all";
+    btnOff.className = "flex-1 rounded-md text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all";
+    tag.textContent = "MAIN JOB";
+  });
+
+  btnOff.addEventListener('click', function() {
+    btnOff.className = "flex-1 rounded-md bg-surface-container-lowest shadow-sm text-on-surface font-label-md text-label-md font-semibold transition-all";
+    btnMain.className = "flex-1 rounded-md text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all";
+    tag.textContent = "OFF SIDE";
+  });
+
+  // Visual pulse when user clicks Preview button
+  function previewBillPulse() {
+    const sheet = document.getElementById('invoiceSheet');
+    sheet.classList.add('ring-2', 'ring-secondary');
+    setTimeout(() => {
+      sheet.classList.remove('ring-2', 'ring-secondary');
+    }, 600);
+  }
+
+  // Generate Bill finalization action
+  document.getElementById('btnGenerate').addEventListener('click', function() {
+    const billNo = document.getElementById('inputBillNo').value;
+    const total = document.getElementById('formGrandTotal').textContent;
+    alert(`Success: Tax Invoice ${billNo} has been committed to the BIS ledger for ${total}. Generating cryptographic token.`);
+  });
+</script></main></div></body></html>

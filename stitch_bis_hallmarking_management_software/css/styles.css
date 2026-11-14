@@ -1,0 +1,734 @@
+/* SSR Bullion Management System - Custom Styles & Responsive Rules */
+
+/* Base font & smoothness */
+html {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  overflow-x: hidden;
+  background-color: #f8f9ff;
+  color: #0b1c30;
+}
+
+/* Tabular figures for numbers, weights, currencies */
+.font-data-mono,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #eff4ff;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c5c6cd;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #75777d;
+}
+
+/* Material Symbols Styling */
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.material-symbols-outlined.filled {
+  font-variation-settings: 'FILL' 1;
+}
+
+/* Responsive Table Wrapper */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0.75rem;
+}
+
+.table-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Mobile & Touch Improvements */
+@media (max-width: 640px) {
+  button, 
+  [role="button"],
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 40px;
+  }
+
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents auto-zoom on iOS */
+  }
+}
+
+/* Sidebar Responsive Transition */
+#app-sidebar {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#main-wrapper {
+  transition: padding-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#app-header {
+  transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Collapsed Sidebar on Tablet/Desktop */
+body.sidebar-collapsed #app-sidebar {
+  transform: translateX(-100%);
+}
+
+@media (min-width: 1024px) {
+  body.sidebar-collapsed #app-sidebar {
+    transform: translateX(0);
+    width: 5rem; /* 80px mini rail */
+  }
+  
+  body.sidebar-collapsed #app-sidebar .sidebar-text,
+  body.sidebar-collapsed #app-sidebar .sidebar-badge-area {
+    display: none;
+  }
+  
+  body.sidebar-collapsed #app-sidebar .sidebar-bottom-card {
+    padding: 0.5rem;
+    margin: 0.5rem;
+    display: flex;
+    justify-content: center;
+  }
+  
+  body.sidebar-collapsed #app-sidebar .sidebar-logo-text {
+    display: none;
+  }
+
+  body.sidebar-collapsed #app-sidebar nav a {
+    justify-content: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  body.sidebar-collapsed #app-sidebar .sidebar-header-box {
+    justify-content: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  body.sidebar-collapsed #main-wrapper {
+    padding-left: 5rem !important;
+  }
+
+  body.sidebar-collapsed #app-header {
+    left: 5rem !important;
+  }
+}
+
+/* Print Stylesheet for Tax Invoices */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+  }
+
+  body.printing-intake-receipt #app-sidebar,
+  body.printing-intake-receipt #app-header,
+  body.printing-intake-receipt #main-wrapper,
+  body.printing-intake-receipt #mobile-drawer,
+  body.printing-intake-receipt #mobile-backdrop,
+  body.printing-intake-receipt #intakeConfirmationModal,
+  body.printing-intake-receipt #toast-container,
+  body.printing-intake-receipt #global-search-modal,
+  body.printing-intake-receipt #view-bill-generation {
+    display: none !important;
+  }
+
+  body.printing-intake-receipt #intake-receipt-printable {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 76mm !important;
+    margin: 0 auto !important;
+    padding: 4mm 2mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body:not(.printing-intake-receipt) #app-sidebar,
+  body:not(.printing-intake-receipt) #app-header,
+  body:not(.printing-intake-receipt) #mobile-drawer,
+  body:not(.printing-intake-receipt) #mobile-backdrop,
+  body:not(.printing-intake-receipt) .no-print,
+  body:not(.printing-intake-receipt) #toast-container,
+  body:not(.printing-intake-receipt) #global-search-modal,
+  body:not(.printing-intake-receipt) .xl\\:col-span-5 {
+    display: none !important;
+  }
+
+  #main-wrapper {
+    padding-left: 0 !important;
+    padding-top: 0 !important;
+    margin: 0 !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  #view-bill-generation {
+    display: block !important;
+  }
+
+  .xl\\:col-span-7 {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #invoiceSheet {
+    box-shadow: none !important;
+    border: 1px solid #d1d5db !important;
+    padding: 20px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    page-break-after: avoid;
+  }
+}
+
+/* Subtle Fade Transitions for Page Views */
+.page-view {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Sparkline subtle glow */
+.sparkline-glow {
+  filter: drop-shadow(0 2px 4px rgba(119, 90, 25, 0.2));
+}
+
+/* Modal Backdrop Blur */
+.modal-backdrop {
+  background-color: rgba(14, 28, 47, 0.65);
+  backdrop-filter: blur(4px);
+}
+
+/* ======================================================== */
+/* VAULT CUSTODY BOX & COMPARTMENT SPACES MATRIX            */
+/* ======================================================== */
+
+.vault-box-card {
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+
+.vault-box-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px -3px rgba(14, 28, 47, 0.12), 0 4px 6px -2px rgba(14, 28, 47, 0.05);
+}
+
+.vault-box-card.is-selected {
+  outline: 2.5px solid #1d4ed8;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.25), 0 12px 24px -4px rgba(14, 28, 47, 0.16);
+  transform: translateY(-2px) scale(1.02);
+}
+
+/* Status 1: Pre-Marking Stage (Red) */
+.vault-box-red {
+  background: linear-gradient(145deg, #fffafa 0%, #fee2e2 100%);
+  border: 1.5px solid #f87171;
+}
+.vault-box-red:hover {
+  border-color: #ef4444;
+  box-shadow: 0 8px 18px -2px rgba(239, 68, 68, 0.22);
+}
+
+/* Status 2: Marking Completed (Green) */
+.vault-box-green {
+  background: linear-gradient(145deg, #f7fef9 0%, #dcfce7 100%);
+  border: 1.5px solid #4ade80;
+}
+.vault-box-green:hover {
+  border-color: #22c55e;
+  box-shadow: 0 8px 18px -2px rgba(34, 197, 94, 0.22);
+}
+
+/* Status 3: Empty / Not in Use (Grey) */
+.vault-box-grey {
+  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1.5px solid #cbd5e1;
+}
+.vault-box-grey:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 8px 18px -2px rgba(148, 163, 184, 0.22);
+}
+
+/* Physical Slotted Tray Matrix */
+.vault-slot-cell {
+  position: relative;
+  background: #ffffff;
+  border-radius: 0.5rem;
+  border: 1.5px dashed #cbd5e1;
+  transition: all 0.18s ease-in-out;
+  cursor: pointer;
+  min-height: 58px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.5rem;
+}
+
+.vault-slot-cell:hover:not(.is-occupied) {
+  border-color: #1d4ed8;
+  background: #eff6ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.18);
+}
+
+.vault-slot-cell.is-selected {
+  border: 2px solid #1d4ed8 !important;
+  background: #eff6ff !important;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.25) !important;
+  transform: scale(1.03);
+}
+
+.vault-slot-cell.is-occupied-red {
+  background: #fef2f2;
+  border: 1.5px solid #fca5a5;
+  cursor: not-allowed;
+  opacity: 0.95;
+}
+
+.vault-slot-cell.is-occupied-green {
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  cursor: not-allowed;
+  opacity: 0.95;
+}
+
+/* Smooth Accordion / Slide expansion */
+.slot-drawer-enter {
+  animation: slideDownFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ======================================================== */
+/* TICKET SEAT-BOOKING STYLE VAULT MATRIX (DUFFEL PATTERN)  */
+/* ======================================================== */
+
+/* Compact Seat Spaces */
+.seat-pill {
+  width: var(--seat-size, 26px);
+  height: var(--seat-size, 26px);
+  border-radius: 5px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: var(--seat-font, 9.5px);
+  font-weight: 700;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Empty Seat (Available - Grey) */
+.seat-pill.seat-empty {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  color: #334155;
+}
+.seat-pill.seat-empty:hover {
+  border-color: #1d4ed8;
+  background: #eff6ff;
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 4px 10px rgba(29, 78, 216, 0.22);
+  z-index: 10;
+}
+
+/* Pre-Marking Seat (Used till before marking - Red) */
+.seat-pill.seat-premarking {
+  background: #fee2e2;
+  border: 1.5px solid #f87171;
+  color: #b91c1c;
+  cursor: not-allowed;
+}
+.seat-pill.seat-premarking:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+/* Completed Seat (Marking Done - Green) */
+.seat-pill.seat-completed {
+  background: #dcfce7;
+  border: 1.5px solid #4ade80;
+  color: #15803d;
+  cursor: not-allowed;
+}
+.seat-pill.seat-completed:hover {
+  background: #bbf7d0;
+  transform: translateY(-1px);
+}
+
+/* Selected Seat (Active Target - Professional Royal Navy/Blue with Application Gold Text) */
+.seat-pill.seat-selected {
+  background: #1d4ed8 !important;
+  border: 2px solid #1e40af !important;
+  color: #ffdea5 !important;
+  transform: scale(1.1) !important;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.35), 0 4px 12px rgba(15, 23, 42, 0.25) !important;
+  z-index: 20;
+}
+
+/* Left Tray Tiles (Larger & More Readable) */
+.tray-seat-tile {
+  position: relative;
+  box-sizing: border-box;
+  padding: var(--tray-padding, 5px 4px);
+  min-height: var(--tray-min-h, 40px);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1.5px solid transparent;
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.tray-seat-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+.tray-seat-tile.is-active {
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 0 0 2px #1d4ed8, 0 4px 10px rgba(29, 78, 216, 0.22) !important;
+  background-color: #eff6ff !important;
+  transform: translateY(-2px);
+  z-index: 10;
+}
+.tray-seat-tile.has-allocation {
+  border-color: #1d4ed8 !important;
+  background-color: #eff6ff !important;
+}
+.tray-seat-tile.is-suggested {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.32);
+}
+
+/* Left Tray Status Tints */
+.tray-tile-empty {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+.tray-tile-empty:hover {
+  border-color: #94a3b8;
+}
+
+.tray-tile-premarking {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+.tray-tile-premarking:hover {
+  border-color: #f87171;
+}
+
+.tray-tile-completed {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #166534;
+}
+.tray-tile-completed:hover {
+  border-color: #4ade80;
+}
+
+/* ======================================================== */
+/* RECEIVE BATCH FEATURE: EVERYTHING IN CAPITAL LETTERS     */
+/* ======================================================== */
+#view-receive,
+#view-receive *,
+#view-receive input,
+#view-receive select,
+#view-receive select option,
+#view-receive textarea,
+#view-receive button,
+#view-receive label,
+#view-receive p,
+#view-receive span,
+#view-receive h1,
+#view-receive h2,
+#view-receive h3,
+#view-receive div,
+#addTrayModal,
+#addTrayModal *,
+#addTrayModal input,
+#addTrayModal select,
+#addTrayModal select option,
+#addTrayModal button,
+#addTrayModal label,
+#addTrayModal p,
+#addTrayModal span,
+#addTrayModal h3 {
+  text-transform: uppercase !important;
+}
+
+#view-receive input::placeholder,
+#view-receive textarea::placeholder,
+#addTrayModal input::placeholder,
+#intakeWarningModal * {
+  text-transform: uppercase !important;
+}
+
+/* Protect Material Symbols & Icons from uppercase ligature breakage */
+#view-receive .material-symbols-outlined,
+#view-receive .material-icons,
+#addTrayModal .material-symbols-outlined,
+#addTrayModal .material-icons,
+#intakeWarningModal .material-symbols-outlined,
+#intakeWarningModal .material-icons {
+  text-transform: none !important;
+  font-variant: normal !important;
+}
+
+/* ======================================================== */
+/* COMPULSORY FIELD VALIDATION ERROR HIGHLIGHTS             */
+/* ======================================================== */
+.field-error-highlight {
+  border: 2px solid #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+  background-color: #fef2f2 !important;
+  animation: shakeField 0.35s ease-in-out;
+}
+
+@keyframes shakeField {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+/* ======================================================== */
+/* SMART CUSTOMER AUTOCOMPLETE DROPDOWN STYLING             */
+/* ======================================================== */
+#customer-suggestions-dropdown {
+  scrollbar-width: thin;
+  scrollbar-color: #c5a059 #f1f5f9;
+}
+
+#customer-suggestions-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+#customer-suggestions-dropdown::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+
+#customer-suggestions-dropdown::-webkit-scrollbar-thumb {
+  background: #c5a059;
+  border-radius: 8px;
+}
+
+.customer-suggestion-item.active-item {
+  background-color: rgba(14, 28, 47, 0.08) !important;
+  border-left: 3px solid #c5a059 !important;
+}
+
+/* ======================================================== */
+/* LINE-BY-LINE ENTER KEY FOCUS & BOX BOUNDARY GLOW         */
+/* ======================================================== */
+.enter-nav-focused:not(button):not(#btn-save-receive-entry) {
+  outline: 2px solid #0e1c2f !important;
+  outline-offset: 1px !important;
+  background-color: #ffffff !important;
+  border-color: #c5a059 !important;
+  box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.45), 0 0 16px rgba(197, 160, 89, 0.35) !important;
+  transition: all 0.15s ease-in-out;
+}
+
+/* ACTIVE BOX BOUNDARY GLOW: Any box in use illuminates */
+#intake-form input:focus,
+#intake-form select:focus,
+#intake-form textarea:focus,
+#intake-form [tabindex="0"]:focus:not(#btn-save-receive-entry),
+#metal-button-group:focus,
+#ampm-button-group:focus,
+#purity-dropdown-btn:focus,
+#depositor-dropdown-btn:focus,
+#receiver-dropdown-btn:focus,
+.box-glow-focus:focus-within {
+  border-color: #c5a059 !important;
+  box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.45), 0 0 18px rgba(197, 160, 89, 0.35) !important;
+  background-color: #ffffff !important;
+  outline: none !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+}
+
+/* SAVE RECEIVE ENTRY (HERO ACTION) - PERSISTENT NAVY & BRILLIANT GOLD GLOW */
+#btn-save-receive-entry,
+button[type="submit"]#btn-save-receive-entry,
+#intake-form #btn-save-receive-entry,
+#intake-form button#btn-save-receive-entry {
+  background-color: #0e1c2f !important;
+  color: #ffdea5 !important;
+}
+
+#btn-save-receive-entry:focus,
+#btn-save-receive-entry:active,
+#btn-save-receive-entry:hover,
+#btn-save-receive-entry.enter-nav-focused,
+#btn-save-receive-entry.final-step-glow,
+#intake-form #btn-save-receive-entry:focus,
+#intake-form #btn-save-receive-entry.enter-nav-focused,
+#intake-form #btn-save-receive-entry.final-step-glow,
+button[type="submit"]#btn-save-receive-entry:focus,
+button[type="submit"]#btn-save-receive-entry.enter-nav-focused,
+button[type="submit"]#btn-save-receive-entry.final-step-glow {
+  background-color: #0e1c2f !important;
+  color: #ffdea5 !important;
+  border-color: #c5a059 !important;
+  box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.7), 0 0 24px rgba(197, 160, 89, 0.6) !important;
+  outline: none !important;
+  transform: scale(1.02);
+  animation: finalSavePulse 1.8s infinite ease-in-out;
+}
+
+#btn-save-receive-entry:focus .material-symbols-outlined,
+#btn-save-receive-entry.final-step-glow .material-symbols-outlined {
+  color: #fbbf24 !important;
+  transform: scale(1.15);
+  transition: transform 0.2s ease;
+}
+
+@keyframes finalSavePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.6), 0 0 18px rgba(197, 160, 89, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(197, 160, 89, 0.9), 0 0 28px rgba(197, 160, 89, 0.7);
+  }
+}
+
+/* Choose Tray box boundary glow when selected/in-use */
+.vault-box-card.active-box,
+[data-tray-active="true"] {
+  border-color: #c5a059 !important;
+  box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.5), 0 0 18px rgba(197, 160, 89, 0.4) !important;
+}
+
+/* Custom scrollbar for purity, depositor, receiver dropdown menus */
+#purity-options-menu,
+#depositor-options-menu,
+#receiver-options-menu {
+  scrollbar-width: thin;
+  scrollbar-color: #c5a059 #f1f5f9;
+}
+#purity-options-menu::-webkit-scrollbar,
+#depositor-options-menu::-webkit-scrollbar,
+#receiver-options-menu::-webkit-scrollbar {
+  width: 6px;
+}
+#purity-options-menu::-webkit-scrollbar-track,
+#depositor-options-menu::-webkit-scrollbar-track,
+#receiver-options-menu::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+#purity-options-menu::-webkit-scrollbar-thumb,
+#depositor-options-menu::-webkit-scrollbar-thumb,
+#receiver-options-menu::-webkit-scrollbar-thumb {
+  background: #c5a059;
+  border-radius: 8px;
+}
+
+
+
+
+
+
+/* ======================================================== */
+/* ULTRA-LUXURY WELCOMING SPLASH & GOLD METALLIC STYLING     */
+/* ======================================================== */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 36s linear infinite;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.animate-shimmer {
+  animation: shimmer 2.2s infinite;
+}
+.gold-metallic-text {
+  background: linear-gradient(135deg, #fff7c2 0%, #ffd700 25%, #e6be68 50%, #996515 75%, #ffe082 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 18px rgba(212, 175, 55, 0.35));
+}
+.gold-glow-box {
+  background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.12) 0%, rgba(14, 28, 47, 0.6) 100%);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.gold-glow-box:hover {
+  border-color: rgba(212, 175, 55, 0.55);
+  box-shadow: 0 16px 40px -8px rgba(212, 175, 55, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}

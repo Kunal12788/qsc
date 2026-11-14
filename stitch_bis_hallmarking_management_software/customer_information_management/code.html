@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Manrope:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"error-container":"#ffdad6","error":"#ba1a1a","tertiary-fixed-dim":"#bcc7de","primary":"#000000","surface-container":"#e5eeff","inverse-on-surface":"#eaf1ff","on-tertiary-fixed":"#111c2d","on-primary-fixed-variant":"#3a475c","on-secondary-container":"#785a1a","outline-variant":"#c5c6cd","on-surface-variant":"#44474c","on-tertiary-container":"#79849a","on-background":"#0b1c30","on-secondary-fixed-variant":"#5d4201","surface-container-highest":"#d3e4fe","secondary-container":"#fed488","primary-fixed-dim":"#bac7e1","on-error":"#ffffff","surface-tint":"#525f75","on-secondary-fixed":"#261900","outline":"#75777d","on-secondary":"#ffffff","secondary-fixed":"#ffdea5","surface-dim":"#cbdbf5","tertiary-fixed":"#d8e3fb","tertiary-container":"#111c2d","surface-container-low":"#eff4ff","primary-container":"#0e1c2f","primary-fixed":"#d6e3fe","background":"#f8f9ff","on-surface":"#0b1c30","surface-container-high":"#dce9ff","surface":"#f8f9ff","inverse-surface":"#213145","on-primary-container":"#77849c","surface-bright":"#f8f9ff","on-primary-fixed":"#0e1c2f","on-tertiary-fixed-variant":"#3c475a","secondary":"#775a19","surface-container-lowest":"#ffffff","on-error-container":"#93000a","surface-variant":"#d3e4fe","secondary-fixed-dim":"#e9c176","tertiary":"#000000","inverse-primary":"#bac7e1","on-tertiary":"#ffffff","on-primary":"#ffffff"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"margin":"1rem","margin-tablet":"1.5rem","gutter":"1.25rem","space-lg":"1.5rem","gutter-desktop":"1.5rem","space-xl":"2.5rem","space-sm":"0.5rem","space-md":"1rem","space-xs":"0.25rem","margin-desktop":"2rem"},"fontFamily":{"label-sm":["Inter"],"headline-sm":["Manrope"],"body-lg":["Inter"],"data-mono":["Inter"],"label-md":["Inter"],"body-md":["Inter"],"headline-lg":["Manrope"],"display-lg-mobile":["Manrope"],"headline-lg-mobile":["Manrope"],"display-lg":["Manrope"],"body-sm":["Inter"],"headline-md":["Manrope"]},"fontSize":{"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-sm":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"400"}],"data-mono":["13px",{"lineHeight":"18px","letterSpacing":"0.02em","fontWeight":"500"}],"label-md":["13px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"500"}],"body-md":["14px",{"lineHeight":"20px","letterSpacing":"0em","fontWeight":"400"}],"headline-lg":["28px",{"lineHeight":"36px","letterSpacing":"-0.015em","fontWeight":"600"}],"display-lg-mobile":["30px",{"lineHeight":"38px","letterSpacing":"-0.015em","fontWeight":"700"}],"headline-lg-mobile":["22px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}],"display-lg":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"400"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-primary-container text-on-primary-fixed z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.06)]"><div class="flex flex-col"><div class="p-space-lg flex items-start gap-space-sm bg-tertiary-container"><img alt="SSR Hallmark Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrBhPWxWNxBaRmEu1MARMbOcW8c176f3KOB76FHNUzVXWvUCJyKGNDC2KpHCxeOllZGqj3In1AYgM-hHFa4n589ALgpn7aytQg3hnCBliposFvjZ6UP4GJzJYwLWSGVcrp1URyR0PHx1g4YCr3nQygFnHPufzopJmntx55cmGuAmxaoeCGZNjNs89MB1_fEUfXVMFcG8OTeYPCop01NHBVghyzPniTA3qrBD6cMSTOj8"/><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm font-semibold tracking-tight text-surface-container-lowest truncate">SSR BULLION</span><span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary-fixed font-bold truncate">HALLMARK & ASSAY CENTER</span><div class="mt-space-xs inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed"></span><span class="font-data-mono text-[10px] text-on-primary-container tracking-wider uppercase">BIS LAB #AHC-88492</span></div></div></div><div class="px-space-md pt-space-md pb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-wider text-on-primary-container px-space-sm">Laboratory Operations</span></div><nav class="flex flex-col gap-1 px-space-md py-space-xs" data-active-classes="bg-surface-container-lowest text-on-surface font-semibold shadow-sm"><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">dashboard</span><span class="font-label-md text-label-md">Dashboard</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="receive" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">move_to_inbox</span><span class="font-label-md text-label-md">Receive Batch</span></a><a aria-current="page" class="flex items-center gap-3 px-space-md py-2.5 rounded-lg transition-colors bg-surface-container-lowest text-on-surface font-semibold shadow-sm" data-path="customer-information" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">storefront</span><span class="font-label-md text-label-md">Customer Information</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="bill-generation" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">receipt_long</span><span class="font-label-md text-label-md">Bill Generation</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="records-history" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">history_edu</span><span class="font-label-md text-label-md">Records / History</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">settings</span><span class="font-label-md text-label-md">Settings</span></a></nav></div><div class="p-space-md m-space-md rounded-xl bg-inverse-surface/60"><div class="flex items-center justify-between mb-1.5"><span class="font-label-sm text-label-sm text-secondary-fixed font-semibold uppercase tracking-wider">Assay Standards</span><span class="font-data-mono text-[10px] text-on-primary-container">IS 1417:2019</span></div><div class="flex items-center gap-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary-container text-on-secondary-container">916 (22K)</span><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary-container text-on-secondary-container">999 (24K)</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md z-40 px-gutter-desktop shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex items-center justify-between"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-2"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-outline text-[18px]">search</span><input class="w-80 h-9 pl-9 pr-14 text-body-sm font-body-sm bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest" placeholder="Quick search Job #, BIS Lic, or Customer..." type="text"/><kbd class="absolute right-2.5 px-1.5 py-0.5 text-[10px] font-data-mono bg-surface-container text-on-surface-variant rounded">⌘K</kbd></div></div><div class="hidden xl:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-low"><span class="material-symbols-outlined text-secondary text-[16px]">calendar_today</span><span class="font-body-sm text-body-sm text-on-surface-variant font-medium">Thursday, October 24, 2024</span></div></div><div class="flex items-center gap-space-md"><div class="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/40 text-on-secondary-container"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="font-label-sm text-label-sm font-semibold tracking-wide uppercase">BIS Lab Active • Shift A</span></div><button aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-secondary ring-2 ring-surface-container-lowest"></span></button><div class="flex items-center gap-3 pl-space-sm"><div class="flex flex-col text-right hidden sm:flex"><span class="font-label-md text-label-md font-semibold text-on-surface leading-tight">Sarah Jenkins, Assay Master</span><span class="font-label-sm text-label-sm text-on-surface-variant leading-tight">Lab Superintendent</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYIfV4DElZjxFyDFYtrAoxY6kwVl-7DXb8Y9kHhzMvfoOFDXw_jDXwb0HDkGf4le8mCGegmNlmov8dCIoDq_OUaADelsSqVW2jiutf-RZqDzFnj-zlg6TnuolO4uCRSe2Xfbpc_7RBYAUh7ZEJH7LrT-iPH9MJwhgWvhhgitbxctt7W3ES-GDbMHz2lGxHpyjitRM4-TVVFtZ2Utr1NvFna68f_YFrGvpmQT55djs"/></div></div></header><main class="relative pt-16 bg-surface w-full px-gutter-desktop min-h-screen"><div class="flex flex-col w-full pb-16">
+<!-- Top Context Ribbon & Breadcrumb Header -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md py-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-data-mono text-[11px] text-secondary font-semibold uppercase tracking-widest">Client Directorate</span>
+<span class="text-outline-variant font-data-mono text-[11px]">•</span>
+<span class="font-data-mono text-[11px] text-on-surface-variant">BIS IS 1417:2019 Registry</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight mt-0.5">Customer Information</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Central directory of authorized bullion dealers, manufacturer ateliers, and retail jewellers.</p>
+</div>
+<!-- Quick Stats Pill Carousel -->
+<div class="flex items-center gap-3 flex-wrap">
+<div class="flex items-center gap-3 px-4 py-2 bg-surface-container-lowest shadow-sm rounded-xl">
+<div class="w-2.5 h-2.5 rounded-full bg-secondary"></div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Active Jewellers</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface leading-none mt-0.5">428</span>
+</div>
+<div class="ml-2 pl-3 bg-surface-container-low rounded-lg py-1 px-2 text-center">
+<span class="font-data-mono text-[11px] text-secondary font-bold">+14 pending</span>
+</div>
+</div>
+<div class="flex items-center gap-3 px-4 py-2 bg-surface-container-lowest shadow-sm rounded-xl">
+<span class="material-symbols-outlined text-[20px] text-secondary">verified</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">BIS Compliance</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface leading-none mt-0.5">99.2%</span>
+</div>
+</div>
+<button class="flex items-center gap-2 px-5 py-2.5 bg-primary-container text-on-primary rounded-lg shadow hover:bg-inverse-surface transition-all active:scale-[0.99] cursor-pointer" id="toggleDrawerBtn" onclick="toggleCustomerDrawer(true)">
+<span class="material-symbols-outlined text-[18px] text-secondary-fixed">add_circle</span>
+<span class="font-label-md text-label-md font-semibold tracking-wide">Add New Customer</span>
+</button>
+</div>
+</div>
+<!-- Metric Visual Bento Grid with Ambient Backdrop -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter my-space-sm">
+<!-- Main Metric Card -->
+<div class="md:col-span-4 bg-surface-container-lowest rounded-xl p-space-md shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Registered Jeweller Network</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display-lg text-display-lg font-bold text-on-surface tracking-tight">428</span>
+<span class="font-label-md text-label-md text-secondary font-semibold">Active Clients</span>
+</div>
+</div>
+<span class="p-2.5 rounded-lg bg-surface-container-low text-secondary material-symbols-outlined text-[24px]">corporate_fare</span>
+</div>
+<div class="mt-4 pt-3 bg-surface-container-low/60 -mx-space-md -mb-space-md p-space-md flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed-dim"></span>
+<span class="font-data-mono text-[12px] text-on-surface-variant">14 Pending BIS Verification</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-semibold hover:underline cursor-pointer">Review Queue →</span>
+</div>
+</div>
+<!-- Active Jobs in Assay Stream -->
+<div class="md:col-span-5 bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Daily Intake Load by Jeweller Tier</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface mt-1">182 Active Assay Lots</span>
+</div>
+<span class="font-data-mono text-[11px] text-on-surface-variant px-2 py-1 bg-surface-container-low rounded">SHIFT 01</span>
+</div>
+<!-- Compact SVG Flow Graphic -->
+<div class="my-2">
+<div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant mb-1">
+<span>Tier A (Zaveri / Kalbadevi)</span>
+<span class="font-data-mono text-on-surface font-semibold">68%</span>
+</div>
+<div class="w-full bg-surface-container-low h-2 rounded-full overflow-hidden flex">
+<div class="bg-primary-container h-full" style="width: 68%;"></div>
+<div class="bg-secondary h-full" style="width: 22%;"></div>
+<div class="bg-secondary-fixed-dim h-full" style="width: 10%;"></div>
+</div>
+<div class="flex items-center gap-4 mt-2 font-data-mono text-[11px] text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span> Mumbai (124)</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Delhi (41)</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed-dim"></span> Bangalore (17)</span>
+</div>
+</div>
+</div>
+<!-- BIS Standard Compliance Stamp Card -->
+<div class="md:col-span-3 bg-secondary-container/30 rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-secondary-container font-bold">Portal Status</span>
+<span class="material-symbols-outlined text-[20px] text-secondary">verified_user</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-secondary-container">Automated HUID Sync to BIS Portal active. All licensed clients re-validated hourly.</p>
+<div class="mt-2 flex items-center gap-2">
+<span class="font-data-mono text-[10px] bg-surface-container-lowest/80 text-on-secondary-container px-2 py-0.5 rounded font-semibold">API LINK: ONLINE</span>
+<span class="font-data-mono text-[10px] text-on-secondary-container">RTT: 18ms</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Expandable Top Customer Form Panel (Inline drawer/collapsible) -->
+<section class="hidden transition-all duration-300 my-space-md" id="customerFormPanel">
+<div class="bg-surface-container-lowest rounded-xl shadow-md p-space-lg">
+<div class="flex items-center justify-between pb-space-sm mb-space-md bg-surface-container-low/40 -mx-space-lg -mt-space-lg px-space-lg pt-space-md rounded-t-xl">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary-container text-secondary-fixed flex items-center justify-center font-headline-sm font-bold">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface" id="formHeaderTitle">Register New Jeweller Client</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Store client legal entity details, accredited workshop premises, and active BIS license codes.</p>
+</div>
+</div>
+<button aria-label="Close Form" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors cursor-pointer" onclick="toggleCustomerDrawer(false)">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<form class="grid grid-cols-1 md:grid-cols-12 gap-space-md" id="customerForm" onsubmit="event.preventDefault(); handleSaveCustomer();">
+<!-- Firm Legal Name -->
+<div class="md:col-span-8 flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+<span>Customer / Firm Registered Name <span class="text-error">*</span></span>
+<span class="font-data-mono text-[11px] text-on-surface-variant font-normal">As per GST / BIS Certificate</span>
+</label>
+<input class="h-10 px-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:shadow-[0_0_0_2px_rgba(14,28,47,0.15)] transition-all" id="custNameInput" placeholder="e.g. Zaveri & Sons Jewellers Pvt Ltd" required="" type="text"/>
+</div>
+<!-- Short Name / Client Code -->
+<div class="md:col-span-4 flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+<span>Short Code <span class="text-error">*</span></span>
+<span class="font-data-mono text-[11px] text-on-surface-variant font-normal">Job Prefix</span>
+</label>
+<input class="h-10 px-3 uppercase rounded-lg bg-surface-container-low text-on-surface font-data-mono text-data-mono focus:bg-surface-container-lowest focus:outline-none focus:shadow-[0_0_0_2px_rgba(14,28,47,0.15)] transition-all" id="custCodeInput" placeholder="e.g. ZAVERI-BOM" required="" type="text"/>
+</div>
+<!-- Physical Address -->
+<div class="md:col-span-6 flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Premises / Workshop Address <span class="text-error">*</span></label>
+<input class="h-10 px-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:shadow-[0_0_0_2px_rgba(14,28,47,0.15)] transition-all" id="custAddressInput" placeholder="e.g. Shop 14-16, Bullion Plaza, Zaveri Bazaar" required="" type="text"/>
+</div>
+<!-- Area / City -->
+<div class="md:col-span-6 flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Area / City & PIN <span class="text-error">*</span></label>
+<input class="h-10 px-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:shadow-[0_0_0_2px_rgba(14,28,47,0.15)] transition-all" id="custAreaInput" placeholder="e.g. Kalbadevi, Mumbai - 400002" required="" type="text"/>
+</div>
+<!-- Mobile Contact -->
+<div class="md:col-span-6 flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+<span>Primary Mobile / WhatsApp <span class="text-error">*</span></span>
+<span class="font-data-mono text-[11px] text-on-surface-variant font-normal">SMS Hallmark Alerts</span>
+</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[18px]">smartphone</span>
+<input class="w-full h-10 pl-10 pr-3 rounded-lg bg-surface-container-low text-on-surface font-data-mono text-data-mono focus:bg-surface-container-lowest focus:outline-none focus:shadow-[0_0_0_2px_rgba(14,28,47,0.15)] transition-all" id="custMobileInput" placeholder="+91 98201 44920" required="" type="tel"/>
+</div>
+</div>
+<!-- BIS License Number -->
+<div class="md:col-span-6 flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+<span>BIS Jeweller License No. <span class="text-error">*</span></span>
+<span class="font-data-mono text-[11px] text-secondary font-semibold">BIS Mandate IS 1417</span>
+</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-secondary text-[18px]">verified</span>
+<input class="w-full h-10 pl-10 pr-24 uppercase rounded-lg bg-surface-container-low text-on-surface font-data-mono text-data-mono focus:bg-surface-container-lowest focus:outline-none focus:shadow-[0_0_0_2px_rgba(14,28,47,0.15)] transition-all" id="custBisInput" placeholder="e.g. BIS-MH-2021-9941" required="" type="text"/>
+<span class="absolute right-2 px-2 py-0.5 rounded text-[10px] font-semibold bg-secondary-container/60 text-on-secondary-container">VERIFY</span>
+</div>
+</div>
+<!-- Form Control Bar -->
+<div class="md:col-span-12 flex items-center justify-between pt-space-sm mt-space-xs">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Instant validation enabled via BIS portal connection</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="px-4 py-2 text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="toggleCustomerDrawer(false)" type="button">
+              Cancel
+            </button>
+<button class="hidden px-5 py-2 bg-secondary text-on-secondary font-label-md text-label-md font-semibold rounded-lg shadow-sm hover:brightness-110 transition-all cursor-pointer" id="btnUpdateCustomer" onclick="handleUpdateCustomer()" type="button">
+              Update Customer
+            </button>
+<button class="px-5 py-2 bg-primary-container text-on-primary font-label-md text-label-md font-semibold rounded-lg shadow-sm hover:bg-inverse-surface transition-all cursor-pointer" id="btnSaveCustomer" type="submit">
+              Save Customer
+            </button>
+</div>
+</div>
+</form>
+</div>
+</section>
+<!-- Controls Bar: Filter, Instant Search & Region Dropdown -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md mb-space-sm flex flex-col md:flex-row items-center justify-between gap-space-md">
+<!-- Search Input with Interactive Filter -->
+<div class="relative w-full md:w-96 flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[18px]">search</span>
+<input class="w-full h-10 pl-9 pr-8 bg-surface-container-low rounded-lg text-body-md font-body-md text-on-surface placeholder:text-outline focus:bg-surface-container-lowest focus:outline-none focus:shadow-[0_0_0_2px_rgba(14,28,47,0.1)] transition-all" id="tableFilterInput" onkeyup="filterClientTable()" placeholder="Filter by Jeweller name, BIS #, code, or phone..." type="text"/>
+<button class="hidden absolute right-2.5 text-on-surface-variant hover:text-on-surface cursor-pointer" id="clearSearchBtn" onclick="clearSearch()">
+<span class="material-symbols-outlined text-[16px]">cancel</span>
+</button>
+</div>
+<!-- Area Dropdown & Export Tools -->
+<div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Region:</span>
+<select class="h-10 px-3 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded-lg border-0 focus:outline-none focus:bg-surface-container-lowest cursor-pointer" id="areaFilterSelect" onchange="filterClientTable()">
+<option value="ALL">All Hubs & Areas</option>
+<option value="Zaveri Bazaar">Zaveri Bazaar, Mumbai</option>
+<option value="Karol Bagh">Karol Bagh, Delhi</option>
+<option value="Commercial Street">Commercial Street, Bengaluru</option>
+<option value="Pernambut">Pernambut / Chennai</option>
+<option value="Manek Chowk">Manek Chowk, Ahmedabad</option>
+</select>
+</div>
+<div class="flex items-center gap-1.5 pl-2">
+<button aria-label="Export Data" class="p-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer" onclick="exportCustomerCSV()" title="Export Directory CSV">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button aria-label="Print Registry" class="p-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer" onclick="window.print()" title="Print Assay Registry">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Customer Records Table -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse" id="customerDirectoryTable">
+<thead>
+<tr class="bg-surface-container-low/80 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+<th class="py-3 px-4 font-semibold">Customer / Firm Name</th>
+<th class="py-3 px-3 font-semibold">Short Code</th>
+<th class="py-3 px-3 font-semibold">Premises / Address</th>
+<th class="py-3 px-3 font-semibold">Area / City</th>
+<th class="py-3 px-3 font-semibold">Mobile Contact</th>
+<th class="py-3 px-3 font-semibold">BIS License</th>
+<th class="py-3 px-3 font-semibold text-center">Active Jobs</th>
+<th class="py-3 px-4 font-semibold text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md divide-y divide-surface-container-low" id="customerTableBody">
+<!-- Row 1: Zaveri & Sons -->
+<tr class="hover:bg-surface-container-low/40 transition-colors group" data-id="CUST-101" data-region="Zaveri Bazaar">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-headline-sm font-bold text-sm shrink-0">
+                  ZS
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface leading-snug group-hover:text-secondary transition-colors truncate">Zaveri & Sons Jewellers Pvt Ltd</span>
+<span class="font-label-sm text-[11px] text-on-surface-variant">Client Since 2018 • Gold Bullion / 22K Hallmarking</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="font-data-mono text-data-mono px-2 py-0.5 rounded bg-surface-container-low font-semibold text-on-surface">ZAVERI-BOM</span>
+</td>
+<td class="py-3.5 px-3 text-body-sm text-on-surface-variant max-w-[200px] truncate" title="Shop 14-16, Bullion Plaza, Zaveri Bazaar">
+              Shop 14-16, Bullion Plaza, Zaveri Bazaar
+            </td>
+<td class="py-3.5 px-3 font-body-sm text-on-surface whitespace-nowrap">
+              Kalbadevi, Mumbai - 400002
+            </td>
+<td class="py-3.5 px-3 font-data-mono text-data-mono text-on-surface whitespace-nowrap">
+              +91 98201 44920
+            </td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary-container/40 text-on-secondary-container font-data-mono">
+<span class="material-symbols-outlined text-[14px] text-secondary">verified</span>
+                BIS-MH-2021-9941
+              </span>
+</td>
+<td class="py-3.5 px-3 text-center">
+<span class="inline-block px-2.5 py-0.5 rounded-full bg-surface-container-low font-data-mono text-xs font-bold text-on-surface">14</span>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="viewCustomerDetails('Zaveri & Sons Jewellers Pvt Ltd', 'ZAVERI-BOM', 'Shop 14-16, Bullion Plaza, Zaveri Bazaar', 'Kalbadevi, Mumbai - 400002', '+91 98201 44920', 'BIS-MH-2021-9941', '14')" title="View Profile">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="editCustomerRow('Zaveri & Sons Jewellers Pvt Ltd', 'ZAVERI-BOM', 'Shop 14-16, Bullion Plaza, Zaveri Bazaar', 'Kalbadevi, Mumbai - 400002', '+91 98201 44920', 'BIS-MH-2021-9941')" title="Edit Customer">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-lg transition-colors cursor-pointer" onclick="promptDelete('Zaveri & Sons Jewellers Pvt Ltd', this)" title="Delete Record">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Kalyan Malabar Goldsmiths -->
+<tr class="hover:bg-surface-container-low/40 transition-colors group" data-id="CUST-102" data-region="Karol Bagh">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container text-on-surface font-headline-sm font-bold text-sm flex items-center justify-center shrink-0">
+                  KM
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface leading-snug group-hover:text-secondary transition-colors truncate">Kalyan Malabar Goldsmiths LLP</span>
+<span class="font-label-sm text-[11px] text-on-surface-variant">Client Since 2020 • Casting & Chains</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="font-data-mono text-data-mono px-2 py-0.5 rounded bg-surface-container-low font-semibold text-on-surface">KM-DEL</span>
+</td>
+<td class="py-3.5 px-3 text-body-sm text-on-surface-variant max-w-[200px] truncate" title="44-A, Gurudwara Road, Bank Street">
+              44-A, Gurudwara Road, Bank Street
+            </td>
+<td class="py-3.5 px-3 font-body-sm text-on-surface whitespace-nowrap">
+              Karol Bagh, Delhi - 110005
+            </td>
+<td class="py-3.5 px-3 font-data-mono text-data-mono text-on-surface whitespace-nowrap">
+              +91 98112 55621
+            </td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary-container/40 text-on-secondary-container font-data-mono">
+<span class="material-symbols-outlined text-[14px] text-secondary">verified</span>
+                BIS-DL-2020-4108
+              </span>
+</td>
+<td class="py-3.5 px-3 text-center">
+<span class="inline-block px-2.5 py-0.5 rounded-full bg-surface-container-low font-data-mono text-xs font-bold text-on-surface">22</span>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="viewCustomerDetails('Kalyan Malabar Goldsmiths LLP', 'KM-DEL', '44-A, Gurudwara Road, Bank Street', 'Karol Bagh, Delhi - 110005', '+91 98112 55621', 'BIS-DL-2020-4108', '22')" title="View Profile">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="editCustomerRow('Kalyan Malabar Goldsmiths LLP', 'KM-DEL', '44-A, Gurudwara Road, Bank Street', 'Karol Bagh, Delhi - 110005', '+91 98112 55621', 'BIS-DL-2020-4108')" title="Edit Customer">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-lg transition-colors cursor-pointer" onclick="promptDelete('Kalyan Malabar Goldsmiths LLP', this)" title="Delete Record">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Sri Chamunda Bullion & Ornaments -->
+<tr class="hover:bg-surface-container-low/40 transition-colors group" data-id="CUST-103" data-region="Zaveri Bazaar">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-secondary-fixed text-on-secondary-fixed font-headline-sm font-bold text-sm flex items-center justify-center shrink-0">
+                  SC
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface leading-snug group-hover:text-secondary transition-colors truncate">Sri Chamunda Bullion & Ornaments</span>
+<span class="font-label-sm text-[11px] text-on-surface-variant">Client Since 2019 • 999 Fine Bullion Refinery</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="font-data-mono text-data-mono px-2 py-0.5 rounded bg-surface-container-low font-semibold text-on-surface">CHAMUNDA-MUM</span>
+</td>
+<td class="py-3.5 px-3 text-body-sm text-on-surface-variant max-w-[200px] truncate" title="Unit 301, 3rd Floor, Sheikh Memon St">
+              Unit 301, 3rd Floor, Sheikh Memon St
+            </td>
+<td class="py-3.5 px-3 font-body-sm text-on-surface whitespace-nowrap">
+              Zaveri Bazaar, Mumbai - 400002
+            </td>
+<td class="py-3.5 px-3 font-data-mono text-data-mono text-on-surface whitespace-nowrap">
+              +91 99304 88712
+            </td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary-container/40 text-on-secondary-container font-data-mono">
+<span class="material-symbols-outlined text-[14px] text-secondary">verified</span>
+                BIS-MH-2019-1142
+              </span>
+</td>
+<td class="py-3.5 px-3 text-center">
+<span class="inline-block px-2.5 py-0.5 rounded-full bg-surface-container-low font-data-mono text-xs font-bold text-on-surface">31</span>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="viewCustomerDetails('Sri Chamunda Bullion & Ornaments', 'CHAMUNDA-MUM', 'Unit 301, 3rd Floor, Sheikh Memon St', 'Zaveri Bazaar, Mumbai - 400002', '+91 99304 88712', 'BIS-MH-2019-1142', '31')" title="View Profile">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="editCustomerRow('Sri Chamunda Bullion & Ornaments', 'CHAMUNDA-MUM', 'Unit 301, 3rd Floor, Sheikh Memon St', 'Zaveri Bazaar, Mumbai - 400002', '+91 99304 88712', 'BIS-MH-2019-1142')" title="Edit Customer">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-lg transition-colors cursor-pointer" onclick="promptDelete('Sri Chamunda Bullion & Ornaments', this)" title="Delete Record">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Navkar Jewellers Atelier -->
+<tr class="hover:bg-surface-container-low/40 transition-colors group" data-id="CUST-104" data-region="Commercial Street">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface font-headline-sm font-bold text-sm flex items-center justify-center shrink-0">
+                  NJ
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface leading-snug group-hover:text-secondary transition-colors truncate">Navkar Jewels & Diamonds</span>
+<span class="font-label-sm text-[11px] text-on-surface-variant">Client Since 2022 • Studded Jewelry Laser Hallmarking</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="font-data-mono text-data-mono px-2 py-0.5 rounded bg-surface-container-low font-semibold text-on-surface">NAVKAR-BLR</span>
+</td>
+<td class="py-3.5 px-3 text-body-sm text-on-surface-variant max-w-[200px] truncate" title="78, Dispensary Road Cross, Tasker Town">
+              78, Dispensary Road Cross, Tasker Town
+            </td>
+<td class="py-3.5 px-3 font-body-sm text-on-surface whitespace-nowrap">
+              Commercial Street, Bengaluru - 560001
+            </td>
+<td class="py-3.5 px-3 font-data-mono text-data-mono text-on-surface whitespace-nowrap">
+              +91 97412 30044
+            </td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary-container/40 text-on-secondary-container font-data-mono">
+<span class="material-symbols-outlined text-[14px] text-secondary">verified</span>
+                BIS-KA-2022-7721
+              </span>
+</td>
+<td class="py-3.5 px-3 text-center">
+<span class="inline-block px-2.5 py-0.5 rounded-full bg-surface-container-low font-data-mono text-xs font-bold text-on-surface">8</span>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="viewCustomerDetails('Navkar Jewels & Diamonds', 'NAVKAR-BLR', '78, Dispensary Road Cross, Tasker Town', 'Commercial Street, Bengaluru - 560001', '+91 97412 30044', 'BIS-KA-2022-7721', '8')" title="View Profile">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="editCustomerRow('Navkar Jewels & Diamonds', 'NAVKAR-BLR', '78, Dispensary Road Cross, Tasker Town', 'Commercial Street, Bengaluru - 560001', '+91 97412 30044', 'BIS-KA-2022-7721')" title="Edit Customer">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-lg transition-colors cursor-pointer" onclick="promptDelete('Navkar Jewels & Diamonds', this)" title="Delete Record">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Tribhovandas & Sons Jewellers -->
+<tr class="hover:bg-surface-container-low/40 transition-colors group" data-id="CUST-105" data-region="Manek Chowk">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-secondary-fixed-dim text-on-secondary-fixed-variant font-headline-sm font-bold text-sm flex items-center justify-center shrink-0">
+                  TS
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface leading-snug group-hover:text-secondary transition-colors truncate">Tribhovandas & Sons Jewellers</span>
+<span class="font-label-sm text-[11px] text-on-surface-variant">Client Since 2017 • Traditional KDM & 916 Bullion</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="font-data-mono text-data-mono px-2 py-0.5 rounded bg-surface-container-low font-semibold text-on-surface">TB-AHM</span>
+</td>
+<td class="py-3.5 px-3 text-body-sm text-on-surface-variant max-w-[200px] truncate" title="Shop 8, Gold Chhota Bazaar">
+              Shop 8, Gold Chhota Bazaar
+            </td>
+<td class="py-3.5 px-3 font-body-sm text-on-surface whitespace-nowrap">
+              Manek Chowk, Ahmedabad - 380001
+            </td>
+<td class="py-3.5 px-3 font-data-mono text-data-mono text-on-surface whitespace-nowrap">
+              +91 94260 19844
+            </td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary-container/40 text-on-secondary-container font-data-mono">
+<span class="material-symbols-outlined text-[14px] text-secondary">verified</span>
+                BIS-GJ-2017-3850
+              </span>
+</td>
+<td class="py-3.5 px-3 text-center">
+<span class="inline-block px-2.5 py-0.5 rounded-full bg-surface-container-low font-data-mono text-xs font-bold text-on-surface">19</span>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="viewCustomerDetails('Tribhovandas & Sons Jewellers', 'TB-AHM', 'Shop 8, Gold Chhota Bazaar', 'Manek Chowk, Ahmedabad - 380001', '+91 94260 19844', 'BIS-GJ-2017-3850', '19')" title="View Profile">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="editCustomerRow('Tribhovandas & Sons Jewellers', 'TB-AHM', 'Shop 8, Gold Chhota Bazaar', 'Manek Chowk, Ahmedabad - 380001', '+91 94260 19844', 'BIS-GJ-2017-3850')" title="Edit Customer">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-lg transition-colors cursor-pointer" onclick="promptDelete('Tribhovandas & Sons Jewellers', this)" title="Delete Record">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: Pernambut Royal Chains Ltd -->
+<tr class="hover:bg-surface-container-low/40 transition-colors group" data-id="CUST-106" data-region="Pernambut">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-primary-container text-secondary-fixed font-headline-sm font-bold text-sm flex items-center justify-center shrink-0">
+                  PR
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface leading-snug group-hover:text-secondary transition-colors truncate">Pernambut Royal Gold Chains Ltd</span>
+<span class="font-label-sm text-[11px] text-on-surface-variant">Client Since 2021 • Automated Machine Chains 20K & 22K</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="font-data-mono text-data-mono px-2 py-0.5 rounded bg-surface-container-low font-semibold text-on-surface">PRC-TN</span>
+</td>
+<td class="py-3.5 px-3 text-body-sm text-on-surface-variant max-w-[200px] truncate" title="Plot 12, Industrial Artisan Estate">
+              Plot 12, Industrial Artisan Estate
+            </td>
+<td class="py-3.5 px-3 font-body-sm text-on-surface whitespace-nowrap">
+              Pernambut, Vellore - 635810
+            </td>
+<td class="py-3.5 px-3 font-data-mono text-data-mono text-on-surface whitespace-nowrap">
+              +91 94440 55198
+            </td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary-container/40 text-on-secondary-container font-data-mono">
+<span class="material-symbols-outlined text-[14px] text-secondary">verified</span>
+                BIS-TN-2021-8822
+              </span>
+</td>
+<td class="py-3.5 px-3 text-center">
+<span class="inline-block px-2.5 py-0.5 rounded-full bg-surface-container-low font-data-mono text-xs font-bold text-on-surface">47</span>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="viewCustomerDetails('Pernambut Royal Gold Chains Ltd', 'PRC-TN', 'Plot 12, Industrial Artisan Estate', 'Pernambut, Vellore - 635810', '+91 94440 55198', 'BIS-TN-2021-8822', '47')" title="View Profile">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="editCustomerRow('Pernambut Royal Gold Chains Ltd', 'PRC-TN', 'Plot 12, Industrial Artisan Estate', 'Pernambut, Vellore - 635810', '+91 94440 55198', 'BIS-TN-2021-8822')" title="Edit Customer">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-lg transition-colors cursor-pointer" onclick="promptDelete('Pernambut Royal Gold Chains Ltd', this)" title="Delete Record">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination & Footer Meta -->
+<div class="px-space-md py-3 bg-surface-container-low/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-body-sm text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="font-data-mono text-[12px]">Showing 1–6 of 428 Verified Jewellers</span>
+<span class="text-outline-variant">•</span>
+<span class="font-data-mono text-[11px] text-secondary">Synchronized with BIS Portal AHC-88492</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-2.5 py-1 text-on-surface-variant bg-surface-container-lowest rounded-md text-xs font-semibold shadow-sm hover:bg-surface transition-colors cursor-pointer">Previous</button>
+<div class="flex items-center gap-1 font-data-mono text-xs">
+<span class="px-2 py-0.5 rounded bg-primary-container text-on-primary font-bold">1</span>
+<span class="px-2 py-0.5 rounded hover:bg-surface-container-low cursor-pointer">2</span>
+<span class="px-2 py-0.5 rounded hover:bg-surface-container-low cursor-pointer">3</span>
+<span>...</span>
+<span class="px-2 py-0.5 rounded hover:bg-surface-container-low cursor-pointer">72</span>
+</div>
+<button class="px-2.5 py-1 text-on-surface-variant bg-surface-container-lowest rounded-md text-xs font-semibold shadow-sm hover:bg-surface transition-colors cursor-pointer">Next</button>
+</div>
+</div>
+</div>
+<!-- Delete Confirmation Modal (Visual Tooltip / Modal Simulation) -->
+<div class="fixed inset-0 z-50 hidden flex items-center justify-center bg-inverse-surface/40 backdrop-blur-xs p-4" id="deleteConfirmModal">
+<div class="bg-surface-container-lowest rounded-xl shadow-xl max-w-md w-full p-space-lg flex flex-col gap-4 transform transition-all">
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 rounded-full bg-error-container text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">warning</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Delete Jeweller Record?</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            You are about to remove <span class="font-bold text-on-surface" id="deleteCustomerName"></span> from the active directory. This client has active hallmarking batches.
+          </p>
+</div>
+</div>
+<div class="bg-error-container/20 rounded-lg p-3 text-xs text-error font-body-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">info</span>
+<span>Action requires Lab Superintendent elevation. Audit log entry will be submitted to BIS portal.</span>
+</div>
+<div class="flex items-center justify-end gap-2 pt-2">
+<button class="px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" onclick="closeDeleteModal()">
+          Abort
+        </button>
+<button class="px-4 py-2 font-label-md text-label-md font-semibold bg-error text-on-error rounded-lg shadow-sm hover:brightness-95 transition-all cursor-pointer" onclick="confirmDeletion()">
+          Confirm Deletion
+        </button>
+</div>
+</div>
+</div>
+<!-- Jeweller Detail View Modal -->
+<div class="fixed inset-0 z-50 hidden flex items-center justify-center bg-inverse-surface/40 backdrop-blur-xs p-4" id="profileModal">
+<div class="bg-surface-container-lowest rounded-xl shadow-xl max-w-lg w-full p-space-lg flex flex-col gap-4">
+<div class="flex items-center justify-between pb-2 bg-surface-container-low/30 -mx-space-lg -mt-space-lg px-space-lg pt-space-md rounded-t-xl">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[22px]">storefront</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Jeweller Dossier</span>
+</div>
+<button class="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low cursor-pointer" onclick="closeProfileModal()">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-secondary-container text-on-secondary-container font-headline-md font-bold flex items-center justify-center" id="profileAvatar">
+          ZS
+        </div>
+<div class="flex flex-col">
+<h4 class="font-headline-sm text-headline-sm font-bold text-on-surface" id="profileName">Firm Name</h4>
+<span class="font-data-mono text-xs text-secondary font-semibold" id="profileCode">CODE-123</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3 text-body-sm">
+<div class="p-3 bg-surface-container-low rounded-lg flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">BIS Accreditation</span>
+<span class="font-data-mono text-on-surface font-bold text-xs mt-0.5" id="profileBis">BIS-XXX-0000</span>
+<span class="font-data-mono text-[10px] text-secondary mt-1">Status: Validated</span>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Active Job Batches</span>
+<span class="font-headline-sm font-bold text-on-surface mt-0.5" id="profileJobs">0 Jobs</span>
+<span class="font-data-mono text-[10px] text-on-surface-variant mt-1">In XRF / Fire Assay</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Premises Location</span>
+<p class="text-on-surface font-body-md text-sm bg-surface-container-low p-2.5 rounded-lg" id="profileAddress"></p>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Contact Channel</span>
+<p class="text-on-surface font-data-mono text-sm bg-surface-container-low p-2.5 rounded-lg" id="profilePhone"></p>
+</div>
+<div class="flex justify-end gap-2 pt-2">
+<button class="px-4 py-2 font-label-md text-label-md bg-surface-container-low text-on-surface rounded-lg hover:bg-surface-container transition-colors cursor-pointer" onclick="closeProfileModal()">
+          Close Dossier
+        </button>
+</div>
+</div>
+</div>
+<!-- Notification Toast Container -->
+<div class="fixed bottom-6 right-6 z-50 hidden flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary rounded-xl shadow-lg transition-all" id="toastNotification">
+<span class="material-symbols-outlined text-secondary-fixed text-[20px]" id="toastIcon">check_circle</span>
+<span class="font-body-sm text-body-sm font-medium" id="toastMessage">Action completed successfully</span>
+</div>
+</div>
+<script>
+  let rowToDelete = null;
+
+  function toggleCustomerDrawer(show) {
+    const panel = document.getElementById('customerFormPanel');
+    if (show) {
+      panel.classList.remove('hidden');
+      document.getElementById('formHeaderTitle').textContent = 'Register New Jeweller Client';
+      document.getElementById('btnSaveCustomer').classList.remove('hidden');
+      document.getElementById('btnUpdateCustomer').classList.add('hidden');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('custNameInput').focus();
+    } else {
+      panel.classList.add('hidden');
+      document.getElementById('customerForm').reset();
+    }
+  }
+
+  function handleSaveCustomer() {
+    const name = document.getElementById('custNameInput').value.trim();
+    const code = document.getElementById('custCodeInput').value.trim().toUpperCase();
+    const address = document.getElementById('custAddressInput').value.trim();
+    const area = document.getElementById('custAreaInput').value.trim();
+    const mobile = document.getElementById('custMobileInput').value.trim();
+    const bis = document.getElementById('custBisInput').value.trim().toUpperCase();
+
+    if (!name || !code || !bis) return;
+
+    // Get initials
+    const initials = name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'JW';
+
+    const tbody = document.getElementById('customerTableBody');
+    const tr = document.createElement('tr');
+    tr.className = "hover:bg-surface-container-low/40 transition-colors group animate-fadeIn";
+    tr.dataset.region = area.includes('Zaveri') ? 'Zaveri Bazaar' : (area.includes('Karol') ? 'Karol Bagh' : (area.includes('Commercial') ? 'Commercial Street' : 'ALL'));
+    
+    tr.innerHTML = `
+      <td class="py-3.5 px-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-headline-sm font-bold text-sm shrink-0">
+            ${initials}
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span class="font-headline-sm text-headline-sm font-semibold text-on-surface leading-snug group-hover:text-secondary transition-colors truncate">${name}</span>
+            <span class="font-label-sm text-[11px] text-on-surface-variant">Registered Just Now • BIS Verified</span>
+          </div>
+        </div>
+      </td>
+      <td class="py-3.5 px-3">
+        <span class="font-data-mono text-data-mono px-2 py-0.5 rounded bg-surface-container-low font-semibold text-on-surface">${code}</span>
+      </td>
+      <td class="py-3.5 px-3 text-body-sm text-on-surface-variant max-w-[200px] truncate" title="${address}">
+        ${address}
+      </td>
+      <td class="py-3.5 px-3 font-body-sm text-on-surface whitespace-nowrap">
+        ${area}
+      </td>
+      <td class="py-3.5 px-3 font-data-mono text-data-mono text-on-surface whitespace-nowrap">
+        ${mobile}
+      </td>
+      <td class="py-3.5 px-3">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary-container/40 text-on-secondary-container font-data-mono">
+          <span class="material-symbols-outlined text-[14px] text-secondary">verified</span>
+          ${bis}
+        </span>
+      </td>
+      <td class="py-3.5 px-3 text-center">
+        <span class="inline-block px-2.5 py-0.5 rounded-full bg-surface-container-low font-data-mono text-xs font-bold text-on-surface">0</span>
+      </td>
+      <td class="py-3.5 px-4 text-right whitespace-nowrap">
+        <div class="inline-flex items-center gap-1">
+          <button onclick="viewCustomerDetails('${name}', '${code}', '${address}', '${area}', '${mobile}', '${bis}', '0')" class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" title="View Profile">
+            <span class="material-symbols-outlined text-[18px]">visibility</span>
+          </button>
+          <button onclick="editCustomerRow('${name}', '${code}', '${address}', '${area}', '${mobile}', '${bis}')" class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer" title="Edit Customer">
+            <span class="material-symbols-outlined text-[18px]">edit</span>
+          </button>
+          <button onclick="promptDelete('${name}', this)" class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-lg transition-colors cursor-pointer" title="Delete Record">
+            <span class="material-symbols-outlined text-[18px]">delete</span>
+          </button>
+        </div>
+      </td>
+    `;
+
+    tbody.prepend(tr);
+    toggleCustomerDrawer(false);
+    showToast(`Jeweller record '${name}' saved and verified on BIS`);
+  }
+
+  function editCustomerRow(name, code, address, area, mobile, bis) {
+    const panel = document.getElementById('customerFormPanel');
+    panel.classList.remove('hidden');
+    document.getElementById('formHeaderTitle').textContent = `Edit Jeweller: ${code}`;
+    document.getElementById('custNameInput').value = name;
+    document.getElementById('custCodeInput').value = code;
+    document.getElementById('custAddressInput').value = address;
+    document.getElementById('custAreaInput').value = area;
+    document.getElementById('custMobileInput').value = mobile;
+    document.getElementById('custBisInput').value = bis;
+
+    document.getElementById('btnSaveCustomer').classList.add('hidden');
+    document.getElementById('btnUpdateCustomer').classList.remove('hidden');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function handleUpdateCustomer() {
+    toggleCustomerDrawer(false);
+    showToast('Customer information updated and synced with registry');
+  }
+
+  function filterClientTable() {
+    const query = document.getElementById('tableFilterInput').value.toLowerCase().trim();
+    const areaVal = document.getElementById('areaFilterSelect').value;
+    const clearBtn = document.getElementById('clearSearchBtn');
+    clearBtn.classList.toggle('hidden', query.length === 0);
+
+    const rows = document.querySelectorAll('#customerTableBody tr');
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+      const matchesSearch = text.includes(query);
+      const matchesArea = areaVal === 'ALL' || row.dataset.region === areaVal || row.innerText.includes(areaVal);
+
+      if (matchesSearch && matchesArea) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+
+  function clearSearch() {
+    document.getElementById('tableFilterInput').value = '';
+    filterClientTable();
+  }
+
+  function promptDelete(name, btnElement) {
+    rowToDelete = btnElement.closest('tr');
+    document.getElementById('deleteCustomerName').textContent = name;
+    document.getElementById('deleteConfirmModal').classList.remove('hidden');
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('deleteConfirmModal').classList.add('hidden');
+    rowToDelete = null;
+  }
+
+  function confirmDeletion() {
+    if (rowToDelete) {
+      rowToDelete.remove();
+      closeDeleteModal();
+      showToast('Client record safely retired from active intake roster');
+    }
+  }
+
+  function viewCustomerDetails(name, code, address, area, phone, bis, jobs) {
+    document.getElementById('profileName').textContent = name;
+    document.getElementById('profileCode').textContent = code;
+    document.getElementById('profileBis').textContent = bis;
+    document.getElementById('profileJobs').textContent = jobs + ' Batches Active';
+    document.getElementById('profileAddress').textContent = `${address}, ${area}`;
+    document.getElementById('profilePhone').textContent = `${phone} (Verified WhatsApp Hallmark Updates)`;
+    
+    const initials = name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+    document.getElementById('profileAvatar').textContent = initials;
+    
+    document.getElementById('profileModal').classList.remove('hidden');
+  }
+
+  function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toastNotification');
+    document.getElementById('toastMessage').textContent = msg;
+    toast.classList.remove('hidden');
+    setTimeout(() => {
+      toast.classList.add('hidden');
+    }, 3800);
+  }
+
+  function exportCustomerCSV() {
+    showToast('Exporting BIS customer ledger to CSV...');
+  }
+</script></main></div></body></html>

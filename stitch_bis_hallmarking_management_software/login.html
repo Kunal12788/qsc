@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+  <title>SSR Hallmark Center &bull; Precision, Purity, Trust</title>
+  <meta name="description" content="Authorized Laboratory Terminal Login - Bureau of Indian Standards (BIS) Hallmarking & Custody Management System."/>
+  
+  <!-- Google Fonts: Manrope & Inter + Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@600;700;800;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface": "#f8f9ff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#eff4ff",
+            "surface-container": "#e5eeff",
+            "surface-container-high": "#dce9ff",
+            "surface-container-highest": "#d3e4fe",
+            "on-surface": "#0b1c30",
+            "on-surface-variant": "#44474c",
+            "primary": "#000000",
+            "on-primary": "#ffffff",
+            "primary-container": "#0e1c2f",
+            "on-primary-container": "#77849c",
+            "secondary": "#775a19",
+            "on-secondary": "#ffffff",
+            "secondary-container": "#fed488",
+            "on-secondary-container": "#785a1a",
+            "error": "#ba1a1a",
+            "secondary-fixed": "#ffdea5",
+            "secondary-fixed-dim": "#e9c176"
+          },
+          fontFamily: {
+            "sans": ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+            "headline": ["Manrope", "Inter", "sans-serif"],
+            "data-mono": ["Inter", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+  
+  <style>
+    html, body {
+      height: 100%;
+      max-height: 100%;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin-slow {
+      animation: spin-slow 36s linear infinite;
+    }
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(200%); }
+    }
+    .animate-shimmer {
+      animation: shimmer 2.2s infinite;
+    }
+    .gold-metallic-text {
+      background: linear-gradient(135deg, #fff7c2 0%, #ffd700 25%, #e6be68 50%, #996515 75%, #ffe082 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 18px rgba(212, 175, 55, 0.35));
+    }
+    .gold-glow-box {
+      background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.12) 0%, rgba(14, 28, 47, 0.6) 100%);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(212, 175, 55, 0.28);
+      box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+    .gold-glow-box:hover {
+      border-color: rgba(212, 175, 55, 0.55);
+      box-shadow: 0 16px 40px -8px rgba(212, 175, 55, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    input, button, select {
+      touch-action: manipulation;
+    }
+  </style>
+</head>
+<body class="bg-surface font-sans text-on-surface antialiased h-screen max-h-screen overflow-hidden flex flex-col justify-between p-2 sm:p-3 lg:p-4 selection:bg-secondary-fixed selection:text-on-secondary-fixed relative">
+
+  <!-- ========================================================================= -->
+  <!-- 1. ULTRA-ATTRACTIVE WELCOMING PAGE OVERLAY (Fade Up Cinematic Intro)      -->
+  <!-- ========================================================================= -->
+  <div 
+    id="welcome-splash" 
+    class="fixed inset-0 z-50 flex flex-col items-center justify-between p-3 sm:p-6 lg:p-8 bg-[#040913] text-white transition-all duration-700 ease-out overflow-hidden"
+  >
+    <!-- Background Guilloche Security Lattice with Center Radial Mask -->
+    <div class="absolute inset-0 opacity-20 pointer-events-none" style="mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 80%); -webkit-mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 80%);">
+      <svg class="w-full h-full" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern height="64" id="splash-guilloche" patternUnits="userSpaceOnUse" width="64">
+            <circle cx="32" cy="32" fill="none" r="30" stroke="#eab308" stroke-dasharray="1 3" stroke-width="0.75"></circle>
+            <circle cx="32" cy="32" fill="none" r="20" stroke="#ca8a04" stroke-width="0.5"></circle>
+            <circle cx="32" cy="32" fill="none" r="10" stroke="#ffd700" stroke-width="0.35"></circle>
+            <path d="M0 32h64M32 0v64" stroke="#ca8a04" stroke-opacity="0.25" stroke-width="0.5"></path>
+          </pattern>
+        </defs>
+        <rect fill="url(#splash-guilloche)" height="100%" width="100%"></rect>
+      </svg>
+    </div>
+
+    <!-- Sovereign Radiant Glow Beams -->
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] sm:w-[750px] h-[550px] sm:h-[750px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.22)_0%,rgba(26,42,68,0.25)_45%,transparent_75%)] blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-amber-600/15 blur-3xl pointer-events-none"></div>
+    <div class="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-blue-600/20 blur-3xl pointer-events-none"></div>
+
+    <!-- Splash Top Status Bar -->
+    <header class="relative z-10 w-full max-w-5xl flex items-center justify-between gap-2 pt-1 text-xs">
+      <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-amber-400/30 text-amber-200 shadow-sm">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse ring-2 ring-emerald-500/30"></span>
+        <span class="font-mono tracking-wider text-[10px] sm:text-xs font-black uppercase">BIS ACCREDITED LAB #AHC-88492</span>
+        <span class="text-white/30 hidden sm:inline">&bull;</span>
+        <span class="font-mono text-[10px] sm:text-xs text-slate-300 hidden sm:inline font-bold">NODE #0842 ONLINE</span>
+      </div>
+      <div class="inline-flex items-center gap-2 text-slate-300 font-mono text-[10px] sm:text-xs bg-white/5 border border-white/10 px-3 py-1 sm:py-1.5 rounded-full">
+        <span class="material-symbols-outlined text-[15px] sm:text-[17px] text-amber-400">shield_lock</span>
+        <span class="font-bold text-amber-300 tracking-wider">AES-256 SECURE GATEWAY</span>
+      </div>
+    </header>
+
+    <!-- Splash Centerpiece (Grand Sovereign Hallmark Presentation) -->
+    <div class="relative z-10 my-auto flex flex-col items-center text-center max-w-4xl px-3 py-1 w-full">
+      
+      <!-- Concentric Gold Assay Emblem & Official SSR Bullion Logo -->
+      <div class="relative w-24 h-24 sm:w-32 sm:h-32 lg:w-36 lg:h-36 mb-3 sm:mb-4 flex items-center justify-center">
+        <!-- Outer Glowing Pulse Bezel -->
+        <div class="absolute inset-0 rounded-full border-2 border-amber-400/40 animate-ping" style="animation-duration: 3.5s;"></div>
+        <!-- Rotating Precision Compass Bezel -->
+        <div class="absolute -inset-3 rounded-full border-2 border-amber-400/30 border-dashed animate-spin-slow"></div>
+        <div class="absolute -inset-1.5 rounded-full border border-amber-300/40"></div>
+        
+        <!-- Bullion Mint Coin Cartouche -->
+        <div class="w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full bg-gradient-to-br from-amber-400/30 via-slate-950 to-black backdrop-blur-md p-1.5 flex items-center justify-center shadow-[0_0_45px_rgba(234,179,8,0.45)] ring-2 ring-amber-400/80 overflow-hidden relative group">
+          <img 
+            src="assets/ssr-logo.jpg" 
+            alt="SSR Bullion Hallmark Logo" 
+            class="w-full h-full object-cover rounded-full" 
+            onerror="this.onerror=null; this.src='assets/ssr-logo-bw.png';" 
+          />
+          <!-- Coin Glaze Sheen -->
+          <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none"></div>
+        </div>
+      </div>
+
+      <!-- Grand Metallic Typography -->
+      <div class="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
+        <div class="inline-block px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-500/10 via-amber-400/20 to-amber-500/10 border border-amber-400/40 text-amber-300 font-mono text-[9px] sm:text-xs font-black tracking-[0.2em] uppercase shadow-sm">
+          BUREAU OF INDIAN STANDARDS &bull; RECOGNIZED ASSAY FACILITY
+        </div>
+        <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight gold-metallic-text font-headline leading-tight">
+          SSR HALLMARK CENTER
+        </h1>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-amber-400/40 text-amber-200 font-mono text-[9px] sm:text-xs font-black uppercase tracking-widest mt-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+          <span>STRATEGICALLY DIRECTED BY KUNAL</span>
+        </div>
+      </div>
+
+      <!-- Sovereign Value Motto -->
+      <div class="flex items-center justify-center gap-3 sm:gap-5 text-[10.5px] sm:text-xs lg:text-sm font-mono text-amber-400/90 tracking-[0.25em] uppercase mb-4 sm:mb-5 font-black">
+        <span>PRECISION</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+        <span>PURITY</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+        <span>TRUST</span>
+      </div>
+
+      <!-- 3 Glassmorphic Metrology & Certification Cards -->
+      <div class="grid grid-cols-3 gap-2 sm:gap-3.5 w-full max-w-xl mb-4 sm:mb-6">
+        <!-- Card 1 -->
+        <div class="gold-glow-box rounded-xl p-2 sm:p-3 text-center transition-all">
+          <div class="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-400/15 text-amber-300 mb-1">
+            <span class="material-symbols-outlined text-[15px] sm:text-[18px]">verified</span>
+          </div>
+          <div class="text-[8px] sm:text-[9.5px] font-mono text-amber-300 uppercase font-black tracking-wider">AU FINENESS</div>
+          <div class="text-xs sm:text-base lg:text-lg font-black text-white font-mono mt-0.5">999.9 &permil;</div>
+          <div class="text-[7.5px] sm:text-[9px] text-slate-400 font-medium hidden sm:block">Fire Assay Certified</div>
+        </div>
+        
+        <!-- Card 2 -->
+        <div class="gold-glow-box rounded-xl p-2 sm:p-3 text-center transition-all">
+          <div class="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-400/15 text-amber-300 mb-1">
+            <span class="material-symbols-outlined text-[15px] sm:text-[18px]">scale</span>
+          </div>
+          <div class="text-[8px] sm:text-[9.5px] font-mono text-amber-300 uppercase font-black tracking-wider">SCALE RES.</div>
+          <div class="text-xs sm:text-base lg:text-lg font-black text-white font-mono mt-0.5">0.001 mg</div>
+          <div class="text-[7.5px] sm:text-[9px] text-slate-400 font-medium hidden sm:block">Dual Range Mettler</div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="gold-glow-box rounded-xl p-2 sm:p-3 text-center transition-all">
+          <div class="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-400/15 text-amber-300 mb-1">
+            <span class="material-symbols-outlined text-[15px] sm:text-[18px]">fingerprint</span>
+          </div>
+          <div class="text-[8px] sm:text-[9.5px] font-mono text-amber-300 uppercase font-black tracking-wider">CENTRAL GATEWAY</div>
+          <div class="text-xs sm:text-base lg:text-lg font-black text-white font-mono mt-0.5">HUID / XRF</div>
+          <div class="text-[7.5px] sm:text-[9px] text-slate-400 font-medium hidden sm:block">IS 1417:2019 Standard</div>
+        </div>
+      </div>
+
+      <!-- Dynamic Security Initialization Progress Console -->
+      <div class="w-full max-w-md space-y-2">
+        <div class="flex items-center justify-between text-[10.5px] sm:text-xs font-mono text-slate-200 px-1">
+          <span id="splash-status-text" class="flex items-center gap-2 truncate">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse ring-2 ring-amber-400/40 shrink-0"></span>
+            <span class="tracking-wide">Initializing Cryptographic Lab Node #0842...</span>
+          </span>
+          <span id="splash-progress-percent" class="font-black text-amber-300 font-mono shrink-0 ml-2">[ 0% ]</span>
+        </div>
+        
+        <!-- Animated Golden Progress Track -->
+        <div class="w-full h-2 sm:h-2.5 rounded-full bg-slate-900/80 overflow-hidden p-0.5 border border-amber-400/40 shadow-inner relative">
+          <div 
+            id="splash-progress-bar" 
+            class="h-full rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 w-0 transition-all duration-200 ease-out shadow-[0_0_15px_rgba(234,179,8,0.9)] relative overflow-hidden"
+          >
+            <!-- Moving Shimmer Beam -->
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Immediate Enter / Proceed Button -->
+      <div class="mt-4 sm:mt-5">
+        <button 
+          type="button" 
+          onclick="dismissWelcomeSplash()" 
+          class="inline-flex items-center gap-3 px-7 sm:px-9 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-[#ffd700] via-[#f3c859] to-[#d4af37] hover:from-[#fff099] hover:to-[#ffd700] active:scale-[0.98] text-slate-950 font-headline text-xs sm:text-sm font-black tracking-widest uppercase shadow-[0_0_35px_rgba(234,179,8,0.5)] transition-all cursor-pointer group border border-amber-200"
+        >
+          <span>Enter Laboratory Workspace</span>
+          <span class="material-symbols-outlined text-[18px] sm:text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Splash Bottom Legal Cluster -->
+    <footer class="relative z-10 w-full max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-1 text-[9.5px] sm:text-xs text-slate-400 font-mono pb-1">
+      <div>SSR Metallurgical &amp; Refinery Holdings &copy; 2025</div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-300 font-bold">IS 1417:2019 COMPLIANT</span>
+        <span>&bull;</span>
+        <span class="text-slate-300">BIS RULE 11 VERIFIED</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. MAIN SIGN IN TERMINAL VIEW (Smoothly Revealed Behind Splash)           -->
+  <!-- ========================================================================= -->
+  <div 
+    id="sign-in-screen-wrapper" 
+    class="w-full h-full flex flex-col justify-between transition-all duration-700 ease-out opacity-100 transform scale-100"
+  >
+    <!-- MAIN TERMINAL WRAPPER (Strict Zero Scroll, Viewport Lock) -->
+    <main class="w-full flex-1 flex items-center justify-center relative min-h-0 py-1 sm:py-2">
+      
+      <!-- Subtle Ambient Glow Flares -->
+      <div class="absolute -top-16 -left-16 w-64 md:w-80 h-64 md:h-80 rounded-full bg-secondary-container/20 blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-16 -right-16 w-64 md:w-80 h-64 md:h-80 rounded-full bg-surface-container-highest/40 blur-3xl pointer-events-none"></div>
+
+      <!-- ELEVATED SIGN IN TERMINAL CARD (Adaptive: Mobile tight stack, Tab 2-col, Desktop grand 2-col) -->
+      <div class="w-[94%] sm:w-[90%] md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto rounded-2xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-12 relative z-10 bg-surface-container-lowest border-2 border-slate-300">
+        
+        <!-- ======================================================== -->
+        <!-- LEFT / TOP SECTION: BRAND PANEL                          -->
+        <!-- ======================================================== -->
+        <div class="md:col-span-5 lg:col-span-5 xl:col-span-5 bg-primary-container p-3.5 sm:p-5 md:p-6 lg:p-9 xl:p-11 flex flex-col justify-between relative overflow-hidden text-on-primary">
+          
+          <!-- Guilloche Pattern Backdrop -->
+          <div class="absolute inset-0 opacity-10 pointer-events-none">
+            <svg class="w-full h-full" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern height="48" id="guilloche-grid" patternUnits="userSpaceOnUse" width="48">
+                  <circle cx="24" cy="24" fill="none" r="23" stroke="currentColor" stroke-dasharray="1 3" stroke-width="0.75"></circle>
+                  <circle cx="24" cy="24" fill="none" r="16" stroke="currentColor" stroke-width="0.5"></circle>
+                  <path d="M0 24h48M24 0v48" stroke="currentColor" stroke-opacity="0.3" stroke-width="0.5"></path>
+                </pattern>
+              </defs>
+              <rect fill="url(#guilloche-grid)" height="100%" width="100%"></rect>
+            </svg>
+          </div>
+
+          <!-- Atmospheric Golden Luminescence Flare -->
+          <div class="absolute top-1/3 -left-20 w-72 h-72 rounded-full bg-secondary/20 blur-2xl pointer-events-none"></div>
+
+          <!-- Top Cluster: Welcome Intro Action -->
+          <div class="relative z-10 flex items-center justify-end pb-1.5 sm:pb-2 md:pb-3">
+            <!-- Welcome Splash Re-trigger Icon -->
+            <button 
+              type="button" 
+              onclick="reopenWelcomeSplash()" 
+              title="View Welcoming Page" 
+              class="inline-flex items-center gap-1 text-on-primary-container hover:text-amber-300 font-data-mono text-[10px] sm:text-xs lg:text-sm font-semibold transition-colors cursor-pointer px-2.5 py-1 rounded-full bg-surface-container-highest/20 border border-white/10"
+            >
+              <span class="material-symbols-outlined text-[14px] sm:text-[16px] text-secondary-fixed">auto_awesome</span>
+              <span class="uppercase tracking-wider font-bold">WELCOME INTRO</span>
+            </button>
+          </div>
+
+          <!-- Center Cluster: Core Sovereign Emblem & Brand (Centered) -->
+          <div class="relative z-10 my-auto flex flex-col items-center text-center w-full">
+            
+            <!-- Concentric Assay Stamp Emblem (Centered) -->
+            <div class="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 mb-2.5 sm:mb-3 md:mb-4 flex items-center justify-center mx-auto">
+              <div class="absolute inset-0 rounded-full border border-secondary-fixed/40"></div>
+              <div class="absolute inset-1 rounded-full border border-secondary-fixed/20 border-dashed animate-spin-slow"></div>
+              <div class="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-22 lg:h-22 rounded-full bg-surface-container-lowest/10 backdrop-blur-md flex items-center justify-center text-secondary-fixed shadow-[0_0_25px_rgba(233,193,118,0.3)] ring-1 ring-secondary-fixed/30 overflow-hidden">
+                <img src="assets/ssr-logo.jpg" alt="SSR Logo" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; document.getElementById('ssr-star-fallback').style.display='block';" />
+                <span class="material-symbols-outlined text-[24px] sm:text-[32px] md:text-[40px] hidden" id="ssr-star-fallback" style="font-variation-settings: 'FILL' 1;">stars</span>
+              </div>
+            </div>
+
+            <!-- Brand Name & Strategically Directed By Kunal -->
+            <div class="space-y-1 sm:space-y-1.5 w-full">
+              <h1 class="font-headline text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-on-primary tracking-tight font-black leading-tight text-center">
+                SSR HALLMARK CENTER
+              </h1>
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-secondary-fixed/30 text-secondary-fixed text-[8.5px] sm:text-[9.5px] md:text-[10.5px] lg:text-xs font-black uppercase tracking-widest mx-auto">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                <span>STRATEGICALLY DIRECTED BY KUNAL</span>
+              </div>
+            </div>
+
+            <!-- Precision Purity Trust Tagline -->
+            <div class="mt-2.5 sm:mt-3 md:mt-4 pt-2 sm:pt-2.5 border-t border-white/15 w-full text-center">
+              <div class="font-data-mono text-[9px] sm:text-[10px] md:text-xs font-bold text-secondary-fixed tracking-wider uppercase">
+                PRECISION &bull; PURITY &bull; TRUST
+              </div>
+            </div>
+
+            <!-- Metrology Specs: Ultra-Compact Grid (Centered) -->
+            <div class="mt-2 sm:mt-2.5 md:mt-3.5 grid grid-cols-3 gap-1 md:gap-2 w-full bg-white/5 p-1.5 sm:p-2 md:p-2.5 rounded-xl border border-white/10 backdrop-blur-sm text-center">
+              <div>
+                <span class="block font-data-mono text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] text-secondary-fixed font-bold uppercase tracking-wider">AU FINENESS</span>
+                <span class="block font-data-mono text-[10.5px] sm:text-xs md:text-sm lg:text-base text-on-primary font-black">999.9 &permil;</span>
+              </div>
+              <div class="border-l border-white/10">
+                <span class="block font-data-mono text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] text-secondary-fixed font-bold uppercase tracking-wider">SCALE RES.</span>
+                <span class="block font-data-mono text-[10.5px] sm:text-xs md:text-sm lg:text-base text-on-primary font-black">0.001 mg</span>
+              </div>
+              <div class="border-l border-white/10">
+                <span class="block font-data-mono text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] text-secondary-fixed font-bold uppercase tracking-wider">SPECTRA XRF</span>
+                <span class="block font-data-mono text-[10.5px] sm:text-xs md:text-sm lg:text-base text-on-primary font-black">0.02 eV</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- RIGHT / BOTTOM SECTION: LOGIN FORM                       -->
+        <!-- ======================================================== -->
+        <div class="md:col-span-7 lg:col-span-7 xl:col-span-7 bg-surface-container-lowest p-3.5 sm:p-5 md:p-6 lg:p-9 xl:p-11 flex flex-col justify-between">
+          
+          <div>
+            <!-- Header Tag -->
+            <div class="flex items-center justify-between gap-2 mb-2 sm:mb-2.5 md:mb-3.5 lg:mb-5">
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-300 text-slate-900 text-[9px] sm:text-[10.5px] md:text-xs lg:text-sm font-black uppercase tracking-wider">
+                <span class="material-symbols-outlined text-[13px] sm:text-[15px] lg:text-[17px] text-amber-700">lock</span>
+                <span>AUTHORIZED PERSONNEL ONLY</span>
+              </div>
+              <!-- Mini SSR Hallmark Cartouche Emblem -->
+              <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 rounded-lg bg-primary-container text-secondary-fixed flex items-center justify-center shadow-xs ring-1 ring-secondary/40 shrink-0">
+                <span class="font-headline font-black text-[10px] sm:text-xs lg:text-sm tracking-tighter">SSR</span>
+              </div>
+            </div>
+
+            <div class="space-y-0.5 sm:space-y-1 mb-2 sm:mb-3 md:mb-4 lg:mb-5">
+              <h2 class="font-headline text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-slate-900 font-black tracking-tight">
+                Welcome Back
+              </h2>
+              <p class="font-sans text-[10.5px] sm:text-xs md:text-xs lg:text-sm text-slate-600 font-medium">
+                Sign in to access your secure laboratory assay workspace.
+              </p>
+            </div>
+
+            <!-- Credential Authentication Form -->
+            <form class="space-y-2 sm:space-y-2.5 md:space-y-3 lg:space-y-4" id="lab-auth-form" onsubmit="handleSignInSubmit(event)">
+              
+              <!-- Staff Identifier / Email -->
+              <div class="space-y-0.5 sm:space-y-1">
+                <label class="block text-[9.5px] sm:text-[10.5px] md:text-xs lg:text-xs font-bold uppercase tracking-wider text-slate-900" for="terminal-uid">
+                  Staff Lab ID / Email Address <span class="text-error font-black">*</span>
+                </label>
+                <div class="relative rounded-lg sm:rounded-xl overflow-hidden bg-slate-50 border border-slate-300 focus-within:border-slate-900 focus-within:bg-white focus-within:ring-2 focus-within:ring-slate-900/10 transition-all">
+                  <div class="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 lg:pl-3.5 flex items-center pointer-events-none text-slate-600">
+                    <span class="material-symbols-outlined text-[16px] sm:text-[18px] lg:text-[20px]">badge</span>
+                  </div>
+                  <input 
+                    class="w-full pl-8 sm:pl-9 lg:pl-10 pr-3 py-1.5 sm:py-2 md:py-2.5 lg:py-3 bg-transparent text-slate-900 text-xs sm:text-sm md:text-sm lg:text-base font-semibold placeholder:text-slate-400 focus:outline-none" 
+                    id="terminal-uid" 
+                    name="terminal-uid" 
+                    placeholder="name@ssrhallmark.com or STAFF-ID" 
+                    required 
+                    type="text" 
+                    value="sarah.jenkins@ssrhallmark.com"
+                    autocomplete="username"
+                  />
+                </div>
+              </div>
+
+              <!-- Terminal Passcode -->
+              <div class="space-y-0.5 sm:space-y-1">
+                <label class="block text-[9.5px] sm:text-[10.5px] md:text-xs lg:text-xs font-bold uppercase tracking-wider text-slate-900" for="terminal-pwd">
+                  Lab Terminal Passcode <span class="text-error font-black">*</span>
+                </label>
+                <div class="relative rounded-lg sm:rounded-xl overflow-hidden bg-slate-50 border border-slate-300 focus-within:border-slate-900 focus-within:bg-white focus-within:ring-2 focus-within:ring-slate-900/10 transition-all">
+                  <div class="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 lg:pl-3.5 flex items-center pointer-events-none text-slate-600">
+                    <span class="material-symbols-outlined text-[16px] sm:text-[18px] lg:text-[20px]">key</span>
+                  </div>
+                  <input 
+                    class="w-full pl-8 sm:pl-9 lg:pl-10 pr-9 sm:pr-10 lg:pr-11 py-1.5 sm:py-2 md:py-2.5 lg:py-3 bg-transparent text-slate-900 font-data-mono text-xs sm:text-sm md:text-sm lg:text-base font-semibold placeholder:text-slate-400 focus:outline-none" 
+                    id="terminal-pwd" 
+                    name="terminal-pwd" 
+                    placeholder="Enter authorized credential" 
+                    required 
+                    type="password" 
+                    value="LaboratoryPass#2025"
+                    autocomplete="current-password"
+                  />
+                  <button 
+                    aria-label="Toggle Password Visibility" 
+                    class="absolute inset-y-0 right-0 pr-2.5 sm:pr-3 lg:pr-3.5 flex items-center text-slate-600 hover:text-slate-900 transition-colors cursor-pointer" 
+                    id="pwd-toggle-btn" 
+                    onclick="togglePasswordVisibility()" 
+                    type="button"
+                  >
+                    <span class="material-symbols-outlined text-[17px] sm:text-[19px] lg:text-[21px]" id="pwd-toggle-icon">visibility</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Session & Checkpoint Persist Control + Quick Fill -->
+              <div class="flex items-center justify-between gap-1 pt-0.5">
+                <label class="flex items-center gap-1.5 sm:gap-2 cursor-pointer select-none">
+                  <input checked class="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded text-primary-container focus:ring-0 bg-white border-slate-400 cursor-pointer" type="checkbox" id="keep-signed-in"/>
+                  <span class="text-[10px] sm:text-xs md:text-xs lg:text-sm text-slate-800 font-semibold">
+                    Keep signed in
+                  </span>
+                </label>
+                <button type="button" onclick="fillDemoCredentials()" class="text-[10px] sm:text-xs md:text-xs lg:text-sm font-bold text-amber-800 hover:underline cursor-pointer">
+                  Fill Demo Credentials
+                </button>
+              </div>
+
+              <!-- Primary Submission Execution Trigger -->
+              <div class="pt-1">
+                <button 
+                  class="w-full py-2 sm:py-2.5 md:py-3 lg:py-3.5 px-4 rounded-xl bg-primary-container hover:bg-slate-800 active:scale-[0.99] text-white font-headline text-xs sm:text-sm md:text-sm lg:text-base font-bold tracking-wider uppercase flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-xl group cursor-pointer border border-[#c5a059]/40" 
+                  id="sign-in-btn" 
+                  type="submit"
+                >
+                  <span id="sign-in-btn-text">Sign In to Workspace</span>
+                  <span class="material-symbols-outlined text-[17px] sm:text-[19px] lg:text-[21px] text-amber-400 group-hover:translate-x-1 transition-transform" id="sign-in-btn-icon">arrow_forward</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Card Internal Status Anchor (Centered) -->
+          <div class="mt-2.5 sm:mt-3.5 pt-2 sm:pt-2.5 border-t border-slate-200 flex items-center justify-center">
+            <div class="inline-flex items-center gap-1.5 font-data-mono text-[9px] sm:text-[10.5px] md:text-xs lg:text-xs text-emerald-950 font-bold bg-emerald-100 px-3 sm:px-4 py-1 rounded-full border border-emerald-400 shadow-xs">
+              <span class="material-symbols-outlined text-[14px] sm:text-[16px] text-emerald-700" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+              <span>SECURE ACCESS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- STATUTORY ENTERPRISE FOOTER (High-Contrast Solid Card) -->
+    <footer class="w-[94%] sm:w-[90%] md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-1 pb-1 shrink-0 z-20">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 px-3 sm:px-5 lg:px-6 rounded-xl bg-white border-2 border-slate-300 shadow-sm text-xs sm:text-sm">
+        <div class="flex items-center gap-2 text-slate-900 font-black text-[10.5px] sm:text-xs lg:text-sm">
+          <span class="w-2 h-2 rounded-full bg-amber-500 ring-1 ring-amber-700"></span>
+          <span>SSR Metallurgical &amp; Refinery Holdings &copy; 2025</span>
+          <span class="hidden md:inline text-slate-400">&bull;</span>
+          <span class="hidden md:inline text-slate-700 font-bold">BIS Hallmarking Regulations</span>
+        </div>
+        <div class="flex items-center gap-2 font-mono text-[10px] sm:text-[11px] lg:text-xs font-bold">
+          <span class="inline-flex items-center gap-1 text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded border border-slate-300">
+            <span class="material-symbols-outlined text-[14px] text-amber-700">lock</span>
+            <span>256-BIT ENCRYPTION</span>
+          </span>
+          <span class="inline-flex items-center gap-1 text-amber-950 bg-amber-100 px-2.5 py-0.5 rounded border border-amber-400">
+            <span class="material-symbols-outlined text-[14px] text-amber-700 font-bold">verified</span>
+            <span>IS 1417:2019</span>
+          </span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- Authentication & Welcoming Splash Logic -->
+  <script>
+    // --- Welcoming Splash Animation & Auto Fade Up ---
+    let splashInterval = null;
+
+    function initWelcomeSplash() {
+      const splash = document.getElementById('welcome-splash');
+      const pBar = document.getElementById('splash-progress-bar');
+      const pText = document.getElementById('splash-progress-percent');
+      const sText = document.getElementById('splash-status-text');
+      if (!splash) return;
+
+      let progress = 0;
+      const steps = [
+        { at: 8, text: 'Initializing Cryptographic Lab Node #0842...' },
+        { at: 32, text: 'Calibrating Fire Assay & XRF Spectrometry...' },
+        { at: 65, text: 'Establishing Secure BIS Gateway Connection...' },
+        { at: 92, text: 'Lab Security Verified \u2022 Launching Terminal...' }
+      ];
+
+      splashInterval = setInterval(() => {
+        progress += Math.floor(Math.random() * 8) + 6;
+        if (progress > 100) progress = 100;
+
+        if (pBar) pBar.style.width = progress + '%';
+        if (pText) pText.textContent = '[ ' + progress + '% ]';
+
+        for (let i = steps.length - 1; i >= 0; i--) {
+          if (progress >= steps[i].at) {
+            if (sText) {
+              sText.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse ring-2 ring-amber-400/40 shrink-0"></span> <span class="tracking-wide">${steps[i].text}</span>`;
+            }
+            break;
+          }
+        }
+
+        if (progress >= 100) {
+          clearInterval(splashInterval);
+          setTimeout(dismissWelcomeSplash, 400);
+        }
+      }, 110);
+    }
+
+    function dismissWelcomeSplash() {
+      if (splashInterval) clearInterval(splashInterval);
+      const splash = document.getElementById('welcome-splash');
+      if (!splash || splash.classList.contains('dismissed')) return;
+      splash.classList.add('dismissed');
+
+      // Cinematic Fade Up Animation
+      splash.style.transition = 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
+      splash.style.opacity = '0';
+      splash.style.transform = 'translateY(-60px) scale(1.02)';
+      splash.style.filter = 'blur(10px)';
+      splash.style.pointerEvents = 'none';
+
+      const mainWrapper = document.getElementById('sign-in-screen-wrapper');
+      if (mainWrapper) {
+        mainWrapper.style.transition = 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
+        mainWrapper.style.opacity = '1';
+        mainWrapper.style.transform = 'translateY(0) scale(1)';
+      }
+
+      setTimeout(() => {
+        splash.style.display = 'none';
+      }, 800);
+    }
+
+    function reopenWelcomeSplash() {
+      const splash = document.getElementById('welcome-splash');
+      const pBar = document.getElementById('splash-progress-bar');
+      const pText = document.getElementById('splash-progress-percent');
+      const sText = document.getElementById('splash-status-text');
+      if (!splash) return;
+
+      splash.classList.remove('dismissed');
+      splash.style.display = 'flex';
+      splash.style.pointerEvents = 'auto';
+      splash.style.opacity = '0';
+      splash.style.transform = 'translateY(40px) scale(0.98)';
+      splash.style.filter = 'blur(6px)';
+
+      if (pBar) pBar.style.width = '0%';
+      if (pText) pText.textContent = '[ 0% ]';
+      if (sText) {
+        sText.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse ring-2 ring-amber-400/40 shrink-0"></span> <span class="tracking-wide">Initializing Cryptographic Lab Node #0842...</span>';
+      }
+
+      // Trigger reflow
+      void splash.offsetWidth;
+
+      splash.style.transition = 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+      splash.style.opacity = '1';
+      splash.style.transform = 'translateY(0) scale(1)';
+      splash.style.filter = 'none';
+
+      initWelcomeSplash();
+    }
+
+    // Start welcoming splash when DOM is ready
+    document.addEventListener('DOMContentLoaded', initWelcomeSplash);
+
+    // --- Authentication & Form Handlers ---
+    function togglePasswordVisibility() {
+      const input = document.getElementById('terminal-pwd');
+      const icon = document.getElementById('pwd-toggle-icon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = 'visibility_off';
+      } else {
+        input.type = 'password';
+        icon.textContent = 'visibility';
+      }
+    }
+
+    function fillDemoCredentials() {
+      document.getElementById('terminal-uid').value = 'sarah.jenkins@ssrhallmark.com';
+      document.getElementById('terminal-pwd').value = 'LaboratoryPass#2025';
+      showToast('Demo administrator credentials filled.', 'info');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `p-3 rounded-xl shadow-lg border text-xs font-semibold flex items-center gap-2 transition-all duration-300 pointer-events-auto ${
+        type === 'success' 
+          ? 'bg-emerald-900 text-white border-emerald-700' 
+          : type === 'warning'
+          ? 'bg-amber-900 text-white border-amber-700'
+          : 'bg-slate-900 text-white border-slate-700'
+      }`;
+      const icon = type === 'success' ? 'check_circle' : type === 'warning' ? 'warning' : 'info';
+      toast.innerHTML = `<span class="material-symbols-outlined text-[16px]">${icon}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    function handleSignInSubmit(e) {
+      if (e) e.preventDefault();
+      const uid = document.getElementById('terminal-uid').value.trim();
+      const pwd = document.getElementById('terminal-pwd').value;
+      const btn = document.getElementById('sign-in-btn');
+      const btnText = document.getElementById('sign-in-btn-text');
+      const btnIcon = document.getElementById('sign-in-btn-icon');
+
+      if (!uid || !pwd) {
+        showToast('Please enter both Lab ID and Passcode.', 'warning');
+        return;
+      }
+
+      btn.disabled = true;
+      btnText.textContent = 'AUTHENTICATING SECURE SESSION...';
+      btnIcon.textContent = 'sync';
+      btnIcon.classList.add('animate-spin');
+
+      setTimeout(() => {
+        localStorage.setItem('ssr_authenticated', 'true');
+        localStorage.setItem('ssr_active_user', uid);
+        btnText.textContent = 'ACCESS GRANTED \u2022 OPENING WORKSPACE';
+        btnIcon.classList.remove('animate-spin');
+        btnIcon.textContent = 'check_circle';
+        btn.classList.remove('bg-primary-container');
+        btn.classList.add('bg-emerald-800');
+
+        showToast('Authorized: Sarah Jenkins (Lab Superintendent)', 'success');
+
+        setTimeout(() => {
+          window.location.href = 'index.html#/dashboard';
+        }, 500);
+      }, 700);
+    }
+  </script>
+</body>
+</html>

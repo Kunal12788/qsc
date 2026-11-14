@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Manrope:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"error-container":"#ffdad6","error":"#ba1a1a","tertiary-fixed-dim":"#bcc7de","primary":"#000000","surface-container":"#e5eeff","inverse-on-surface":"#eaf1ff","on-tertiary-fixed":"#111c2d","on-primary-fixed-variant":"#3a475c","on-secondary-container":"#785a1a","outline-variant":"#c5c6cd","on-surface-variant":"#44474c","on-tertiary-container":"#79849a","on-background":"#0b1c30","on-secondary-fixed-variant":"#5d4201","surface-container-highest":"#d3e4fe","secondary-container":"#fed488","primary-fixed-dim":"#bac7e1","on-error":"#ffffff","surface-tint":"#525f75","on-secondary-fixed":"#261900","outline":"#75777d","on-secondary":"#ffffff","secondary-fixed":"#ffdea5","surface-dim":"#cbdbf5","tertiary-fixed":"#d8e3fb","tertiary-container":"#111c2d","surface-container-low":"#eff4ff","primary-container":"#0e1c2f","primary-fixed":"#d6e3fe","background":"#f8f9ff","on-surface":"#0b1c30","surface-container-high":"#dce9ff","surface":"#f8f9ff","inverse-surface":"#213145","on-primary-container":"#77849c","surface-bright":"#f8f9ff","on-primary-fixed":"#0e1c2f","on-tertiary-fixed-variant":"#3c475a","secondary":"#775a19","surface-container-lowest":"#ffffff","on-error-container":"#93000a","surface-variant":"#d3e4fe","secondary-fixed-dim":"#e9c176","tertiary":"#000000","inverse-primary":"#bac7e1","on-tertiary":"#ffffff","on-primary":"#ffffff"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"margin":"1rem","margin-tablet":"1.5rem","gutter":"1.25rem","space-lg":"1.5rem","gutter-desktop":"1.5rem","space-xl":"2.5rem","space-sm":"0.5rem","space-md":"1rem","space-xs":"0.25rem","margin-desktop":"2rem"},"fontFamily":{"label-sm":["Inter"],"headline-sm":["Manrope"],"body-lg":["Inter"],"data-mono":["Inter"],"label-md":["Inter"],"body-md":["Inter"],"headline-lg":["Manrope"],"display-lg-mobile":["Manrope"],"headline-lg-mobile":["Manrope"],"display-lg":["Manrope"],"body-sm":["Inter"],"headline-md":["Manrope"]},"fontSize":{"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-sm":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"400"}],"data-mono":["13px",{"lineHeight":"18px","letterSpacing":"0.02em","fontWeight":"500"}],"label-md":["13px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"500"}],"body-md":["14px",{"lineHeight":"20px","letterSpacing":"0em","fontWeight":"400"}],"headline-lg":["28px",{"lineHeight":"36px","letterSpacing":"-0.015em","fontWeight":"600"}],"display-lg-mobile":["30px",{"lineHeight":"38px","letterSpacing":"-0.015em","fontWeight":"700"}],"headline-lg-mobile":["22px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}],"display-lg":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"400"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-primary-container text-on-primary-fixed z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.06)]"><div class="flex flex-col"><div class="p-space-lg flex items-start gap-space-sm bg-tertiary-container"><img alt="SSR Hallmark Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrBhPWxWNxBaRmEu1MARMbOcW8c176f3KOB76FHNUzVXWvUCJyKGNDC2KpHCxeOllZGqj3In1AYgM-hHFa4n589ALgpn7aytQg3hnCBliposFvjZ6UP4GJzJYwLWSGVcrp1URyR0PHx1g4YCr3nQygFnHPufzopJmntx55cmGuAmxaoeCGZNjNs89MB1_fEUfXVMFcG8OTeYPCop01NHBVghyzPniTA3qrBD6cMSTOj8"/><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm font-semibold tracking-tight text-surface-container-lowest truncate">SSR BULLION</span><span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary-fixed font-bold truncate">HALLMARK & ASSAY CENTER</span><div class="mt-space-xs inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed"></span><span class="font-data-mono text-[10px] text-on-primary-container tracking-wider uppercase">BIS LAB #AHC-88492</span></div></div></div><div class="px-space-md pt-space-md pb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-wider text-on-primary-container px-space-sm">Laboratory Operations</span></div><nav class="flex flex-col gap-1 px-space-md py-space-xs" data-active-classes="bg-surface-container-lowest text-on-surface font-semibold shadow-sm"><a aria-current="page" class="flex items-center gap-3 px-space-md py-2.5 rounded-lg transition-colors bg-surface-container-lowest text-on-surface font-semibold shadow-sm" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">dashboard</span><span class="font-label-md text-label-md">Dashboard</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="receive" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">move_to_inbox</span><span class="font-label-md text-label-md">Receive Batch</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="customer-information" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">storefront</span><span class="font-label-md text-label-md">Customer Information</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="bill-generation" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">receipt_long</span><span class="font-label-md text-label-md">Bill Generation</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="records-history" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">history_edu</span><span class="font-label-md text-label-md">Records / History</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">settings</span><span class="font-label-md text-label-md">Settings</span></a></nav></div><div class="p-space-md m-space-md rounded-xl bg-inverse-surface/60"><div class="flex items-center justify-between mb-1.5"><span class="font-label-sm text-label-sm text-secondary-fixed font-semibold uppercase tracking-wider">Assay Standards</span><span class="font-data-mono text-[10px] text-on-primary-container">IS 1417:2019</span></div><div class="flex items-center gap-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary-container text-on-secondary-container">916 (22K)</span><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary-container text-on-secondary-container">999 (24K)</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md z-40 px-gutter-desktop shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex items-center justify-between"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-2"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-outline text-[18px]">search</span><input class="w-80 h-9 pl-9 pr-14 text-body-sm font-body-sm bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest" placeholder="Quick search Job #, BIS Lic, or Customer..." type="text"/><kbd class="absolute right-2.5 px-1.5 py-0.5 text-[10px] font-data-mono bg-surface-container text-on-surface-variant rounded">⌘K</kbd></div></div><div class="hidden xl:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-low"><span class="material-symbols-outlined text-secondary text-[16px]">calendar_today</span><span class="font-body-sm text-body-sm text-on-surface-variant font-medium">Thursday, October 24, 2024</span></div></div><div class="flex items-center gap-space-md"><div class="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/40 text-on-secondary-container"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="font-label-sm text-label-sm font-semibold tracking-wide uppercase">BIS Lab Active • Shift A</span></div><button aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-secondary ring-2 ring-surface-container-lowest"></span></button><div class="flex items-center gap-3 pl-space-sm"><div class="flex flex-col text-right hidden sm:flex"><span class="font-label-md text-label-md font-semibold text-on-surface leading-tight">Sarah Jenkins, Assay Master</span><span class="font-label-sm text-label-sm text-on-surface-variant leading-tight">Lab Superintendent</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYIfV4DElZjxFyDFYtrAoxY6kwVl-7DXb8Y9kHhzMvfoOFDXw_jDXwb0HDkGf4le8mCGegmNlmov8dCIoDq_OUaADelsSqVW2jiutf-RZqDzFnj-zlg6TnuolO4uCRSe2Xfbpc_7RBYAUh7ZEJH7LrT-iPH9MJwhgWvhhgitbxctt7W3ES-GDbMHz2lGxHpyjitRM4-TVVFtZ2Utr1NvFna68f_YFrGvpmQT55djs"/></div></div></header><main class="relative pt-16 bg-surface w-full px-gutter-desktop min-h-screen"><div class="flex flex-col w-full pb-space-xl">
+<!-- Operational Breadcrumb & Welcome Strip -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md py-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-2 mb-1">
+<span class="font-data-mono text-label-sm uppercase tracking-wider text-secondary font-bold">A/C SHIFT OPERATION • PROTOCOL IS 1417:2019</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="font-data-mono text-label-sm text-on-surface-variant">NODE: BLR-CENTRAL-01</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">
+        Good morning, Sarah. <span class="font-normal text-on-surface-variant">Lab throughput is at </span><span class="text-secondary font-bold">94.2% efficiency</span><span class="font-normal text-on-surface-variant"> today.</span>
+</h1>
+</div>
+<!-- Quick Actions Group -->
+<div class="flex items-center gap-space-sm flex-wrap">
+<button class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-lg bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-[18px] text-secondary">person_add</span>
+<span>Add Customer</span>
+</button>
+<button class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-lg bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-[18px] text-secondary">receipt_long</span>
+<span>Generate Bill</span>
+</button>
+<button class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md shadow-md hover:bg-inverse-surface transition-all group">
+<span class="material-symbols-outlined text-[20px] text-secondary-fixed group-hover:rotate-90 transition-transform">add_circle</span>
+<span class="font-semibold tracking-wide">New Receive Entry</span>
+</button>
+</div>
+</div>
+<!-- Metric Summary Cards (5-Column Analytical Bento) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-space-md mt-space-sm">
+<!-- Card 1: Total Received Jobs -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Total Received</span>
+<span class="font-data-mono text-[10px] text-outline">BATCH CYCLE CURRENT</span>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-container-low text-on-surface-variant">
+          Normal Flow
+        </span>
+</div>
+<div class="my-space-sm flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface">142 <span class="font-body-md text-body-md text-on-surface-variant font-normal">jobs</span></span>
+<div class="flex items-center gap-0.5 text-secondary font-data-mono text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>+18.4%</span>
+</div>
+</div>
+<!-- Inline Micro Sparkline -->
+<div class="w-full pt-1 flex items-center justify-between text-outline">
+<svg class="w-full h-6 text-secondary" fill="none" viewbox="0 0 100 24">
+<path d="M0 18 L15 14 L30 19 L45 10 L60 12 L75 4 L90 7 L100 2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M0 18 L15 14 L30 19 L45 10 L60 12 L75 4 L90 7 L100 2 L100 24 L0 24 Z" fill="currentColor" fill-opacity="0.08"></path>
+</svg>
+</div>
+</div>
+<!-- Card 2: Pieces Received -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Pieces Intake</span>
+<span class="font-data-mono text-[10px] text-outline">PHYSICAL UNITS</span>
+</div>
+<span class="p-1 rounded bg-secondary-container/40 text-on-secondary-container">
+<span class="material-symbols-outlined text-[16px] block">toll</span>
+</span>
+</div>
+<div class="my-space-sm">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface">3,840 <span class="font-body-md text-body-md text-on-surface-variant font-normal">pcs</span></span>
+</div>
+<div class="flex items-center justify-between pt-1 text-on-surface-variant font-data-mono text-body-sm">
+<span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary"></span>Gold: <strong class="text-on-surface">3,420</strong></span>
+<span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-outline-variant"></span>Ag: <strong class="text-on-surface">420</strong></span>
+</div>
+</div>
+<!-- Card 3: Pending Deliveries -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Pending Delivery</span>
+<span class="font-data-mono text-[10px] text-outline">ASSAY / PACKING QUEUE</span>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-error-container text-on-error-container">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> 6 Urgent
+        </span>
+</div>
+<div class="my-space-sm flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface">38 <span class="font-body-md text-body-md text-on-surface-variant font-normal">jobs</span></span>
+<span class="font-label-sm text-label-sm text-outline">Awaiting Fire Assay</span>
+</div>
+<!-- Mini stage bar -->
+<div class="w-full bg-surface-container-low rounded-full h-1.5 flex overflow-hidden">
+<div class="bg-error h-full" style="width: 25%"></div>
+<div class="bg-secondary h-full" style="width: 45%"></div>
+<div class="bg-primary-container h-full" style="width: 30%"></div>
+</div>
+</div>
+<!-- Card 4: Completed Deliveries -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Dispatched</span>
+<span class="font-data-mono text-[10px] text-outline">HUID INSCRIBED</span>
+</div>
+<span class="p-1 rounded bg-surface-container-low text-on-surface">
+<span class="material-symbols-outlined text-[16px] block">verified</span>
+</span>
+</div>
+<div class="my-space-sm flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface">104 <span class="font-body-md text-body-md text-on-surface-variant font-normal">jobs</span></span>
+<span class="font-data-mono text-label-sm font-semibold text-secondary">98.6% SLA</span>
+</div>
+<div class="w-full pt-1 flex items-center justify-between text-on-surface-variant text-body-sm">
+<span>On-time dispatch rate</span>
+<span class="font-data-mono text-[11px] text-on-surface font-semibold">Target: 95%</span>
+</div>
+</div>
+<!-- Card 5: Total Customers -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Registered Jewellers</span>
+<span class="font-data-mono text-[10px] text-outline">BIS AFFILIATED</span>
+</div>
+<span class="p-1 rounded bg-surface-container-low text-on-surface">
+<span class="material-symbols-outlined text-[16px] block">storefront</span>
+</span>
+</div>
+<div class="my-space-sm flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface">428 <span class="font-body-md text-body-md text-on-surface-variant font-normal">clients</span></span>
+<span class="font-data-mono text-label-sm font-semibold text-secondary">+12 mo</span>
+</div>
+<div class="w-full pt-1 flex items-center justify-between text-on-surface-variant text-body-sm">
+<span class="truncate">Active in last 48h</span>
+<span class="font-data-mono text-[11px] text-on-surface font-semibold">89 Jewellers</span>
+</div>
+</div>
+</div>
+<!-- Main Dual Analytics & Operations Grid -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg mt-space-lg items-start">
+<!-- Main Left Column (8 of 12 = 66.6% width) -->
+<div class="xl:col-span-8 flex flex-col gap-space-lg">
+<!-- Transactions Card Panel -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<!-- Table Header & Controls Strip -->
+<div class="p-space-md flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm bg-surface-container-lowest">
+<div class="flex items-center gap-space-sm">
+<span class="p-2 rounded-lg bg-surface-container-low text-secondary">
+<span class="material-symbols-outlined text-[20px] block">move_to_inbox</span>
+</span>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm font-semibold text-on-surface">Recent Intake Batches</h2>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-data-mono bg-surface-container text-on-surface font-medium">Live Feed</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Real-time metallurgical logging and HUID certification intake</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-[16px] text-outline">filter_list</span>
+<select class="pl-8 pr-6 py-1.5 text-body-sm font-body-sm bg-surface-container-low rounded-lg text-on-surface appearance-none focus:outline-none">
+<option>All Types</option>
+<option>Main Batch</option>
+<option>Off-Side Sample</option>
+</select>
+</div>
+<button class="p-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px] block">refresh</span>
+</button>
+</div>
+</div>
+<!-- Density Data Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<th class="py-3 px-space-md font-semibold">Job ID & Time</th>
+<th class="py-3 px-space-md font-semibold">Jeweller / BIS License</th>
+<th class="py-3 px-space-md font-semibold text-center">Batch Items</th>
+<th class="py-3 px-space-md font-semibold">Purity</th>
+<th class="py-3 px-space-md font-semibold">Lot Class</th>
+<th class="py-3 px-space-md font-semibold text-right">Net / Gross Wt</th>
+<th class="py-3 px-space-md font-semibold">Assay Status</th>
+<th class="py-3 px-space-md font-semibold text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-body-sm font-body-sm text-on-surface">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-3.5 px-space-md">
+<div class="flex flex-col">
+<span class="font-data-mono font-semibold text-on-surface text-[13px]">#JOB-2024-8841</span>
+<span class="font-data-mono text-[11px] text-outline">10:45 AM Today</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">Kalyan Heritage Jewellers</span>
+<span class="font-data-mono text-[11px] text-on-surface-variant">BIS-KA-99210</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-center">
+<span class="font-data-mono font-semibold text-on-surface">45</span>
+<span class="text-[11px] text-outline block">bangles</span>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full font-data-mono text-[11px] font-bold bg-secondary-container/50 text-on-secondary-container">
+                    22K 916
+                  </span>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-label-sm font-semibold bg-primary-container text-surface-container-lowest">
+                    Main
+                  </span>
+</td>
+<td class="py-3.5 px-space-md text-right font-data-mono">
+<div class="flex flex-col items-end">
+<span class="font-semibold text-on-surface">412.50g</span>
+<span class="text-[11px] text-outline">Gross: 428.10g</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-surface-container text-on-surface">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> XRF Verified
+                  </span>
+</td>
+<td class="py-3.5 px-space-md text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm font-semibold hover:bg-primary hover:text-on-primary transition-colors">
+                    Details
+                  </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-3.5 px-space-md">
+<div class="flex flex-col">
+<span class="font-data-mono font-semibold text-on-surface text-[13px]">#JOB-2024-8840</span>
+<span class="font-data-mono text-[11px] text-outline">10:20 AM Today</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">Malabar Gold Craft</span>
+<span class="font-data-mono text-[11px] text-on-surface-variant">BIS-KA-10492</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-center">
+<span class="font-data-mono font-semibold text-on-surface">112</span>
+<span class="text-[11px] text-outline block">chains</span>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full font-data-mono text-[11px] font-bold bg-secondary-container/50 text-on-secondary-container">
+                    22K 916
+                  </span>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-label-sm font-semibold bg-primary-container text-surface-container-lowest">
+                    Main
+                  </span>
+</td>
+<td class="py-3.5 px-space-md text-right font-data-mono">
+<div class="flex flex-col items-end">
+<span class="font-semibold text-on-surface">982.10g</span>
+<span class="text-[11px] text-outline">Gross: 994.40g</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-secondary-container/40 text-on-secondary-container">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span> In Marking
+                  </span>
+</td>
+<td class="py-3.5 px-space-md text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm font-semibold hover:bg-primary hover:text-on-primary transition-colors">
+                    Details
+                  </button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-3.5 px-space-md">
+<div class="flex flex-col">
+<span class="font-data-mono font-semibold text-on-surface text-[13px]">#JOB-2024-8839</span>
+<span class="font-data-mono text-[11px] text-outline">09:55 AM Today</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">Tanishq Studio Boutique</span>
+<span class="font-data-mono text-[11px] text-on-surface-variant">BIS-KA-88301</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-center">
+<span class="font-data-mono font-semibold text-on-surface">18</span>
+<span class="text-[11px] text-outline block">rings</span>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full font-data-mono text-[11px] font-bold bg-surface-container-highest text-on-surface">
+                    18K 750
+                  </span>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-label-sm font-semibold bg-secondary-container text-on-secondary-container">
+                    Off Side
+                  </span>
+</td>
+<td class="py-3.5 px-space-md text-right font-data-mono">
+<div class="flex flex-col items-end">
+<span class="font-semibold text-on-surface">144.20g</span>
+<span class="text-[11px] text-outline">Gross: 148.80g</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-surface-container text-on-surface">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Fire Assay Q
+                  </span>
+</td>
+<td class="py-3.5 px-space-md text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm font-semibold hover:bg-primary hover:text-on-primary transition-colors">
+                    Details
+                  </button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-3.5 px-space-md">
+<div class="flex flex-col">
+<span class="font-data-mono font-semibold text-on-surface text-[13px]">#JOB-2024-8838</span>
+<span class="font-data-mono text-[11px] text-outline">09:30 AM Today</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">Navrathan Jewellers Ltd</span>
+<span class="font-data-mono text-[11px] text-on-surface-variant">BIS-KA-77402</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-center">
+<span class="font-data-mono font-semibold text-on-surface">6</span>
+<span class="text-[11px] text-outline block">ingots</span>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full font-data-mono text-[11px] font-bold bg-secondary-fixed text-on-secondary-fixed">
+                    24K 999
+                  </span>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-label-sm font-semibold bg-primary-container text-surface-container-lowest">
+                    Main
+                  </span>
+</td>
+<td class="py-3.5 px-space-md text-right font-data-mono">
+<div class="flex flex-col items-end">
+<span class="font-semibold text-on-surface">600.00g</span>
+<span class="text-[11px] text-outline">Gross: 600.12g</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-surface-container-low text-on-surface font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-on-surface"></span> Dispatched
+                  </span>
+</td>
+<td class="py-3.5 px-space-md text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm font-semibold hover:bg-primary hover:text-on-primary transition-colors">
+                    Details
+                  </button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-3.5 px-space-md">
+<div class="flex flex-col">
+<span class="font-data-mono font-semibold text-on-surface text-[13px]">#JOB-2024-8837</span>
+<span class="font-data-mono text-[11px] text-outline">08:50 AM Today</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">Bhima & Brothers Fine Bullion</span>
+<span class="font-data-mono text-[11px] text-on-surface-variant">BIS-KA-23114</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-center">
+<span class="font-data-mono font-semibold text-on-surface">78</span>
+<span class="text-[11px] text-outline block">coins</span>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full font-data-mono text-[11px] font-bold bg-secondary-container/50 text-on-secondary-container">
+                    22K 916
+                  </span>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-label-sm font-semibold bg-secondary-container text-on-secondary-container">
+                    Off Side
+                  </span>
+</td>
+<td class="py-3.5 px-space-md text-right font-data-mono">
+<div class="flex flex-col items-end">
+<span class="font-semibold text-on-surface">624.00g</span>
+<span class="text-[11px] text-outline">Gross: 625.50g</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-surface-container text-on-surface">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> XRF Verified
+                  </span>
+</td>
+<td class="py-3.5 px-space-md text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm font-semibold hover:bg-primary hover:text-on-primary transition-colors">
+                    Details
+                  </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Pagination Metadata Strip -->
+<div class="p-space-md bg-surface-container-low/50 flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm text-body-sm text-on-surface-variant font-data-mono text-[12px]">
+<div class="flex items-center gap-2">
+<span>Showing <strong class="text-on-surface">5 of 142</strong> active batches</span>
+<span class="text-outline">•</span>
+<span>Weight Sum: <strong class="text-on-surface">2,762.80g</strong></span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-3 py-1 rounded bg-surface-container-lowest text-on-surface font-semibold hover:bg-surface-container transition-colors">Prev</button>
+<button class="px-3 py-1 rounded bg-primary-container text-surface-container-lowest font-semibold">1</button>
+<button class="px-3 py-1 rounded bg-surface-container-lowest text-on-surface hover:bg-surface-container transition-colors">2</button>
+<button class="px-3 py-1 rounded bg-surface-container-lowest text-on-surface hover:bg-surface-container transition-colors">3</button>
+<button class="px-3 py-1 rounded bg-surface-container-lowest text-on-surface font-semibold hover:bg-surface-container transition-colors">Next</button>
+</div>
+</div>
+</div>
+<!-- Secondary Analytical View: Micro-Laboratory Shift Spectrum -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Live Precision Balances -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">scale</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">Mettler Toledo Precision Balances</span>
+</div>
+<span class="font-data-mono text-[10px] text-secondary font-bold uppercase tracking-wider">Dual Calibrated</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm font-data-mono">
+<div class="p-space-sm rounded-lg bg-surface-container-low">
+<span class="text-[10px] text-outline block">BALANCE ID: MT-401 (0.001g)</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">412.508 g</span>
+<span class="text-[10px] text-secondary block mt-0.5">Tare: Stable ±0.0002</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low">
+<span class="text-[10px] text-outline block">BALANCE ID: MT-402 (0.0001g)</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">18.4912 g</span>
+<span class="text-[10px] text-secondary block mt-0.5">Tare: Stable ±0.0001</span>
+</div>
+</div>
+</div>
+<!-- Sample Fire Assay Status Banner -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">local_fire_department</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">Cupellation Furnace Temp</span>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-data-mono font-bold bg-secondary-container/40 text-on-secondary-container">1100°C SET</span>
+</div>
+<div class="my-space-xs flex items-center justify-between">
+<div>
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface font-data-mono">1,098.4°C</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block">Chamber B (Lead separation stage)</span>
+</div>
+<div class="text-right font-data-mono text-[11px] text-on-surface-variant">
+<span>Cycle: 42 / 60 min</span>
+<div class="w-24 bg-surface-container h-1.5 rounded-full overflow-hidden mt-1">
+<div class="bg-secondary h-full" style="width: 70%"></div>
+</div>
+</div>
+</div>
+<span class="font-data-mono text-[10px] text-outline uppercase tracking-wider">Furnace operator: M. Gowda (Cert #FA-990)</span>
+</div>
+</div>
+</div>
+<!-- Right Sidebar Column (4 of 12 = 33.3% width) -->
+<div class="xl:col-span-4 flex flex-col gap-space-lg">
+<!-- Widget 1: Assay Purity Breakdown -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-secondary">pie_chart</span>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-on-surface">Assay Purity Breakdown</h3>
+</div>
+<span class="font-data-mono text-[11px] text-on-surface-variant">Today's Intake</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-md">Fineness distribution across 3,840 assayed pieces</p>
+<!-- Purity Bars List -->
+<div class="flex flex-col gap-space-md font-data-mono">
+<!-- 22K 916 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded bg-secondary"></span>
+<span class="font-bold text-on-surface">22K 916 Gold</span>
+<span class="text-[11px] text-outline font-normal">(Crown Standard)</span>
+</div>
+<span class="font-bold text-on-surface">74% <span class="text-outline font-normal">(2,842 pcs)</span></span>
+</div>
+<div class="w-full bg-surface-container-low h-2.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 74%"></div>
+</div>
+</div>
+<!-- 18K 750 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded bg-secondary-fixed"></span>
+<span class="font-bold text-on-surface">18K 750 Gold</span>
+<span class="text-[11px] text-outline font-normal">(Diamond Studded)</span>
+</div>
+<span class="font-bold text-on-surface">18% <span class="text-outline font-normal">(691 pcs)</span></span>
+</div>
+<div class="w-full bg-surface-container-low h-2.5 rounded-full overflow-hidden">
+<div class="bg-secondary-fixed h-full rounded-full" style="width: 18%"></div>
+</div>
+</div>
+<!-- 24K 999 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded bg-primary-container"></span>
+<span class="font-bold text-on-surface">24K 999 Fine</span>
+<span class="text-[11px] text-outline font-normal">(Investment Bar)</span>
+</div>
+<span class="font-bold text-on-surface">5% <span class="text-outline font-normal">(192 pcs)</span></span>
+</div>
+<div class="w-full bg-surface-container-low h-2.5 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 5%"></div>
+</div>
+</div>
+<!-- 14K 585 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded bg-outline-variant"></span>
+<span class="font-bold text-on-surface">14K 585 Export</span>
+<span class="text-[11px] text-outline font-normal">(Customs Std)</span>
+</div>
+<span class="font-bold text-on-surface">3% <span class="text-outline font-normal">(115 pcs)</span></span>
+</div>
+<div class="w-full bg-surface-container-low h-2.5 rounded-full overflow-hidden">
+<div class="bg-outline-variant h-full rounded-full" style="width: 3%"></div>
+</div>
+</div>
+</div>
+<!-- Fineness verification badge footer -->
+<div class="mt-space-md pt-space-sm bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">gavel</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">XRF Spectral Drift</span>
+</div>
+<span class="font-data-mono text-[11px] text-secondary font-bold">< 0.002% Δ</span>
+</div>
+</div>
+<!-- Widget 2: Laser Hallmarking Queue Status -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-secondary">qr_code_scanner</span>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-on-surface">Laser Inscribing Stations</h3>
+</div>
+<span class="font-data-mono text-[10px] text-outline uppercase">HUID ENGINE</span>
+</div>
+<div class="flex flex-col gap-space-sm">
+<!-- Machine A -->
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary animate-ping"></span>
+<span class="font-label-md text-label-md font-semibold text-on-surface">Laser Station Alpha (Nd:YAG)</span>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-secondary-container/60 text-on-secondary-container">
+                ACTIVE
+              </span>
+</div>
+<div class="flex items-center justify-between font-data-mono text-body-sm">
+<span class="text-on-surface-variant text-[11px]">JOB #JOB-2024-8840 (Piece 48/112)</span>
+<span class="font-bold text-on-surface">43% done</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 43%"></div>
+</div>
+<div class="flex items-center justify-between text-[10px] font-data-mono text-outline">
+<span>HUID Inscribed: <strong class="text-on-surface">KA991A8029F</strong></span>
+<span>Speed: 14s/pc</span>
+</div>
+</div>
+<!-- Machine B -->
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-outline"></span>
+<span class="font-label-md text-label-md font-semibold text-on-surface">Laser Station Beta (Fiber 50W)</span>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container text-on-surface-variant">
+                CALIBRATING
+              </span>
+</div>
+<div class="flex items-center justify-between font-data-mono text-body-sm">
+<span class="text-on-surface-variant text-[11px]">Beam alignment with reference gold coupon</span>
+<span class="font-bold text-on-surface">88%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-outline h-full rounded-full" style="width: 88%"></div>
+</div>
+<div class="flex items-center justify-between text-[10px] font-data-mono text-outline">
+<span>Estimated operational: 4 mins</span>
+<span>Temp: 21.4°C</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Widget 3: Quick BIS Regulatory Notice / Daily XRF Calibration Stamp -->
+<div class="bg-gradient-to-br from-surface-container-low via-surface-container-lowest to-surface-container-low rounded-xl p-space-md shadow-sm relative overflow-hidden">
+<!-- Certified Tactile Seal Stamp -->
+<div class="flex items-start gap-space-md">
+<div class="w-14 h-14 rounded-full bg-secondary-container/40 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary text-[30px]">workspace_premium</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-bold">BIS AUDIT CERTIFICATE</span>
+<span class="material-symbols-outlined text-secondary text-[14px]">verified</span>
+</div>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface tracking-tight mt-0.5">XRF Instrument Certified</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              Fischer XAN-250 Spectrometer recalibrated to certified BIS Reference Standard Coupon #KA-4410.
+            </p>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between font-data-mono text-[11px] text-on-surface-variant">
+<div>
+<span class="text-outline block">TIMESTAMP:</span>
+<span class="font-bold text-on-surface">08:30 AM IST (Today)</span>
+</div>
+<div>
+<span class="text-outline block">VERIFIED BY:</span>
+<span class="font-bold text-on-surface">S. Jenkins (Master #849)</span>
+</div>
+<button class="px-2.5 py-1 rounded bg-surface-container text-on-surface font-label-sm text-label-sm font-semibold hover:bg-primary-container hover:text-surface-container-lowest transition-colors">
+            Audit Log
+          </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Forensic Bullion Security Watermark -->
+<div class="mt-space-xl flex flex-col sm:flex-row items-center justify-between text-on-surface-variant text-[11px] font-data-mono py-space-sm px-space-md bg-surface-container-low/40 rounded-lg">
+<div class="flex items-center gap-3">
+<span class="inline-flex items-center gap-1 text-secondary font-semibold">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+        BIS PORTAL AUTO-SYNC ACTIVE
+      </span>
+<span>•</span>
+<span>HUID Central Server Gateway: Operational (Ping: 14ms)</span>
+</div>
+<div class="mt-1 sm:mt-0">
+<span>SSR BULLION METALLURGICAL MANAGEMENT SUITE • v4.12.0-ENTERPRISE</span>
+</div>
+</div>
+</div></main></div></body></html>

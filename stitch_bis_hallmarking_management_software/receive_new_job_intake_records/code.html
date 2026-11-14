@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Manrope:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"error-container":"#ffdad6","error":"#ba1a1a","tertiary-fixed-dim":"#bcc7de","primary":"#000000","surface-container":"#e5eeff","inverse-on-surface":"#eaf1ff","on-tertiary-fixed":"#111c2d","on-primary-fixed-variant":"#3a475c","on-secondary-container":"#785a1a","outline-variant":"#c5c6cd","on-surface-variant":"#44474c","on-tertiary-container":"#79849a","on-background":"#0b1c30","on-secondary-fixed-variant":"#5d4201","surface-container-highest":"#d3e4fe","secondary-container":"#fed488","primary-fixed-dim":"#bac7e1","on-error":"#ffffff","surface-tint":"#525f75","on-secondary-fixed":"#261900","outline":"#75777d","on-secondary":"#ffffff","secondary-fixed":"#ffdea5","surface-dim":"#cbdbf5","tertiary-fixed":"#d8e3fb","tertiary-container":"#111c2d","surface-container-low":"#eff4ff","primary-container":"#0e1c2f","primary-fixed":"#d6e3fe","background":"#f8f9ff","on-surface":"#0b1c30","surface-container-high":"#dce9ff","surface":"#f8f9ff","inverse-surface":"#213145","on-primary-container":"#77849c","surface-bright":"#f8f9ff","on-primary-fixed":"#0e1c2f","on-tertiary-fixed-variant":"#3c475a","secondary":"#775a19","surface-container-lowest":"#ffffff","on-error-container":"#93000a","surface-variant":"#d3e4fe","secondary-fixed-dim":"#e9c176","tertiary":"#000000","inverse-primary":"#bac7e1","on-tertiary":"#ffffff","on-primary":"#ffffff"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"margin":"1rem","margin-tablet":"1.5rem","gutter":"1.25rem","space-lg":"1.5rem","gutter-desktop":"1.5rem","space-xl":"2.5rem","space-sm":"0.5rem","space-md":"1rem","space-xs":"0.25rem","margin-desktop":"2rem"},"fontFamily":{"label-sm":["Inter"],"headline-sm":["Manrope"],"body-lg":["Inter"],"data-mono":["Inter"],"label-md":["Inter"],"body-md":["Inter"],"headline-lg":["Manrope"],"display-lg-mobile":["Manrope"],"headline-lg-mobile":["Manrope"],"display-lg":["Manrope"],"body-sm":["Inter"],"headline-md":["Manrope"]},"fontSize":{"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-sm":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"400"}],"data-mono":["13px",{"lineHeight":"18px","letterSpacing":"0.02em","fontWeight":"500"}],"label-md":["13px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"500"}],"body-md":["14px",{"lineHeight":"20px","letterSpacing":"0em","fontWeight":"400"}],"headline-lg":["28px",{"lineHeight":"36px","letterSpacing":"-0.015em","fontWeight":"600"}],"display-lg-mobile":["30px",{"lineHeight":"38px","letterSpacing":"-0.015em","fontWeight":"700"}],"headline-lg-mobile":["22px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}],"display-lg":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"400"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-primary-container text-on-primary-fixed z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.06)]"><div class="flex flex-col"><div class="p-space-lg flex items-start gap-space-sm bg-tertiary-container"><img alt="SSR Hallmark Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrBhPWxWNxBaRmEu1MARMbOcW8c176f3KOB76FHNUzVXWvUCJyKGNDC2KpHCxeOllZGqj3In1AYgM-hHFa4n589ALgpn7aytQg3hnCBliposFvjZ6UP4GJzJYwLWSGVcrp1URyR0PHx1g4YCr3nQygFnHPufzopJmntx55cmGuAmxaoeCGZNjNs89MB1_fEUfXVMFcG8OTeYPCop01NHBVghyzPniTA3qrBD6cMSTOj8"/><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm font-semibold tracking-tight text-surface-container-lowest truncate">SSR BULLION</span><span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary-fixed font-bold truncate">HALLMARK & ASSAY CENTER</span><div class="mt-space-xs inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed"></span><span class="font-data-mono text-[10px] text-on-primary-container tracking-wider uppercase">BIS LAB #AHC-88492</span></div></div></div><div class="px-space-md pt-space-md pb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-wider text-on-primary-container px-space-sm">Laboratory Operations</span></div><nav class="flex flex-col gap-1 px-space-md py-space-xs" data-active-classes="bg-surface-container-lowest text-on-surface font-semibold shadow-sm"><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">dashboard</span><span class="font-label-md text-label-md">Dashboard</span></a><a aria-current="page" class="flex items-center gap-3 px-space-md py-2.5 rounded-lg transition-colors bg-surface-container-lowest text-on-surface font-semibold shadow-sm" data-path="receive" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">move_to_inbox</span><span class="font-label-md text-label-md">Receive Batch</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="customer-information" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">storefront</span><span class="font-label-md text-label-md">Customer Information</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="bill-generation" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">receipt_long</span><span class="font-label-md text-label-md">Bill Generation</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="records-history" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">history_edu</span><span class="font-label-md text-label-md">Records / History</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">settings</span><span class="font-label-md text-label-md">Settings</span></a></nav></div><div class="p-space-md m-space-md rounded-xl bg-inverse-surface/60"><div class="flex items-center justify-between mb-1.5"><span class="font-label-sm text-label-sm text-secondary-fixed font-semibold uppercase tracking-wider">Assay Standards</span><span class="font-data-mono text-[10px] text-on-primary-container">IS 1417:2019</span></div><div class="flex items-center gap-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary-container text-on-secondary-container">916 (22K)</span><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary-container text-on-secondary-container">999 (24K)</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md z-40 px-gutter-desktop shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex items-center justify-between"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-2"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-outline text-[18px]">search</span><input class="w-80 h-9 pl-9 pr-14 text-body-sm font-body-sm bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest" placeholder="Quick search Job #, BIS Lic, or Customer..." type="text"/><kbd class="absolute right-2.5 px-1.5 py-0.5 text-[10px] font-data-mono bg-surface-container text-on-surface-variant rounded">⌘K</kbd></div></div><div class="hidden xl:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-low"><span class="material-symbols-outlined text-secondary text-[16px]">calendar_today</span><span class="font-body-sm text-body-sm text-on-surface-variant font-medium">Thursday, October 24, 2024</span></div></div><div class="flex items-center gap-space-md"><div class="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/40 text-on-secondary-container"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="font-label-sm text-label-sm font-semibold tracking-wide uppercase">BIS Lab Active • Shift A</span></div><button aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-secondary ring-2 ring-surface-container-lowest"></span></button><div class="flex items-center gap-3 pl-space-sm"><div class="flex flex-col text-right hidden sm:flex"><span class="font-label-md text-label-md font-semibold text-on-surface leading-tight">Sarah Jenkins, Assay Master</span><span class="font-label-sm text-label-sm text-on-surface-variant leading-tight">Lab Superintendent</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYIfV4DElZjxFyDFYtrAoxY6kwVl-7DXb8Y9kHhzMvfoOFDXw_jDXwb0HDkGf4le8mCGegmNlmov8dCIoDq_OUaADelsSqVW2jiutf-RZqDzFnj-zlg6TnuolO4uCRSe2Xfbpc_7RBYAUh7ZEJH7LrT-iPH9MJwhgWvhhgitbxctt7W3ES-GDbMHz2lGxHpyjitRM4-TVVFtZ2Utr1NvFna68f_YFrGvpmQT55djs"/></div></div></header><main class="relative pt-16 bg-surface w-full px-gutter-desktop min-h-screen"><div class="flex flex-col w-full pb-space-xl">
+<!-- Page Header & Operational Status Bar -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md py-space-md">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2.5">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">Receive New Job</span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-primary-fixed-variant text-label-sm font-label-sm uppercase tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+          Station: Intake Desk 01
+        </span>
+<span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/30 text-on-secondary-container text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-[13px] text-secondary">verified</span>
+          BIS AHC Accredited
+        </span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+        Custody transfer, dual weight acquisition, and laser XRF assay dispatch ticketing conforming to IS 1417:2019 guidelines.
+      </p>
+</div>
+<!-- Export & Printing Utility Controls -->
+<div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+<button class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-lowest text-on-surface shadow-sm hover:bg-surface-container-low transition-colors text-label-md font-label-md" type="button">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">picture_as_pdf</span>
+<span>Export PDF</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-lowest text-on-surface shadow-sm hover:bg-surface-container-low transition-colors text-label-md font-label-md" type="button">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">table_view</span>
+<span>Export Excel</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-surface-container-lowest text-secondary-fixed-dim hover:text-on-secondary-fixed font-semibold shadow-sm hover:bg-secondary-fixed/20 transition-all text-label-md font-label-md" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">barcode_scanner</span>
+<span class="text-on-surface">Print Barcode Labels</span>
+</button>
+</div>
+</div>
+<!-- Intake Workspace Layout (Form + Active Balance Telemetry) -->
+<div class="grid grid-cols-12 gap-gutter-desktop mt-space-sm">
+<!-- Main Structured Intake Form: 12 Cols Desktop -->
+<div class="col-span-12 flex flex-col gap-space-lg">
+<form class="flex flex-col gap-space-lg" id="intake-form" onsubmit="event.preventDefault();">
+<!-- SECTION A: Job & Customer Reference -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-2">
+<span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary-container text-surface-container-lowest text-label-sm font-label-sm font-bold">1</span>
+<span class="text-headline-sm font-headline-sm font-semibold text-on-surface tracking-tight">Section A: Job & Depositor Authorization</span>
+</div>
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+              Synchronized with BIS Portal
+            </div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md">
+<!-- Customer Selector -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<label class="text-label-md font-label-md font-semibold text-on-surface" for="customer-select">
+                  Customer Name <span class="text-error">*</span>
+</label>
+<button class="text-label-sm font-label-sm text-secondary hover:underline inline-flex items-center gap-0.5" type="button">
+<span class="material-symbols-outlined text-[14px]">add_circle</span>
+<span>New Customer</span>
+</button>
+</div>
+<div class="relative">
+<select class="w-full h-10 px-3 bg-surface-container-low text-on-surface text-body-md font-body-md rounded-lg focus:outline-none focus:bg-surface-container-lowest appearance-none transition-colors pr-9" id="customer-select">
+<option value="TANISHQ">Tanishq Luxury Guild - BIS-DL-4482</option>
+<option selected="" value="MALABAR">Malabar Gold & Diamonds - BIS-MH-10294-G</option>
+<option value="KALYAN">Kalyan Jewellers Heritage Line - BIS-KA-3391-B</option>
+<option value="JOYALUKKAS">Joyalukkas India Private Ltd - BIS-KL-9904-C</option>
+<option value="SENCO">Senco Gold & Diamonds - BIS-WB-7712-F</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-2.5 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+</div>
+</div>
+<!-- BIS License Auto-Badge -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface">
+                BIS License Number <span class="text-label-sm font-normal text-on-surface-variant">(Auto-Linked)</span>
+</label>
+<div class="h-10 px-3 bg-surface-container-low rounded-lg flex items-center justify-between text-body-md font-body-md">
+<span class="font-data-mono text-data-mono font-semibold text-on-surface" id="bis-badge">BIS-MH-10294-G</span>
+<span class="inline-flex items-center gap-1 text-[11px] font-label-sm px-2 py-0.5 rounded-full bg-secondary-container/40 text-on-secondary-container">
+<span class="material-symbols-outlined text-[12px]">verified_user</span> Validated
+                </span>
+</div>
+</div>
+<!-- Job Number Auto-Generated -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface">
+                Job Docket Number <span class="text-label-sm font-normal text-on-surface-variant">(System Generated)</span>
+</label>
+<div class="h-10 px-3 bg-surface-container-high/60 rounded-lg flex items-center justify-between text-body-md font-body-md">
+<span class="font-data-mono text-data-mono font-bold text-on-surface tracking-wide">JOB-2024-9104</span>
+<span class="material-symbols-outlined text-outline text-[18px]">lock</span>
+</div>
+</div>
+<!-- Request Number -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface" for="req-number">
+                Customer Request Number <span class="text-error">*</span>
+</label>
+<div class="relative">
+<input class="w-full h-10 px-3 bg-surface-container-low text-on-surface font-data-mono text-data-mono rounded-lg focus:outline-none focus:bg-surface-container-lowest transition-colors" id="req-number" placeholder="e.g. REQ-9921" type="text" value="REQ-8831-A"/>
+</div>
+</div>
+<!-- Number of Pieces -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface" for="pieces-count">
+                Total Pieces Count <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full h-10 px-3 bg-surface-container-low text-on-surface font-data-mono text-data-mono rounded-lg focus:outline-none focus:bg-surface-container-lowest pr-16 transition-colors" id="pieces-count" max="5000" min="1" type="number" value="85"/>
+<span class="absolute right-3 text-body-sm font-body-sm text-outline pointer-events-none">units</span>
+</div>
+</div>
+<!-- Purity Standard Selection -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface" for="purity-select">
+                Declared Gold Purity <span class="text-error">*</span>
+</label>
+<div class="relative">
+<select class="w-full h-10 px-3 bg-surface-container-low text-on-surface text-body-md font-body-md rounded-lg focus:outline-none focus:bg-surface-container-lowest appearance-none transition-colors pr-9 font-medium" id="purity-select">
+<option selected="" value="22K">22K 916 (91.6% Fine Gold) - Standard Hallmark</option>
+<option value="24K">24K 999 (99.9% Pure Bullion & Minted Coins)</option>
+<option value="18K">18K 750 (75.0% Fine Gold - Diamond Studded)</option>
+<option value="14K">14K 585 (58.5% Contemporary Fine Gold)</option>
+<option value="9K">9K 375 (37.5% Alloy Specification)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-2.5 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+</div>
+</div>
+<!-- Receipt Number -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface" for="receipt-number">
+                Physical Receipt # <span class="text-error">*</span>
+</label>
+<input class="w-full h-10 px-3 bg-surface-container-low text-on-surface font-data-mono text-data-mono rounded-lg focus:outline-none focus:bg-surface-container-lowest transition-colors" id="receipt-number" placeholder="e.g. REC-00000" type="text" value="REC-10948"/>
+</div>
+<!-- Box Number / Vault Tray -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface" for="tray-number">
+                Vault Tray / Box Assigned <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-secondary text-[18px]">inventory_2</span>
+<input class="w-full h-10 pl-9 pr-3 bg-surface-container-low text-on-surface font-data-mono text-data-mono font-medium rounded-lg focus:outline-none focus:bg-surface-container-lowest transition-colors" id="tray-number" placeholder="e.g. BOX-01" type="text" value="BOX-TR-14"/>
+</div>
+</div>
+<!-- Intake Timestamp -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface">
+                Intake Timestamp
+              </label>
+<div class="h-10 px-3 bg-surface-container-low rounded-lg flex items-center justify-between text-body-md font-body-md">
+<span class="font-data-mono text-data-mono text-on-surface">11:30:42 AM IST (Auto Logged)</span>
+<span class="material-symbols-outlined text-outline text-[18px]">schedule</span>
+</div>
+</div>
+</div>
+</div>
+<!-- SECTION B: Job Stream Classification -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+<div class="flex items-center gap-2">
+<span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary-container text-surface-container-lowest text-label-sm font-label-sm font-bold">2</span>
+<span class="text-headline-sm font-headline-sm font-semibold text-on-surface tracking-tight">Section B: Assay Processing Classification</span>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Select routing lane according to item metallurgical composition</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md" id="stream-selector">
+<!-- Option 1: Main Stream (Active State) -->
+<label class="relative flex items-start gap-4 p-space-md rounded-xl bg-surface-container-low/70 hover:bg-surface-container-low cursor-pointer transition-all duration-200 ring-2 ring-secondary/70 shadow-sm" id="card-stream-main">
+<input checked="" class="mt-1 accent-primary" name="job_stream" onchange="updateStreamUI('MAIN')" type="radio" value="MAIN"/>
+<div class="flex flex-col gap-1 min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Main Line Assay</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] font-label-sm font-semibold bg-secondary-container text-on-secondary-container">Standard Turnaround</span>
+</div>
+<span class="material-symbols-outlined text-secondary text-[22px]" id="icon-stream-main">check_circle</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+                  High-volume standard ornaments, chains, plain bangles, cast rings. Standard 4-hour batch turnaround with bulk XRF multi-point spectral analysis.
+                </p>
+<div class="flex items-center gap-3 pt-1 text-label-sm font-label-sm text-outline">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">bolt</span> Laser Sample #1</span>
+<span>•</span>
+<span>Fire Assay Verification Ready</span>
+</div>
+</div>
+</label>
+<!-- Option 2: Off Side Stream -->
+<label class="relative flex items-start gap-4 p-space-md rounded-xl bg-surface-container-low/30 hover:bg-surface-container-low cursor-pointer transition-all duration-200" id="card-stream-offside">
+<input class="mt-1 accent-primary" name="job_stream" onchange="updateStreamUI('OFF_SIDE')" type="radio" value="OFF_SIDE"/>
+<div class="flex flex-col gap-1 min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Off Side Stream</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] font-label-sm font-semibold bg-surface-container-high text-on-surface-variant">Priority Express / Odd-Lot</span>
+</div>
+<span class="material-symbols-outlined text-outline/40 text-[22px]" id="icon-stream-offside">radio_button_unchecked</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+                  Specialized lots, antique restoration, stone-embedded jewellery, odd-carat alloys, or urgent express verification (< 90 mins) requiring manual micro-touchstone & laser ablation.
+                </p>
+<div class="flex items-center gap-3 pt-1 text-label-sm font-label-sm text-outline">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">precision_manufacturing</span> Specific Gravity Bath</span>
+<span>•</span>
+<span>Assay Master Direct Stamp</span>
+</div>
+</div>
+</label>
+</div>
+</div>
+<!-- SECTION C: Delivery & High-Precision Weight Information -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex flex-col md:flex-row md:items-center justify-between pb-space-xs gap-2">
+<div class="flex items-center gap-2">
+<span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary-container text-surface-container-lowest text-label-sm font-label-sm font-bold">3</span>
+<span class="text-headline-sm font-headline-sm font-semibold text-on-surface tracking-tight">Section C: Weight Telemetry & Custody Handover</span>
+</div>
+<!-- Certified Balance Live Connection Pill -->
+<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container text-on-primary-container text-label-sm font-label-sm">
+<span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+<span class="font-data-mono font-semibold text-on-surface">METTLER TOLEDO / SARTORIUS SART-02</span>
+<span class="text-outline">|</span>
+<span class="text-secondary font-medium">Calibrated: Today 08:00 AM</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md">
+<!-- Receive Date -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface" for="receive-date">
+                Receive Date <span class="text-error">*</span>
+</label>
+<div class="relative">
+<input class="w-full h-10 px-3 bg-surface-container-low text-on-surface text-body-md font-body-md rounded-lg focus:outline-none focus:bg-surface-container-lowest transition-colors" id="receive-date" type="date" value="2024-10-24"/>
+</div>
+</div>
+<!-- Estimated Delivery Date & Time -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface" for="delivery-datetime">
+                Estimated Delivery Date & Time <span class="text-error">*</span>
+</label>
+<div class="relative">
+<input class="w-full h-10 px-3 bg-surface-container-low text-on-surface text-body-md font-body-md rounded-lg focus:outline-none focus:bg-surface-container-lowest transition-colors" id="delivery-datetime" type="datetime-local" value="2024-10-24T15:30"/>
+</div>
+</div>
+<!-- Gross Weight Precision Input -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<label class="text-label-md font-label-md font-semibold text-on-surface" for="gross-weight">
+                  Gross Weight (Balance Reading) <span class="text-error">*</span>
+</label>
+<button class="text-label-sm font-label-sm text-secondary hover:underline inline-flex items-center gap-1" onclick="captureBalanceReading()" type="button">
+<span class="material-symbols-outlined text-[13px]">refresh</span> Read Scale
+                </button>
+</div>
+<div class="relative flex items-center">
+<input class="w-full h-10 px-3 bg-surface-container-low text-on-surface font-data-mono text-body-lg font-bold rounded-lg focus:outline-none focus:bg-surface-container-lowest pr-16 transition-colors" id="gross-weight" oninput="calculateTareWeight()" step="0.001" type="number" value="854.120"/>
+<span class="absolute right-3 text-body-sm font-body-sm text-outline font-semibold">grams</span>
+</div>
+</div>
+<!-- Net Weight Precision Input -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface" for="net-weight">
+                Net Fine Weight (Pure Core) <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full h-10 px-3 bg-surface-container-low text-on-surface font-data-mono text-body-lg font-bold rounded-lg focus:outline-none focus:bg-surface-container-lowest pr-16 transition-colors" id="net-weight" oninput="calculateTareWeight()" step="0.001" type="number" value="842.350"/>
+<span class="absolute right-3 text-body-sm font-body-sm text-outline font-semibold">grams</span>
+</div>
+</div>
+<!-- Computed Tare / Stone Indication Card -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface">
+                Calculated Tare / Inclusions Wt
+              </label>
+<div class="h-10 px-3 bg-surface-container-low rounded-lg flex items-center justify-between text-body-md font-body-md">
+<span class="font-data-mono text-data-mono font-bold text-secondary" id="tare-weight-badge">11.770 g</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Stone / Wax / Lac Tare</span>
+</div>
+</div>
+<!-- Name of Depositor / Representative -->
+<div class="flex flex-col gap-1.5">
+<label class="text-label-md font-label-md font-semibold text-on-surface" for="depositor-name">
+                Name of Depositor (Courier / Agent) <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline text-[18px]">person</span>
+<input class="w-full h-10 pl-9 pr-3 bg-surface-container-low text-on-surface text-body-md font-body-md rounded-lg focus:outline-none focus:bg-surface-container-lowest transition-colors" id="depositor-name" placeholder="Depositor signature representative" type="text" value="Rajesh M. Varma"/>
+</div>
+</div>
+<!-- Received By (Operator Selection) -->
+<div class="flex flex-col gap-1.5 lg:col-span-3">
+<label class="text-label-md font-label-md font-semibold text-on-surface" for="receiver-select">
+                Received By (Assay Master / Authorized Custodian) <span class="text-error">*</span>
+</label>
+<div class="relative">
+<select class="w-full h-10 px-3 bg-surface-container-low text-on-surface text-body-md font-body-md rounded-lg focus:outline-none focus:bg-surface-container-lowest appearance-none transition-colors pr-9 font-medium" id="receiver-select">
+<option selected="">Sarah Jenkins (Assay Master #04 - Lab Superintendent)</option>
+<option>Vikram Anand (Senior Metallurgical Officer #01)</option>
+<option>Priyanka Roy (Assay Technician & Intake Officer #09)</option>
+<option>Arun D'Souza (Head of Security & Vault Vault-Keeper)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-2.5 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Sanity Check Banner -->
+<div class="flex items-center gap-3 p-space-sm rounded-lg bg-surface-container text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
+<div class="flex-1 flex flex-col sm:flex-row sm:items-center justify-between text-body-sm font-body-sm gap-1">
+<span>Automatic weight discrepancy check: <strong class="text-on-surface font-semibold">Tolerable band ±0.005g</strong> respected. Vault custody receipt ready.</span>
+<span class="text-label-sm font-label-sm font-semibold uppercase text-secondary">Pre-Assay Gate 1 Cleared</span>
+</div>
+</div>
+</div>
+<!-- FORM ACTION BAR -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<div class="flex items-center gap-2 text-on-surface-variant text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-secondary text-[18px]">info</span>
+<span>All entries are permanently signed in the Bureau Immutable Audit Trail.</span>
+</div>
+<div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end">
+<button class="px-4 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors text-label-md font-label-md" onclick="document.getElementById('intake-form').reset(); calculateTareWeight();" type="button">
+              Reset Form
+            </button>
+<button class="px-4 py-2 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container-low transition-colors text-label-md font-label-md" type="button">
+              Cancel
+            </button>
+<button class="px-4 py-2 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-container transition-colors text-label-md font-label-md font-medium" type="button">
+              Save & Add Another
+            </button>
+<button class="px-5 py-2 rounded-lg bg-primary-container text-surface-container-lowest shadow-sm hover:bg-tertiary-container transition-all text-label-md font-label-md font-semibold flex items-center gap-2" type="submit">
+<span class="material-symbols-outlined text-[18px] text-secondary-fixed">assignment_turned_in</span>
+<span>Save Receive Entry</span>
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+<!-- SECTION 3: Live Receive Records & Historical Log -->
+<div class="mt-space-xl flex flex-col gap-space-md">
+<!-- Header with Filter Controls -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div>
+<h2 class="text-headline-md font-headline-md font-bold text-on-surface tracking-tight">Today's Received Intake Batches</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Live audit queue of bullion and jewellery received at Station Desk 01 today.</p>
+</div>
+<!-- Quick Metrics Summary Badges -->
+<div class="flex items-center gap-3">
+<div class="px-3 py-1.5 rounded-lg bg-surface-container-lowest shadow-sm flex items-center gap-2">
+<span class="text-body-sm font-body-sm text-outline">Total Intake:</span>
+<span class="font-data-mono text-data-mono font-bold text-on-surface">5 Batches</span>
+</div>
+<div class="px-3 py-1.5 rounded-lg bg-surface-container-lowest shadow-sm flex items-center gap-2">
+<span class="text-body-sm font-body-sm text-outline">Cumulative Wt:</span>
+<span class="font-data-mono text-data-mono font-bold text-secondary">3,492.830 g</span>
+</div>
+</div>
+</div>
+<!-- Filter & Search Toolbar Card -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col lg:flex-row items-center justify-between gap-space-md">
+<div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+<!-- Search Field -->
+<div class="relative flex-1 sm:w-64 min-w-[200px]">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">search</span>
+<input class="w-full h-9 pl-9 pr-3 text-body-sm font-body-sm bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest" placeholder="Search Job #, Cust, or Lic..." type="text"/>
+</div>
+<!-- Customer Dropdown Filter -->
+<select class="h-9 px-3 text-body-sm font-body-sm bg-surface-container-low text-on-surface rounded-lg focus:outline-none">
+<option value="">All Jewelers</option>
+<option>Malabar Gold</option>
+<option>Tanishq Guild</option>
+<option>Kalyan Jewellers</option>
+<option>Joyalukkas India</option>
+<option>Senco Gold</option>
+</select>
+<!-- Stream Classification Filter -->
+<div class="inline-flex rounded-lg bg-surface-container-low p-0.5">
+<button class="px-3 py-1 rounded-md text-label-sm font-label-sm font-semibold bg-surface-container-lowest text-on-surface shadow-xs" type="button">All Types</button>
+<button class="px-3 py-1 rounded-md text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface" type="button">Main Line</button>
+<button class="px-3 py-1 rounded-md text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface" type="button">Off Side</button>
+</div>
+<!-- Date Filter -->
+<div class="relative">
+<input class="h-9 px-3 text-body-sm font-body-sm bg-surface-container-low text-on-surface rounded-lg focus:outline-none" type="date" value="2024-10-24"/>
+</div>
+</div>
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant w-full lg:w-auto justify-end">
+<span>Showing <strong>5</strong> of 142 records</span>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant" title="Refresh Table" type="button">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+</button>
+</div>
+</div>
+<!-- Data Table Container -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/70 text-on-surface-variant text-label-sm font-label-sm uppercase tracking-wider">
+<th class="py-3 px-4 font-semibold">Job Docket</th>
+<th class="py-3 px-4 font-semibold">Customer & BIS Lic</th>
+<th class="py-3 px-4 font-semibold">Req #</th>
+<th class="py-3 px-3 font-semibold text-center">Pcs</th>
+<th class="py-3 px-4 font-semibold">Purity</th>
+<th class="py-3 px-3 font-semibold">Stream</th>
+<th class="py-3 px-4 font-semibold">Box / Tray</th>
+<th class="py-3 px-4 font-semibold text-right">Net Wt (g)</th>
+<th class="py-3 px-4 font-semibold text-right">Gross Wt (g)</th>
+<th class="py-3 px-4 font-semibold">Depositor</th>
+<th class="py-3 px-4 font-semibold">Received By</th>
+<th class="py-3 px-4 font-semibold text-center">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low text-body-sm font-body-sm text-on-surface">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4 font-data-mono text-data-mono font-bold text-on-surface whitespace-nowrap">
+                JOB-2024-9104
+              </td>
+<td class="py-3.5 px-4">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface">Malabar Gold & Diamonds</span>
+<span class="font-data-mono text-[11px] text-outline">BIS-MH-10294-G</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono text-on-surface-variant">REQ-8831-A</td>
+<td class="py-3.5 px-3 font-data-mono text-data-mono text-center font-semibold">85</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-data-mono font-bold bg-secondary-container/40 text-on-secondary-container">
+                  22K 916
+                </span>
+</td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-label-sm font-semibold bg-surface-container-high text-on-surface">
+                  Main
+                </span>
+</td>
+<td class="py-3.5 px-4 font-data-mono text-[12px] text-on-surface-variant">BOX-TR-14</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono font-bold text-right text-on-surface">842.350</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono text-right text-on-surface-variant">854.120</td>
+<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">Rajesh M. Varma</td>
+<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">Sarah J. (#04)</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="View Full Docket" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Edit Job Details" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1 rounded text-secondary hover:text-on-surface hover:bg-surface-container transition-colors" title="Print BIS Barcode Tag" type="button">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4 font-data-mono text-data-mono font-bold text-on-surface whitespace-nowrap">
+                JOB-2024-9103
+              </td>
+<td class="py-3.5 px-4">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface">Tanishq Luxury Guild</span>
+<span class="font-data-mono text-[11px] text-outline">BIS-DL-4482-T</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono text-on-surface-variant">REQ-8829-K</td>
+<td class="py-3.5 px-3 font-data-mono text-data-mono text-center font-semibold">120</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-data-mono font-bold bg-secondary-container text-on-secondary-container">
+                  24K 999
+                </span>
+</td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-label-sm font-semibold bg-surface-container-high text-on-surface">
+                  Main
+                </span>
+</td>
+<td class="py-3.5 px-4 font-data-mono text-[12px] text-on-surface-variant">BOX-TR-08</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono font-bold text-right text-on-surface">1,200.000</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono text-right text-on-surface-variant">1,200.420</td>
+<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">K. Somasekhar</td>
+<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">Sarah J. (#04)</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="View Full Docket" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Edit Job Details" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1 rounded text-secondary hover:text-on-surface hover:bg-surface-container transition-colors" title="Print BIS Barcode Tag" type="button">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4 font-data-mono text-data-mono font-bold text-on-surface whitespace-nowrap">
+                JOB-2024-9102
+              </td>
+<td class="py-3.5 px-4">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface">Kalyan Jewellers</span>
+<span class="font-data-mono text-[11px] text-outline">BIS-KA-3391-B</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono text-on-surface-variant">REQ-8825-Z</td>
+<td class="py-3.5 px-3 font-data-mono text-data-mono text-center font-semibold">14</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-data-mono font-bold bg-surface-container-high text-on-surface-variant">
+                  18K 750
+                </span>
+</td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-label-sm font-semibold bg-secondary-fixed/50 text-on-secondary-fixed-variant">
+                  Off Side
+                </span>
+</td>
+<td class="py-3.5 px-4 font-data-mono text-[12px] text-on-surface-variant">BOX-TR-03</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono font-bold text-right text-on-surface">312.480</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono text-right text-on-surface-variant">344.800</td>
+<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">Anand G. Naik</td>
+<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">Vikram A. (#01)</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="View Full Docket" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Edit Job Details" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1 rounded text-secondary hover:text-on-surface hover:bg-surface-container transition-colors" title="Print BIS Barcode Tag" type="button">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4 font-data-mono text-data-mono font-bold text-on-surface whitespace-nowrap">
+                JOB-2024-9101
+              </td>
+<td class="py-3.5 px-4">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface">Joyalukkas India Ltd</span>
+<span class="font-data-mono text-[11px] text-outline">BIS-KL-9904-C</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono text-on-surface-variant">REQ-8822-M</td>
+<td class="py-3.5 px-3 font-data-mono text-data-mono text-center font-semibold">48</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-data-mono font-bold bg-secondary-container/40 text-on-secondary-container">
+                  22K 916
+                </span>
+</td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-label-sm font-semibold bg-surface-container-high text-on-surface">
+                  Main
+                </span>
+</td>
+<td class="py-3.5 px-4 font-data-mono text-[12px] text-on-surface-variant">BOX-TR-11</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono font-bold text-right text-on-surface">618.000</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono text-right text-on-surface-variant">622.150</td>
+<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">Pranav K. S.</td>
+<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">Priyanka R. (#09)</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="View Full Docket" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Edit Job Details" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1 rounded text-secondary hover:text-on-surface hover:bg-surface-container transition-colors" title="Print BIS Barcode Tag" type="button">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4 font-data-mono text-data-mono font-bold text-on-surface whitespace-nowrap">
+                JOB-2024-9100
+              </td>
+<td class="py-3.5 px-4">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface">Senco Gold & Diamonds</span>
+<span class="font-data-mono text-[11px] text-outline">BIS-WB-7712-F</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono text-on-surface-variant">REQ-8819-P</td>
+<td class="py-3.5 px-3 font-data-mono text-data-mono text-center font-semibold">62</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-data-mono font-bold bg-surface-container-high text-on-surface-variant">
+                  14K 585
+                </span>
+</td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-label-sm font-semibold bg-secondary-fixed/50 text-on-secondary-fixed-variant">
+                  Off Side
+                </span>
+</td>
+<td class="py-3.5 px-4 font-data-mono text-[12px] text-on-surface-variant">BOX-TR-05</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono font-bold text-right text-on-surface">520.000</td>
+<td class="py-3.5 px-4 font-data-mono text-data-mono text-right text-on-surface-variant">541.900</td>
+<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">Debjit Chatterjee</td>
+<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">Sarah J. (#04)</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="View Full Docket" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Edit Job Details" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1 rounded text-secondary hover:text-on-surface hover:bg-surface-container transition-colors" title="Print BIS Barcode Tag" type="button">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="p-space-md bg-surface-container-lowest flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<span class="text-body-sm font-body-sm text-on-surface-variant">
+          Showing <strong class="text-on-surface">1 to 5</strong> of 142 total intake records
+        </span>
+<div class="flex items-center gap-1">
+<button class="px-2.5 py-1 rounded text-label-sm font-label-sm text-outline hover:bg-surface-container-low hover:text-on-surface transition-colors disabled:opacity-50" type="button">
+            Prev
+          </button>
+<button class="w-7 h-7 rounded text-label-sm font-label-sm font-bold bg-primary-container text-surface-container-lowest flex items-center justify-center" type="button">
+            1
+          </button>
+<button class="w-7 h-7 rounded text-label-sm font-label-sm text-on-surface-variant hover:bg-surface-container-low flex items-center justify-center" type="button">
+            2
+          </button>
+<button class="w-7 h-7 rounded text-label-sm font-label-sm text-on-surface-variant hover:bg-surface-container-low flex items-center justify-center" type="button">
+            3
+          </button>
+<span class="px-1 text-outline">...</span>
+<button class="w-7 h-7 rounded text-label-sm font-label-sm text-on-surface-variant hover:bg-surface-container-low flex items-center justify-center" type="button">
+            29
+          </button>
+<button class="px-2.5 py-1 rounded text-label-sm font-label-sm text-on-surface hover:bg-surface-container-low transition-colors" type="button">
+            Next
+          </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function updateStreamUI(selected) {
+    const cardMain = document.getElementById('card-stream-main');
+    const cardOffside = document.getElementById('card-stream-offside');
+    const iconMain = document.getElementById('icon-stream-main');
+    const iconOffside = document.getElementById('icon-stream-offside');
+
+    if (selected === 'MAIN') {
+      cardMain.className = 'relative flex items-start gap-4 p-space-md rounded-xl bg-surface-container-low/70 hover:bg-surface-container-low cursor-pointer transition-all duration-200 ring-2 ring-secondary/70 shadow-sm';
+      cardOffside.className = 'relative flex items-start gap-4 p-space-md rounded-xl bg-surface-container-low/30 hover:bg-surface-container-low cursor-pointer transition-all duration-200';
+      iconMain.className = 'material-symbols-outlined text-secondary text-[22px]';
+      iconMain.textContent = 'check_circle';
+      iconOffside.className = 'material-symbols-outlined text-outline/40 text-[22px]';
+      iconOffside.textContent = 'radio_button_unchecked';
+    } else {
+      cardOffside.className = 'relative flex items-start gap-4 p-space-md rounded-xl bg-surface-container-low/70 hover:bg-surface-container-low cursor-pointer transition-all duration-200 ring-2 ring-secondary/70 shadow-sm';
+      cardMain.className = 'relative flex items-start gap-4 p-space-md rounded-xl bg-surface-container-low/30 hover:bg-surface-container-low cursor-pointer transition-all duration-200';
+      iconOffside.className = 'material-symbols-outlined text-secondary text-[22px]';
+      iconOffside.textContent = 'check_circle';
+      iconMain.className = 'material-symbols-outlined text-outline/40 text-[22px]';
+      iconMain.textContent = 'radio_button_unchecked';
+    }
+  }
+
+  function calculateTareWeight() {
+    const gross = parseFloat(document.getElementById('gross-weight').value) || 0;
+    const net = parseFloat(document.getElementById('net-weight').value) || 0;
+    const diff = Math.max(0, gross - net);
+    document.getElementById('tare-weight-badge').innerText = diff.toFixed(3) + ' g';
+  }
+
+  function captureBalanceReading() {
+    const grossInput = document.getElementById('gross-weight');
+    const simulatedReading = (Math.random() * (950 - 800) + 800).toFixed(3);
+    grossInput.value = simulatedReading;
+    calculateTareWeight();
+  }
+
+  // Customer change auto-populates mock BIS license
+  const customerSelector = document.getElementById('customer-select');
+  if (customerSelector) {
+    customerSelector.addEventListener('change', function(e) {
+      const badge = document.getElementById('bis-badge');
+      const val = e.target.value;
+      const dict = {
+        'TANISHQ': 'BIS-DL-4482-T',
+        'MALABAR': 'BIS-MH-10294-G',
+        'KALYAN': 'BIS-KA-3391-B',
+        'JOYALUKKAS': 'BIS-KL-9904-C',
+        'SENCO': 'BIS-WB-7712-F'
+      };
+      if (badge && dict[val]) {
+        badge.innerText = dict[val];
+      }
+    });
+  }
+</script></main></div></body></html>

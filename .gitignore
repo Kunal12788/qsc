@@ -1,0 +1,13 @@
+# OS & editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+
+# Node dependencies
+node_modules/
+npm-debug.log*
+
+# Antigravity & local tools
+.gemini/
+scratch/
