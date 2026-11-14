@@ -459,6 +459,15 @@
     const mainWrapper = document.getElementById('main-wrapper');
     const mainArea = document.querySelector('main');
 
+    // Strict zero-scroll lock for sign-in page on mobile and all devices
+    if (isSignIn) {
+      document.documentElement.classList.add('sign-in-mode');
+      document.body.classList.add('sign-in-mode');
+    } else {
+      document.documentElement.classList.remove('sign-in-mode');
+      document.body.classList.remove('sign-in-mode');
+    }
+
     if (appHeader) appHeader.style.display = isSignIn ? 'none' : '';
     if (sidebar) sidebar.style.display = isSignIn ? 'none' : '';
     if (mainWrapper) {

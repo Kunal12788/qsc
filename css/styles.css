@@ -13,6 +13,37 @@ body {
   color: #0b1c30;
 }
 
+/* ========================================================================= */
+/* STRICT MOBILE ZERO-SCROLL LOCK FOR SIGN-IN VIEW                           */
+/* ========================================================================= */
+html.sign-in-mode,
+body.sign-in-mode {
+  overflow: hidden !important;
+  height: 100% !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  width: 100% !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  overscroll-behavior: none !important;
+  -webkit-overflow-scrolling: auto !important;
+  touch-action: none !important;
+}
+
+@media (max-width: 767px) {
+  .sign-in-mode,
+  .sign-in-mode body,
+  .sign-in-mode #view-sign-in,
+  .sign-in-mode #sign-in-screen-wrapper {
+    overflow: hidden !important;
+    touch-action: none !important;
+    overscroll-behavior: none !important;
+  }
+}
+
 /* Tabular figures for numbers, weights, currencies */
 .font-data-mono,
 .tabular-nums {

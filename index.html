@@ -129,6 +129,16 @@
 </head>
 
 <body class="bg-surface font-body-md text-on-surface antialiased min-h-screen">
+  <script>
+    // Strict Mobile Zero-Scroll Initializer for Sign-In
+    (function() {
+      var h = window.location.hash.replace('#/', '').replace('#', '');
+      if (h === 'sign-in' || !h) {
+        document.documentElement.classList.add('sign-in-mode');
+        document.body.classList.add('sign-in-mode');
+      }
+    })();
+  </script>
 
   <!-- ========================================== -->
   <!-- MOBILE SLIDE-OVER BACKDROP & DRAWER        -->
@@ -3607,7 +3617,7 @@
   <!-- Watermark Logo Asset Script -->
   <script src="js/logo-data.js"></script>
   <!-- Application Engine Script -->
-  <script src="js/app.js?v=2.1"></script>
+  <script src="js/app.js?v=2.2"></script>
 </body>
 </html>
 
