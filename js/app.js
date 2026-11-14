@@ -489,13 +489,6 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    if (isSignIn) {
-      setTimeout(() => {
-        if (typeof initWelcomeSplash === 'function') {
-          initWelcomeSplash();
-        }
-      }, 50);
-    }
 
     // Update active nav links across desktop sidebar & mobile drawer
     document.querySelectorAll('[data-path]').forEach(link => {
@@ -5556,111 +5549,10 @@
     navigateTo('sign-in');
   }
 
-  // --- WELCOMING SPLASH SCREEN LOGIC ---
-  let splashInterval = null;
-
-  function initWelcomeSplash() {
-    const splash = document.getElementById('welcome-splash');
-    const pBar = document.getElementById('splash-progress-bar');
-    const pText = document.getElementById('splash-progress-percent');
-    const sText = document.getElementById('splash-status-text');
-    if (!splash) return;
-
-    if (splash.classList.contains('dismissed')) return;
-
-    splash.style.display = 'flex';
-    splash.style.opacity = '1';
-    splash.style.transform = 'translateY(0) scale(1)';
-    splash.style.filter = 'none';
-    splash.style.pointerEvents = 'auto';
-
-    let progress = 0;
-    const steps = [
-      { at: 10, text: 'Initializing Cryptographic Lab Node #0842...' },
-      { at: 38, text: 'Calibrating Fire Assay & XRF Sensors...' },
-      { at: 68, text: 'Establishing BIS Central Cloud Gateway...' },
-      { at: 92, text: 'Lab Security Verified \u2022 Launching Terminal...' }
-    ];
-
-    if (splashInterval) clearInterval(splashInterval);
-
-    splashInterval = setInterval(() => {
-      progress += Math.floor(Math.random() * 8) + 6;
-      if (progress > 100) progress = 100;
-
-      if (pBar) pBar.style.width = progress + '%';
-      if (pText) pText.textContent = progress + '%';
-
-      for (let i = steps.length - 1; i >= 0; i--) {
-        if (progress >= steps[i].at) {
-          if (sText) {
-            sText.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span> ${steps[i].text}`;
-          }
-          break;
-        }
-      }
-
-      if (progress >= 100) {
-        clearInterval(splashInterval);
-        setTimeout(dismissWelcomeSplash, 350);
-      }
-    }, 110);
-  }
-
-  function dismissWelcomeSplash() {
-    if (splashInterval) clearInterval(splashInterval);
-    const splash = document.getElementById('welcome-splash');
-    if (!splash || splash.classList.contains('dismissed')) return;
-    splash.classList.add('dismissed');
-
-    // Cinematic Fade Up Animation
-    splash.style.transition = 'all 0.75s cubic-bezier(0.16, 1, 0.3, 1)';
-    splash.style.opacity = '0';
-    splash.style.transform = 'translateY(-55px) scale(1.02)';
-    splash.style.filter = 'blur(8px)';
-    splash.style.pointerEvents = 'none';
-
-    const mainWrapper = document.getElementById('sign-in-screen-wrapper');
-    if (mainWrapper) {
-      mainWrapper.style.transition = 'all 0.65s cubic-bezier(0.16, 1, 0.3, 1)';
-      mainWrapper.style.opacity = '1';
-      mainWrapper.style.transform = 'translateY(0) scale(1)';
-    }
-
-    setTimeout(() => {
-      splash.style.display = 'none';
-    }, 750);
-  }
-
-  function reopenWelcomeSplash() {
-    const splash = document.getElementById('welcome-splash');
-    const pBar = document.getElementById('splash-progress-bar');
-    const pText = document.getElementById('splash-progress-percent');
-    const sText = document.getElementById('splash-status-text');
-    if (!splash) return;
-
-    splash.classList.remove('dismissed');
-    splash.style.display = 'flex';
-    splash.style.pointerEvents = 'auto';
-    splash.style.opacity = '0';
-    splash.style.transform = 'translateY(40px) scale(0.98)';
-    splash.style.filter = 'blur(6px)';
-
-    if (pBar) pBar.style.width = '0%';
-    if (pText) pText.textContent = '0%';
-    if (sText) {
-      sText.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span> Initializing Cryptographic Lab Node...';
-    }
-
-    void splash.offsetWidth;
-
-    splash.style.transition = 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
-    splash.style.opacity = '1';
-    splash.style.transform = 'translateY(0) scale(1)';
-    splash.style.filter = 'none';
-
-    initWelcomeSplash();
-  }
+  // --- WELCOMING SPLASH SCREEN (Removed per user request) ---
+  function initWelcomeSplash() {}
+  function dismissWelcomeSplash() {}
+  function reopenWelcomeSplash() {}
 
   window.initWelcomeSplash = initWelcomeSplash;
   window.dismissWelcomeSplash = dismissWelcomeSplash;
