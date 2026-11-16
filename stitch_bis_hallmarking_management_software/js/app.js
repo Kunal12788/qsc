@@ -244,7 +244,10 @@
         depositor: 'Rajesh M. Varma',
         receiver: 'Sarah Jenkins',
         time: '10:45 AM Today',
-        status: 'In Marking'
+        status: 'In Marking',
+        billNo: 'BILL-2024-04192',
+        billPrinted: false,
+        disposition: { rejected: 0, destroyed: 0, nonFeasible: 0, irrucd: 0, passed: 85 }
       },
       {
         jobDocket: 'JOB-2024-8841',
@@ -260,7 +263,10 @@
         depositor: 'Anand Kumar',
         receiver: 'Sarah Jenkins',
         time: '10:20 AM Today',
-        status: 'XRF Verified'
+        status: 'XRF Verified',
+        billNo: 'BILL-2024-04191',
+        billPrinted: true,
+        disposition: { rejected: 2, destroyed: 1, nonFeasible: 0, irrucd: 0, passed: 42 }
       },
       {
         jobDocket: 'JOB-2024-8840',
@@ -276,7 +282,10 @@
         depositor: 'Vipin Das',
         receiver: 'Vikram Anand',
         time: '09:55 AM Today',
-        status: 'In Marking'
+        status: 'In Marking',
+        billNo: 'BILL-2024-04190',
+        billPrinted: false,
+        disposition: { rejected: 0, destroyed: 0, nonFeasible: 0, irrucd: 0, passed: 112 }
       },
       {
         jobDocket: 'JOB-2024-8839',
@@ -292,7 +301,10 @@
         depositor: 'Girish Rao',
         receiver: 'Priyanka Roy',
         time: '09:30 AM Today',
-        status: 'Fire Assay Q'
+        status: 'Fire Assay Q',
+        billNo: 'BILL-2024-04189',
+        billPrinted: true,
+        disposition: { rejected: 1, destroyed: 1, nonFeasible: 0, irrucd: 0, passed: 16 }
       },
       {
         jobDocket: 'JOB-2024-8838',
@@ -308,7 +320,10 @@
         depositor: 'Devraj N.',
         receiver: 'Sarah Jenkins',
         time: '08:50 AM Today',
-        status: 'Dispatched'
+        status: 'Dispatched',
+        billNo: 'BILL-2024-04188',
+        billPrinted: true,
+        disposition: { rejected: 0, destroyed: 0, nonFeasible: 0, irrucd: 0, passed: 6 }
       }
     ],
     billingItems: [
@@ -542,6 +557,9 @@
     }
     if (route === 'delivery') {
       initDeliveryView();
+    }
+    if (route === 'bill-generation') {
+      initBillGenerationView();
     }
   }
 
@@ -2897,9 +2915,28 @@
   function executeSaveReceiveEntry() {
     if (!activeDraftBatch) return;
 
+    // Attach billing and piece disposition metadata so batch automatically shows up in Bill Generation
+    const totalPcs = activeDraftBatch.pcs || 0;
+    const nextSeq = 4193 + (state.intakeBatches ? state.intakeBatches.length : 0);
+    activeDraftBatch.billNo = 'BILL-2024-' + String(nextSeq).padStart(5, '0');
+    activeDraftBatch.billPrinted = false; // Newly submitted batch is NOT printed yet
+    activeDraftBatch.disposition = {
+      rejected: 0,
+      destroyed: 0,
+      nonFeasible: 0,
+      irrucd: 0,
+      passed: totalPcs
+    };
+
     state.intakeBatches.unshift(activeDraftBatch);
     renderIntakeBatchesTable();
-    showToast(`BATCH ${activeDraftBatch.jobDocket} SUCCESSFULLY CONFIRMED AND SAVED TO BIS AUDIT LEDGER.`, 'success');
+    showToast(`BATCH ${activeDraftBatch.jobDocket} CONFIRMED & QUEUED TO BILL GENERATION (BILL #${activeDraftBatch.billNo}).`, 'success');
+
+    // Automatically make this new intake batch the active batch in Bill Generation
+    activeBillingBatch = activeDraftBatch;
+    if (typeof renderBillQueue === 'function') {
+      renderBillQueue();
+    }
 
     const modal = document.getElementById('intakeConfirmationModal');
     if (modal) modal.classList.add('hidden');
@@ -4608,6 +4645,16 @@
       const selectedOption = clientSelect.options[clientSelect.selectedIndex];
       previewClientName.textContent = selectedOption ? selectedOption.text.split(' (')[0] : 'Tanishq Luxury Guild';
     }
+
+    if (activeBillingBatch) {
+      if (billNoInput) activeBillingBatch.billNo = billNoInput.value;
+      if (reqNoInput) activeBillingBatch.reqNo = reqNoInput.value;
+      if (dateInput) activeBillingBatch.time = dateInput.value;
+      if (clientSelect) {
+        const opt = clientSelect.options[clientSelect.selectedIndex];
+        if (opt) activeBillingBatch.customer = opt.text.split(' (')[0];
+      }
+    }
   }
 
   function setJobClassification(stream) {
@@ -4625,6 +4672,7 @@
         btnOff.classList.add('text-on-surface-variant');
       }
       if (tag) tag.textContent = 'MAIN BRANCH';
+      if (activeBillingBatch) activeBillingBatch.stream = 'Main Branch';
     } else {
       if (btnOff) {
         btnOff.classList.add('bg-surface-container-lowest', 'shadow-sm', 'text-on-surface', 'font-semibold');
@@ -4635,7 +4683,479 @@
         btnMain.classList.add('text-on-surface-variant');
       }
       if (tag) tag.textContent = 'OFFSIDE';
+      if (activeBillingBatch) activeBillingBatch.stream = 'OFFSIDE';
     }
+  }
+
+  // --- BILL GENERATION, INTAKE AUTO-SYNC & PIECE DISPOSITION ---
+  let activeBillingBatch = null;
+  let activeBillFilter = 'all';
+
+  function initBillGenerationView() {
+    if (state.intakeBatches && state.intakeBatches.length > 0) {
+      state.intakeBatches.forEach((b, idx) => {
+        if (!b.billNo) {
+          b.billNo = 'BILL-2024-' + String(4192 - idx).padStart(5, '0');
+        }
+        if (b.billPrinted === undefined) {
+          b.billPrinted = (idx > 0 && idx % 2 === 1);
+        }
+        if (!b.disposition) {
+          b.disposition = {
+            rejected: 0,
+            destroyed: 0,
+            nonFeasible: 0,
+            irrucd: 0,
+            passed: b.pcs || 85
+          };
+        }
+      });
+
+      if (!activeBillingBatch || !state.intakeBatches.some(b => b.jobDocket === activeBillingBatch.jobDocket)) {
+        activeBillingBatch = state.intakeBatches[0];
+      }
+    }
+
+    renderBillQueue();
+    if (activeBillingBatch) {
+      selectBillingBatch(activeBillingBatch.jobDocket);
+    }
+  }
+
+  function filterBillQueue(filter) {
+    activeBillFilter = filter;
+
+    const btnAll = document.getElementById('btn-bill-filter-all');
+    const btnNotPrinted = document.getElementById('btn-bill-filter-not-printed');
+    const btnPrinted = document.getElementById('btn-bill-filter-printed');
+
+    if (btnAll) {
+      if (filter === 'all') {
+        btnAll.className = 'px-2.5 py-1 text-xs font-semibold rounded-md bg-surface-container-lowest shadow-xs text-on-surface transition-all cursor-pointer';
+      } else {
+        btnAll.className = 'px-2.5 py-1 text-xs font-semibold rounded-md text-on-surface-variant hover:text-on-surface transition-all cursor-pointer';
+      }
+    }
+
+    if (btnNotPrinted) {
+      if (filter === 'not-printed') {
+        btnNotPrinted.className = 'px-2.5 py-1 text-xs font-semibold rounded-md bg-amber-100 text-amber-900 border border-amber-300 shadow-xs transition-all flex items-center gap-1 cursor-pointer';
+      } else {
+        btnNotPrinted.className = 'px-2.5 py-1 text-xs font-semibold rounded-md text-amber-700 hover:text-amber-900 transition-all flex items-center gap-1 cursor-pointer';
+      }
+    }
+
+    if (btnPrinted) {
+      if (filter === 'printed') {
+        btnPrinted.className = 'px-2.5 py-1 text-xs font-semibold rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-xs transition-all flex items-center gap-1 cursor-pointer';
+      } else {
+        btnPrinted.className = 'px-2.5 py-1 text-xs font-semibold rounded-md text-emerald-700 hover:text-emerald-900 transition-all flex items-center gap-1 cursor-pointer';
+      }
+    }
+
+    renderBillQueue();
+  }
+
+  function renderBillQueue() {
+    const container = document.getElementById('bill-queue-container');
+    const countBadge = document.getElementById('bill-queue-count');
+    if (!container) return;
+
+    if (!state.intakeBatches || state.intakeBatches.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full py-6 text-center text-xs text-on-surface-variant font-medium bg-surface-container-low/40 rounded-lg border border-dashed border-surface-container">
+          No intake batches registered yet. Receive a batch in the "Receive Batch" module to auto-generate bills.
+        </div>
+      `;
+      if (countBadge) countBadge.textContent = '0 Batches';
+      return;
+    }
+
+    const filtered = state.intakeBatches.filter(b => {
+      if (activeBillFilter === 'not-printed') return !b.billPrinted;
+      if (activeBillFilter === 'printed') return !!b.billPrinted;
+      return true;
+    });
+
+    if (countBadge) {
+      const notPrintedCount = state.intakeBatches.filter(b => !b.billPrinted).length;
+      countBadge.textContent = `${filtered.length} of ${state.intakeBatches.length} Batches (${notPrintedCount} Not Printed)`;
+    }
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full py-4 text-center text-xs text-on-surface-variant font-medium bg-surface-container-low/30 rounded-lg">
+          No batches found matching filter: <strong class="uppercase text-on-surface">${activeBillFilter}</strong>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = filtered.map(b => {
+      const isSelected = activeBillingBatch && activeBillingBatch.jobDocket === b.jobDocket;
+      const isPrinted = !!b.billPrinted;
+
+      return `
+        <div onclick="selectBillingBatch('${escapeHtmlStr(b.jobDocket)}')" class="group relative rounded-xl p-3 border transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+          isSelected 
+            ? 'bg-surface-container-lowest border-primary-container shadow-md ring-2 ring-primary-container/20' 
+            : 'bg-surface-container-lowest/70 hover:bg-surface-container-lowest border-surface-container-low hover:border-surface-container hover:shadow-xs'
+        }">
+          <!-- Top Row: Docket & Print Status Badge -->
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="font-mono text-[11px] font-bold text-on-surface truncate">${escapeHtmlStr(b.receiptNo || b.jobDocket)}</span>
+            ${
+              isPrinted
+                ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>PRINTED
+                   </span>`
+                : `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-300">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>NOT PRINTED
+                   </span>`
+            }
+          </div>
+
+          <!-- Customer Name & Details -->
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs font-semibold text-on-surface truncate group-hover:text-primary-container transition-colors">${escapeHtmlStr(b.customer)}</span>
+            <div class="flex items-center gap-2 text-[10px] font-mono text-on-surface-variant">
+              <span>${b.pcs || 0} Pcs</span>
+              <span>•</span>
+              <span class="text-secondary font-semibold">${escapeHtmlStr(b.purity || '22K 916')}</span>
+              <span>•</span>
+              <span>${typeof b.grossWt === 'number' ? b.grossWt.toFixed(2) : b.grossWt}g</span>
+            </div>
+          </div>
+
+          <!-- Bottom: Bill No & Active Indicator -->
+          <div class="pt-2 border-t border-surface-container-low flex items-center justify-between text-[10px]">
+            <span class="font-mono text-slate-500 truncate">${escapeHtmlStr(b.billNo || 'BILL-PENDING')}</span>
+            ${isSelected ? '<span class="text-[9px] font-bold uppercase tracking-wider text-primary-container bg-primary-container/10 px-1.5 py-0.5 rounded">Active</span>' : '<span class="text-[10px] text-slate-400 group-hover:text-slate-700">Select →</span>'}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function selectBillingBatch(docket) {
+    if (!docket) return;
+    const batch = state.intakeBatches.find(b => b.jobDocket === docket) || state.intakeBatches[0];
+    if (!batch) return;
+
+    activeBillingBatch = batch;
+
+    if (batch.billPrinted === undefined) batch.billPrinted = false;
+    if (!batch.billNo) {
+      batch.billNo = 'BILL-2024-' + (batch.jobDocket ? batch.jobDocket.replace(/\D/g, '').slice(-5) : '04192');
+    }
+    if (!batch.disposition) {
+      batch.disposition = {
+        rejected: 0,
+        destroyed: 0,
+        nonFeasible: 0,
+        irrucd: 0,
+        passed: batch.pcs || 85
+      };
+    }
+
+    // Populate inputs
+    const billNoInput = document.getElementById('inputBillNo');
+    const reqNoInput = document.getElementById('inputReqNo');
+    const dateInput = document.getElementById('inputDate');
+    const clientSelect = document.getElementById('clientSelect');
+
+    if (billNoInput) billNoInput.value = batch.billNo;
+    if (reqNoInput) reqNoInput.value = batch.reqNo || ('REQ-' + batch.jobDocket.slice(-6));
+    if (dateInput) {
+      dateInput.value = batch.time || (new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
+    }
+
+    if (clientSelect && batch.customer) {
+      let matched = false;
+      for (let i = 0; i < clientSelect.options.length; i++) {
+        const optText = clientSelect.options[i].text.toLowerCase();
+        const custLower = batch.customer.toLowerCase();
+        if (optText.includes(custLower) || custLower.includes(optText.split(' ')[0].toLowerCase())) {
+          clientSelect.selectedIndex = i;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        let customOpt = Array.from(clientSelect.options).find(o => o.value === 'batch_custom');
+        if (customOpt) {
+          customOpt.text = batch.customer;
+          customOpt.selected = true;
+        } else {
+          customOpt = new Option(batch.customer, 'batch_custom', true, true);
+          clientSelect.add(customOpt);
+        }
+      }
+    }
+
+    if (batch.stream && batch.stream.toUpperCase().includes('OFF')) {
+      setJobClassification('OFF_SIDE');
+    } else {
+      setJobClassification('MAIN');
+    }
+
+    updatePrintStatusUI(batch.billPrinted);
+
+    const inputRej = document.getElementById('inputPcsRejected');
+    const inputDes = document.getElementById('inputPcsDestroyed');
+    const inputNon = document.getElementById('inputPcsNonFeasible');
+    const inputIrr = document.getElementById('inputPcsIRRUCD');
+
+    if (inputRej) inputRej.value = batch.disposition.rejected || 0;
+    if (inputDes) inputDes.value = batch.disposition.destroyed || 0;
+    if (inputNon) inputNon.value = batch.disposition.nonFeasible || 0;
+    if (inputIrr) inputIrr.value = batch.disposition.irrucd || 0;
+
+    onDispositionInputChanged();
+
+    const passed = batch.disposition.passed !== undefined ? batch.disposition.passed : (batch.pcs || 85);
+    const itemWeight = typeof batch.netWt === 'number' ? batch.netWt : (parseFloat(batch.netWt) || 482.40);
+    
+    state.billingItems = [
+      {
+        id: 1,
+        desc: `BIS Hallmarking Laser Inscription (Gold ${batch.purity || '22K 916'})`,
+        subtext: `SAC Code: 998346 • HUID Laser Gen (${batch.jobDocket || 'JOB'})`,
+        qty: passed,
+        wt: itemWeight,
+        rate: 45.00
+      },
+      {
+        id: 2,
+        desc: 'Fire Assay Purity Verification Certification',
+        subtext: 'IS 1418:2009 Cupellation Protocol',
+        qty: Math.max(1, batch.disposition.destroyed || 0),
+        wt: 2.50,
+        rate: 750.00
+      },
+      {
+        id: 3,
+        desc: 'Secure Vault Handling & Tamper-Evident Packaging',
+        subtext: `Tamper Evident Seal Security Box #${batch.tray || 'SSR-9941'}`,
+        qty: 1,
+        wt: 0.00,
+        rate: 250.00
+      }
+    ];
+
+    updateInvoiceDispositionStrip(batch.pcs || 85, batch.disposition);
+
+    renderBillingItemsForm();
+    recalculateBill();
+    renderBillQueue();
+  }
+
+  function updatePrintStatusUI(isPrinted) {
+    const ind = document.getElementById('active-batch-print-indicator');
+    const badge = document.getElementById('previewPrintStatusBadge');
+
+    if (isPrinted) {
+      if (ind) {
+        ind.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-900 border border-emerald-300';
+        ind.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> PRINTED';
+      }
+      if (badge) {
+        badge.className = 'px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 font-label-sm text-[10px] font-bold uppercase tracking-wider flex items-center gap-1';
+        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> PRINTED';
+      }
+    } else {
+      if (ind) {
+        ind.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300';
+        ind.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> NOT PRINTED';
+      }
+      if (badge) {
+        badge.className = 'px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-label-sm text-[10px] font-bold uppercase tracking-wider flex items-center gap-1';
+        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> NOT PRINTED';
+      }
+    }
+  }
+
+  function updateInvoiceDispositionStrip(totalIntake, disp) {
+    const invIntake = document.getElementById('invDispIntake');
+    const invPassed = document.getElementById('invDispPassed');
+    const invRej = document.getElementById('invDispRejected');
+    const invDes = document.getElementById('invDispDestroyed');
+    const invNon = document.getElementById('invDispNonFeasible');
+    const invIrr = document.getElementById('invDispIRRUCD');
+
+    if (invIntake) invIntake.textContent = totalIntake;
+    if (invPassed) invPassed.textContent = disp.passed !== undefined ? disp.passed : totalIntake;
+    if (invRej) invRej.textContent = disp.rejected || 0;
+    if (invDes) invDes.textContent = disp.destroyed || 0;
+    if (invNon) invNon.textContent = disp.nonFeasible || 0;
+    if (invIrr) invIrr.textContent = disp.irrucd || 0;
+  }
+
+  function onDispositionInputChanged() {
+    const inputRej = document.getElementById('inputPcsRejected');
+    const inputDes = document.getElementById('inputPcsDestroyed');
+    const inputNon = document.getElementById('inputPcsNonFeasible');
+    const inputIrr = document.getElementById('inputPcsIRRUCD');
+
+    const rej = Math.max(0, parseInt(inputRej ? inputRej.value : 0) || 0);
+    const des = Math.max(0, parseInt(inputDes ? inputDes.value : 0) || 0);
+    const non = Math.max(0, parseInt(inputNon ? inputNon.value : 0) || 0);
+    const irr = Math.max(0, parseInt(inputIrr ? inputIrr.value : 0) || 0);
+
+    const total = activeBillingBatch ? (activeBillingBatch.pcs || 0) : 85;
+    const deductions = rej + des + non + irr;
+    const passed = Math.max(0, total - deductions);
+
+    const elTotal = document.getElementById('disp-total-pcs');
+    const elDed = document.getElementById('disp-deductions');
+    const elPassed = document.getElementById('disp-passed-pcs');
+
+    if (elTotal) elTotal.textContent = `${total} Pcs`;
+    if (elDed) elDed.textContent = `${deductions} Pcs`;
+    if (elPassed) elPassed.textContent = `${passed} Pcs`;
+
+    return { total, rej, des, non, irr, deductions, passed };
+  }
+
+  function openDispositionConfirmationModal() {
+    const math = onDispositionInputChanged();
+    const modal = document.getElementById('dispositionConfirmModal');
+    if (!modal) return;
+
+    const modalClient = document.getElementById('modal-client-name');
+    const modalReq = document.getElementById('modal-req-no');
+    const modalBill = document.getElementById('modal-bill-no');
+
+    const inputBillNo = document.getElementById('inputBillNo');
+    const inputReqNo = document.getElementById('inputReqNo');
+    const clientSelect = document.getElementById('clientSelect');
+
+    if (modalClient) {
+      if (clientSelect) {
+        const opt = clientSelect.options[clientSelect.selectedIndex];
+        modalClient.textContent = opt ? opt.text.split(' (')[0] : (activeBillingBatch ? activeBillingBatch.customer : 'Client Jeweller');
+      } else if (activeBillingBatch) {
+        modalClient.textContent = activeBillingBatch.customer;
+      }
+    }
+
+    if (modalReq && inputReqNo) modalReq.textContent = inputReqNo.value;
+    if (modalBill && inputBillNo) modalBill.textContent = inputBillNo.value;
+
+    const elTot = document.getElementById('modal-total-pcs');
+    const elRej = document.getElementById('modal-rejected-pcs');
+    const elDes = document.getElementById('modal-destroyed-pcs');
+    const elNon = document.getElementById('modal-nonfeasible-pcs');
+    const elIrr = document.getElementById('modal-irrucd-pcs');
+    const elPassed = document.getElementById('modal-passed-pcs');
+
+    if (elTot) elTot.textContent = `${math.total} Pcs`;
+    if (elRej) elRej.textContent = `${math.rej} Pcs`;
+    if (elDes) elDes.textContent = `${math.des} Pcs`;
+    if (elNon) elNon.textContent = `${math.non} Pcs`;
+    if (elIrr) elIrr.textContent = `${math.irr} Pcs`;
+    if (elPassed) elPassed.textContent = `${math.passed} Pcs`;
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDispositionConfirmationModal() {
+    const modal = document.getElementById('dispositionConfirmModal');
+    if (modal) modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  function executeApplyDisposition() {
+    const math = onDispositionInputChanged();
+    
+    if (activeBillingBatch) {
+      activeBillingBatch.disposition = {
+        rejected: math.rej,
+        destroyed: math.des,
+        nonFeasible: math.non,
+        irrucd: math.irr,
+        passed: math.passed
+      };
+    }
+
+    updateInvoiceDispositionStrip(math.total, {
+      rejected: math.rej,
+      destroyed: math.des,
+      nonFeasible: math.non,
+      irrucd: math.irr,
+      passed: math.passed
+    });
+
+    if (state.billingItems && state.billingItems.length > 0) {
+      state.billingItems[0].qty = math.passed;
+      if (math.total > 0 && activeBillingBatch && activeBillingBatch.netWt) {
+        state.billingItems[0].wt = parseFloat(((activeBillingBatch.netWt / math.total) * math.passed).toFixed(2));
+      }
+      if (state.billingItems[1]) {
+        state.billingItems[1].qty = Math.max(1, math.des);
+      }
+    }
+
+    renderBillingItemsForm();
+    recalculateBill();
+    closeDispositionConfirmationModal();
+    showToast(`Piece breakdown verified: ${math.passed} passed pcs billed. ${math.deductions} pcs deducted.`, 'success');
+  }
+
+  function toggleActiveBillPrintStatus() {
+    if (!activeBillingBatch) return;
+    activeBillingBatch.billPrinted = !activeBillingBatch.billPrinted;
+    updatePrintStatusUI(activeBillingBatch.billPrinted);
+    renderBillQueue();
+    showToast(`Bill ${activeBillingBatch.billNo} marked as ${activeBillingBatch.billPrinted ? 'PRINTED' : 'NOT PRINTED'}.`, 'info');
+  }
+
+  function printTaxInvoice() {
+    const billNoInput = document.getElementById('inputBillNo');
+    const reqNoInput = document.getElementById('inputReqNo');
+    const dateInput = document.getElementById('inputDate');
+
+    if (activeBillingBatch) {
+      activeBillingBatch.billPrinted = true;
+      if (billNoInput) activeBillingBatch.billNo = billNoInput.value;
+      if (reqNoInput) activeBillingBatch.reqNo = reqNoInput.value;
+      if (dateInput) activeBillingBatch.time = dateInput.value;
+    }
+
+    updatePrintStatusUI(true);
+    renderBillQueue();
+
+    window.print();
+    showToast(`Tax Invoice ${activeBillingBatch ? activeBillingBatch.billNo : ''} sent to print (Height: 17.9cm). Marked as PRINTED.`, 'success');
+  }
+
+  function finalizeCurrentBill() {
+    const billNoInput = document.getElementById('inputBillNo');
+    const reqNoInput = document.getElementById('inputReqNo');
+    const dateInput = document.getElementById('inputDate');
+    const clientSelect = document.getElementById('clientSelect');
+
+    const billNo = billNoInput ? billNoInput.value : (activeBillingBatch ? activeBillingBatch.billNo : 'BILL-2024-04192');
+    const reqNo = reqNoInput ? reqNoInput.value : (activeBillingBatch ? activeBillingBatch.reqNo : 'REQ-8831-A');
+    const date = dateInput ? dateInput.value : 'Today';
+    let customer = activeBillingBatch ? activeBillingBatch.customer : 'Tanishq Luxury Guild';
+    if (clientSelect) {
+      const opt = clientSelect.options[clientSelect.selectedIndex];
+      if (opt) customer = opt.text.split(' (')[0];
+    }
+
+    if (activeBillingBatch) {
+      activeBillingBatch.billPrinted = true;
+      activeBillingBatch.billNo = billNo;
+      activeBillingBatch.reqNo = reqNo;
+      activeBillingBatch.customer = customer;
+      activeBillingBatch.time = date;
+    }
+
+    updatePrintStatusUI(true);
+    renderBillQueue();
+    showToast(`Tax Invoice ${billNo} successfully recorded and finalized in BIS Audit Ledger.`, 'success');
   }
 
   // --- RECORDS / HISTORY MODULE ---
@@ -5412,6 +5932,7 @@
     // Initial render of tables
     renderIntakeBatchesTable();
     renderCustomerTable();
+    initBillGenerationView();
     renderBillingItemsForm();
     recalculateBill();
     renderVaultBoxes();
@@ -5624,6 +6145,17 @@
   window.printCurrentDeliveryGatePass = printCurrentDeliveryGatePass;
   window.printDeliveryGatePassDirect = printDeliveryGatePassDirect;
   window.filterDeliveryLedger = filterDeliveryLedger;
+  window.initBillGenerationView = initBillGenerationView;
+  window.filterBillQueue = filterBillQueue;
+  window.renderBillQueue = renderBillQueue;
+  window.selectBillingBatch = selectBillingBatch;
+  window.onDispositionInputChanged = onDispositionInputChanged;
+  window.openDispositionConfirmationModal = openDispositionConfirmationModal;
+  window.closeDispositionConfirmationModal = closeDispositionConfirmationModal;
+  window.executeApplyDisposition = executeApplyDisposition;
+  window.printTaxInvoice = printTaxInvoice;
+  window.toggleActiveBillPrintStatus = toggleActiveBillPrintStatus;
+  window.finalizeCurrentBill = finalizeCurrentBill;
   window.initInteractiveControls = initInteractiveControls;
 })();
 
