@@ -5111,6 +5111,369 @@
     showToast(`Bill ${activeBillingBatch.billNo} marked as ${activeBillingBatch.billPrinted ? 'PRINTED' : 'NOT PRINTED'}.`, 'info');
   }
 
+  function generateTaxInvoicePrintContent() {
+    const billNoInput = document.getElementById('inputBillNo');
+    const reqNoInput = document.getElementById('inputReqNo');
+    const dateInput = document.getElementById('inputDate');
+    const clientSelect = document.getElementById('clientSelect');
+
+    const billNo = billNoInput ? billNoInput.value : (activeBillingBatch ? activeBillingBatch.billNo : 'BILL-2024-04192');
+    const reqNo = reqNoInput ? reqNoInput.value : (activeBillingBatch ? activeBillingBatch.reqNo : 'REQ-8831-A');
+    const billDate = dateInput ? dateInput.value : '24 Oct 2024, 02:45 PM';
+
+    let customerName = activeBillingBatch ? activeBillingBatch.customer : 'Tanishq Luxury Guild';
+    if (clientSelect) {
+      const opt = clientSelect.options[clientSelect.selectedIndex];
+      if (opt) customerName = opt.text.split(' (')[0];
+    }
+
+    const customerBis = (activeBillingBatch && activeBillingBatch.bis) ? activeBillingBatch.bis : 'BIS #JWL-99210-W';
+    const customerGstin = '27AABCT' + (activeBillingBatch && activeBillingBatch.jobDocket ? activeBillingBatch.jobDocket.replace(/\D/g, '').slice(-4) : '3920') + 'F1ZV';
+
+    const isOffside = activeBillingBatch && activeBillingBatch.stream && activeBillingBatch.stream.toUpperCase().includes('OFF');
+    const streamClassification = isOffside ? 'OFFSIDE' : 'MAIN BRANCH';
+
+    const rows = (state.billingItems && state.billingItems.length > 0) ? state.billingItems : [
+      { desc: 'BIS Hallmarking Laser Inscription', subtext: 'SAC Code: 998346 • HUID Laser Gen', qty: 85, wt: 482.40, rate: 45.00 },
+      { desc: 'Fire Assay Purity Verification Certification', subtext: 'IS 1418:2009 Cupellation Protocol', qty: 1, wt: 2.50, rate: 750.00 },
+      { desc: 'Secure Vault Handling & Tamper-Evident Packaging', subtext: 'Tamper Evident Seal Security Box #SSR-9941', qty: 1, wt: 0.00, rate: 250.00 }
+    ];
+
+    let subtotal = 0;
+    const particularsRows = rows.map((item, idx) => {
+      const itemQty = parseFloat(item.qty) || 0;
+      const itemRate = parseFloat(item.rate) || 0;
+      const itemWt = parseFloat(item.wt) || 0;
+      const lineTotal = itemQty * itemRate;
+      subtotal += lineTotal;
+
+      return `
+        <tr>
+          <td class="text-center mono" style="font-size: 10px;">${idx + 1}</td>
+          <td>
+            <div style="font-weight: 700; color: #0f172a; font-size: 10.5px;">${escapeHtmlStr(item.desc)}</div>
+            <div style="font-size: 8.5px; color: #64748b; font-family: ui-monospace, monospace;">${escapeHtmlStr(item.subtext || '')}</div>
+          </td>
+          <td class="text-right mono">${itemQty}</td>
+          <td class="text-right mono">${itemWt.toFixed(2)}</td>
+          <td class="text-right mono">${itemRate.toFixed(2)}</td>
+          <td class="text-right mono" style="font-weight: 700;">${lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const cgst = subtotal * 0.09;
+    const sgst = subtotal * 0.09;
+    const grandTotal = subtotal + cgst + sgst;
+
+    const subtotalFormatted = subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const cgstFormatted = cgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const sgstFormatted = sgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const grandTotalFormatted = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const amountInWords = numberToIndianWords(grandTotal);
+
+    const disp = (activeBillingBatch && activeBillingBatch.disposition) ? activeBillingBatch.disposition : {
+      rejected: 0,
+      destroyed: 0,
+      nonFeasible: 0,
+      irrucd: 0,
+      passed: activeBillingBatch ? activeBillingBatch.pcs : 85
+    };
+
+    const dispIntake = activeBillingBatch ? (activeBillingBatch.pcs || 85) : 85;
+    const dispPassed = disp.passed !== undefined ? disp.passed : dispIntake;
+    const dispRejected = disp.rejected || 0;
+    const dispDestroyed = disp.destroyed || 0;
+    const dispNonFeasible = disp.nonFeasible || 0;
+    const dispIrrucd = disp.irrucd || 0;
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>TAX INVOICE - ${escapeHtmlStr(billNo)}</title>
+  <style>
+    @page {
+      size: 210mm 17.9cm;
+      margin: 0;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 210mm;
+      height: 17.9cm;
+      max-height: 17.9cm;
+      overflow: hidden;
+      background: #ffffff;
+      color: #000000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .print-sheet {
+      width: 210mm;
+      height: 17.9cm;
+      max-height: 17.9cm;
+      padding: 0 10mm 3mm 10mm;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      position: relative;
+    }
+    /* Exactly 3.8 cm blank top space reserved for physical letterhead / brand name */
+    .letterhead-reserve {
+      height: 3.8cm;
+      min-height: 3.8cm;
+      width: 100%;
+      visibility: hidden;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 8px;
+      padding: 6px 10px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 10px;
+      margin-bottom: 5px;
+    }
+    .info-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .info-val {
+      font-size: 12px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .info-sub {
+      font-size: 9.5px;
+      color: #334155;
+      font-family: ui-monospace, monospace;
+    }
+    .particulars-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 5px;
+      font-size: 10px;
+    }
+    .particulars-table th {
+      background: #f1f5f9;
+      color: #1e293b;
+      font-weight: 700;
+      font-size: 9px;
+      text-transform: uppercase;
+      padding: 3.5px 6px;
+      border: 1px solid #cbd5e1;
+    }
+    .particulars-table td {
+      padding: 3px 6px;
+      border: 1px solid #e2e8f0;
+      vertical-align: middle;
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .disposition-strip {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 3px 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: ui-monospace, monospace;
+      font-size: 9px;
+      margin-bottom: 5px;
+    }
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+    .undertaking-box {
+      font-size: 8.5px;
+      color: #334155;
+      line-height: 1.25;
+      padding: 5px 8px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+    .words-box {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 2px;
+    }
+    .totals-table {
+      width: 100%;
+      font-size: 10px;
+      border-collapse: collapse;
+    }
+    .totals-table td {
+      padding: 1.5px 3px;
+    }
+    .grand-total-row {
+      font-weight: 800;
+      font-size: 12px;
+      border-top: 1.5px solid #0f172a;
+      color: #0f172a;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-items: flex-end;
+      padding-top: 4px;
+      border-top: 1px solid #e2e8f0;
+      margin-top: auto;
+    }
+    .signatory {
+      text-align: right;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .signatory-space {
+      height: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="print-sheet">
+    <!-- Exactly 3.8 cm blank top space reserved for physical letterhead / brand name -->
+    <div class="letterhead-reserve"></div>
+
+    <!-- Billed To & Invoice Specifics -->
+    <div class="info-grid">
+      <div>
+        <div class="info-label">Billed To (Licensed Jeweller)</div>
+        <div class="info-val">${escapeHtmlStr(customerName)}</div>
+        <div class="info-sub">GSTIN: ${escapeHtmlStr(customerGstin)} • BIS: ${escapeHtmlStr(customerBis)}</div>
+        <div class="info-sub">Registered Commercial Trade Account</div>
+      </div>
+      <div style="text-align: right;">
+        <div class="info-label">Statutory Tax Invoice</div>
+        <div class="info-val mono">${escapeHtmlStr(billNo)}</div>
+        <div class="info-sub">Date: ${escapeHtmlStr(billDate)}</div>
+        <div class="info-sub">Ref Job: ${escapeHtmlStr(reqNo)} • <strong style="color: #0f172a;">${streamClassification}</strong></div>
+      </div>
+    </div>
+
+    <!-- Particulars Table -->
+    <table class="particulars-table">
+      <thead>
+        <tr>
+          <th style="width: 25px;" class="text-center">#</th>
+          <th>Description of Assay / Service</th>
+          <th style="width: 45px;" class="text-right">Qty</th>
+          <th style="width: 60px;" class="text-right">Net Wt (g)</th>
+          <th style="width: 55px;" class="text-right">Rate (₹)</th>
+          <th style="width: 75px;" class="text-right">Amount (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${particularsRows}
+      </tbody>
+    </table>
+
+    <!-- BIS IS 1417 Quality Disposition Summary Strip -->
+    <div class="disposition-strip">
+      <span style="font-weight: 700; color: #0f172a;">IS 1417 QUALITY SUMMARY:</span>
+      <span>INTAKE: <strong>${dispIntake}</strong></span>
+      <span>•</span>
+      <span style="color: #047857; font-weight: 700;">PASSED: <strong>${dispPassed}</strong></span>
+      <span>•</span>
+      <span style="color: #b91c1c;">REJECTED: <strong>${dispRejected}</strong></span>
+      <span>•</span>
+      <span style="color: #b45309;">DESTROYED: <strong>${dispDestroyed}</strong></span>
+      <span>•</span>
+      <span style="color: #c2410c;">NON-FEASIBLE: <strong>${dispNonFeasible}</strong></span>
+      <span>•</span>
+      <span style="color: #7e22ce;">IRRUCD: <strong>${dispIrrucd}</strong></span>
+    </div>
+
+    <!-- Calculations & Words -->
+    <div class="calc-grid">
+      <div class="undertaking-box">
+        <div class="info-label">Amount Chargeable (in words)</div>
+        <div class="words-box">${escapeHtmlStr(amountInWords)}</div>
+        <div style="font-weight: 700; color: #0f172a; margin-top: 2px;">BIS Regulatory Undertaking:</div>
+        Articles above have been assayed via BIS approved cupellation/XRF methods and inscribed with 6-digit HUID stamps per IS 1417:2019 standards.
+      </div>
+
+      <div>
+        <table class="totals-table">
+          <tr>
+            <td style="color: #475569;">Taxable Subtotal:</td>
+            <td class="text-right mono" style="font-weight: 600;">₹${subtotalFormatted}</td>
+          </tr>
+          <tr>
+            <td style="color: #475569;">CGST (9.0%):</td>
+            <td class="text-right mono" style="font-weight: 600;">₹${cgstFormatted}</td>
+          </tr>
+          <tr>
+            <td style="color: #475569;">SGST (9.0%):</td>
+            <td class="text-right mono" style="font-weight: 600;">₹${sgstFormatted}</td>
+          </tr>
+          <tr class="grand-total-row">
+            <td>Total Payable:</td>
+            <td class="text-right mono">₹${grandTotalFormatted}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Signatures & Authentic BIS QR (NO Brand Name or Logo) -->
+    <div class="footer-grid">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg style="width: 34px; height: 34px; color: #0f172a;" viewBox="0 0 100 100" fill="currentColor">
+          <rect fill="none" height="24" rx="2" stroke="currentColor" stroke-width="4" width="24" x="10" y="10"></rect>
+          <rect height="10" rx="1" width="10" x="17" y="17"></rect>
+          <rect fill="none" height="24" rx="2" stroke="currentColor" stroke-width="4" width="24" x="66" y="10"></rect>
+          <rect height="10" rx="1" width="10" x="73" y="17"></rect>
+          <rect fill="none" height="24" rx="2" stroke="currentColor" stroke-width="4" width="24" x="10" y="66"></rect>
+          <rect height="10" rx="1" width="10" x="17" y="73"></rect>
+          <rect height="6" width="6" x="42" y="12"></rect>
+          <rect height="6" width="6" x="52" y="12"></rect>
+          <rect height="12" width="6" x="52" y="30"></rect>
+          <rect height="6" width="8" x="12" y="44"></rect>
+          <rect height="6" width="16" x="42" y="46"></rect>
+          <rect height="8" width="16" x="44" y="80"></rect>
+        </svg>
+        <div>
+          <div style="font-size: 8.5px; font-weight: 700; color: #b45309; text-transform: uppercase;">Verify on BIS Care</div>
+          <div style="font-size: 8px; color: #64748b; font-family: ui-monospace, monospace;">Central HUID Database</div>
+        </div>
+      </div>
+
+      <div class="signatory">
+        <div style="font-size: 8px; color: #64748b; text-transform: uppercase;">ASSAY AUTHORITY SIGN-OFF</div>
+        <div class="signatory-space"></div>
+        <div>Authorized Assay Master / Signatory</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+  }
+
   function printTaxInvoice() {
     const billNoInput = document.getElementById('inputBillNo');
     const reqNoInput = document.getElementById('inputReqNo');
@@ -5126,7 +5489,33 @@
     updatePrintStatusUI(true);
     renderBillQueue();
 
-    window.print();
+    // Use dedicated isolated iframe print so ZERO other screens or UI elements leak into the print/PDF dialog
+    const invoiceHtml = generateTaxInvoicePrintContent();
+
+    let printFrame = document.getElementById('invoice-print-iframe');
+    if (!printFrame) {
+      printFrame = document.createElement('iframe');
+      printFrame.id = 'invoice-print-iframe';
+      printFrame.style.position = 'fixed';
+      printFrame.style.right = '0';
+      printFrame.style.bottom = '0';
+      printFrame.style.width = '0';
+      printFrame.style.height = '0';
+      printFrame.style.border = '0';
+      printFrame.style.opacity = '0';
+      document.body.appendChild(printFrame);
+    }
+
+    const frameDoc = printFrame.contentWindow.document;
+    frameDoc.open();
+    frameDoc.write(invoiceHtml);
+    frameDoc.close();
+
+    setTimeout(() => {
+      printFrame.contentWindow.focus();
+      printFrame.contentWindow.print();
+    }, 250);
+
     showToast(`Tax Invoice ${activeBillingBatch ? activeBillingBatch.billNo : ''} sent to print (Height: 17.9cm). Marked as PRINTED.`, 'success');
   }
 
@@ -6154,6 +6543,7 @@
   window.closeDispositionConfirmationModal = closeDispositionConfirmationModal;
   window.executeApplyDisposition = executeApplyDisposition;
   window.printTaxInvoice = printTaxInvoice;
+  window.generateTaxInvoicePrintContent = generateTaxInvoicePrintContent;
   window.toggleActiveBillPrintStatus = toggleActiveBillPrintStatus;
   window.finalizeCurrentBill = finalizeCurrentBill;
   window.initInteractiveControls = initInteractiveControls;
