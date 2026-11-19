@@ -1527,6 +1527,36 @@
     `;
   }
 
+  function generateQrCodeSvg(text, size = 64) {
+    const cleanText = String(text || 'HUID-PREVIEW').trim();
+    if (typeof qrcode === 'function') {
+      try {
+        const qr = qrcode(0, 'M');
+        qr.addData(cleanText);
+        qr.make();
+        const svgTag = qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true });
+        return svgTag.replace('<svg ', `<svg width="${size}" height="${size}" style="max-width:100%;max-height:100%;display:block;" `);
+      } catch (err) {
+        console.error('qrcode-generator error:', err);
+      }
+    }
+    // Pure vector SVG 2D QR fallback
+    return `
+      <svg width="${size}" height="${size}" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;max-height:100%;display:block;">
+        <rect width="25" height="25" fill="#fff"/>
+        <rect x="1" y="1" width="7" height="7" fill="#000"/><rect x="2" y="2" width="5" height="5" fill="#fff"/><rect x="3" y="3" width="3" height="3" fill="#000"/>
+        <rect x="17" y="1" width="7" height="7" fill="#000"/><rect x="18" y="2" width="5" height="5" fill="#fff"/><rect x="19" y="3" width="3" height="3" fill="#000"/>
+        <rect x="1" y="17" width="7" height="7" fill="#000"/><rect x="2" y="18" width="5" height="5" fill="#fff"/><rect x="3" y="19" width="3" height="3" fill="#000"/>
+        <rect x="9" y="3" width="1" height="1" fill="#000"/><rect x="11" y="3" width="1" height="1" fill="#000"/><rect x="13" y="3" width="1" height="1" fill="#000"/><rect x="15" y="3" width="1" height="1" fill="#000"/>
+        <rect x="3" y="9" width="1" height="1" fill="#000"/><rect x="3" y="11" width="1" height="1" fill="#000"/><rect x="3" y="13" width="1" height="1" fill="#000"/><rect x="3" y="15" width="1" height="1" fill="#000"/>
+        <rect x="16" y="16" width="5" height="5" fill="#000"/><rect x="17" y="17" width="3" height="3" fill="#fff"/><rect x="18" y="18" width="1" height="1" fill="#000"/>
+        <rect x="9" y="9" width="2" height="1" fill="#000"/><rect x="12" y="9" width="1" height="2" fill="#000"/>
+        <rect x="10" y="12" width="2" height="2" fill="#000"/><rect x="14" y="11" width="1" height="2" fill="#000"/>
+        <rect x="9" y="17" width="2" height="1" fill="#000"/><rect x="12" y="18" width="1" height="2" fill="#000"/>
+      </svg>
+    `;
+  }
+
   function initTagGenerationView() {
     if (!state.intakeBatches || state.intakeBatches.length === 0) {
       const queueEl = document.getElementById('tag-batch-queue-container');
@@ -2263,17 +2293,19 @@
       const optCust = document.getElementById('tag-opt-cust') ? document.getElementById('tag-opt-cust').checked : true;
       const optOrnament = document.getElementById('tag-opt-ornament') ? document.getElementById('tag-opt-ornament').checked : true;
       const optHuid = document.getElementById('tag-opt-huid') ? document.getElementById('tag-opt-huid').checked : true;
-      const optBarcode = document.getElementById('tag-opt-barcode') ? document.getElementById('tag-opt-barcode').checked : true;
+      const optQr = document.getElementById('tag-opt-qr') ? document.getElementById('tag-opt-qr').checked : true;
 
       const elRowCust = document.getElementById('mini-row-cust');
       const elRowOrnament = document.getElementById('mini-row-ornament');
-      const elRowBarcode = document.getElementById('mini-row-barcode');
       const elRowHuid = document.getElementById('mini-row-huid');
+      const elRowBox = document.getElementById('mini-row-box');
+      const elRowQr = document.getElementById('mini-row-qr');
 
-      if (elRowCust) elRowCust.style.display = optCust ? 'flex' : 'none';
+      if (elRowCust) elRowCust.style.display = optCust ? 'block' : 'none';
       if (elRowOrnament) elRowOrnament.style.display = optOrnament ? 'flex' : 'none';
-      if (elRowBarcode) elRowBarcode.style.display = optBarcode ? 'flex' : 'none';
       if (elRowHuid) elRowHuid.style.display = optHuid ? 'flex' : 'none';
+      if (elRowBox) elRowBox.style.display = optHuid ? 'block' : 'none';
+      if (elRowQr) elRowQr.style.display = optQr ? 'flex' : 'none';
 
       // Pick top sample row from activeTagRows, or fallback to activeTagBatch defaults
       const sampleRow = (activeTagRows && activeTagRows[0]) ? activeTagRows[0] : null;
@@ -2284,7 +2316,6 @@
       const weightVal = sampleRow ? (sampleRow.weight ? (sampleRow.weight + 'g') : (sampleRow.grossWt + 'g')) : '1.674g';
       const huidVal = sampleRow ? (sampleRow.huid || 'Y6P2F5') : 'Y6P2F5';
       const boxVal = sampleRow ? (sampleRow.boxNo || (activeTagBatch ? (activeTagBatch.tray || activeTagBatch.boxNo) : 'BOX-TR-09')) : (activeTagBatch ? (activeTagBatch.tray || activeTagBatch.boxNo || 'BOX-TR-09') : 'BOX-TR-09');
-      const barcodeVal = sampleRow ? (sampleRow.barcode || sampleRow.huid || 'Y6P2F5') : 'Y6P2F5';
 
       const elCust = document.getElementById('mini-tag-cust');
       const elArticle = document.getElementById('mini-tag-article');
@@ -2292,7 +2323,7 @@
       const elWeight = document.getElementById('mini-tag-weight');
       const elHuid = document.getElementById('mini-tag-huid');
       const elBox = document.getElementById('mini-tag-box');
-      const elBarcode = document.getElementById('mini-tag-barcode');
+      const elQr = document.getElementById('mini-tag-qr');
 
       if (elCust) elCust.textContent = custName.slice(0, 20);
       if (elArticle) elArticle.textContent = articleVal.slice(0, 14);
@@ -2301,10 +2332,14 @@
       if (elHuid) elHuid.textContent = huidVal;
       if (elBox) elBox.textContent = boxVal;
 
-      if (elBarcode && optBarcode) {
-        const bcW = Math.max(48, Math.min(targetW - 16, 170));
-        const bcH = Math.max(10, Math.min(22, Math.round(targetH * 0.28)));
-        elBarcode.innerHTML = generateBarcodeSvg(barcodeVal, bcW, bcH);
+      if (elRowQr) {
+        const qrSize = Math.max(28, Math.min(targetH - 12, Math.round(targetW * 0.35)));
+        elRowQr.style.width = qrSize + 'px';
+        elRowQr.style.height = qrSize + 'px';
+      }
+      if (elQr && optQr) {
+        const qrSize = Math.max(24, Math.min(targetH - 14, 80));
+        elQr.innerHTML = generateQrCodeSvg(huidVal, qrSize);
       }
     }
   }
@@ -2383,7 +2418,7 @@
     const incCust = document.getElementById('tag-opt-cust') ? document.getElementById('tag-opt-cust').checked : true;
     const incOrnament = document.getElementById('tag-opt-ornament') ? document.getElementById('tag-opt-ornament').checked : true;
     const incHuid = document.getElementById('tag-opt-huid') ? document.getElementById('tag-opt-huid').checked : true;
-    const incBarcode = document.getElementById('tag-opt-barcode') ? document.getElementById('tag-opt-barcode').checked : true;
+    const incQr = document.getElementById('tag-opt-qr') ? document.getElementById('tag-opt-qr').checked : true;
 
     let printFrame = document.getElementById('tag-print-iframe');
     if (!printFrame) {
@@ -2399,10 +2434,15 @@
     const defaultBox = activeTagBatch.tray || activeTagBatch.boxNo || 'BOX-TR-01';
 
     const hMm = unit === 'in' ? height * 25.4 : height;
-    const titlePt = Math.max(5.5, Math.min(8.5, hMm * 0.42));
-    const bodyPt = Math.max(5.0, Math.min(7.5, hMm * 0.36));
-    const metaPt = Math.max(4.2, Math.min(6.2, hMm * 0.30));
-    const bcHeightPx = Math.max(12, Math.min(30, Math.round(hMm * 1.5)));
+    const wMm = unit === 'in' ? width * 25.4 : width;
+
+    // QR Box dimension (square on right)
+    const qrBoxDimMm = Math.max(7, Math.min(hMm - 1.6, wMm * 0.35));
+
+    // Dynamic typography scaling based on tag height in mm
+    const titlePt = Math.max(5.5, Math.min(8.5, hMm * 0.40));
+    const bodyPt = Math.max(4.8, Math.min(7.2, hMm * 0.32));
+    const metaPt = Math.max(4.0, Math.min(6.0, hMm * 0.26));
 
     const tagsHtml = activeTagRows.map((row, idx) => {
       const customerName = row.customer || defaultCustomer;
@@ -2411,39 +2451,47 @@
       const weightStr = (row.weight || row.grossWt || '0.000') + 'g';
       const huidStr = row.huid || `HUID-${idx + 1}`;
       const boxNoStr = row.boxNo || defaultBox;
-      const barcodeCode = row.barcode || row.huid || `${activeTagBatch.jobDocket}-${idx + 1}`;
-      const bcSvg = incBarcode ? generateBarcodeSvg(barcodeCode, 120, bcHeightPx) : '';
+
+      // Clean vector QR code on the right side
+      const qrSvg = incQr ? generateQrCodeSvg(huidStr, Math.round(qrBoxDimMm * 3.78)) : '';
 
       return `
-        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; page-break-after: always; box-sizing: border-box; padding: 0.8mm 1.2mm; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; background: #ffffff; border: 0.4px solid #222; color: #000; line-height: 1.15;">
-          ${incCust ? `
-            <!-- Line 1: 1st Name of Customer, 2nd Article Type -->
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 0.4px solid #222; padding-bottom: 0.3mm;">
-              <span style="font-size: ${titlePt}pt; font-weight: 900; text-transform: uppercase; letter-spacing: -0.15px; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtmlStr(customerName)}</span>
-              <span style="font-size: ${bodyPt}pt; font-weight: 800; font-family: monospace; text-transform: uppercase; white-space: nowrap;">${escapeHtmlStr(articleType)}</span>
-            </div>
-          ` : ''}
+        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: center; justify-content: space-between; page-break-after: always; box-sizing: border-box; padding: 0.8mm 1.2mm; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #ffffff; border: 0.4px solid #222; color: #000; overflow: hidden; line-height: 1.15;">
+          <!-- LEFT SIDE: All Writing Portion -->
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding-right: 1.2mm; overflow: hidden;">
+            ${incCust ? `
+              <!-- 1. Customer Name -->
+              <div style="font-size: ${titlePt}pt; font-weight: 900; text-transform: uppercase; letter-spacing: -0.15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-bottom: 0.35px solid #222; padding-bottom: 0.2mm;">
+                ${escapeHtmlStr(customerName)}
+              </div>
+            ` : ''}
 
-          ${incOrnament ? `
-            <!-- Line 2: 3rd Ornaments Type, 4th Weight -->
-            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.2mm; font-size: ${bodyPt}pt;">
-              <span style="font-weight: 700; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="font-size: ${metaPt}pt; font-weight: 600; color: #444;">ORN: </span>${escapeHtmlStr(ornamentsType)}</span>
-              <span style="font-weight: 800; font-family: monospace; white-space: nowrap;"><span style="font-size: ${metaPt}pt; font-weight: 600; color: #444;">WT: </span>${escapeHtmlStr(weightStr)}</span>
-            </div>
-          ` : ''}
+            ${incOrnament ? `
+              <!-- 2. Article Type & 3. Ornaments Type -->
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${bodyPt}pt; padding-top: 0.15mm;">
+                <span style="font-weight: 800; font-family: monospace; text-transform: uppercase; white-space: nowrap;"><span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 600; color: #333;">ART: </span>${escapeHtmlStr(articleType)}</span>
+                <span style="font-weight: 700; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right;"><span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 600; color: #333;">ORN: </span>${escapeHtmlStr(ornamentsType)}</span>
+              </div>
 
-          ${incBarcode ? `
-            <!-- Optional Barcode -->
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0.2mm 0; overflow: hidden; flex: 1;">
-              ${bcSvg}
-            </div>
-          ` : ''}
+              <!-- 4. Weight & 5. HUID Number -->
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${bodyPt}pt; font-family: monospace; padding-top: 0.15mm;">
+                <span style="font-weight: 800; white-space: nowrap;"><span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 600; color: #333;">WT: </span>${escapeHtmlStr(weightStr)}</span>
+                <span style="font-weight: 900; letter-spacing: 0.3px; white-space: nowrap; text-align: right;"><span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 700; color: #333;">HUID: </span>${escapeHtmlStr(huidStr)}</span>
+              </div>
+            ` : ''}
 
-          ${incHuid ? `
-            <!-- Line 3: 5th HUID Number, 6th Box Number -->
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 0.4px solid #222; padding-top: 0.3mm; font-size: ${bodyPt}pt; font-family: monospace;">
-              <span style="font-weight: 900; letter-spacing: 0.3px;"><span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 700; color: #444;">HUID: </span>${escapeHtmlStr(huidStr)}</span>
-              <span style="font-weight: 800; white-space: nowrap;"><span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 700; color: #444;">BOX: </span>${escapeHtmlStr(boxNoStr)}</span>
+            ${incHuid ? `
+              <!-- 6. Box Number -->
+              <div style="font-size: ${bodyPt}pt; font-family: monospace; font-weight: 800; white-space: nowrap; border-top: 0.35px solid #222; padding-top: 0.15mm;">
+                <span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 700; color: #333;">BOX: </span>${escapeHtmlStr(boxNoStr)}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- RIGHT SIDE: QR Code (Barcode Removed) -->
+          ${incQr ? `
+            <div style="width: ${qrBoxDimMm}mm; height: ${qrBoxDimMm}mm; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #ffffff; padding: 0.2mm; border-left: 0.35px dashed #555;">
+              ${qrSvg}
             </div>
           ` : ''}
         </div>
