@@ -2499,10 +2499,13 @@
       return;
     }
 
-    const printFrame = document.getElementById('tag-print-frame');
+    let printFrame = document.getElementById('tag-print-frame');
     if (!printFrame) {
-      showToast('Print system unavailable.', 'error');
-      return;
+      printFrame = document.createElement('iframe');
+      printFrame.id = 'tag-print-frame';
+      printFrame.name = 'tag-print-frame';
+      printFrame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+      document.body.appendChild(printFrame);
     }
 
     const width = parseFloat(document.getElementById('tag-cfg-width')?.value || 50);
