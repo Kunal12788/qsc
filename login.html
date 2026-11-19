@@ -1,432 +1,1125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
-  <title>SSR Hallmark Center &bull; Precision, Purity, Trust</title>
-  <meta name="description" content="Authorized Laboratory Terminal Login - Bureau of Indian Standards (BIS) Hallmarking & Custody Management System."/>
-  
-  <!-- Google Fonts: Cinzel, Outfit, Manrope & Inter + Material Symbols -->
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Outfit:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@600;700;800;900&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            "surface": "#f8f9ff",
-            "surface-container-lowest": "#ffffff",
-            "surface-container-low": "#eff4ff",
-            "surface-container": "#e5eeff",
-            "surface-container-high": "#dce9ff",
-            "surface-container-highest": "#d3e4fe",
-            "on-surface": "#0b1c30",
-            "on-surface-variant": "#44474c",
-            "primary": "#000000",
-            "on-primary": "#ffffff",
-            "primary-container": "#0e1c2f",
-            "on-primary-container": "#77849c",
-            "secondary": "#775a19",
-            "on-secondary": "#ffffff",
-            "secondary-container": "#fed488",
-            "on-secondary-container": "#785a1a",
-            "error": "#ba1a1a",
-            "secondary-fixed": "#ffdea5",
-            "secondary-fixed-dim": "#e9c176"
-          },
-          fontFamily: {
-            "sans": ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
-            "headline": ["Outfit", "Manrope", "Inter", "sans-serif"],
-            "cinzel": ["Cinzel", "serif"],
-            "outfit": ["Outfit", "sans-serif"],
-            "data-mono": ["Inter", "monospace"]
-          }
-        }
-      }
-    };
-  </script>
-  
-  <style>
-    html, body {
-      height: 100%;
-      height: 100dvh;
-      max-height: 100dvh;
-      overflow: hidden !important;
-      overscroll-behavior: none !important;
-      position: fixed;
-      width: 100%;
-      top: 0;
-      left: 0;
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      touch-action: none;
-    }
-    *, *:before, *:after {
-      box-sizing: inherit;
-    }
-    @keyframes spin-slow {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    .animate-spin-slow {
-      animation: spin-slow 36s linear infinite;
-    }
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(200%); }
-    }
-    .animate-shimmer {
-      animation: shimmer 2.2s infinite;
-    }
-    .gold-metallic-text {
-      background: linear-gradient(135deg, #fff7c2 0%, #ffd700 25%, #e6be68 50%, #996515 75%, #ffe082 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 4px 18px rgba(212, 175, 55, 0.35));
-    }
-    .gold-foil-text {
-      background: linear-gradient(135deg, #ffffff 0%, #fff1ba 18%, #f3c760 38%, #d49f34 58%, #8a5a0f 82%, #ffd978 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 4px 24px rgba(243, 199, 96, 0.45));
-    }
-    .gold-beveled-card {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(14, 25, 42, 0.75) 50%, rgba(4, 9, 19, 0.95) 100%);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(245, 206, 114, 0.35);
-      box-shadow: 0 16px 45px -10px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 -1px 1px rgba(212, 175, 55, 0.2);
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .gold-beveled-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(245, 206, 114, 0.7);
-      box-shadow: 0 20px 50px -10px rgba(212, 175, 55, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4);
-    }
-    .gold-btn-luxury {
-      background: linear-gradient(135deg, #ffe599 0%, #f6ca65 30%, #e0a32b 70%, #fff0ad 100%);
-      box-shadow: 0 8px 30px rgba(224, 163, 43, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -2px 4px rgba(138, 90, 15, 0.4);
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .gold-btn-luxury:hover {
-      background: linear-gradient(135deg, #fff2ba 0%, #ffd777 30%, #eaab34 70%, #fff7cc 100%);
-      box-shadow: 0 12px 40px rgba(224, 163, 43, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.9);
-      transform: translateY(-1px) scale(1.015);
-    }
-    .gold-glow-box {
-      background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.12) 0%, rgba(14, 28, 47, 0.6) 100%);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(212, 175, 55, 0.28);
-      box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-    }
-    .gold-glow-box:hover {
-      border-color: rgba(212, 175, 55, 0.55);
-      box-shadow: 0 16px 40px -8px rgba(212, 175, 55, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-    input, button, select {
-      touch-action: manipulation;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sign in · Hallmarking Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0e1c2f; --navy-deep:#0b1c30; --ice:#f8f9ff; --white:#fff;
+  --line:#e5eeff; --line-soft:#eff4ff;
+  --gold:#c5a059; --champagne:#ffdea5; --amber-soft:#fed488;
+  --gold-foil:linear-gradient(135deg,#fff7c2,#ffd700 45%,#c5a059);
+  --ok:#059669; --warn:#d97706; --err:#ba1a1a; --slate:#64748b; --slate-dark:#475569;
+  --padY:clamp(12px,2.6vh,32px);
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html,body{min-height:100%}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);color:var(--navy);-webkit-font-smoothing:antialiased;
+  min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:var(--padY) clamp(12px,2vw,24px);
+  background:
+    radial-gradient(50% 45% at 12% 8%,rgba(197,160,89,.28),transparent 70%),
+    radial-gradient(45% 45% at 92% 96%,rgba(255,215,0,.14),transparent 70%),
+    linear-gradient(160deg,#0b1c30,#0e1c2f 55%,#08111d);
+}
+
+/* ============ Floating frame ============ */
+.frame{
+  width:100%;max-width:1280px;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+  background:var(--white);border-radius:30px;overflow:hidden;
+  box-shadow:0 0 0 1px rgba(255,222,165,.25),0 60px 120px -40px rgba(0,0,0,.8),0 30px 60px -30px rgba(197,160,89,.35);
+  animation:rise .8s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+
+/* ============ Form side ============ */
+.form-side{display:flex;flex-direction:column;padding:clamp(18px,3.4vh,34px) clamp(24px,4.6vw,52px) clamp(14px,2.4vh,26px);position:relative;z-index:2;min-width:0}
+.logo{display:flex;align-items:center;gap:11px;font-weight:700;font-size:15px}
+.logo-mark{width:38px;height:38px;border-radius:11px;background:var(--navy);display:grid;place-items:center;color:var(--champagne);box-shadow:inset 0 0 0 1px rgba(197,160,89,.7)}
+.logo small{display:block;font-weight:400;font-size:12px;color:var(--slate);margin-top:1px}
+.form-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(8px,1.8vh,18px) 0 clamp(8px,1.4vh,14px);max-width:400px;width:100%;margin:0 auto}
+.gold-rule{width:46px;height:4px;border-radius:4px;background:var(--gold-foil)}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(28px,min(4.4vh,3.4vw),40px);letter-spacing:-.02em;margin-top:clamp(10px,1.6vh,16px);line-height:1.05}
+.sub{margin-top:clamp(5px,.9vh,9px);color:var(--slate);font-size:14.5px;line-height:1.55}
+
+
+.field{margin-top:clamp(10px,1.9vh,18px)}
+label{display:block;font-size:13px;font-weight:600;color:var(--slate-dark);margin-bottom:7px}
+.control{position:relative}
+.ico{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:#8b9ab0;pointer-events:none;transition:color .15s}
+.control:focus-within .ico{color:var(--gold)}
+input[type=text],input[type=password]{
+  width:100%;height:clamp(44px,6vh,54px);padding:0 14px 0 45px;font:inherit;font-size:15px;color:var(--navy);
+  background:#f7f9ff;border:1px solid #dbe4f4;border-radius:14px;outline:none;transition:border-color .15s,box-shadow .15s,background .15s}
+input::placeholder{color:#9aa8bd}
+input:hover{border-color:#b9c6dd}
+input:focus{background:#fff;border-color:var(--gold);box-shadow:0 0 0 4px rgba(197,160,89,.24)}
+input[aria-invalid=true]{border-color:var(--err);box-shadow:0 0 0 4px rgba(186,26,26,.1)}
+.toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);height:36px;padding:0 11px;border:0;background:transparent;color:var(--slate-dark);font:inherit;font-size:13px;font-weight:600;border-radius:9px;cursor:pointer}
+.toggle:hover{background:var(--line-soft)}
+.err{display:none;margin-top:6px;font-size:13px;color:var(--err)}
+.field.bad .err{display:block}
+
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;margin-top:clamp(10px,1.6vh,15px);font-size:13.5px;flex-wrap:wrap}
+.check{display:flex;align-items:center;gap:9px;color:var(--slate-dark);cursor:pointer;margin:0;font-weight:500}
+.check input{appearance:none;width:18px;height:18px;border:1px solid #b9c6dd;border-radius:5px;background:#fff;display:grid;place-content:center;cursor:pointer;transition:.15s;margin:0}
+.check input:checked{background:var(--navy);border-color:var(--navy)}
+.check input:checked::after{content:"";width:9px;height:5px;border-left:2px solid var(--champagne);border-bottom:2px solid var(--champagne);transform:rotate(-45deg) translate(1px,-1px)}
+.check input:focus-visible{outline:none;box-shadow:0 0 0 4px rgba(197,160,89,.3);border-color:var(--gold)}
+a{color:var(--navy);font-weight:600;text-decoration-color:var(--gold);text-underline-offset:3px}
+a:hover{color:#8a6b2c}
+a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:8px}
+
+.submit{
+  position:relative;overflow:hidden;width:100%;height:clamp(46px,6.2vh,56px);margin-top:clamp(14px,2.4vh,22px);border:0;border-radius:14px;cursor:pointer;
+  background:linear-gradient(180deg,#14294a,var(--navy));color:var(--champagne);font:inherit;font-weight:600;font-size:16px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  box-shadow:inset 0 0 0 1px rgba(197,160,89,.6),0 16px 28px -14px rgba(14,28,47,.9);transition:box-shadow .2s,transform .1s}
+.submit::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;transform:skewX(-20deg);background:linear-gradient(90deg,transparent,rgba(255,222,165,.35),transparent);transition:left .7s}
+.submit:hover::after{left:130%}
+.submit:hover{box-shadow:inset 0 0 0 1px var(--gold),0 20px 32px -14px rgba(14,28,47,.95)}
+.submit:active{transform:translateY(1px)}
+.submit[disabled]{cursor:progress}
+.spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,222,165,.35);border-top-color:var(--champagne);animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.submit.loading .spinner{display:block}
+
+.or{display:flex;align-items:center;gap:12px;margin:clamp(12px,2.2vh,20px) 0 clamp(9px,1.6vh,14px);font-size:12.5px;color:var(--slate)}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.alt{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.alt button{height:clamp(42px,5.4vh,46px);border-radius:12px;border:1px solid #dbe4f4;background:#fff;font:inherit;font-size:13.5px;font-weight:600;color:var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:border-color .15s,background .15s,box-shadow .15s}
+.alt button:hover{border-color:var(--gold);background:#fffdf7;box-shadow:0 8px 18px -12px rgba(197,160,89,.9)}
+
+.alert{display:none;margin-top:16px;padding:11px 13px;border-radius:11px;font-size:13.5px;line-height:1.45}
+.alert.show{display:block}
+.alert.error{background:#fdf0f0;color:var(--err);border:1px solid #f3c9c9}
+.alert.ok{background:#ecfaf4;color:#047857;border:1px solid #b6e8d3}
+
+.form-foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--slate);padding-top:clamp(8px,1.4vh,14px)}
+.status{display:inline-flex;align-items:center;gap:7px}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(5,150,105,.18)}
+
+/* ============ Visual side ============ */
+.visual{
+  position:relative;overflow:hidden;color:#fff;padding:clamp(20px,4vh,40px) clamp(20px,3vw,44px) clamp(20px,4vh,40px) clamp(86px,9.6vw,110px);display:flex;flex-direction:column;justify-content:space-between;min-width:0;
+  background:
+    radial-gradient(70% 50% at 65% 52%,rgba(255,215,0,.22),transparent 70%),
+    radial-gradient(80% 60% at 100% 0%,#22436e,transparent 60%),
+    linear-gradient(165deg,#0b1c30,#0e1c2f 60%,#08111d);
+}
+.visual::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.6;
+  background-image:linear-gradient(rgba(197,160,89,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(197,160,89,.07) 1px,transparent 1px);
+  background-size:42px 42px;-webkit-mask-image:radial-gradient(70% 70% at 65% 50%,#000,transparent);mask-image:radial-gradient(70% 70% at 65% 50%,#000,transparent)}
+.visual>*{position:relative;z-index:1}
+.wave{position:absolute!important;left:-1px;top:0;height:100%;width:84px;z-index:1;display:block}
+.chip{align-self:flex-end;display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--champagne);padding:8px 14px;border:1px solid rgba(197,160,89,.5);border-radius:999px;background:rgba(14,28,47,.5);backdrop-filter:blur(6px)}
+.chip i{width:7px;height:7px;border-radius:50%;background:#ffd700;box-shadow:0 0 10px #ffd700}
+
+/* The scene is laid out on a fixed 430x400 stage that is scaled to fit,
+   so the host, board and speech bubble always keep the same composition. */
+.scene{position:relative;flex:1;min-height:220px;margin:6px 0 10px}
+.visual>.scene{z-index:0} /* below the white wave so the host walks out from behind its edge */
+.stage{position:absolute;left:0;bottom:0;width:430px;height:400px;transform-origin:0 100%}
+.floor{position:absolute;left:-6px;bottom:-12px;width:270px;height:34px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,215,0,.45),transparent)}
+
+/* animated host */
+.fig{position:absolute;left:-14px;bottom:0;width:278px;height:380px;overflow:visible;z-index:3;pointer-events:none}
+
+.bubble{position:absolute;left:172px;top:2px;max-width:246px;background:#fff;color:var(--navy);padding:11px 15px;border-radius:16px;font-size:13.5px;line-height:1.45;font-weight:500;box-shadow:0 24px 40px -20px rgba(0,0,0,.7);z-index:4;
+  opacity:0;transform:translateY(6px) scale(.92);transform-origin:0 100%;transition:opacity .35s,transform .35s cubic-bezier(.2,.9,.3,1.3)}
+.bubble.on{opacity:1;transform:none}
+.bubble::after{content:"";position:absolute;left:-5px;bottom:15px;width:13px;height:13px;background:#fff;transform:rotate(45deg);border-radius:3px}
+.bubble b{font-weight:700}
+#say{display:block;transition:opacity .16s,transform .16s}
+#say.swap{opacity:0;transform:translateY(4px)}
+
+/* holo board */
+.board{position:absolute;right:0;bottom:54px;width:246px;height:262px;border-radius:20px;padding:14px 16px 12px;color:#fff;display:flex;flex-direction:column;z-index:2;
+  background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.04));border:1px solid rgba(255,222,165,.55);backdrop-filter:blur(8px);
+  box-shadow:0 34px 60px -28px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.25);
+  opacity:0;transform:translateY(14px) scale(.97);transition:opacity .6s,transform .6s cubic-bezier(.2,.8,.2,1)}
+.board.on{opacity:1;transform:none}
+.board-head{display:flex;justify-content:space-between;align-items:center;font-size:12.5px}
+.board-head b{color:var(--champagne);font-weight:700}
+.board-head span{font-size:11px;color:#9fb0c7;font-weight:500}
+.slides{position:relative;flex:1;margin-top:10px}
+.slide{position:absolute;inset:0;opacity:0;transform:translateY(10px);transition:opacity .5s,transform .5s;pointer-events:none}
+.slide.on{opacity:1;transform:none}
+.dots{display:flex;gap:7px;justify-content:center;padding-top:8px}
+.dots button{width:22px;height:5px;border:0;border-radius:5px;background:rgba(255,255,255,.25);cursor:pointer;padding:0;transition:.3s}
+.dots button.on{background:var(--gold-foil);width:34px}
+.cap{margin-top:8px;font-size:11.5px;color:#9fb0c7;line-height:1.45}
+
+/* slide 1: purity */
+.prow{display:grid;grid-template-columns:32px 1fr 34px;align-items:center;gap:10px;padding:6px 8px;border-radius:10px;font-size:12.5px;color:#c3cfe0}
+.prow .k{font-weight:700;color:#fff}
+.track{height:8px;border-radius:8px;background:rgba(255,255,255,.12);overflow:hidden}
+.fill{display:block;height:100%;width:0;border-radius:8px;background:var(--gold-foil);transition:width 1s cubic-bezier(.2,.8,.2,1) .25s}
+.slide.on .fill{width:var(--w)}
+.prow .n{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.prow.hi{background:rgba(255,215,0,.12);box-shadow:inset 0 0 0 1px rgba(255,222,165,.6)}
+
+/* slide 2: HUID */
+.huid{display:flex;align-items:center;gap:14px;margin-top:4px}
+.ringbox{position:relative;width:92px;height:92px;flex:none}
+.ringbox svg{width:100%;height:100%}
+.scanline{position:absolute;left:2px;right:2px;top:8px;height:2px;background:linear-gradient(90deg,transparent,#fff7c2,transparent);box-shadow:0 0 10px #ffd700;opacity:0}
+.slide.on .scanline{animation:scan 1.1s ease-in-out .3s 4 alternate}
+@keyframes scan{0%{top:8px;opacity:1}100%{top:82px;opacity:1}}
+.hlabel{font-size:11px;color:#9fb0c7;font-weight:600;letter-spacing:.04em}
+.hcode{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:23px;font-weight:700;color:var(--champagne);margin-top:4px;letter-spacing:3px;--tw:calc(6ch + 18px)}
+.type{display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:bottom;width:0;border-right:2px solid var(--champagne)}
+.slide.on .type{animation:typing 1.1s steps(6,end) .5s forwards,caret .8s step-end infinite}
+@keyframes typing{to{width:var(--tw)}}
+@keyframes caret{50%{border-color:transparent}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chips span{font-size:11px;padding:4px 9px;border-radius:999px;border:1px solid rgba(197,160,89,.5);color:var(--amber-soft)}
+
+/* slide 3: hallmark */
+.hm{display:flex;gap:12px;align-items:center;margin-top:2px}
+.plate{width:92px;height:92px;flex:none}
+.slide.on .plate{animation:stamp .7s cubic-bezier(.2,.9,.25,1) .2s both}
+@keyframes stamp{0%{transform:scale(1.5);opacity:0}60%{transform:scale(.95);opacity:1}100%{transform:scale(1)}}
+.parts{list-style:none;padding:0;display:grid;gap:8px;font-size:12px;color:#d6e0ee}
+.parts li{display:flex;align-items:center;gap:8px;opacity:0;transform:translateX(8px)}
+.slide.on .parts li{animation:pin .5s ease forwards}
+.parts li:nth-child(1){animation-delay:.7s}.parts li:nth-child(2){animation-delay:1s}.parts li:nth-child(3){animation-delay:1.3s}.parts li:nth-child(4){animation-delay:1.6s}
+@keyframes pin{to{opacity:1;transform:none}}
+.ck{width:16px;height:16px;border-radius:50%;background:var(--gold-foil);display:grid;place-items:center;flex:none}
+
+
+/* ===== Hallmarking process slides (6 steps) ===== */
+.pv{display:block;width:100%;height:auto;margin-top:-2px;overflow:visible}
+.pv text{font-family:var(--sans)}
+.pv .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.pa{transform-box:fill-box;transform-origin:center}
+.dots button{width:18px}.dots button.on{width:30px}
+.slide .cap{margin-top:6px}
+
+/* shared pop-in */
+.slide.on .pop{animation:pop .5s cubic-bezier(.2,.9,.3,1.4) var(--d,0s) both}
+@keyframes pop{from{transform:scale(0);opacity:0}}
+
+/* step 1: submission */
+.slide.on .jw{animation:jwIn .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes jwIn{from{transform:translateX(-70px);opacity:0}}
+.slide.on .tray{animation:trayMv 1s ease-in-out 1.1s both}
+@keyframes trayMv{from{transform:translate(-22px,-20px)}}
+.slide.on .jarm{animation:jarm 1s ease-in-out 1.1s both}
+@keyframes jarm{to{opacity:0}}
+
+/* step 2: XRF */
+.slide.on .beam{animation:beamP .9s ease-in-out infinite alternate}
+@keyframes beamP{from{opacity:.2}to{opacity:.9}}
+.slide.on .rip{animation:rip 1.6s ease-out infinite;animation-delay:var(--d,0s)}
+@keyframes rip{from{transform:scale(.4);opacity:.9}to{transform:scale(1.7);opacity:0}}
+.bar{transform-box:fill-box;transform-origin:0 50%}
+.slide.on .bar{animation:barG 1.2s cubic-bezier(.2,.8,.2,1) var(--d,.4s) both}
+@keyframes barG{from{transform:scaleX(0)}}
+.slide.on .blink{animation:blk 1s step-end infinite}
+@keyframes blk{50%{opacity:.25}}
+
+/* step 3: fire assay */
+.flame{transform-box:fill-box;transform-origin:50% 100%}
+.slide.on .flame{animation:fl .45s ease-in-out infinite alternate;animation-delay:var(--d,0s)}
+@keyframes fl{from{transform:scale(1,.8)}to{transform:scale(.9,1.15)}}
+.mer{transform-box:fill-box;transform-origin:50% 100%}
+.slide.on .mer{animation:merUp 2.8s ease-out .2s both}
+@keyframes merUp{from{transform:scaleY(.05)}}
+.slide.on .bead{animation:beadIn .8s ease 1.7s both}
+@keyframes beadIn{from{transform:scale(0);opacity:0}}
+.slide.on .glow{animation:glow 1.1s ease-in-out 2s infinite alternate}
+@keyframes glow{from{opacity:.15}to{opacity:.6}}
+.slide.on .sprk{animation:sprk 1.6s ease-out infinite;animation-delay:var(--d,0s)}
+@keyframes sprk{from{transform:translateY(8px);opacity:1}to{transform:translateY(-14px);opacity:0}}
+
+/* step 5: laser */
+.slide.on .lh{animation:lhSweep 2.4s linear .4s both,lhOff .4s ease 2.9s both}
+@keyframes lhSweep{from{transform:translateX(-55px)}to{transform:translateX(57px)}}
+@keyframes lhOff{to{opacity:0}}
+.slide.on .ch{animation:chIn .18s ease both;animation-delay:var(--d,0s)}
+@keyframes chIn{from{opacity:0}}
+.slide.on .lbeam{animation:flick .1s linear infinite alternate}
+@keyframes flick{from{opacity:.55}to{opacity:1}}
+.slide.on .shine{animation:shine 1s ease 3.1s both}
+@keyframes shine{from{opacity:0}50%{opacity:.9}to{opacity:0}}
+
+/* step 6: packing */
+.slide.on .rg{animation:ringDrop .7s cubic-bezier(.4,0,.6,1) .3s both}
+@keyframes ringDrop{from{transform:translateY(-58px);opacity:0}}
+.slide.on .lid{animation:lidDrop .55s cubic-bezier(.3,1.4,.5,1) 1.3s both}
+@keyframes lidDrop{from{transform:translateY(-44px);opacity:0}}
+.rib{transform-box:fill-box;transform-origin:50% 0}
+.slide.on .rib{animation:ribG .5s ease 1.95s both}
+@keyframes ribG{from{transform:scaleY(0)}}
+.slide.on .pk{animation:bob .9s ease-in-out infinite alternate}
+@keyframes bob{to{transform:translateY(-3px)}}
+
+.tag h2{font-family:var(--serif);font-weight:600;font-size:clamp(22px,min(2.7vw,3.6vh),40px);line-height:1.12;letter-spacing:-.015em;max-width:22ch;text-wrap:balance;background:var(--gold-foil);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag p{margin-top:clamp(6px,1.2vh,12px);max-width:44ch;color:#c3cfe0;line-height:1.6;font-size:14.5px}
+
+/* ============ Responsive tiers ============ */
+/* Desktop & laptop: the card fills the viewport (never scrolls the page unless the window is really short) */
+@media (min-width:1000px){
+  .frame{height:clamp(560px,calc(100vh - 2*var(--padY)),980px);height:clamp(560px,calc(100dvh - 2*var(--padY)),980px)}
+}
+@media (min-width:1000px) and (max-height:820px){ .tag p{display:none} }
+@media (min-width:1000px) and (max-height:720px){ .sub{display:none} .logo small{display:none} }
+@media (min-width:1000px) and (max-height:600px){
+  body{place-items:start center}
+  .frame{height:auto;min-height:560px}
+}
+@media (min-width:1700px) and (min-height:960px){ .frame{max-width:1440px} }
+
+/* Tablet & small laptop windows: host banner on top, form below.
+   The card is locked to the viewport height so the WHOLE sign-in is visible without scrolling. */
+@media (max-width:999px){
+  body{place-items:center}
+  .frame{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);max-width:720px;border-radius:24px;
+    height:calc(100vh - 2*var(--padY));height:calc(var(--app-h,100dvh) - 2*var(--padY));min-height:0}
+  .visual{order:-1;padding:14px 18px 0;justify-content:flex-start;height:clamp(170px,32vh,380px);height:clamp(170px,32dvh,380px)}
+  .wave,.chip,.tag{display:none}
+  .scene{flex:1;min-height:0;height:auto;margin:0}
+  .form-side{padding:clamp(12px,2.2vh,24px) clamp(20px,5vw,40px) clamp(10px,1.8vh,18px);min-height:0;overflow-y:auto}
+  .form-wrap{padding-top:4px}
+}
+/* Phones: form only, sized to fit exactly one screen */
+@media (max-width:640px){
+  body{padding:0;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);place-items:stretch}
+  .frame{border-radius:0;box-shadow:none;max-width:none;grid-template-rows:minmax(0,1fr);
+    height:100vh;height:var(--app-h,100dvh);min-height:0}
+  .visual{display:none}
+  .form-side{padding:clamp(12px,2.4vh,22px) 20px clamp(10px,1.8vh,18px)}
+  .form-wrap{max-width:none;justify-content:center;padding-top:0}
+  h1{font-size:clamp(25px,4.2vh,30px)}
+  input[type=text],input[type=password]{font-size:16px}
+  .form-foot{flex-direction:column;gap:3px;font-size:12px}
+}
+@media (max-width:380px){
+  .alt{grid-template-columns:1fr}
+  .form-side{padding-left:16px;padding-right:16px}
+}
+/* Short screens (any device): trim the extras so everything still fits */
+@media (max-height:780px){ .sub{display:none} .logo small{display:none} }
+@media (max-height:680px){
+  label{margin-bottom:4px}
+  .or{margin:8px 0 7px}
+  .alt button{height:40px}
+  .gold-rule{height:3px}
+  .logo-mark{width:32px;height:32px}
+}
+@media (max-height:600px){ .form-foot span:last-child{display:none} .check{font-size:13px} }
+/* Short landscape screens (phones/tablets on their side): form only */
+@media (max-width:999px) and (max-height:700px){
+  .visual{display:none}
+  .frame{max-width:560px;grid-template-rows:minmax(0,1fr)}
+}
+
+
+/* ============ Live figures + illustrations ============ */
+.live{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:clamp(10px,2vh,18px)}
+.kpi{position:relative;padding:10px 12px 9px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(197,160,89,.38);backdrop-filter:blur(6px);min-width:0;overflow:hidden}
+.kpi .lbl{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#9fb0c7;letter-spacing:.02em;white-space:nowrap}
+.kpi b{display:block;margin-top:3px;font-family:var(--serif);font-weight:600;font-size:clamp(19px,1.9vw,25px);color:var(--champagne);line-height:1.1;font-variant-numeric:tabular-nums;transition:color .4s}
+.kpi b.flash{color:#fff}
+.kpi em{font-style:normal;font-size:11px;font-weight:700}
+.kpi em.up{color:#34d399}.kpi em.dn{color:#f87171}
+.pulse{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 0 0 rgba(52,211,153,.6);animation:pulse 1.8s infinite;flex:none}
+@keyframes pulse{70%{box-shadow:0 0 0 8px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+.spark{position:absolute;right:8px;bottom:8px;width:46%;height:22px;opacity:.9}
+.spark polyline{fill:none;stroke:url(#gGold);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.deco{position:absolute!important;pointer-events:none;z-index:0}
+.deco-scale{left:clamp(92px,10.4vw,120px);top:clamp(18px,3.6vh,36px);width:62px;opacity:.85;animation:sway 6s ease-in-out infinite;transform-origin:50% 8%}
+@keyframes sway{50%{transform:rotate(2.5deg)}}
+.deco-ring{right:-70px;top:22%;width:300px;height:300px;opacity:.5;animation:spin 60s linear infinite}
+.deco-bars{right:clamp(18px,2.6vw,40px);bottom:clamp(14px,2.6vh,30px);width:92px;opacity:.95;z-index:2}
+.tag p{max-width:46ch}
+.mini{display:none;align-items:center;gap:8px;margin-top:10px;padding:7px 11px;border-radius:11px;background:var(--line-soft);border:1px solid var(--line);font-size:12px;color:var(--slate-dark);font-weight:600;white-space:nowrap;overflow:hidden}
+.mini b{color:var(--navy);font-variant-numeric:tabular-nums}
+.mini .sep{opacity:.35}
+@media (max-width:440px){ .mini{gap:6px;font-size:11.5px;padding:7px 9px} .mini .w{display:none} }
+.mini .up{color:var(--ok)}.mini .dn{color:var(--err)}
+@media (max-width:999px){ .live,.deco{display:none} }
+@media (max-width:999px) and (min-height:701px){ .mini{display:flex} }
+@media (min-width:1000px) and (max-height:860px){ .live{display:none} .deco-bars{display:none} }
+@media (prefers-reduced-motion:reduce){.deco-scale,.deco-ring,.pulse{animation:none}}
+
+@media (prefers-reduced-motion:reduce){.frame,.spinner,.slide *{animation:none!important}.submit::after{display:none}.board,.bubble{transition:none}}
+</style>
 </head>
-<body class="bg-surface font-sans text-on-surface antialiased h-screen h-[100dvh] max-h-screen overflow-hidden flex flex-col justify-center items-center p-2 sm:p-3 lg:p-4 selection:bg-secondary-fixed selection:text-on-secondary-fixed relative">
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff7c2"/><stop offset=".45" stop-color="#ffd700"/><stop offset="1" stop-color="#c5a059"/></linearGradient>
+</defs></svg>
+<div class="frame">
 
-  <!-- ========================================================================= -->
-  <!-- MAIN SIGN IN TERMINAL VIEW (Strict Zero Scroll, Multi-Device Responsive)  -->
-  <!-- ========================================================================= -->
-  <div 
-    id="sign-in-screen-wrapper" 
-    class="w-full h-full max-h-full flex flex-col justify-center items-center overflow-hidden"
-  >
-    <!-- MAIN TERMINAL WRAPPER (Strict Zero Scroll, Viewport Lock) -->
-    <main class="w-full flex-1 flex items-center justify-center relative min-h-0 py-0 sm:py-1">
-      
-      <!-- Subtle Ambient Glow Flares -->
-      <div class="absolute -top-16 -left-16 w-64 md:w-80 h-64 md:h-80 rounded-full bg-secondary-container/20 blur-3xl pointer-events-none"></div>
-      <div class="absolute -bottom-16 -right-16 w-64 md:w-80 h-64 md:h-80 rounded-full bg-surface-container-highest/40 blur-3xl pointer-events-none"></div>
-
-      <!-- ELEVATED SIGN IN TERMINAL CARD (Adaptive: Mobile cohesive zero-scroll, Tab/Desktop 2-col) -->
-      <div class="w-[94%] sm:w-[90%] md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:grid md:grid-cols-12 relative z-10 bg-surface-container-lowest border-2 border-slate-300 my-auto">
-        
-        <!-- ======================================================== -->
-        <!-- LEFT / TOP SECTION: BRAND PANEL                          -->
-        <!-- ======================================================== -->
-        <div class="md:col-span-5 lg:col-span-5 xl:col-span-5 bg-primary-container p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 flex flex-col justify-center items-center relative overflow-hidden text-on-primary shrink-0">
-          
-          <!-- Guilloche Pattern Backdrop -->
-          <div class="absolute inset-0 opacity-10 pointer-events-none">
-            <svg class="w-full h-full" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern height="48" id="guilloche-grid" patternUnits="userSpaceOnUse" width="48">
-                  <circle cx="24" cy="24" fill="none" r="23" stroke="currentColor" stroke-dasharray="1 3" stroke-width="0.75"></circle>
-                  <circle cx="24" cy="24" fill="none" r="16" stroke="currentColor" stroke-width="0.5"></circle>
-                  <path d="M0 24h48M24 0v48" stroke="currentColor" stroke-opacity="0.3" stroke-width="0.5"></path>
-                </pattern>
-              </defs>
-              <rect fill="url(#guilloche-grid)" height="100%" width="100%"></rect>
-            </svg>
-          </div>
-
-          <!-- Atmospheric Golden Luminescence Flare -->
-          <div class="absolute top-1/3 -left-20 w-72 h-72 rounded-full bg-secondary/20 blur-2xl pointer-events-none"></div>
-
-          <!-- Center Cluster: Core Sovereign Emblem & Brand (Centered) -->
-          <div class="relative z-10 flex flex-col items-center text-center w-full my-auto">
-            
-            <!-- Concentric Assay Stamp Emblem (Grand & Centered) -->
-            <div class="relative w-14 h-14 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-28 lg:h-28 xl:w-32 xl:h-32 mb-1.5 sm:mb-2 md:mb-2.5 flex items-center justify-center mx-auto shrink-0">
-              <div class="absolute -inset-1.5 sm:-inset-2 rounded-full border border-secondary-fixed/30 animate-pulse"></div>
-              <div class="absolute inset-0 rounded-full border-2 border-secondary-fixed/40"></div>
-              <div class="absolute inset-1 rounded-full border border-secondary-fixed/30 border-dashed animate-spin-slow"></div>
-              <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 xl:w-28 xl:h-28 rounded-full bg-surface-container-lowest/10 backdrop-blur-md flex items-center justify-center text-secondary-fixed shadow-[0_0_20px_rgba(233,193,118,0.45)] ring-2 ring-secondary-fixed/50 overflow-hidden">
-                <img src="assets/ssr-logo.jpg" alt="SSR Hallmark Logo" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; document.getElementById('ssr-star-fallback').style.display='block';" />
-                <span class="material-symbols-outlined text-[24px] sm:text-[30px] md:text-[42px] lg:text-[48px] hidden" id="ssr-star-fallback" style="font-variation-settings: 'FILL' 1;">stars</span>
-              </div>
-            </div>
-
-            <!-- Brand Name & Strategically Directed By Kunal -->
-            <div class="space-y-0.5 sm:space-y-1 w-full">
-              <h1 class="font-cinzel text-sm sm:text-base md:text-xl lg:text-2xl xl:text-3xl text-white tracking-[0.05em] font-black leading-tight text-center drop-shadow-md uppercase">
-                SSR HALLMARK CENTER
-              </h1>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-secondary-fixed/30 text-secondary-fixed text-[7.5px] sm:text-[8px] md:text-[9.5px] lg:text-xs font-black uppercase tracking-widest mx-auto mt-0.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                <span>STRATEGICALLY DIRECTED BY KUNAL</span>
-              </div>
-            </div>
-
-            <!-- Precision Purity Trust Tagline -->
-            <div class="mt-1 sm:mt-1.5 md:mt-2 pt-1 sm:pt-1.5 border-t border-white/15 w-full text-center">
-              <div class="font-data-mono text-[8px] sm:text-[9px] md:text-xs font-bold text-secondary-fixed tracking-wider uppercase">
-                PRECISION &bull; PURITY &bull; TRUST
-              </div>
-            </div>
-
-            <!-- Metrology Specs: Clean Compact Strip -->
-            <div class="grid grid-cols-3 gap-1 sm:gap-2 w-full max-w-xs bg-white/5 p-1 sm:p-1.5 md:p-2 rounded-lg border border-white/10 backdrop-blur-sm text-center mt-1.5 sm:mt-2">
-              <div>
-                <span class="block font-data-mono text-[6.5px] sm:text-[7.5px] md:text-[9px] text-secondary-fixed font-bold uppercase">AU FINENESS</span>
-                <span class="block font-data-mono text-[9px] sm:text-[10px] md:text-xs text-on-primary font-black">999.9 &permil;</span>
-              </div>
-              <div class="border-l border-white/10">
-                <span class="block font-data-mono text-[6.5px] sm:text-[7.5px] md:text-[9px] text-secondary-fixed font-bold uppercase">SCALE RES.</span>
-                <span class="block font-data-mono text-[9px] sm:text-[10px] md:text-xs text-on-primary font-black">0.001 mg</span>
-              </div>
-              <div class="border-l border-white/10">
-                <span class="block font-data-mono text-[6.5px] sm:text-[7.5px] md:text-[9px] text-secondary-fixed font-bold uppercase">SPECTRA XRF</span>
-                <span class="block font-data-mono text-[9px] sm:text-[10px] md:text-xs text-on-primary font-black">0.02 eV</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ======================================================== -->
-        <!-- RIGHT / BOTTOM SECTION: LOGIN FORM                       -->
-        <!-- ======================================================== -->
-        <div class="md:col-span-7 lg:col-span-7 xl:col-span-7 bg-surface-container-lowest p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col justify-center">
-          <div class="space-y-3 sm:space-y-3.5 w-full">
-            <!-- Header Status & Relocated SECURE ACCESS Badge -->
-            <div class="flex items-center justify-between gap-2">
-              <div class="inline-flex items-center gap-1.5 font-data-mono text-[8.5px] sm:text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>GATEWAY TERMINAL ONLINE</span>
-              </div>
-              <!-- Relocated SECURE ACCESS button-like graphic -->
-              <div class="inline-flex items-center gap-1 font-data-mono text-[8.5px] sm:text-[9px] md:text-xs text-emerald-950 font-bold bg-emerald-100 px-2.5 sm:px-3 py-0.5 rounded-full border border-emerald-400 shadow-xs">
-                <span class="material-symbols-outlined text-[13px] sm:text-[14px] text-emerald-700" style="font-variation-settings: 'FILL' 1;">verified_user</span>
-                <span>SECURE ACCESS</span>
-              </div>
-            </div>
-
-            <!-- Title Block with Relocated AUTHORIZED PERSONNEL ONLY -->
-            <div class="space-y-0.5">
-              <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-900 text-[8px] sm:text-[8.5px] md:text-[9.5px] font-black uppercase tracking-wider">
-                <span class="material-symbols-outlined text-[11px] sm:text-[12px] text-amber-700">lock</span>
-                <span>AUTHORIZED PERSONNEL ONLY</span>
-              </div>
-              <h2 class="font-outfit text-xl sm:text-2xl md:text-3xl lg:text-4xl text-slate-900 font-black tracking-tight leading-tight">
-                Welcome <span class="text-amber-800">Back</span>
-              </h2>
-              <p class="font-sans text-[11px] sm:text-xs text-slate-600 font-medium">
-                Sign in to access your secure laboratory assay workspace.
-              </p>
-            </div>
-
-            <!-- Credential Authentication Form -->
-            <form class="space-y-2.5 sm:space-y-3" id="lab-auth-form" onsubmit="handleSignInSubmit(event)">
-              
-              <!-- Staff Identifier / Email -->
-              <div class="space-y-1">
-                <label class="block text-[8.5px] sm:text-[9.5px] md:text-xs font-bold uppercase tracking-wider text-slate-900" for="terminal-uid">
-                  Staff Lab ID / Email Address <span class="text-error font-black">*</span>
-                </label>
-                <div class="relative rounded-lg sm:rounded-xl overflow-hidden bg-slate-50 border border-slate-300 focus-within:border-slate-900 focus-within:bg-white focus-within:ring-2 focus-within:ring-slate-900/10 transition-all">
-                  <div class="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none text-slate-600">
-                    <span class="material-symbols-outlined text-[16px] sm:text-[17px]">badge</span>
-                  </div>
-                  <input 
-                    class="w-full pl-8 sm:pl-9 pr-3 py-2 sm:py-2.5 bg-transparent text-slate-900 text-xs sm:text-sm font-semibold placeholder:text-slate-400 focus:outline-none" 
-                    id="terminal-uid" 
-                    name="terminal-uid" 
-                    placeholder="name@ssrhallmark.com or STAFF-ID" 
-                    required 
-                    type="text" 
-                    value="sarah.jenkins@ssrhallmark.com"
-                    autocomplete="username"
-                  />
-                </div>
-              </div>
-
-              <!-- Terminal Passcode -->
-              <div class="space-y-1">
-                <label class="block text-[8.5px] sm:text-[9.5px] md:text-xs font-bold uppercase tracking-wider text-slate-900" for="terminal-pwd">
-                  Lab Terminal Passcode <span class="text-error font-black">*</span>
-                </label>
-                <div class="relative rounded-lg sm:rounded-xl overflow-hidden bg-slate-50 border border-slate-300 focus-within:border-slate-900 focus-within:bg-white focus-within:ring-2 focus-within:ring-slate-900/10 transition-all">
-                  <div class="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none text-slate-600">
-                    <span class="material-symbols-outlined text-[16px] sm:text-[17px]">key</span>
-                  </div>
-                  <input 
-                    class="w-full pl-8 sm:pl-9 pr-9 sm:pr-10 py-2 sm:py-2.5 bg-transparent text-slate-900 font-data-mono text-xs sm:text-sm font-semibold placeholder:text-slate-400 focus:outline-none" 
-                    id="terminal-pwd" 
-                    name="terminal-pwd" 
-                    placeholder="Enter authorized credential" 
-                    required 
-                    type="password" 
-                    value="LaboratoryPass#2025"
-                    autocomplete="current-password"
-                  />
-                  <button 
-                    aria-label="Toggle Password Visibility" 
-                    class="absolute inset-y-0 right-0 pr-2.5 sm:pr-3 flex items-center text-slate-600 hover:text-slate-900 transition-colors cursor-pointer" 
-                    id="pwd-toggle-btn" 
-                    onclick="togglePasswordVisibility()" 
-                    type="button"
-                  >
-                    <span class="material-symbols-outlined text-[16px] sm:text-[17px]" id="pwd-toggle-icon">visibility</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Session & Checkpoint Persist Control + Quick Fill -->
-              <div class="flex items-center justify-between gap-1 pt-0.5">
-                <label class="flex items-center gap-1.5 cursor-pointer select-none">
-                  <input checked class="w-3.5 h-3.5 rounded text-primary-container focus:ring-0 bg-white border-slate-400 cursor-pointer" type="checkbox" id="keep-signed-in"/>
-                  <span class="text-[9.5px] sm:text-xs text-slate-800 font-semibold">
-                    Keep signed in
-                  </span>
-                </label>
-                <button type="button" onclick="fillDemoCredentials()" class="text-[9.5px] sm:text-xs font-bold text-amber-800 hover:underline cursor-pointer">
-                  Fill Demo Credentials
-                </button>
-              </div>
-
-              <!-- Primary Submission Execution Trigger -->
-              <div class="pt-1">
-                <button 
-                  class="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-primary-container hover:bg-slate-800 active:scale-[0.99] text-white font-headline text-xs sm:text-sm font-bold tracking-wider uppercase flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-xl group cursor-pointer border border-[#c5a059]/40" 
-                  id="sign-in-btn" 
-                  type="submit"
-                >
-                  <span id="sign-in-btn-text">Sign In to Workspace</span>
-                  <span class="material-symbols-outlined text-[16px] sm:text-[18px] text-amber-400 group-hover:translate-x-1 transition-transform" id="sign-in-btn-icon">arrow_forward</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+  <!-- ===== Form side ===== -->
+  <main class="form-side">
+    <div class="logo">
+      <div class="logo-mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5 20 7v10l-8 4.5L4 17V7z"/><path d="M8.5 12.2 11 14.6l4.6-5"/></svg>
       </div>
-    </main>
-  </div>
+      <div>Hallmarking Console<small>Assay &amp; hallmark centre management</small></div>
+    </div>
 
-  <!-- Notification Toast Container -->
-  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+    <div class="mini" aria-label="Live figures"><i class="pulse"></i>Live<span class="sep">|</span><span><b data-k="done">1,248</b> hallmarked<span class="w"> today</span></span><span class="sep">|</span><span>22K <b data-k="rate">&#8377;6,742</b>/g <b class="up" data-k="chg">&#9650; 0.4%</b></span></div>
 
-  <!-- Authentication & Welcoming Splash Logic -->
-  <script>
-    // --- Welcoming Splash (Removed per user request) ---
-    function initWelcomeSplash() {}
-    function dismissWelcomeSplash() {}
-    function reopenWelcomeSplash() {}
+    <div class="form-wrap">
+      <span class="gold-rule"></span>
+      <h1>Welcome back</h1>
+      <p class="sub">Sign in to continue to your hallmarking workspace.</p>
 
-    // --- Authentication & Form Handlers ---
-    function togglePasswordVisibility() {
-      const input = document.getElementById('terminal-pwd');
-      const icon = document.getElementById('pwd-toggle-icon');
-      if (input.type === 'password') {
-        input.type = 'text';
-        icon.textContent = 'visibility_off';
-      } else {
-        input.type = 'password';
-        icon.textContent = 'visibility';
-      }
+      <form id="f" novalidate>
+
+        <div class="field" id="g-user">
+          <label for="user">Staff ID or email</label>
+          <div class="control">
+            <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>
+            <input id="user" type="text" autocomplete="username" placeholder="name@yourcentre.in" required>
+          </div>
+          <div class="err" id="e-user">Enter your staff ID or email.</div>
+        </div>
+
+        <div class="field" id="g-pass">
+          <label for="pass">Password</label>
+          <div class="control">
+            <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+            <input id="pass" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+            <button type="button" class="toggle" id="tg" aria-label="Show password" aria-pressed="false">Show</button>
+          </div>
+          <div class="err" id="e-pass">Enter your password.</div>
+        </div>
+
+        <div class="row">
+          <label class="check"><input type="checkbox" id="rem"> Keep me signed in</label>
+          <a href="#forgot">Forgot password?</a>
+        </div>
+
+        <div class="alert" id="al" role="alert"></div>
+
+        <button class="submit" id="sb" type="submit"><span class="spinner" aria-hidden="true"></span><span id="sbt">Sign in</span></button>
+
+        <div class="or">or continue with</div>
+        <div class="alt">
+          <button type="button" data-alt="Google">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.5 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2.1-1.9 3.2-4.8 3.2-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.7c-1 .7-2.3 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.2a6.6 6.6 0 0 1 0-4.4V7H2.1a11 11 0 0 0 0 10z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.1-3.1A11 11 0 0 0 2.1 7l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z"/></svg>
+            Google
+          </button>
+          <button type="button" data-alt="Email code">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>
+            Email code
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="form-foot">
+      <span class="status"><i></i>All systems operational</span>
+      <span>Authorised staff only · Sign-ins are recorded</span>
+    </div>
+  </main>
+
+  <!-- ===== Visual side ===== -->
+  <aside class="visual" aria-label="Product highlights">
+    <svg class="wave" viewBox="0 0 100 800" preserveAspectRatio="none"><path d="M0,0 H72 C30,100 100,200 60,320 C20,440 90,560 50,680 C35,740 55,780 62,800 H0 Z" fill="#ffffff"/></svg>
+
+    <svg class="deco deco-ring" viewBox="0 0 300 300" aria-hidden="true"><circle cx="150" cy="150" r="140" fill="none" stroke="rgba(197,160,89,.35)" stroke-width="1.2"/><circle cx="150" cy="150" r="112" fill="none" stroke="rgba(255,222,165,.25)" stroke-width="1" stroke-dasharray="2 7"/><circle cx="150" cy="150" r="84" fill="none" stroke="rgba(197,160,89,.3)" stroke-width="1"/><g stroke="rgba(255,222,165,.4)" stroke-width="2"><path d="M150 4v14M150 282v14M4 150h14M282 150h14"/></g></svg>
+    <svg class="deco deco-scale" viewBox="0 0 64 70" fill="none" stroke="url(#gGold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 6v52M20 62h24M8 18h48"/><circle cx="32" cy="8" r="3" fill="#ffd700" stroke="none"/><path d="M8 18 1 38h14zM56 18l-7 20h14z"/><path d="M1 38c0 5 14 5 14 0M49 38c0 5 14 5 14 0"/></svg>
+    <svg class="deco deco-bars" viewBox="0 0 92 56" aria-hidden="true"><defs><linearGradient id="bar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff7c2"/><stop offset=".5" stop-color="#ffd700"/><stop offset="1" stop-color="#b8892f"/></linearGradient></defs><g fill="url(#bar)" stroke="rgba(255,255,255,.35)" stroke-width=".8"><path d="M4 52 12 38h32l8 14z"/><path d="M40 52 48 38h32l8 14z"/><path d="M22 36 30 22h32l8 14z"/></g><text x="57" y="48.5" font-size="6" font-weight="700" fill="#7a5a1c" text-anchor="middle" font-family="sans-serif">999.9</text></svg>
+    <span class="chip"><i></i>Built for hallmarking centres</span>
+
+    <div class="scene">
+     <div class="stage">
+      <div class="floor"></div>
+
+      <div class="bubble" id="bubble"><span id="say"></span></div>
+
+      <!-- ============ Rigged host (front view, flat style) ============
+           Every moving part has an id and is driven by the rig script below. -->
+      <svg class="fig" viewBox="0 0 300 410" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="gBlazer" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2d5a97"/><stop offset="1" stop-color="#13294a"/></linearGradient>
+        </defs>
+        <g id="root" transform="translate(-260 0)">
+          <ellipse cx="150" cy="402" rx="74" ry="7" fill="rgba(0,0,0,.4)"/>
+          <g id="legL"></g>
+          <g id="legR"></g>
+
+          <g id="upper">
+            <!-- torso: blazer, shirt, tie -->
+            <path d="M108,132 Q108,110 132,104 H168 Q192,110 192,132 L196,262 Q150,274 104,262 Z" fill="url(#gBlazer)"/>
+            <polygon points="130,104 170,104 150,172" fill="#f4f7ff"/>
+            <path d="M130,104 L111,158 L135,214 M170,104 L189,158 L165,214" stroke="#ffd700" stroke-opacity=".5" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <polygon points="143,108 157,108 159,119 141,119" fill="url(#gGold)"/>
+            <path d="M141,119 h18 l4,50 -13,17 -13,-17 z" fill="url(#gGold)"/>
+            <polygon points="113,162 129,158 127,171 113,173" fill="url(#gGold)"/>
+            <circle cx="150" cy="232" r="2.6" fill="url(#gGold)"/><circle cx="150" cy="250" r="2.6" fill="url(#gGold)"/>
+            <path d="M136,112 q14,12 28,0" stroke="#dfe6f5" stroke-width="2" fill="none"/>
+
+            <!-- neck -->
+            <path d="M136,84 h28 v28 q-14,12 -28,0 z" fill="#b57a4d"/>
+
+            <!-- head -->
+            <g id="head">
+              <ellipse cx="112" cy="64" rx="7" ry="10.5" fill="#c28659"/><ellipse cx="188" cy="64" rx="7" ry="10.5" fill="#c28659"/>
+              <ellipse cx="150" cy="60" rx="38" ry="44" fill="#d29a6a"/>
+              <path d="M112,56 C104,18 138,10 152,11 C188,12 198,40 188,56 C182,38 168,31 150,31 C132,31 118,38 112,56 Z" fill="#1a1411"/>
+              <path d="M130,21 q14,-6 28,-1" stroke="#4a3d36" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".7"/>
+              <g id="feat">
+                <g id="cheeks" opacity=".3"><circle cx="124" cy="77" r="8" fill="#e08a6a"/><circle cx="176" cy="77" r="8" fill="#e08a6a"/></g>
+                <g id="brows" stroke="#1a1411" stroke-width="3.2" fill="none" stroke-linecap="round"><path d="M122,45 q12,-7 23,-1"/><path d="M155,44 q12,-6 23,1"/></g>
+                <g id="eyeL" transform="translate(134 60)"><ellipse rx="7" ry="7.5" fill="#fff"/><g id="pupL"><circle r="3.9" fill="#2a1a12"/><circle cx="1.3" cy="-1.4" r="1.3" fill="#fff"/></g></g>
+                <g id="eyeR" transform="translate(166 60)"><ellipse rx="7" ry="7.5" fill="#fff"/><g id="pupR"><circle r="3.9" fill="#2a1a12"/><circle cx="1.3" cy="-1.4" r="1.3" fill="#fff"/></g></g>
+                <g fill="rgba(255,255,255,.1)" stroke="#e0b84a" stroke-width="2.6">
+                  <circle cx="134" cy="60" r="14.5"/><circle cx="166" cy="60" r="14.5"/>
+                  <path d="M148,59 q2,-3 4,0" fill="none"/>
+                  <path d="M119.5,58 L110,56 M180.5,58 L190,56" fill="none" stroke-linecap="round"/>
+                </g>
+                <path d="M150,64 q-5,10 1,14" stroke="#a8683f" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M137,80 Q143,74 150,78 Q157,74 163,80 Q157,82 150,80 Q143,82 137,80 Z" fill="#1a1411"/>
+                <path id="mouth" d="M138,85 Q150,95 162,85" fill="none" stroke="#7a3b2a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+            </g>
+
+            <!-- arms (screen-right arm is the left one mirrored) -->
+            <g transform="translate(300 0) scale(-1 1)"><g id="armB"></g></g>
+            <g id="armA"></g>
+          </g>
+        </g>
+      </svg>
+
+      <!-- graphics board -->
+      <div class="board" id="board">
+        <div class="board-head"><b id="bt">Jewellery Submission</b><span id="bn">Step 1 / 6</span></div>
+        <div class="slides">
+
+          <div class="slide" data-s="0">
+            <svg class="pv" viewBox="0 0 214 134" aria-hidden="true">
+              <rect x="0" y="118" width="214" height="3" rx="1.5" fill="rgba(255,222,165,.45)"/>
+              <g class="pa pop" style="--d:.2s">
+                <rect x="150" y="44" width="56" height="70" rx="7" fill="rgba(255,255,255,.08)" stroke="rgba(255,222,165,.6)"/>
+                <rect x="168" y="39" width="20" height="9" rx="3" fill="url(#gGold)"/>
+                <text x="178" y="63" text-anchor="middle" font-size="7.5" font-weight="700" fill="#ffdea5">LOT #A-204</text>
+                <rect x="158" y="70" width="40" height="3" rx="1.5" fill="rgba(255,255,255,.25)"/>
+                <rect x="158" y="77" width="30" height="3" rx="1.5" fill="rgba(255,255,255,.25)"/>
+                <rect x="158" y="84" width="36" height="3" rx="1.5" fill="rgba(255,255,255,.25)"/>
+              </g>
+              <g class="pa pop" style="--d:2.5s"><circle cx="178" cy="100" r="9" fill="url(#gGold)"/><path d="M173 100l4 4 7-8" stroke="#0b1c30" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+              <g class="jw">
+                <rect x="20" y="64" width="28" height="54" rx="12" fill="#c5a059"/>
+                <rect x="32" y="64" width="4" height="54" fill="#8a6b2c" opacity=".55"/>
+                <circle cx="34" cy="52" r="11" fill="#d29a6a"/>
+                <path d="M23,50 C21,35 47,34 45,50 C42,42 27,42 23,50Z" fill="#1a1411"/>
+                <circle cx="30" cy="53" r="1.4" fill="#2a1a12"/><circle cx="38" cy="53" r="1.4" fill="#2a1a12"/>
+                <path d="M30,58 q4,3.5 8,0" stroke="#7a3b2a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                <g class="jarm"><path d="M46,72 Q58,80 60,92" stroke="#c5a059" stroke-width="8" stroke-linecap="round" fill="none"/><circle cx="61" cy="93" r="4.5" fill="#d29a6a"/></g>
+              </g>
+              <g class="tray">
+                <path d="M68,111 H140 L136,117 H72 Z" fill="url(#gGold)"/>
+                <g class="pa pop" style="--d:.9s"><circle cx="86" cy="104" r="5" fill="none" stroke="#ffd700" stroke-width="2.2"/><polygon points="83,98 89,98 90,100 86,103 82,100" fill="#bfe9ff"/></g>
+                <g class="pa pop" style="--d:1s"><path d="M97,100 Q106,114 115,100" fill="none" stroke="#ffd700" stroke-width="2"/><circle cx="106" cy="108" r="2.6" fill="#ffdea5"/></g>
+                <g class="pa pop" style="--d:1.1s"><ellipse cx="128" cy="106" rx="7" ry="5" fill="none" stroke="#ffd700" stroke-width="2.6"/></g>
+              </g>
+            </svg>
+            <div class="cap">The jeweller hands over the lot. Every piece is counted and logged.</div>
+          </div>
+
+          <div class="slide" data-s="1">
+            <svg class="pv" viewBox="0 0 214 134" aria-hidden="true">
+              <rect x="0" y="118" width="214" height="3" rx="1.5" fill="rgba(255,222,165,.45)"/>
+              <rect x="20" y="8" width="68" height="36" rx="8" fill="rgba(255,255,255,.12)" stroke="rgba(255,222,165,.6)"/>
+              <circle class="blink" cx="31" cy="19" r="2.6" fill="#34d399"/>
+              <text x="60" y="31" text-anchor="middle" font-size="11" font-weight="700" fill="#ffdea5">XRF</text>
+              <polygon points="46,44 62,44 58,56 50,56" fill="#8fa3bf"/>
+              <polygon class="beam" points="50,56 58,56 78,100 30,100" fill="rgba(255,215,0,.4)"/>
+              <rect x="18" y="108" width="72" height="8" rx="3" fill="rgba(255,255,255,.2)"/>
+              <circle class="pa rip" style="--d:0s" cx="54" cy="102" r="12" fill="none" stroke="#ffd700" stroke-width="1.4"/>
+              <circle class="pa rip" style="--d:.8s" cx="54" cy="102" r="12" fill="none" stroke="#ffd700" stroke-width="1.4"/>
+              <circle cx="54" cy="97" r="9" fill="none" stroke="url(#gGold)" stroke-width="4"/>
+              <polygon points="50,83 58,83 60,87 54,92 48,87" fill="#bfe9ff"/>
+              <rect x="104" y="8" width="104" height="108" rx="10" fill="rgba(255,255,255,.07)" stroke="rgba(255,222,165,.4)"/>
+              <text x="114" y="24" font-size="8" font-weight="600" fill="#9fb0c7">COMPOSITION</text>
+              <text x="114" y="46" font-size="9" font-weight="700" fill="#fff">Au</text>
+              <rect x="134" y="39" width="54" height="7" rx="3.5" fill="rgba(255,255,255,.14)"/>
+              <rect class="bar" style="--d:.4s" x="134" y="39" width="49.5" height="7" rx="3.5" fill="url(#gGold)"/>
+              <text x="204" y="46" text-anchor="end" font-size="8.5" font-weight="600" fill="#ffdea5">91.6</text>
+              <text x="114" y="64" font-size="9" font-weight="700" fill="#fff">Ag</text>
+              <rect x="134" y="57" width="54" height="7" rx="3.5" fill="rgba(255,255,255,.14)"/>
+              <rect class="bar" style="--d:.6s" x="134" y="57" width="4" height="7" rx="3.5" fill="#cfd8e6"/>
+              <text x="204" y="64" text-anchor="end" font-size="8.5" font-weight="600" fill="#c3cfe0">4.4</text>
+              <text x="114" y="82" font-size="9" font-weight="700" fill="#fff">Cu</text>
+              <rect x="134" y="75" width="54" height="7" rx="3.5" fill="rgba(255,255,255,.14)"/>
+              <rect class="bar" style="--d:.8s" x="134" y="75" width="4" height="7" rx="3.5" fill="#d08a5a"/>
+              <text x="204" y="82" text-anchor="end" font-size="8.5" font-weight="600" fill="#c3cfe0">4.0</text>
+              <g class="pa pop" style="--d:1.7s"><rect x="112" y="93" width="88" height="17" rx="8.5" fill="rgba(255,215,0,.16)" stroke="#ffd700"/>
+              <text x="156" y="105" text-anchor="middle" font-size="9" font-weight="700" fill="#ffdea5">about 22K · 916</text></g>
+            </svg>
+            <div class="cap">XRF scans the surface, with no damage, to estimate the gold purity.</div>
+          </div>
+
+          <div class="slide" data-s="2">
+            <svg class="pv" viewBox="0 0 214 134" aria-hidden="true">
+              <defs><radialGradient id="faGlow" cx=".5" cy=".95" r=".85"><stop offset="0" stop-color="#ffe08a"/><stop offset=".45" stop-color="#ff8a2a"/><stop offset="1" stop-color="#6b1d08"/></radialGradient></defs>
+              <rect x="0" y="118" width="214" height="3" rx="1.5" fill="rgba(255,222,165,.45)"/>
+              <text x="97" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="#ffdea5">about 1,000 °C</text>
+              <rect x="38" y="24" width="118" height="94" rx="12" fill="#16253d" stroke="rgba(255,222,165,.55)"/>
+              <path d="M62,118 V70 Q62,48 97,48 Q132,48 132,70 V118 Z" fill="url(#faGlow)"/>
+              <path class="flame" style="--d:0s" d="M72,114 C65,102 71,94 72,84 C75,95 80,103 72,114Z" fill="#ffd36a"/>
+              <path class="flame" style="--d:.15s" d="M122,114 C115,102 121,94 122,84 C125,95 130,103 122,114Z" fill="#ffd36a"/>
+              <path class="flame" style="--d:.3s" d="M97,106 C91,96 96,90 97,82 C100,91 104,97 97,106Z" fill="#fff3b0"/>
+              <circle class="sprk" style="--d:0s" cx="80" cy="62" r="1.6" fill="#ffd36a"/>
+              <circle class="sprk" style="--d:.5s" cx="114" cy="58" r="1.6" fill="#ffd36a"/>
+              <circle class="sprk" style="--d:1s" cx="97" cy="54" r="1.4" fill="#fff3b0"/>
+              <circle class="glow" cx="97" cy="102" r="12" fill="#ffd700" opacity=".15"/>
+              <path d="M81,118 L85,106 H109 L113,118 Z" fill="#e8dccb" stroke="#8a6b2c"/>
+              <circle class="pa bead" cx="97" cy="102" r="4.6" fill="url(#gGold)"/>
+              <rect x="178" y="24" width="10" height="84" rx="5" fill="rgba(255,255,255,.14)"/>
+              <rect class="mer" x="180.5" y="26" width="5" height="82" rx="2.5" fill="#ff6b4a"/>
+              <circle cx="183" cy="112" r="8" fill="#ff6b4a" stroke="rgba(255,255,255,.35)"/>
+              <path d="M191 36h4M191 56h4M191 76h4M191 96h4" stroke="rgba(255,255,255,.4)" stroke-width="1.4" stroke-linecap="round"/>
+              <text x="97" y="131" text-anchor="middle" font-size="8" font-weight="600" fill="#9fb0c7">Cupellation</text>
+            </svg>
+            <div class="cap">A tiny sample is heated in a furnace to confirm the exact purity.</div>
+          </div>
+
+          <div class="slide" data-s="3">
+            <div class="huid">
+              <div class="ringbox">
+                <svg viewBox="0 0 100 100">
+                  <circle cx="50" cy="58" r="30" fill="none" stroke="url(#gGold)" stroke-width="11"/>
+                  <circle cx="50" cy="58" r="30" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.5" stroke-dasharray="60 130" transform="rotate(-120 50 58)"/>
+                  <polygon points="41,14 59,14 66,22 50,38 34,22" fill="#bfe9ff"/>
+                  <polygon points="41,14 50,22 59,14" fill="#fff" fill-opacity=".7"/>
+                  <polygon points="34,22 50,22 50,38" fill="#7cc4ee" fill-opacity=".7"/>
+                </svg>
+                <div class="scanline"></div>
+              </div>
+              <div>
+                <div class="hlabel">HUID</div>
+                <div class="hcode"><span class="type">7K2P9X</span></div>
+              </div>
+            </div>
+            <div class="chips"><span>1 piece, 1 HUID</span><span>Fully traceable</span></div>
+            <div class="cap">A unique 6-character HUID is generated and linked to the test record.</div>
+          </div>
+
+          <div class="slide" data-s="4">
+            <svg class="pv" viewBox="0 0 214 134" aria-hidden="true">
+              <rect x="0" y="118" width="214" height="3" rx="1.5" fill="rgba(255,222,165,.45)"/>
+              <rect x="40" y="78" width="134" height="38" rx="8" fill="url(#gGold)" stroke="rgba(255,255,255,.45)"/>
+              <rect x="45" y="83" width="124" height="28" rx="5" fill="none" stroke="rgba(11,28,48,.35)" stroke-dasharray="3 3"/>
+              <text class="ch mono" x="52.3" y="99" text-anchor="middle" font-size="12" font-weight="700" fill="#0b1c30" style="--d:0.40s">9</text>
+              <text class="ch mono" x="60.9" y="99" text-anchor="middle" font-size="12" font-weight="700" fill="#0b1c30" style="--d:0.57s">1</text>
+              <text class="ch mono" x="69.5" y="99" text-anchor="middle" font-size="12" font-weight="700" fill="#0b1c30" style="--d:0.74s">6</text>
+              <text class="ch mono" x="86.7" y="99" text-anchor="middle" font-size="12" font-weight="700" fill="#0b1c30" style="--d:1.09s">2</text>
+              <text class="ch mono" x="95.3" y="99" text-anchor="middle" font-size="12" font-weight="700" fill="#0b1c30" style="--d:1.26s">2</text>
+              <text class="ch mono" x="103.9" y="99" text-anchor="middle" font-size="12" font-weight="700" fill="#0b1c30" style="--d:1.43s">K</text>
+              <text class="ch mono" x="121.1" y="99" text-anchor="middle" font-size="12" font-weight="700" fill="#0b1c30" style="--d:1.77s">7</text>
+              <text class="ch mono" x="129.7" y="99" text-anchor="middle" font-size="12" font-weight="700" fill="#0b1c30" style="--d:1.94s">K</text>
+              <text class="ch mono" x="138.3" y="99" text-anchor="middle" font-size="12" font-weight="700" fill="#0b1c30" style="--d:2.11s">2</text>
+              <text class="ch mono" x="146.9" y="99" text-anchor="middle" font-size="12" font-weight="700" fill="#0b1c30" style="--d:2.29s">P</text>
+              <text class="ch mono" x="155.5" y="99" text-anchor="middle" font-size="12" font-weight="700" fill="#0b1c30" style="--d:2.46s">9</text>
+              <text class="ch mono" x="164.1" y="99" text-anchor="middle" font-size="12" font-weight="700" fill="#0b1c30" style="--d:2.63s">X</text>
+              
+              <g class="lh">
+                <rect x="85" y="4" width="44" height="22" rx="6" fill="#1f3556" stroke="#c5a059"/>
+                <circle cx="94" cy="15" r="2.6" fill="#ff5a4d"/>
+                <polygon points="100,26 114,26 110,33 104,33" fill="#8fa3bf"/>
+                <line class="lbeam" x1="107" y1="33" x2="107" y2="95" stroke="#ff5a4d" stroke-width="6" opacity=".25"/>
+                <line class="lbeam" x1="107" y1="33" x2="107" y2="95" stroke="#ff8a7a" stroke-width="2"/>
+                <circle class="pa lbeam" cx="107" cy="95" r="5" fill="#ffb08a"/>
+                <circle class="sprk" style="--d:0s" cx="100" cy="92" r="1.3" fill="#fff3b0"/>
+                <circle class="sprk" style="--d:.3s" cx="114" cy="90" r="1.3" fill="#fff3b0"/>
+                <circle class="sprk" style="--d:.6s" cx="107" cy="88" r="1.3" fill="#ffd36a"/>
+              </g>
+              <path class="shine" d="M52 80 L84 80 L76 114 L44 114 Z" fill="rgba(255,255,255,.55)" opacity="0"/>
+            </svg>
+            <div class="cap">A laser engraves the BIS mark, purity and HUID onto the piece.</div>
+          </div>
+
+          <div class="slide" data-s="5">
+            <svg class="pv" viewBox="0 0 214 134" aria-hidden="true">
+              <rect x="0" y="118" width="214" height="3" rx="1.5" fill="rgba(255,222,165,.45)"/>
+              <g class="pk">
+                <rect x="14" y="70" width="28" height="48" rx="11" fill="#2d5a97"/>
+                <circle cx="28" cy="58" r="10" fill="#d29a6a"/>
+                <path d="M18,56 C17,44 39,43 38,56 C35,50 22,50 18,56Z" fill="#1a1411"/>
+                <circle cx="24.5" cy="59" r="1.3" fill="#2a1a12"/><circle cx="31.5" cy="59" r="1.3" fill="#2a1a12"/>
+                <path d="M24.5,63.5 q3.5,3 7,0" stroke="#7a3b2a" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+                <path d="M40,82 Q50,86 57,80" stroke="#2d5a97" stroke-width="8" stroke-linecap="round" fill="none"/>
+                <circle cx="59" cy="79" r="4.5" fill="#d29a6a"/>
+              </g>
+              <rect x="60" y="64" width="94" height="14" rx="3" fill="#0b1c30"/>
+              <g class="rg"><circle cx="107" cy="82" r="8" fill="none" stroke="url(#gGold)" stroke-width="3.6"/><polygon points="103,69 111,69 113,73 107,78 101,73" fill="#bfe9ff"/></g>
+              <rect x="60" y="75" width="94" height="43" rx="5" fill="#1c3354" stroke="rgba(255,222,165,.6)"/>
+              <polygon points="80,88 89,93 89,103 80,108 71,103 71,93" fill="#0b1c30" stroke="#ffd700" stroke-width="1.4"/>
+              <text x="80" y="101.5" text-anchor="middle" font-size="7" font-weight="700" fill="#ffdea5">916</text>
+              <text x="134" y="94" text-anchor="middle" font-size="6.5" font-weight="600" fill="#9fb0c7">HUID</text>
+              <text class="mono" x="134" y="105" text-anchor="middle" font-size="7.5" font-weight="700" fill="#ffdea5">7K2P9X</text>
+              <rect class="lid" x="54" y="58" width="106" height="17" rx="4" fill="url(#gGold)" stroke="rgba(255,255,255,.45)"/>
+              <rect class="rib" x="101" y="58" width="12" height="60" fill="#8a6b2c" opacity=".92"/>
+              <g class="pa pop" style="--d:2.6s"><circle cx="160" cy="62" r="10" fill="url(#gGold)"/><path d="M155 62l4 4 7-8" stroke="#0b1c30" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+            </svg>
+            <div class="cap">The marked piece is packed, sealed and ready for the jeweller.</div>
+          </div>
+        </div>
+        <div class="dots"><button class="on" aria-label="Jewellery Submission"></button><button aria-label="XRF Testing"></button><button aria-label="Fire Assay"></button><button aria-label="HUID Generation"></button><button aria-label="Laser Marking"></button><button aria-label="Packing"></button></div>
+      </div>
+     </div>
+    </div>
+
+    <div class="live" aria-label="Live figures">
+      <div class="kpi"><span class="lbl"><i class="pulse"></i>Hallmarked today</span><b data-k="done">1,248</b></div>
+      <div class="kpi"><span class="lbl"><i class="pulse"></i>Centres online</span><b data-k="cent">86</b></div>
+      <div class="kpi"><span class="lbl">22K gold / g</span><b data-k="rate">&#8377;6,742</b><em class="up" data-k="chg">&#9650; 0.4%</em><svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true"><polyline id="spk" points=""/></svg></div>
+    </div>
+
+    <div class="tag">
+      <h2>Secure by design. Accurate by standard.</h2>
+      <p>Every login is protected with encrypted, role-controlled access. Each assay result is verified and recorded against a unique HUID, so every reading stays accurate and traceable. Precision at every step keeps your hallmarking records trustworthy and audit-ready.</p>
+    </div>
+  </aside>
+</div>
+
+<!-- ================= Form logic ================= -->
+<script>
+(function(){
+  var f=document.getElementById('f'), user=document.getElementById('user'), pass=document.getElementById('pass'),
+      tg=document.getElementById('tg'), sb=document.getElementById('sb'), sbt=document.getElementById('sbt'), al=document.getElementById('al');
+
+  tg.addEventListener('click',function(){
+    var show=pass.type==='password';
+    pass.type=show?'text':'password';
+    tg.textContent=show?'Hide':'Show';
+    tg.setAttribute('aria-pressed',show);
+    tg.setAttribute('aria-label',show?'Hide password':'Show password');
+  });
+
+  function mark(input,groupId,bad){
+    document.getElementById(groupId).classList.toggle('bad',bad);
+    input.setAttribute('aria-invalid',bad?'true':'false');
+  }
+  function say(type,msg){ al.className='alert show '+type; al.textContent=msg; }
+
+  f.addEventListener('submit',function(e){
+    e.preventDefault(); al.className='alert';
+    var u=user.value.trim(), p=pass.value;
+    mark(user,'g-user',!u); mark(pass,'g-pass',!p);
+    if(!u||!p){
+      (!u?user:pass).focus();
+      if(window.hallmarkHost) hallmarkHost.react('shake');   /* host shakes his head */
+      return;
     }
 
-    function fillDemoCredentials() {
-      document.getElementById('terminal-uid').value = 'sarah.jenkins@ssrhallmark.com';
-      document.getElementById('terminal-pwd').value = 'LaboratoryPass#2025';
-      showToast('Demo administrator credentials filled.', 'info');
-    }
+    sb.disabled=true; sb.classList.add('loading'); sbt.textContent='Signing in';
 
-    function showToast(message, type = 'info') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      toast.className = `p-3 rounded-xl shadow-lg border text-xs font-semibold flex items-center gap-2 transition-all duration-300 pointer-events-auto ${
-        type === 'success' 
-          ? 'bg-emerald-900 text-white border-emerald-700' 
-          : type === 'warning'
-          ? 'bg-amber-900 text-white border-amber-700'
-          : 'bg-slate-900 text-white border-slate-700'
-      }`;
-      const icon = type === 'success' ? 'check_circle' : type === 'warning' ? 'warning' : 'info';
-      toast.innerHTML = `<span class="material-symbols-outlined text-[16px]">${icon}</span> <span>${message}</span>`;
-      container.appendChild(toast);
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(10px)';
-        setTimeout(() => toast.remove(), 300);
-      }, 2500);
-    }
+    /* ------------------------------------------------------------------
+       Connect your real login here. Example with Supabase:
 
-    function handleSignInSubmit(e) {
-      if (e) e.preventDefault();
-      const uid = document.getElementById('terminal-uid').value.trim();
-      const pwd = document.getElementById('terminal-pwd').value;
-      const btn = document.getElementById('sign-in-btn');
-      const btnText = document.getElementById('sign-in-btn-text');
-      const btnIcon = document.getElementById('sign-in-btn-icon');
-
-      if (!uid || !pwd) {
-        showToast('Please enter both Lab ID and Passcode.', 'warning');
-        return;
-      }
-
-      btn.disabled = true;
-      btnText.textContent = 'AUTHENTICATING SECURE SESSION...';
-      btnIcon.textContent = 'sync';
-      btnIcon.classList.add('animate-spin');
-
-      setTimeout(() => {
+       const { data, error } = await supabase.auth.signInWithPassword({ email: u, password: p });
+       if (error) { say('error', 'Email or password is incorrect. Check both and try again.'); hallmarkHost.react('shake'); }
+       else { hallmarkHost.react('cheer'); window.location.href = '/dashboard'; }
+       ------------------------------------------------------------------ */
+    setTimeout(function(){
+      sb.disabled=false; sb.classList.remove('loading'); sbt.textContent='Sign in';
+      say('ok','Authorized • Opening workspace...');
+      if(window.hallmarkHost) hallmarkHost.react('cheer');   /* host celebrates */
+      try {
         localStorage.setItem('ssr_authenticated', 'true');
-        localStorage.setItem('ssr_active_user', uid);
-        btnText.textContent = 'ACCESS GRANTED \u2022 OPENING WORKSPACE';
-        btnIcon.classList.remove('animate-spin');
-        btnIcon.textContent = 'check_circle';
-        btn.classList.remove('bg-primary-container');
-        btn.classList.add('bg-emerald-800');
+        localStorage.setItem('ssr_active_user', u);
+      } catch(e) {}
+      setTimeout(function(){
+        var dest = 'index.html#/dashboard';
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.href = dest;
+          } else {
+            window.location.href = dest;
+          }
+        } catch(err) {
+          window.location.href = dest;
+        }
+      }, 500);
+    },900);
+  });
 
-        showToast('Authorized: Sarah Jenkins (Lab Superintendent)', 'success');
+  [user,pass].forEach(function(i){
+    i.addEventListener('input',function(){ mark(i,i===user?'g-user':'g-pass',false); });
+  });
 
-        setTimeout(() => {
-          window.location.href = 'index.html#/dashboard';
-        }, 500);
-      }, 700);
+  /* Google / Email code buttons: wire to supabase.auth.signInWithOAuth / signInWithOtp */
+  document.querySelectorAll('[data-alt]').forEach(function(b){
+    b.addEventListener('click',function(){ say('ok','Demo only: '+b.getAttribute('data-alt')+' sign-in is not connected yet.'); });
+  });
+})();
+</script>
+
+<!-- ================= Animated host (rig + director) ================= -->
+<script>
+(function(){
+  'use strict';
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function $(id){ return document.getElementById(id); }
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function ease(t){ t=clamp(t,0,1); return 1-Math.pow(1-t,3); }
+  function f(n){ return Math.round(n*100)/100; }
+
+  /* ---------- keep the 430x400 stage fitted to its box ---------- */
+  var scene=document.querySelector('.scene'), stage=document.querySelector('.stage');
+  function fit(){ var w=scene.clientWidth,h=scene.clientHeight,s=Math.min(1.5,w/430,h/400); if(!(s>0)) s=0; stage.style.transform='scale('+s+')'; stage.style.left=Math.max(0,(w-430*s)/2)+'px'; }
+  fit();
+  if(window.ResizeObserver) new ResizeObserver(fit).observe(scene); else window.addEventListener('resize',fit);
+
+  /* ---------- build the rig ---------- */
+  var SK='#d29a6a', DK='#b57a4d';
+  function hands(p){
+    return ''+
+    '<g id="'+p+'_loupe" style="display:none">'+
+      '<line x1="104" y1="250" x2="104" y2="268" stroke="#8a6b2c" stroke-width="6" stroke-linecap="round"/>'+
+      '<circle cx="104" cy="281" r="13.5" fill="rgba(190,235,255,.3)" stroke="url(#gGold)" stroke-width="4"/>'+
+      '<path d="M96,277 a9,9 0 0 1 7,-6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" opacity=".85"/>'+
+    '</g>'+
+    '<g id="'+p+'_h_open"><g stroke="'+SK+'" stroke-linecap="round" fill="none">'+
+      '<line x1="97" y1="252" x2="95" y2="267" stroke-width="5.5"/><line x1="102" y1="255" x2="101" y2="271" stroke-width="5.5"/>'+
+      '<line x1="107" y1="255" x2="108" y2="271" stroke-width="5.5"/><line x1="112" y1="252" x2="114" y2="266" stroke-width="5.5"/>'+
+      '<line x1="94" y1="244" x2="87" y2="254" stroke-width="6"/></g>'+
+      '<circle cx="104" cy="246" r="11" fill="'+SK+'"/></g>'+
+    '<g id="'+p+'_h_point"><g stroke="'+SK+'" stroke-linecap="round" fill="none">'+
+      '<line x1="105" y1="252" x2="107" y2="278" stroke-width="6.2"/><line x1="95" y1="245" x2="91" y2="253" stroke-width="6"/></g>'+
+      '<circle cx="104" cy="247" r="11.5" fill="'+SK+'"/>'+
+      '<path d="M97,255 q7,5 15,0" stroke="'+DK+'" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>'+
+    '<g id="'+p+'_h_fist"><circle cx="104" cy="247" r="12" fill="'+SK+'"/>'+
+      '<path d="M95,255 q9,5 18,0" stroke="'+DK+'" stroke-width="1.8" fill="none" stroke-linecap="round"/>'+
+      '<path d="M98,252 v-4 M104,253 v-5 M110,252 v-4" stroke="'+DK+'" stroke-width="1.4" stroke-linecap="round"/>'+
+      '<ellipse cx="104" cy="241" rx="9" ry="4.5" fill="'+SK+'" stroke="'+DK+'" stroke-width="1"/></g>'+
+    '<g id="'+p+'_h_thumb"><line x1="97" y1="252" x2="95" y2="272" stroke="'+SK+'" stroke-width="8" stroke-linecap="round"/>'+
+      '<circle cx="104" cy="247" r="11.5" fill="'+SK+'"/>'+
+      '<path d="M95,255 q9,5 18,0" stroke="'+DK+'" stroke-width="1.8" fill="none" stroke-linecap="round"/></g>';
+  }
+  function armMarkup(p){
+    return ''+
+    '<g id="'+p+'_up">'+
+      '<circle cx="104" cy="130" r="15" fill="#24497f"/>'+
+      '<rect x="92" y="120" width="24" height="72" rx="12" fill="#24497f" stroke="#0f2240" stroke-opacity=".5" stroke-width="1.2"/>'+
+      '<rect x="93" y="124" width="7" height="62" rx="3.5" fill="#17335a" opacity=".5"/>'+
+      '<g id="'+p+'_fore">'+
+        '<rect x="93" y="176" width="22" height="64" rx="11" fill="#24497f" stroke="#0f2240" stroke-opacity=".5" stroke-width="1.2"/>'+
+        '<rect x="92" y="222" width="24" height="10" rx="3" fill="#f4f7ff"/>'+
+        '<rect x="101" y="224" width="6" height="6" rx="1.5" fill="url(#gGold)"/>'+
+        '<g id="'+p+'_hand">'+hands(p)+'</g>'+
+      '</g>'+
+    '</g>';
+  }
+  function legMarkup(x){
+    var c=x+14;
+    return ''+
+    '<rect x="'+x+'" y="246" width="28" height="142" rx="13" fill="#15233b"/>'+
+    '<rect x="'+(x+3)+'" y="250" width="8" height="136" rx="4" fill="#0c1729" opacity=".5"/>'+
+    '<path d="M'+(c-17)+',388 Q'+(c-17)+',378 '+(c-6)+',378 H'+(c+6)+' Q'+(c+17)+',378 '+(c+17)+',388 Q'+(c+18)+',397 '+(c+12)+',397 H'+(c-12)+' Q'+(c-18)+',397 '+(c-17)+',388 Z" fill="#2b1810"/>'+
+    '<path d="M'+(c-10)+',383 q10,-4 20,0" stroke="#7a4a30" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  }
+  $('armA').innerHTML=armMarkup('a');
+  $('armB').innerHTML=armMarkup('b');
+  $('legL').innerHTML=legMarkup(120);
+  $('legR').innerHTML=legMarkup(152);
+
+  var E={
+    root:$('root'), upper:$('upper'), head:$('head'), feat:$('feat'), brows:$('brows'), cheeks:$('cheeks'),
+    eyeL:$('eyeL'), eyeR:$('eyeR'), pupL:$('pupL'), pupR:$('pupR'), mouth:$('mouth'), legL:$('legL'), legR:$('legR'),
+    a:{up:$('a_up'),fore:$('a_fore'),hand:$('a_hand')}, b:{up:$('b_up'),fore:$('b_fore'),hand:$('b_hand')},
+    loupe:$('b_loupe'), bubble:$('bubble'), say:$('say'), board:$('board')
+  };
+  var curHand={a:'',b:''};
+  function setHand(p,t){
+    if(curHand[p]===t) return; curHand[p]=t;
+    ['open','point','fist','thumb'].forEach(function(k){ $(p+'_h_'+k).style.display=(k===t)?'':'none'; });
+  }
+
+  /* ---------- poses ----------
+     Arm angles use one convention for both arms: s = shoulder (0 hangs down, 90 straight out,
+     180 straight up), e = elbow bend (+ bends the forearm up/out), w = wrist. */
+  var POSE={
+    idle:   {aS:8,aE:6,aW:0,aH:'open', bS:8,bE:6,bW:0,bH:'open', lean:0,tilt:0,turn:0,gx:.3,gy:0,brow:0,grin:.7,nod:0,loupe:0,
+             waveA:0,tapB:0,bounceB:0,cheer:0,shake:0,lock:0},
+    namaste:{aS:1,aE:-117,aW:-64,aH:'open', bS:1,bE:-117,bW:-64,bH:'open', tilt:3,gx:0,gy:.5,brow:.3,grin:1,nod:.9},
+    wave:   {aS:125,aE:52,aH:'open', tilt:-3,gx:0,gy:0,brow:.4,grin:1,waveA:1},
+    s0:     {aS:28,aE:-66,aH:'fist', bS:74,bE:-6,bH:'point', tilt:2,turn:.7,gx:1,gy:.1,brow:.1,grin:.8,tapB:1},
+    s1:     {aS:14,aE:8,aH:'open', bS:102,bE:134,bH:'fist', loupe:1, tilt:3,turn:.55,gx:.9,gy:0,brow:.1,grin:.5},
+    s2:     {aS:28,aE:-66,aH:'fist', bS:80,bE:-14,bH:'point', tilt:-2,turn:.65,gx:1,gy:.05,brow:.3,grin:.6,tapB:1},
+    s3:     {aS:14,aE:8,aH:'open', bS:74,bE:-6,bH:'point', tilt:2,turn:.6,gx:1,gy:.1,brow:.2,grin:.8,tapB:1},
+    s4:     {aS:14,aE:8,aH:'open', bS:80,bE:-14,bH:'point', tilt:-2,turn:.6,gx:1,gy:.05,brow:.3,grin:.6,tapB:1},
+    s5:     {aS:28,aE:-66,aH:'fist', bS:62,bE:48,bH:'thumb', tilt:-2,turn:.6,gx:1,gy:0,brow:.5,grin:1,bounceB:1},
+    user:   {turn:-.9,gx:-1,gy:.1,tilt:-4,brow:.3,grin:.8,lock:1},
+    pass:   {aS:159,aE:111,aW:-90,aH:'open', bS:159,bE:111,bW:-90,bH:'open', gx:0,gy:0,turn:0,brow:.5,grin:.4,lock:1},
+    avert:  {turn:.95,gx:1,gy:0,tilt:3,brow:.4,grin:.5,lock:1},
+    cheer:  {aS:165,aE:20,aH:'open', bS:165,bE:20,bH:'open', gx:0,gy:-.2,brow:.8,grin:1,cheer:1,lock:1},
+    shake:  {gx:0,gy:0,brow:-.5,grin:.1,shake:1,lock:1}
+  };
+  (function(){ var base=POSE.idle; Object.keys(POSE).forEach(function(k){ if(k!=='idle') POSE[k]=Object.assign({},base,POSE[k]); }); })();
+
+  var NUM=['aS','aE','aW','bS','bE','bW','lean','tilt','turn','gx','gy','brow','grin','nod','loupe','waveA','tapB','bounceB','cheer','shake','talk'];
+  var KZ={aS:[75,.6],aE:[75,.6],aW:[75,.6],bS:[75,.6],bE:[75,.6],bW:[75,.6],gx:[260,1],gy:[260,1],
+          waveA:[50,1],tapB:[50,1],bounceB:[50,1],cheer:[50,1],shake:[60,1],loupe:[110,1],talk:[90,1]};
+  var V={}, VEL={};
+  NUM.forEach(function(n){ V[n]=(POSE.idle[n]||0); VEL[n]=0; });
+
+  var T=0, base='idle', overlay=null, react=null, reactUntil=0, talkUntil=0, introDone=false;
+  var walking=false, walkStart=0, walkX=reduce?0:-260, walkAmp=0, phase=0;
+  var mx=0,my=0,lastMove=-9, nextBlink=2, blinkStart=-9;
+
+  function curPoseName(){ return (react&&T<reactUntil)?react:(overlay||base); }
+
+  /* ---------- speech ---------- */
+  function say(html){
+    E.bubble.classList.add('on');
+    E.say.classList.add('swap');
+    setTimeout(function(){ E.say.innerHTML=html; E.say.classList.remove('swap'); },150);
+    talkUntil=T+clamp(html.length*0.035,1,2.8);
+    VEL.nod+=3;
+  }
+
+  /* ---------- per-frame update ---------- */
+  function update(dt,now){
+    T+=dt;
+
+    if(walking){
+      var p=(now-walkStart)/2300;
+      walkX=-260*(1-ease(p));
+      if(p>=1){ walking=false; walkX=0; arrive(); }
     }
-  </script>
+    var wt=walking&&now>=walkStart?1:0;
+    walkAmp+=(wt-walkAmp)*(1-Math.exp(-dt*8));
+    if(walkAmp>.01) phase+=dt*Math.PI*2*1.7;
+
+    var P=POSE[curPoseName()]||POSE.idle;
+    var gx=P.gx, gy=P.gy, turn=P.turn;
+    if(!P.lock && !reduce && (T-lastMove)<2.2){
+      var r=E.head.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+      gx=clamp((mx-cx)/240,-1,1); gy=clamp((my-cy)/240,-1,1)*.8; turn=gx*.6;
+    }
+
+    var tgt={aS:P.aS,aE:P.aE,aW:P.aW,bS:P.bS,bE:P.bE,bW:P.bW,lean:P.lean,tilt:P.tilt,turn:turn,gx:gx,gy:gy,
+             brow:P.brow,grin:P.grin,nod:P.nod,loupe:P.loupe,waveA:P.waveA,tapB:P.tapB,bounceB:P.bounceB,
+             cheer:P.cheer,shake:P.shake,talk:(T<talkUntil&&!reduce)?1:0};
+    NUM.forEach(function(n){
+      if(reduce){ V[n]=tgt[n]; return; }
+      var k=(KZ[n]||[100,.75]), x=V[n], v=VEL[n], steps=Math.ceil(dt/.012), h=dt/steps;
+      for(var i=0;i<steps;i++){ v+=(-k[0]*(x-tgt[n])-2*k[1]*Math.sqrt(k[0])*v)*h; x+=v*h; }
+      V[n]=x; VEL[n]=v;
+    });
+    setHand('a',P.aH); setHand('b',P.bH);
+
+    /* procedural layers on top of the springs */
+    var aS=V.aS,aE=V.aE,aW=V.aW,bS=V.bS,bE=V.bE,bW=V.bW,lean=V.lean,tilt=V.tilt,tr=V.turn,bob=0;
+    var swing=Math.sin(phase)*walkAmp;
+    if(!reduce){
+      var wv=Math.sin(T*16.5);
+      aE+=17*wv*V.waveA; aW+=11*Math.sin(T*16.5+1)*V.waveA;
+      bS+=3.5*Math.sin(T*8)*V.tapB + 4*Math.sin(T*9)*V.bounceB;
+      bE+=2*Math.sin(T*9+1)*V.bounceB;
+      aE+=10*Math.sin(T*14)*V.cheer; bE+=10*Math.sin(T*14+.5)*V.cheer;
+      aS+=8*swing; bS-=8*swing;
+      aS+=1.2*Math.sin(T*1.3); bS+=1.2*Math.sin(T*1.1+1);
+      lean+=.8*Math.sin(T*.9); tilt+=.8*Math.sin(T*.7+1);
+      tr+=.7*Math.sin(T*17)*V.shake;
+      bob=-Math.abs(Math.sin(phase))*4*walkAmp + Math.sin(T*2)*.7 - Math.abs(Math.sin(T*7))*8*V.cheer;
+    }
+
+    /* eyes / blink / mouth */
+    var bl=1;
+    if(!reduce){
+      if(T>nextBlink){ blinkStart=T; nextBlink=T+2.2+Math.random()*3.4; }
+      var bp=(T-blinkStart)/.16; if(bp>=0&&bp<=1) bl=1-.92*Math.sin(Math.PI*bp);
+    }
+    var px=clamp(V.gx,-1.2,1.2)*3, py=clamp(V.gy,-1.2,1.2)*2.2;
+    var m=reduce?0:V.talk*(.2+.6*Math.abs(Math.sin(T*12.5)*Math.cos(T*7.1)));
+    var g=clamp(V.grin,0,1.2), cy=86-2*g, hw=12+6*g, lc=cy+6+4*g+12*m, uc=lc-12*m;
+
+    /* ---------- apply ---------- */
+    E.root.setAttribute('transform','translate('+f(walkX)+' 0)');
+    E.legL.setAttribute('transform','translate(0 '+f(-7*Math.max(0,-Math.cos(phase))*walkAmp)+') rotate('+f(15*swing)+' 134 250)');
+    E.legR.setAttribute('transform','translate(0 '+f(-7*Math.max(0,Math.cos(phase))*walkAmp)+') rotate('+f(-15*swing)+' 166 250)');
+    E.upper.setAttribute('transform','translate(0 '+f(bob)+') rotate('+f(lean)+' 150 262)');
+    E.head.setAttribute('transform','translate(0 '+f(V.nod*2)+') rotate('+f(tilt)+' 150 104)');
+    E.feat.setAttribute('transform','translate('+f(tr*7)+' '+f(V.nod*3.5)+')');
+    E.brows.setAttribute('transform','translate(0 '+f(-V.brow*3)+')');
+    E.cheeks.setAttribute('opacity',f(.15+.2*clamp(V.grin,0,1)));
+    E.eyeL.setAttribute('transform','translate(134 60) scale(1 '+f(bl)+')');
+    E.eyeR.setAttribute('transform','translate(166 60) scale(1 '+f(bl)+')');
+    E.pupL.setAttribute('transform','translate('+f(px)+' '+f(py)+')');
+    E.pupR.setAttribute('transform','translate('+f(px)+' '+f(py)+')');
+    E.mouth.setAttribute('d','M'+f(150-hw)+','+f(cy)+' Q150,'+f(lc)+' '+f(150+hw)+','+f(cy)+' Q150,'+f(uc)+' '+f(150-hw)+','+f(cy)+' Z');
+    E.mouth.setAttribute('fill',m>.05?'#5b211c':'none');
+
+    E.a.up.setAttribute('transform','rotate('+f(aS)+' 104 128)');
+    E.a.fore.setAttribute('transform','rotate('+f(aE)+' 104 184)');
+    E.a.hand.setAttribute('transform','rotate('+f(aW)+' 104 234)');
+    E.b.up.setAttribute('transform','rotate('+f(bS)+' 104 128)');
+    E.b.fore.setAttribute('transform','rotate('+f(bE)+' 104 184)');
+    E.b.hand.setAttribute('transform','rotate('+f(bW)+' 104 234)');
+    E.loupe.style.display=V.loupe>.03?'':'none';
+    E.loupe.style.opacity=clamp(V.loupe,0,1);
+  }
+
+  var last=0;
+  function frame(now){
+    if(!scene.clientWidth){ last=now; requestAnimationFrame(frame); return; }   /* host hidden (phones): skip work */
+    var dt=last?Math.min(.05,(now-last)/1000):.016; last=now;
+    update(dt,now);
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- slides + director ---------- */
+  var slides=[].slice.call(document.querySelectorAll('.slide')),
+      dots=[].slice.call(document.querySelectorAll('.dots button')),
+      bt=$('bt'), bn=$('bn'),
+      titles=['Jewellery Submission','XRF Testing','Fire Assay','HUID Generation','Laser Marking','Packing'],
+      msgs=['<b>Step 1:</b> the jeweller submits the jewellery.',
+            '<b>Step 2:</b> XRF testing reads the purity, no damage.',
+            '<b>Step 3:</b> fire assay confirms it in the furnace.',
+            '<b>Step 4:</b> a unique <b>HUID</b> is generated.',
+            '<b>Step 5:</b> laser marking engraves the hallmark.',
+            '<b>Step 6:</b> packed, sealed and ready to go!'],
+      cur=0, loopT, introTimers=[];
+
+  function slideUI(n){
+    cur=n;
+    slides.forEach(function(el,k){ el.classList.toggle('on',k===n); });
+    dots.forEach(function(el,k){ el.classList.toggle('on',k===n); });
+    bt.textContent=titles[n]; bn.textContent='Step '+(n+1)+' / '+titles.length;
+  }
+  function show(n){
+    slideUI(n); base='s'+n;
+    if(!overlay) say(msgs[n]);
+  }
+  function loop(){ clearInterval(loopT); if(!reduce) loopT=setInterval(function(){ show((cur+1)%slides.length); },6200); }
+  function later(ms,fn){ introTimers.push(setTimeout(fn,ms)); }
+
+  function arrive(){                       // host has walked in: greet, then start the tour
+    E.board.classList.add('on'); slideUI(0);
+    base='namaste'; say('<b>Namaste!</b> Welcome back.');
+    later(1400,function(){ base='wave'; say('Let me show you the 6 hallmarking steps.'); });
+    later(3200,finishIntro);
+  }
+  function finishIntro(){
+    introTimers.forEach(clearTimeout); introTimers=[];
+    if(introDone) return;
+    introDone=true; walking=false; walkX=0;
+    E.board.classList.add('on');
+    show(cur); loop();
+  }
+  function skipIntro(){ if(!introDone){ walking=false; walkX=0; E.board.classList.add('on'); finishIntro(); } }
+
+  dots.forEach(function(d,n){ d.addEventListener('click',function(){ skipIntro(); show(n); loop(); }); });
+
+  /* ---------- form reactions ---------- */
+  var gUser=$('g-user'), gPass=$('g-pass'), passEl=$('pass'), passEngaged=false;
+  function back(){ if(introDone&&!overlay) say(msgs[cur]); }
+  gUser.addEventListener('focusin',function(){ overlay='user'; say('Type your <b>staff ID</b> or email.'); });
+  gUser.addEventListener('focusout',function(e){ if(!gUser.contains(e.relatedTarget)&&overlay==='user'){ overlay=null; back(); } });
+  function refreshPass(){
+    if(!passEngaged) return;
+    var hidden=passEl.type==='password';
+    overlay=hidden?'pass':'avert';
+    say(hidden?'Eyes covered. <b>No peeking!</b>':'Not looking, <b>promise!</b>');
+  }
+  gPass.addEventListener('focusin',function(){ passEngaged=true; refreshPass(); });
+  gPass.addEventListener('focusout',function(e){
+    if(!gPass.contains(e.relatedTarget)){ passEngaged=false; if(overlay==='pass'||overlay==='avert'){ overlay=null; back(); } }
+  });
+  $('tg').addEventListener('click',refreshPass);
+
+
+  /* ---------- cursor following ---------- */
+  document.addEventListener('mousemove',function(e){ mx=e.clientX; my=e.clientY; lastMove=T; },{passive:true});
+
+  /* ---------- public API ----------
+     hallmarkHost.react('cheer')  -> celebrate (login success)
+     hallmarkHost.react('shake')  -> shake head (login failed)
+     hallmarkHost.say('<b>Hi</b>') -> make him say something */
+  window.hallmarkHost={
+    react:function(name){
+      react=name; reactUntil=T+(name==='cheer'?2.4:1.1);
+      say(name==='cheer'?'<b>Welcome in!</b>':'Hmm, please check those details.');
+      setTimeout(function(){ if(!overlay&&introDone) say(msgs[cur]); },(name==='cheer'?2400:1600));
+    },
+    say:say,
+    preview:function(name){ introDone=true; walking=false; walkX=0; E.board.classList.add('on'); overlay=name; var m=/^s(\d)$/.exec(name); if(m){ slideUI(+m[1]); } for(var i=0;i<30;i++) update(.03,performance.now()); }
+  };
+
+  /* ---------- go ---------- */
+  if(reduce){
+    introDone=true; E.board.classList.add('on'); slideUI(0); base='s0'; E.say.innerHTML='<b>Namaste!</b> Welcome back. '+msgs[0]; E.bubble.classList.add('on');
+    requestAnimationFrame(frame);
+  } else {
+    requestAnimationFrame(function(now){ if(!introDone){ walking=true; walkStart=now+300; } last=now; requestAnimationFrame(frame); });
+  }
+})();
+</script>
+<script>
+/* Fit-to-screen safety net for phones/tablets: uses the real visible height (address bar aware)
+   and gently scales the form down if it would still overflow, so nothing is ever cut off. */
+(function(){
+  var root=document.documentElement, fs=document.querySelector('.form-side'), fw=document.querySelector('.form-wrap');
+  function fit(){
+    var vv=window.visualViewport, h=Math.round(vv?vv.height:window.innerHeight);
+    root.style.setProperty('--app-h',h+'px');
+    fw.style.zoom='';
+    if(window.innerWidth>999) return;
+    for(var i=0;i<3;i++){
+      var over=fs.scrollHeight-fs.clientHeight;
+      if(over<=1) break;
+      var cur=parseFloat(fw.style.zoom)||1, hh=fw.offsetHeight*cur;
+      var z=Math.max(.4,cur*(hh-over-2)/hh);
+      fw.style.zoom=z;
+    }
+  }
+  window.addEventListener('resize',fit);
+  window.addEventListener('orientationchange',function(){setTimeout(fit,250)});
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',fit);
+  window.addEventListener('load',fit);
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit);
+  fit();
+})();
+</script>
+<script>
+/* Live figures (demo data). To wire real numbers: hallmarkLive.set({done:1300,cent:90,rate:6760}) */
+(function(){
+  var st={done:1248,cent:86,rate:6742}, base=6742, hist=[], prev=st.rate, spk=document.getElementById('spk');
+  var nodes=[].slice.call(document.querySelectorAll('[data-k]'));
+  var fmt=function(n){return Number(n).toLocaleString('en-IN');};
+  for(var i=0;i<24;i++){ hist.push(base+Math.round(Math.sin(i/3)*6+Math.random()*6)); }
+  function put(k,t,cls){
+    nodes.forEach(function(n){ if(n.dataset.k!==k) return;
+      if(n.textContent!==t){ n.textContent=t; if(k!=='chg'){ n.classList.add('flash'); setTimeout(function(){n.classList.remove('flash')},500); } }
+      if(cls){ n.classList.remove('up','dn'); n.classList.add(cls); } });
+  }
+  function draw(){
+    var lo=Math.min.apply(0,hist), hi=Math.max.apply(0,hist), r=Math.max(1,hi-lo);
+    if(spk) spk.setAttribute('points',hist.map(function(v,i){return (i*100/(hist.length-1)).toFixed(1)+','+(20-(v-lo)/r*18).toFixed(1);}).join(' '));
+  }
+  function render(){
+    var pct=(st.rate-base)/base*100;
+    put('done',fmt(st.done)); put('cent',String(st.cent)); put('rate','\u20B9'+fmt(st.rate));
+    put('chg',(pct>=0?'\u25B2 ':'\u25BC ')+Math.abs(pct).toFixed(2)+'%',pct>=0?'up':'dn');
+    draw();
+  }
+  function tick(){
+    if(Math.random()<.7) st.done+=1+Math.floor(Math.random()*3);
+    if(Math.random()<.2) st.cent=Math.max(80,Math.min(92,st.cent+(Math.random()<.5?-1:1)));
+    st.rate=Math.max(base*.985,Math.min(base*1.015,st.rate+Math.round((Math.random()-.48)*8)));
+    st.rate=Math.round(st.rate); hist.push(st.rate); hist.shift(); render();
+  }
+  render(); setInterval(tick,2200);
+  window.hallmarkLive={set:function(o){ for(var k in o) st[k]=o[k]; if(o.rate) base=o.rate; render(); }};
+})();
+</script>
 </body>
 </html>

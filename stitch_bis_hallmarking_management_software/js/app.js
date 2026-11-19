@@ -7389,7 +7389,7 @@
   function signOut() {
     localStorage.removeItem('ssr_authenticated');
     showToast('Logged out of laboratory session.', 'info');
-    navigateTo('sign-in');
+    window.location.href = 'signin.html';
   }
 
   // --- WELCOMING SPLASH SCREEN (Removed per user request) ---
