@@ -2548,7 +2548,7 @@
       const qrSvg = incQr ? generateQrCodeSvg(huidStr, qrPixelDim) : '';
 
       return `
-        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; page-break-after: always; box-sizing: border-box; padding: 0.8mm 1mm; font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #ffffff; border: 0.65px solid #000000; color: #000000; overflow: hidden; line-height: 1.15;">
+        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; page-break-after: always; box-sizing: border-box; padding: 0.8mm 1mm; font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #ffffff; border: 0.8px solid #000000; outline: 0.35px solid #000000; outline-offset: -0.7mm; color: #000000; overflow: hidden; line-height: 1.15;">
           
           <!-- LEFT SIDE: Full Structured Assay Data (No Shortcuts) -->
           <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding-right: 1.2mm; overflow: hidden;">
@@ -2603,8 +2603,8 @@
           <!-- RIGHT SIDE: Precision QR Scan Target Box -->
           ${incQr ? `
             <div style="width: ${qrBoxDimMm}mm; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; flex-shrink: 0; background: #ffffff; padding: 0.3mm; border-left: 0.5px solid #000000; box-sizing: border-box;">
-              <span style="font-family: 'Montserrat', sans-serif; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.6px; text-transform: uppercase; line-height: 1; text-align: center;">
-                SCAN QR
+              <span style="font-family: 'Montserrat', sans-serif; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.8px; text-transform: uppercase; line-height: 1; text-align: center;">
+                [ SCAN QR ]
               </span>
               <div style="display: flex; align-items: center; justify-content: center; width: 100%; flex: 1; overflow: hidden; padding: 0.2mm 0;">
                 ${qrSvg}
