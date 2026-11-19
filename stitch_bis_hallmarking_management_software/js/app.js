@@ -2158,6 +2158,37 @@
 
     const miniPreview = document.getElementById('tag-mini-preview');
     if (miniPreview) {
+      // Dynamic live dimension scaling inside preview box (container is h-36, available box ~ 240px x 116px)
+      const maxBoxW = 240;
+      const maxBoxH = 116;
+      const minBoxW = 80;
+      const minBoxH = 40;
+
+      // Effective aspect ratio in mm
+      const effW = unit === 'in' ? width * 25.4 : width;
+      const effH = unit === 'in' ? height * 25.4 : height;
+      const ratio = Math.max(0.05, effW) / Math.max(0.05, effH);
+
+      let targetW, targetH;
+      if (ratio >= (maxBoxW / maxBoxH)) {
+        targetW = maxBoxW;
+        targetH = Math.max(minBoxH, Math.min(maxBoxH, Math.round(maxBoxW / ratio)));
+      } else {
+        targetH = maxBoxH;
+        targetW = Math.max(minBoxW, Math.min(maxBoxW, Math.round(maxBoxH * ratio)));
+      }
+
+      miniPreview.style.width = targetW + 'px';
+      miniPreview.style.height = targetH + 'px';
+      miniPreview.style.maxWidth = '100%';
+      miniPreview.style.transition = 'width 0.22s cubic-bezier(0.4, 0, 0.2, 1), height 0.22s cubic-bezier(0.4, 0, 0.2, 1)';
+
+      // Checkbox visibility toggles
+      const optBarcode = document.getElementById('tag-opt-barcode') ? document.getElementById('tag-opt-barcode').checked : true;
+      const optHuid = document.getElementById('tag-opt-huid') ? document.getElementById('tag-opt-huid').checked : true;
+      const optWeights = document.getElementById('tag-opt-weights') ? document.getElementById('tag-opt-weights').checked : true;
+      const optPurity = document.getElementById('tag-opt-purity') ? document.getElementById('tag-opt-purity').checked : true;
+
       const sampleRow = (activeTagRows && activeTagRows[0]) ? activeTagRows[0] : null;
       const elHuid = document.getElementById('mini-tag-huid');
       const elPurity = document.getElementById('mini-tag-purity');
@@ -2165,18 +2196,27 @@
       const elWeights = document.getElementById('mini-tag-weights');
       const elCust = document.getElementById('mini-tag-cust');
 
-      if (sampleRow) {
-        if (elHuid) elHuid.textContent = sampleRow.huid || 'HUID-916-MA001';
-        if (elPurity) elPurity.textContent = sampleRow.purity || '22K 916';
-        if (elBarcode) elBarcode.innerHTML = generateBarcodeSvg(sampleRow.barcode || '9104-001', 120, 18);
-        if (elWeights) elWeights.textContent = 'G: ' + sampleRow.grossWt + 'g | N: ' + sampleRow.netWt + 'g';
-        if (elCust) elCust.textContent = (activeTagBatch ? activeTagBatch.customer : 'SSR').slice(0, 8);
-      } else {
-        if (elHuid) elHuid.textContent = 'HUID-PREVIEW';
-        if (elPurity) elPurity.textContent = (activeTagBatch ? activeTagBatch.purity : '22K 916');
-        if (elBarcode) elBarcode.innerHTML = generateBarcodeSvg('PREVIEW', 120, 18);
-        if (elWeights) elWeights.textContent = 'G: 0.000g | N: 0.000g';
-        if (elCust) elCust.textContent = (activeTagBatch ? activeTagBatch.customer : 'SSR').slice(0, 8);
+      if (elHuid) {
+        elHuid.style.display = optHuid ? '' : 'none';
+        elHuid.textContent = sampleRow ? (sampleRow.huid || 'HUID-916-MA001') : 'HUID-PREVIEW';
+      }
+      if (elPurity) {
+        elPurity.style.display = optPurity ? '' : 'none';
+        elPurity.textContent = sampleRow ? (sampleRow.purity || '22K 916') : (activeTagBatch ? activeTagBatch.purity : '22K 916');
+      }
+      if (elBarcode) {
+        elBarcode.style.display = optBarcode ? 'flex' : 'none';
+        const barcodeVal = sampleRow ? (sampleRow.barcode || '9104-001') : 'PREVIEW';
+        const bcW = Math.max(48, Math.min(targetW - 16, 170));
+        const bcH = Math.max(10, Math.min(22, Math.round(targetH * 0.28)));
+        elBarcode.innerHTML = generateBarcodeSvg(barcodeVal, bcW, bcH);
+      }
+      if (elWeights) {
+        elWeights.style.display = optWeights ? '' : 'none';
+        elWeights.textContent = sampleRow ? ('G: ' + sampleRow.grossWt + 'g | N: ' + sampleRow.netWt + 'g') : 'G: 0.000g | N: 0.000g';
+      }
+      if (elCust) {
+        elCust.textContent = (activeTagBatch ? activeTagBatch.customer : 'SSR').slice(0, 8);
       }
     }
   }
@@ -2210,7 +2250,7 @@
     updateExcelGridStats();
     updateTagMiniPreview();
 
-    showToast('TAG DATA FOR ' + activeTagBatch.jobDocket + ' SAVED & VALIDATED (' + rows.length + ' ROWS). PRINT UNLOCKED.', 'success');
+    showToast('TAG DATA FOR ' + activeTagBatch.jobDocket + ' SUBMITTED & VALIDATED (' + rows.length + ' ROWS). PRINT UNLOCKED.', 'success');
   }
 
   function syncTagPrintButtonState() {
@@ -2235,16 +2275,16 @@
 
     if (note) {
       if (isDone) {
-        note.innerHTML = `<span class="text-emerald-700 font-bold flex items-center gap-1"><span class="material-symbols-outlined text-[15px]">check_circle</span>READY TO PRINT (${activeTagRows.length} TAGS SAVED)</span>`;
+        note.innerHTML = `<span class="text-emerald-700 font-bold flex items-center gap-1"><span class="material-symbols-outlined text-[15px]">check_circle</span>READY TO PRINT (${activeTagRows.length} TAGS SUBMITTED)</span>`;
       } else {
-        note.innerHTML = '<span class="text-slate-500 font-semibold">SAVE DATA TO ENABLE PRINT</span>';
+        note.innerHTML = '<span class="text-slate-500 font-semibold">SUBMIT DATA TO ENABLE PRINT</span>';
       }
     }
   }
 
   function printCustomTags() {
     if (!activeTagBatch || activeTagBatch.tagStatus !== 'DONE' || !activeTagRows || !activeTagRows.length) {
-      showToast('PRINT LOCKED: PLEASE CLICK "SAVE TAG DATA" FIRST TO VALIDATE AND UNLOCK PRINTING.', 'warning');
+      showToast('PRINT LOCKED: PLEASE CLICK "SUBMIT" FIRST TO VALIDATE AND UNLOCK PRINTING.', 'warning');
       return;
     }
 
