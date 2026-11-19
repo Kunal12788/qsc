@@ -1890,8 +1890,10 @@
       renderTagStatusQueue();
     }
 
+    activeTagRows = convertExcelSheetToRows(excelSheetData);
     renderExcelGrid();
     focusExcelCell(startR, startC);
+    updateTagMiniPreview();
     showToast('PASTED ' + lines.length + ' ROWS INTO EXCEL SPREADSHEET.', 'success');
   }
 
@@ -1978,6 +1980,13 @@
     const rows = [];
     if (!sheet || !sheet.length) return rows;
 
+    const defaultCustomer = activeTagBatch ? (activeTagBatch.customer || 'SSR Bullion') : 'SSR Bullion';
+    const defaultMetal = activeTagBatch ? (activeTagBatch.metal || 'GOLD') : 'GOLD';
+    const defaultPurity = activeTagBatch ? (activeTagBatch.purity || '22K 916') : '22K 916';
+    const defaultBox = activeTagBatch ? (activeTagBatch.tray || activeTagBatch.boxNo || 'BOX-TR-01') : 'BOX-TR-01';
+    const cleanCust = defaultCustomer.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
+    const cleanPurityCode = (activeTagBatch ? activeTagBatch.purity : '916').replace(/[^0-9]/g, '').slice(0, 3) || '916';
+
     for (let i = 0; i < sheet.length; i++) {
       const r = sheet[i];
       if (!r || !r.length) continue;
@@ -1985,94 +1994,161 @@
       const hasData = r.some(cell => cell !== undefined && cell !== null && String(cell).trim() !== '');
       if (!hasData) continue;
 
-      const isHeader = r.some(c => /^(sl\.?\s*no|huid|item|desc|pieces?|pcs|gross|net|purity|karat|barcode)$/i.test(String(c).trim()));
+      const isHeader = r.some(c => /^(sl\.?\s*no|huid|item|desc|pieces?|pcs|gross|net|purity|karat|barcode|box)$/i.test(String(c).trim()));
       if (i === 0 && isHeader && !r.some(c => /^HUID-|^JOB-|^GP-|^REQ-/i.test(String(c).trim()))) {
         continue;
       }
 
       const rowIdx = rows.length + 1;
       const padNum = String(rowIdx).padStart(3, '0');
-      const cleanCust = (activeTagBatch ? activeTagBatch.customer : 'SSR').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
-      const cleanPurityCode = cleanPurity(activeTagBatch ? activeTagBatch.purity : '916');
-      const docketShort = (activeTagBatch ? (activeTagBatch.receiptNo || activeTagBatch.jobDocket) : 'B01').replace(/[^A-Za-z0-9]/g, '').slice(-4);
-      const defaultPurity = activeTagBatch ? activeTagBatch.purity : '22K 916';
-
       const cells = r.map(c => (c !== undefined && c !== null) ? String(c).trim() : '');
 
-      let huid = '';
-      let itemDesc = 'Jewellery Article';
+      let slNo = rowIdx;
+      let customer = defaultCustomer;
+      let articleType = defaultMetal + ' ' + defaultPurity;
+      let ornamentsType = 'Jewellery Article';
       let pcs = 1;
+      let weight = '0.000';
       let grossWt = '0.000';
       let netWt = '0.000';
+      let huid = '';
+      let boxNo = defaultBox;
       let purity = defaultPurity;
-      let barcode = docketShort + '-' + padNum;
+      let barcode = '';
 
-      if (cells.length >= 8) {
-        if (/^HUID-/i.test(cells[0])) {
-          huid = cells[0];
-          itemDesc = cells[1] || 'Jewellery Article';
-          pcs = parseInt(cells[2], 10) || 1;
-          grossWt = parseFloat(cells[3] || 0).toFixed(3);
-          netWt = parseFloat(cells[4] || 0).toFixed(3);
-          purity = cells[5] || defaultPurity;
-          barcode = cells[6] || (docketShort + '-' + padNum);
-        } else {
-          huid = cells[1] || ('HUID-' + cleanPurityCode + '-' + cleanCust + padNum);
-          itemDesc = cells[2] || 'Jewellery Article';
-          pcs = parseInt(cells[3], 10) || 1;
-          grossWt = parseFloat(cells[4] || 0).toFixed(3);
-          netWt = parseFloat(cells[5] || 0).toFixed(3);
-          purity = cells[6] || defaultPurity;
-          barcode = cells[7] || (docketShort + '-' + padNum);
+      const matched = new Set();
+
+      // 1. Look for BIS HUID:
+      // Either starts with HUID- or is 6 alphanumeric characters (like Y6P2F5, 7K2P9X) and not purely numeric
+      for (let cIdx = 0; cIdx < cells.length; cIdx++) {
+        const c = cells[cIdx];
+        if (/^HUID-[\w-]+/i.test(c)) {
+          huid = c.toUpperCase();
+          matched.add(cIdx);
+          break;
         }
-      } else if (cells.length === 7) {
-        huid = cells[0];
-        itemDesc = cells[1] || 'Jewellery Article';
-        pcs = parseInt(cells[2], 10) || 1;
-        grossWt = parseFloat(cells[3] || 0).toFixed(3);
-        netWt = parseFloat(cells[4] || 0).toFixed(3);
-        purity = cells[5] || defaultPurity;
-        barcode = cells[6] || (docketShort + '-' + padNum);
-      } else if (cells.length === 6) {
-        huid = cells[0];
-        itemDesc = cells[1] || 'Jewellery Article';
-        grossWt = parseFloat(cells[2] || 0).toFixed(3);
-        netWt = parseFloat(cells[3] || 0).toFixed(3);
-        purity = cells[4] || defaultPurity;
-        barcode = cells[5] || (docketShort + '-' + padNum);
-      } else if (cells.length === 5) {
-        huid = cells[0];
-        itemDesc = cells[1] || 'Jewellery Article';
-        pcs = parseInt(cells[2], 10) || 1;
-        grossWt = parseFloat(cells[3] || 0).toFixed(3);
-        netWt = parseFloat(cells[4] || 0).toFixed(3);
-      } else if (cells.length >= 2) {
-        huid = cells[0];
-        itemDesc = cells[1] || 'Jewellery Article';
-        if (cells[2]) grossWt = parseFloat(cells[2] || 0).toFixed(3);
-        if (cells[3]) netWt = parseFloat(cells[3] || 0).toFixed(3);
-      } else if (cells.length === 1 && cells[0]) {
-        huid = cells[0];
+      }
+      if (!huid) {
+        for (let cIdx = 0; cIdx < cells.length; cIdx++) {
+          const c = cells[cIdx];
+          if (/^[A-Za-z0-9]{6}$/.test(c) && !/^\d{6}$/.test(c)) {
+            huid = c.toUpperCase();
+            matched.add(cIdx);
+            break;
+          }
+        }
       }
 
-      if (!huid) huid = 'HUID-' + cleanPurityCode + '-' + cleanCust + padNum;
+      // 2. Look for Decimal Weights:
+      const weightIndices = [];
+      for (let cIdx = 0; cIdx < cells.length; cIdx++) {
+        if (matched.has(cIdx)) continue;
+        const c = cells[cIdx];
+        if (/^\d+\.\d{1,4}$/.test(c)) {
+          weightIndices.push(cIdx);
+          matched.add(cIdx);
+        }
+      }
+      if (weightIndices.length >= 2) {
+        grossWt = parseFloat(cells[weightIndices[0]]).toFixed(3);
+        netWt = parseFloat(cells[weightIndices[1]]).toFixed(3);
+        weight = grossWt;
+      } else if (weightIndices.length === 1) {
+        weight = parseFloat(cells[weightIndices[0]]).toFixed(3);
+        grossWt = weight;
+        netWt = weight;
+      }
+
+      // 3. Look for Purity code:
+      for (let cIdx = 0; cIdx < cells.length; cIdx++) {
+        if (matched.has(cIdx)) continue;
+        const c = cells[cIdx];
+        if (/^(24K|22K|18K|14K|999|916|750|585|GOLD|SILVER)/i.test(c)) {
+          purity = c.toUpperCase();
+          matched.add(cIdx);
+          break;
+        }
+      }
+
+      // 4. Look for Ornaments / Item Description (text string):
+      for (let cIdx = 0; cIdx < cells.length; cIdx++) {
+        if (matched.has(cIdx)) continue;
+        const c = cells[cIdx];
+        if (/^[A-Za-z\s&-]{2,}$/.test(c) && !/^(BOX|TRAY)/i.test(c)) {
+          ornamentsType = c.toUpperCase();
+          matched.add(cIdx);
+          break;
+        }
+      }
+
+      // 5. Look for Box / Tray:
+      for (let cIdx = 0; cIdx < cells.length; cIdx++) {
+        if (matched.has(cIdx)) continue;
+        const c = cells[cIdx];
+        if (/^(BOX|TRAY|TR)[-_\s]?[A-Za-z0-9-]+$/i.test(c)) {
+          boxNo = c.toUpperCase();
+          matched.add(cIdx);
+          break;
+        }
+      }
+
+      // 6. Look for Sl No (first cell if integer):
+      if (!matched.has(0) && /^\d+$/.test(cells[0])) {
+        slNo = parseInt(cells[0], 10);
+        matched.add(0);
+      }
+
+      // 7. Look for Pcs:
+      for (let cIdx = 0; cIdx < cells.length; cIdx++) {
+        if (matched.has(cIdx)) continue;
+        const c = cells[cIdx];
+        if (/^\d+$/.test(c)) {
+          pcs = parseInt(c, 10);
+          matched.add(cIdx);
+          break;
+        }
+      }
+
+      // 8. Barcode:
+      for (let cIdx = 0; cIdx < cells.length; cIdx++) {
+        if (matched.has(cIdx)) continue;
+        const c = cells[cIdx];
+        if (c && !barcode) {
+          barcode = c;
+          matched.add(cIdx);
+          break;
+        }
+      }
+
+      if (!huid) {
+        huid = 'HUID-' + cleanPurityCode + '-' + cleanCust + padNum;
+      }
+      if (!barcode) {
+        barcode = huid;
+      }
 
       rows.push({
-        slNo: rowIdx,
-        huid: huid,
-        itemDesc: itemDesc,
+        slNo: slNo,
+        customer: customer,
+        articleType: defaultMetal + (purity ? ' ' + purity : ''),
+        ornamentsType: ornamentsType,
+        itemDesc: ornamentsType,
+        weight: weight,
         pcs: pcs,
         grossWt: grossWt,
         netWt: netWt,
         purity: purity,
+        huid: huid,
+        boxNo: boxNo,
         barcode: barcode,
         rawCells: cells
       });
     }
+
     return rows;
   }
 
-  function generateDefaultTagRows(batch) {
+    function generateDefaultTagRows(batch) {
     return [];
   }
 
@@ -2184,44 +2260,56 @@
       miniPreview.style.transition = 'width 0.22s cubic-bezier(0.4, 0, 0.2, 1), height 0.22s cubic-bezier(0.4, 0, 0.2, 1)';
 
       // Checkbox visibility toggles
-      const optBarcode = document.getElementById('tag-opt-barcode') ? document.getElementById('tag-opt-barcode').checked : true;
+      const optCust = document.getElementById('tag-opt-cust') ? document.getElementById('tag-opt-cust').checked : true;
+      const optOrnament = document.getElementById('tag-opt-ornament') ? document.getElementById('tag-opt-ornament').checked : true;
       const optHuid = document.getElementById('tag-opt-huid') ? document.getElementById('tag-opt-huid').checked : true;
-      const optWeights = document.getElementById('tag-opt-weights') ? document.getElementById('tag-opt-weights').checked : true;
-      const optPurity = document.getElementById('tag-opt-purity') ? document.getElementById('tag-opt-purity').checked : true;
+      const optBarcode = document.getElementById('tag-opt-barcode') ? document.getElementById('tag-opt-barcode').checked : true;
 
+      const elRowCust = document.getElementById('mini-row-cust');
+      const elRowOrnament = document.getElementById('mini-row-ornament');
+      const elRowBarcode = document.getElementById('mini-row-barcode');
+      const elRowHuid = document.getElementById('mini-row-huid');
+
+      if (elRowCust) elRowCust.style.display = optCust ? 'flex' : 'none';
+      if (elRowOrnament) elRowOrnament.style.display = optOrnament ? 'flex' : 'none';
+      if (elRowBarcode) elRowBarcode.style.display = optBarcode ? 'flex' : 'none';
+      if (elRowHuid) elRowHuid.style.display = optHuid ? 'flex' : 'none';
+
+      // Pick top sample row from activeTagRows, or fallback to activeTagBatch defaults
       const sampleRow = (activeTagRows && activeTagRows[0]) ? activeTagRows[0] : null;
-      const elHuid = document.getElementById('mini-tag-huid');
-      const elPurity = document.getElementById('mini-tag-purity');
-      const elBarcode = document.getElementById('mini-tag-barcode');
-      const elWeights = document.getElementById('mini-tag-weights');
-      const elCust = document.getElementById('mini-tag-cust');
 
-      if (elHuid) {
-        elHuid.style.display = optHuid ? '' : 'none';
-        elHuid.textContent = sampleRow ? (sampleRow.huid || 'HUID-916-MA001') : 'HUID-PREVIEW';
-      }
-      if (elPurity) {
-        elPurity.style.display = optPurity ? '' : 'none';
-        elPurity.textContent = sampleRow ? (sampleRow.purity || '22K 916') : (activeTagBatch ? activeTagBatch.purity : '22K 916');
-      }
-      if (elBarcode) {
-        elBarcode.style.display = optBarcode ? 'flex' : 'none';
-        const barcodeVal = sampleRow ? (sampleRow.barcode || '9104-001') : 'PREVIEW';
+      const custName = sampleRow ? (sampleRow.customer || (activeTagBatch ? activeTagBatch.customer : 'CUSTOMER')) : (activeTagBatch ? activeTagBatch.customer : 'KALYAN HERITAGE');
+      const articleVal = sampleRow ? (sampleRow.articleType || ((activeTagBatch ? activeTagBatch.metal : 'GOLD') + ' ' + (activeTagBatch ? activeTagBatch.purity : '22K 916'))) : ((activeTagBatch ? activeTagBatch.metal : 'GOLD') + ' ' + (activeTagBatch ? activeTagBatch.purity : '22K 916'));
+      const ornamentVal = sampleRow ? (sampleRow.ornamentsType || sampleRow.itemDesc || 'HANDWEAR') : 'HANDWEAR';
+      const weightVal = sampleRow ? (sampleRow.weight ? (sampleRow.weight + 'g') : (sampleRow.grossWt + 'g')) : '1.674g';
+      const huidVal = sampleRow ? (sampleRow.huid || 'Y6P2F5') : 'Y6P2F5';
+      const boxVal = sampleRow ? (sampleRow.boxNo || (activeTagBatch ? (activeTagBatch.tray || activeTagBatch.boxNo) : 'BOX-TR-09')) : (activeTagBatch ? (activeTagBatch.tray || activeTagBatch.boxNo || 'BOX-TR-09') : 'BOX-TR-09');
+      const barcodeVal = sampleRow ? (sampleRow.barcode || sampleRow.huid || 'Y6P2F5') : 'Y6P2F5';
+
+      const elCust = document.getElementById('mini-tag-cust');
+      const elArticle = document.getElementById('mini-tag-article');
+      const elOrnament = document.getElementById('mini-tag-ornament');
+      const elWeight = document.getElementById('mini-tag-weight');
+      const elHuid = document.getElementById('mini-tag-huid');
+      const elBox = document.getElementById('mini-tag-box');
+      const elBarcode = document.getElementById('mini-tag-barcode');
+
+      if (elCust) elCust.textContent = custName.slice(0, 20);
+      if (elArticle) elArticle.textContent = articleVal.slice(0, 14);
+      if (elOrnament) elOrnament.textContent = ornamentVal.slice(0, 16);
+      if (elWeight) elWeight.textContent = weightVal;
+      if (elHuid) elHuid.textContent = huidVal;
+      if (elBox) elBox.textContent = boxVal;
+
+      if (elBarcode && optBarcode) {
         const bcW = Math.max(48, Math.min(targetW - 16, 170));
         const bcH = Math.max(10, Math.min(22, Math.round(targetH * 0.28)));
         elBarcode.innerHTML = generateBarcodeSvg(barcodeVal, bcW, bcH);
       }
-      if (elWeights) {
-        elWeights.style.display = optWeights ? '' : 'none';
-        elWeights.textContent = sampleRow ? ('G: ' + sampleRow.grossWt + 'g | N: ' + sampleRow.netWt + 'g') : 'G: 0.000g | N: 0.000g';
-      }
-      if (elCust) {
-        elCust.textContent = (activeTagBatch ? activeTagBatch.customer : 'SSR').slice(0, 8);
-      }
     }
   }
 
-  // --- GATED SAVE & PRINT ACTIONS ---
+    // --- GATED SAVE & PRINT ACTIONS ---
   function saveTagData() {
     if (!activeTagBatch) {
       showToast('NO ACTIVE BATCH SELECTED TO SAVE.', 'warning');
@@ -2292,10 +2380,10 @@
     const height = parseFloat(document.getElementById('tag-print-height').value) || 12;
     const unit = document.getElementById('tag-print-unit').value || 'mm';
 
-    const incBarcode = document.getElementById('tag-opt-barcode') ? document.getElementById('tag-opt-barcode').checked : true;
+    const incCust = document.getElementById('tag-opt-cust') ? document.getElementById('tag-opt-cust').checked : true;
+    const incOrnament = document.getElementById('tag-opt-ornament') ? document.getElementById('tag-opt-ornament').checked : true;
     const incHuid = document.getElementById('tag-opt-huid') ? document.getElementById('tag-opt-huid').checked : true;
-    const incWeights = document.getElementById('tag-opt-weights') ? document.getElementById('tag-opt-weights').checked : true;
-    const incPurity = document.getElementById('tag-opt-purity') ? document.getElementById('tag-opt-purity').checked : true;
+    const incBarcode = document.getElementById('tag-opt-barcode') ? document.getElementById('tag-opt-barcode').checked : true;
 
     let printFrame = document.getElementById('tag-print-iframe');
     if (!printFrame) {
@@ -2305,27 +2393,59 @@
       document.body.appendChild(printFrame);
     }
 
+    const defaultCustomer = activeTagBatch.customer || 'SSR Bullion';
+    const defaultMetal = activeTagBatch.metal || 'GOLD';
+    const defaultPurity = activeTagBatch.purity || '22K 916';
+    const defaultBox = activeTagBatch.tray || activeTagBatch.boxNo || 'BOX-TR-01';
+
+    const hMm = unit === 'in' ? height * 25.4 : height;
+    const titlePt = Math.max(5.5, Math.min(8.5, hMm * 0.42));
+    const bodyPt = Math.max(5.0, Math.min(7.5, hMm * 0.36));
+    const metaPt = Math.max(4.2, Math.min(6.2, hMm * 0.30));
+    const bcHeightPx = Math.max(12, Math.min(30, Math.round(hMm * 1.5)));
+
     const tagsHtml = activeTagRows.map((row, idx) => {
-      const barcodeSvg = incBarcode ? generateBarcodeSvg(row.barcode || `${activeTagBatch.jobDocket}-${idx + 1}`, 110, 20) : '';
+      const customerName = row.customer || defaultCustomer;
+      const articleType = row.articleType || (defaultMetal + ' ' + (row.purity || defaultPurity));
+      const ornamentsType = row.ornamentsType || row.itemDesc || 'Jewellery Article';
+      const weightStr = (row.weight || row.grossWt || '0.000') + 'g';
+      const huidStr = row.huid || `HUID-${idx + 1}`;
+      const boxNoStr = row.boxNo || defaultBox;
+      const barcodeCode = row.barcode || row.huid || `${activeTagBatch.jobDocket}-${idx + 1}`;
+      const bcSvg = incBarcode ? generateBarcodeSvg(barcodeCode, 120, bcHeightPx) : '';
 
       return `
-        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; page-break-after: always; box-sizing: border-box; padding: 1mm 1.5mm; font-family: 'Inter', -apple-system, sans-serif; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; background: #fff; border: 0.5px solid #ccc;">
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 7.5pt; font-weight: 800; border-bottom: 0.5px solid #000; padding-bottom: 0.5mm;">
-            <span>SSR BIS</span>
-            ${incPurity ? `<span style="font-size: 7pt; font-weight: 900;">${escapeHtmlStr(row.purity || '22K 916')}</span>` : ''}
-          </div>
-
-          ${incBarcode ? `
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0.5mm 0;">
-              ${barcodeSvg}
-              <div style="font-family: monospace; font-size: 6.5pt; font-weight: bold; letter-spacing: 0.5px;">${escapeHtmlStr(row.barcode)}</div>
+        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; page-break-after: always; box-sizing: border-box; padding: 0.8mm 1.2mm; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; background: #ffffff; border: 0.4px solid #222; color: #000; line-height: 1.15;">
+          ${incCust ? `
+            <!-- Line 1: 1st Name of Customer, 2nd Article Type -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 0.4px solid #222; padding-bottom: 0.3mm;">
+              <span style="font-size: ${titlePt}pt; font-weight: 900; text-transform: uppercase; letter-spacing: -0.15px; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtmlStr(customerName)}</span>
+              <span style="font-size: ${bodyPt}pt; font-weight: 800; font-family: monospace; text-transform: uppercase; white-space: nowrap;">${escapeHtmlStr(articleType)}</span>
             </div>
           ` : ''}
 
-          <div style="display: flex; justify-content: space-between; align-items: flex-end; font-size: 6.5pt; font-weight: 700;">
-            ${incHuid ? `<span style="font-family: monospace; font-weight: 900;">${escapeHtmlStr(row.huid)}</span>` : ''}
-            ${incWeights ? `<span>G: ${row.grossWt}g</span>` : ''}
-          </div>
+          ${incOrnament ? `
+            <!-- Line 2: 3rd Ornaments Type, 4th Weight -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.2mm; font-size: ${bodyPt}pt;">
+              <span style="font-weight: 700; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="font-size: ${metaPt}pt; font-weight: 600; color: #444;">ORN: </span>${escapeHtmlStr(ornamentsType)}</span>
+              <span style="font-weight: 800; font-family: monospace; white-space: nowrap;"><span style="font-size: ${metaPt}pt; font-weight: 600; color: #444;">WT: </span>${escapeHtmlStr(weightStr)}</span>
+            </div>
+          ` : ''}
+
+          ${incBarcode ? `
+            <!-- Optional Barcode -->
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0.2mm 0; overflow: hidden; flex: 1;">
+              ${bcSvg}
+            </div>
+          ` : ''}
+
+          ${incHuid ? `
+            <!-- Line 3: 5th HUID Number, 6th Box Number -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 0.4px solid #222; padding-top: 0.3mm; font-size: ${bodyPt}pt; font-family: monospace;">
+              <span style="font-weight: 900; letter-spacing: 0.3px;"><span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 700; color: #444;">HUID: </span>${escapeHtmlStr(huidStr)}</span>
+              <span style="font-weight: 800; white-space: nowrap;"><span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 700; color: #444;">BOX: </span>${escapeHtmlStr(boxNoStr)}</span>
+            </div>
+          ` : ''}
         </div>
       `;
     }).join('');
@@ -2353,6 +2473,9 @@
               padding: 0;
               background: #ffffff;
             }
+            .print-tag {
+              page-break-inside: avoid;
+            }
           </style>
         </head>
         <body>
@@ -2372,7 +2495,7 @@
     }, 250);
   }
 
-  function exportTagsCSV() {
+    function exportTagsCSV() {
     const rows = activeTagRows.length ? activeTagRows : generateDefaultTagRows(activeTagBatch || state.intakeBatches[0]);
     if (!rows.length) {
       showToast('NO TAG DATA AVAILABLE TO EXPORT.', 'warning');

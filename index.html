@@ -1848,20 +1848,20 @@
                 <!-- Print Options Checkboxes -->
                 <div class="flex items-center gap-4 text-xs flex-wrap">
                   <label class="flex items-center gap-1.5 cursor-pointer text-slate-700 font-medium">
-                    <input type="checkbox" id="tag-opt-barcode" checked onchange="updateTagMiniPreview()" class="rounded text-primary-container focus:ring-0"/>
-                    <span>Include Inline Barcode</span>
+                    <input type="checkbox" id="tag-opt-cust" checked onchange="updateTagMiniPreview()" class="rounded text-primary-container focus:ring-0"/>
+                    <span>1. Customer & 2. Article</span>
+                  </label>
+                  <label class="flex items-center gap-1.5 cursor-pointer text-slate-700 font-medium">
+                    <input type="checkbox" id="tag-opt-ornament" checked onchange="updateTagMiniPreview()" class="rounded text-primary-container focus:ring-0"/>
+                    <span>3. Ornament & 4. Weight</span>
                   </label>
                   <label class="flex items-center gap-1.5 cursor-pointer text-slate-700 font-medium">
                     <input type="checkbox" id="tag-opt-huid" checked onchange="updateTagMiniPreview()" class="rounded text-primary-container focus:ring-0"/>
-                    <span>Print BIS HUID Number</span>
+                    <span>5. HUID & 6. Box Number</span>
                   </label>
                   <label class="flex items-center gap-1.5 cursor-pointer text-slate-700 font-medium">
-                    <input type="checkbox" id="tag-opt-weights" checked onchange="updateTagMiniPreview()" class="rounded text-primary-container focus:ring-0"/>
-                    <span>Print Gross / Net Wt</span>
-                  </label>
-                  <label class="flex items-center gap-1.5 cursor-pointer text-slate-700 font-medium">
-                    <input type="checkbox" id="tag-opt-purity" checked onchange="updateTagMiniPreview()" class="rounded text-primary-container focus:ring-0"/>
-                    <span>Print Hallmark Purity</span>
+                    <input type="checkbox" id="tag-opt-barcode" checked onchange="updateTagMiniPreview()" class="rounded text-primary-container focus:ring-0"/>
+                    <span>Inline Barcode</span>
                   </label>
                 </div>
               </div>
@@ -1876,19 +1876,30 @@
 
                   <!-- Scaled Tag Sample -->
                   <div class="w-full h-36 flex items-center justify-center p-2 bg-slate-200/50 rounded-lg overflow-hidden">
-                    <div id="tag-mini-preview" class="tag-miniature-box shadow-xs flex flex-col justify-between overflow-hidden">
-                      <div class="flex items-center justify-between text-[9px] font-bold text-slate-900 leading-tight">
-                        <span id="mini-tag-huid">HUID-916-MA001</span>
-                        <span id="mini-tag-purity" class="text-amber-800">22K 916</span>
+                    <div id="tag-mini-preview" class="tag-miniature-box shadow-xs flex flex-col justify-between overflow-hidden p-1.5 bg-white border border-slate-300 rounded-md">
+                      <!-- Line 1: 1st Customer Name & 2nd Article Type -->
+                      <div id="mini-row-cust" class="flex items-center justify-between gap-1 text-[8.5px] font-bold leading-tight border-b border-slate-200/90 pb-0.5">
+                        <span id="mini-tag-cust" class="font-extrabold text-slate-900 uppercase truncate max-w-[65%]">KALYAN HERITAGE</span>
+                        <span id="mini-tag-article" class="text-amber-700 font-mono text-[7.5px] font-bold shrink-0 uppercase">GOLD 22K 916</span>
                       </div>
-                      <div class="my-0.5 flex items-center justify-center flex-1 overflow-hidden">
-                        <div id="mini-tag-barcode" class="w-full h-full flex items-center justify-center font-mono text-[8px] text-slate-500 overflow-hidden">
+
+                      <!-- Line 2: 3rd Ornaments Type & 4th Weight -->
+                      <div id="mini-row-ornament" class="flex items-center justify-between gap-1 text-[8px] leading-tight pt-0.5">
+                        <span class="text-slate-700 font-medium truncate"><span class="text-slate-400 text-[6.5px] uppercase font-bold">ORN: </span><b id="mini-tag-ornament" class="text-slate-900 font-bold uppercase">HANDWEAR</b></span>
+                        <span class="text-slate-800 font-mono font-bold shrink-0"><span class="text-slate-400 text-[6.5px] uppercase font-bold">WT: </span><span id="mini-tag-weight">1.674g</span></span>
+                      </div>
+
+                      <!-- Optional Barcode -->
+                      <div id="mini-row-barcode" class="my-0.5 flex items-center justify-center flex-1 overflow-hidden min-h-[14px]">
+                        <div id="mini-tag-barcode" class="w-full h-full flex items-center justify-center font-mono text-[8px] text-slate-600 overflow-hidden">
                           ||||||||||||||||||||||||||||
                         </div>
                       </div>
-                      <div class="flex items-center justify-between text-[8px] font-mono text-slate-600 leading-tight">
-                        <span id="mini-tag-weights">G: 10.250g | N: 10.100g</span>
-                        <span id="mini-tag-cust" class="font-bold text-slate-800 uppercase">MALABAR</span>
+
+                      <!-- Line 3: 5th HUID Number & 6th Box Number -->
+                      <div id="mini-row-huid" class="flex items-center justify-between gap-1 text-[8px] font-mono leading-tight border-t border-slate-200/90 pt-0.5">
+                        <span class="text-slate-900 font-extrabold tracking-wide"><span class="text-slate-400 font-sans text-[6.5px] font-bold">HUID: </span><span id="mini-tag-huid">Y6P2F5</span></span>
+                        <span class="text-slate-700 font-bold shrink-0"><span class="text-slate-400 font-sans text-[6.5px] font-bold">BOX: </span><span id="mini-tag-box">BOX-TR-09</span></span>
                       </div>
                     </div>
                   </div>
