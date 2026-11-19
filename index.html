@@ -133,7 +133,7 @@
     // Strict Mobile Zero-Scroll Initializer for Sign-In
     (function() {
       var h = window.location.hash.replace('#/', '').replace('#', '');
-      if (h === 'sign-in' || !h) {
+      if (h === 'sign-in') {
         document.documentElement.classList.add('sign-in-mode');
         document.body.classList.add('sign-in-mode');
       }

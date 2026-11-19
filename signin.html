@@ -23,7 +23,7 @@ html,body{min-height:100%}
 html{-webkit-text-size-adjust:100%}
 body{
   font-family:var(--sans);color:var(--navy);-webkit-font-smoothing:antialiased;
-  min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:var(--padY) clamp(12px,2vw,24px);
+  min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:var(--padY) clamp(12px,2vw,24px);overflow-y:auto;overflow-x:hidden;
   background:
     radial-gradient(50% 45% at 12% 8%,rgba(197,160,89,.28),transparent 70%),
     radial-gradient(45% 45% at 92% 96%,rgba(255,215,0,.14),transparent 70%),
@@ -40,11 +40,14 @@ body{
 @keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
 
 /* ============ Form side ============ */
-.form-side{display:flex;flex-direction:column;padding:clamp(18px,3.4vh,34px) clamp(24px,4.6vw,52px) clamp(14px,2.4vh,26px);position:relative;z-index:2;min-width:0}
+.form-side{display:flex;flex-direction:column;padding:clamp(14px,2.5vh,28px) clamp(20px,4.2vw,44px) clamp(12px,2vh,22px);position:relative;z-index:2;min-width:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.form-side::-webkit-scrollbar{width:5px}
+.form-side::-webkit-scrollbar-thumb{background:rgba(197,160,89,.35);border-radius:4px}
+.form-side::-webkit-scrollbar-track{background:transparent}
 .logo{display:flex;align-items:center;gap:11px;font-weight:700;font-size:15px}
 .logo-mark{width:38px;height:38px;border-radius:11px;background:var(--navy);display:grid;place-items:center;color:var(--champagne);box-shadow:inset 0 0 0 1px rgba(197,160,89,.7)}
 .logo small{display:block;font-weight:400;font-size:12px;color:var(--slate);margin-top:1px}
-.form-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(8px,1.8vh,18px) 0 clamp(8px,1.4vh,14px);max-width:400px;width:100%;margin:0 auto}
+.form-wrap{flex:1;display:flex;flex-direction:column;justify-content:flex-start;margin:auto 0;padding:clamp(6px,1.2vh,14px) 0;max-width:400px;width:100%}
 .gold-rule{width:46px;height:4px;border-radius:4px;background:var(--gold-foil)}
 h1{font-family:var(--serif);font-weight:600;font-size:clamp(28px,min(4.4vh,3.4vw),40px);letter-spacing:-.02em;margin-top:clamp(10px,1.6vh,16px);line-height:1.05}
 .sub{margin-top:clamp(5px,.9vh,9px);color:var(--slate);font-size:14.5px;line-height:1.55}
@@ -102,7 +105,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 .alert.error{background:#fdf0f0;color:var(--err);border:1px solid #f3c9c9}
 .alert.ok{background:#ecfaf4;color:#047857;border:1px solid #b6e8d3}
 
-.form-foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--slate);padding-top:clamp(8px,1.4vh,14px)}
+.form-foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--slate);padding-top:clamp(6px,1.2vh,12px);padding-bottom:clamp(8px,1.6vh,16px);flex-shrink:0}
 .status{display:inline-flex;align-items:center;gap:7px}
 .status i{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(5,150,105,.18)}
 
@@ -279,16 +282,28 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 @media (min-width:1700px) and (min-height:960px){ .frame{max-width:1440px} }
 
 /* Tablet & small laptop windows: host banner on top, form below.
-   The card is locked to the viewport height so the WHOLE sign-in is visible without scrolling. */
+   Compact visual banner so the entire form, submit button, and footer fit without being cut off! */
 @media (max-width:999px){
-  body{place-items:center}
-  .frame{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);max-width:720px;border-radius:24px;
-    height:calc(100vh - 2*var(--padY));height:calc(var(--app-h,100dvh) - 2*var(--padY));min-height:0}
-  .visual{order:-1;padding:14px 18px 0;justify-content:flex-start;height:clamp(170px,32vh,380px);height:clamp(170px,32dvh,380px)}
+  body{place-items:center;padding:clamp(8px,1.5vh,16px) clamp(10px,2vw,20px);overflow-y:auto}
+  .frame{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);max-width:680px;border-radius:20px;
+    height:auto;max-height:calc(var(--app-h,100dvh) - clamp(14px,2.5vh,28px));min-height:0}
+  .visual{order:-1;padding:10px 16px 0;justify-content:flex-start;height:clamp(120px,19vh,190px);height:clamp(120px,19dvh,190px)}
   .wave,.chip,.tag{display:none}
   .scene{flex:1;min-height:0;height:auto;margin:0}
-  .form-side{padding:clamp(12px,2.2vh,24px) clamp(20px,5vw,40px) clamp(10px,1.8vh,18px);min-height:0;overflow-y:auto}
-  .form-wrap{padding-top:4px}
+  .form-side{padding:clamp(10px,1.6vh,18px) clamp(18px,4.2vw,36px) clamp(12px,2vh,20px);min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .form-wrap{padding-top:2px;margin:auto 0}
+}
+
+/* Tablet Landscape: compact spacing so the entire 2-col card fits 768px/800px screens cleanly */
+@media (min-width:768px) and (max-height:850px){
+  :root{--padY:clamp(6px,1.2vh,14px)}
+  .frame{height:calc(var(--app-h,100dvh) - 2*var(--padY));max-height:96vh}
+  .form-side{overflow-y:auto;padding-top:clamp(10px,1.8vh,16px);padding-bottom:clamp(10px,1.8vh,16px)}
+  .field{margin-top:clamp(8px,1.3vh,13px)}
+  input[type=text],input[type=password]{height:clamp(40px,4.8vh,46px)}
+  .submit{height:clamp(42px,5vh,48px)}
+  .alt button{height:clamp(36px,4.4vh,42px)}
+  .form-foot{padding-top:clamp(6px,1vh,10px);padding-bottom:6px}
 }
 /* Phones: form only, sized to fit exactly one screen */
 @media (max-width:640px){
@@ -1071,13 +1086,15 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
   function fit(){
     var vv=window.visualViewport, h=Math.round(vv?vv.height:window.innerHeight);
     root.style.setProperty('--app-h',h+'px');
-    fw.style.zoom='';
-    if(window.innerWidth>999) return;
+    if(fs && fs.scrollHeight > fs.clientHeight + 2){
+      fs.style.overflowY = 'auto';
+    }
+    if(window.innerWidth>999 && window.innerHeight>750) return;
     for(var i=0;i<3;i++){
       var over=fs.scrollHeight-fs.clientHeight;
       if(over<=1) break;
       var cur=parseFloat(fw.style.zoom)||1, hh=fw.offsetHeight*cur;
-      var z=Math.max(.4,cur*(hh-over-2)/hh);
+      var z=Math.max(.7,cur*(hh-over-2)/hh);
       fw.style.zoom=z;
     }
   }
