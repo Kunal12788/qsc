@@ -865,3 +865,225 @@ button[type="submit"]#btn-save-receive-entry.final-step-glow {
   border-color: rgba(212, 175, 55, 0.55);
   box-shadow: 0 16px 40px -8px rgba(212, 175, 55, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
+
+/* ========================================================================= */
+/* TAG GENERATION REVAMP: EXCEL GRID & STATUS QUEUE STYLES                   */
+/* ========================================================================= */
+.tag-queue-scroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tag-queue-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tag-queue-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.tag-queue-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.tag-queue-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.tag-queue-card {
+  min-width: 250px;
+  max-width: 290px;
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+}
+
+.tag-queue-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  border-color: #cbd5e1;
+}
+
+.tag-queue-card.active-queue-batch {
+  border-color: #c5a059 !important;
+  box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.4), 0 4px 16px rgba(197, 160, 89, 0.15) !important;
+  background-color: #ffffff !important;
+}
+
+.excel-grid-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background-color: #ffffff;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.excel-grid-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.excel-grid-container::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.excel-grid-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.excel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  text-align: left;
+}
+
+.excel-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #f1f5f9;
+  color: #334155;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid #cbd5e1;
+  white-space: nowrap;
+}
+
+.excel-table td {
+  padding: 0.2rem 0.35rem;
+  border: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.excel-table tr:hover td {
+  background-color: #f8fafc;
+}
+
+.excel-table tr.excel-row-selected td {
+  background-color: #fefce8 !important;
+}
+
+.excel-cell-input {
+  width: 100%;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  background: transparent;
+  color: #0f172a;
+  transition: all 0.15s ease;
+}
+
+.excel-cell-input:focus {
+  outline: none;
+  border-color: #c5a059 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.3) !important;
+}
+
+.excel-cell-number {
+  font-family: 'Inter', monospace;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Gated Print Button Disabled State */
+.btn-print-disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  background-color: #cbd5e1 !important;
+  color: #64748b !important;
+  border-color: #94a3b8 !important;
+  box-shadow: none !important;
+}
+
+/* ========================================================================= */
+/* OUTWARD DELIVERY REVAMP: QUEUE, DROPZONE, PHOTO & LIGHTBOX STYLES         */
+/* ========================================================================= */
+.delivery-queue-card {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+}
+
+.delivery-queue-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  border-color: #cbd5e1;
+}
+
+.delivery-queue-card.active-delivery-batch {
+  border-color: #c5a059 !important;
+  background-color: rgba(254, 212, 136, 0.08) !important;
+  box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.4), 0 4px 16px rgba(197, 160, 89, 0.15) !important;
+}
+
+.delivery-photo-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  background-color: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.delivery-photo-dropzone:hover {
+  border-color: #c5a059;
+  background-color: #fefce8;
+}
+
+.delivery-photo-dropzone.drag-active {
+  border-color: #c5a059 !important;
+  background-color: #fef3c7 !important;
+  transform: scale(1.01);
+  box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.25);
+}
+
+.delivery-photo-thumb {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.delivery-photo-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  z-index: 20;
+}
+
+/* Tag Miniature Preview Aspect Box */
+.tag-miniature-box {
+  background-color: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+/* Print Gate Pass Photo Sizing */
+@media print {
+  .gatepass-photo-img {
+    max-height: 28mm !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+

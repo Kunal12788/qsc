@@ -235,6 +235,7 @@
         customer: 'Malabar Gold & Diamonds',
         bis: 'BIS-MH-10294-G',
         reqNo: 'REQ-8831-A',
+        metal: 'GOLD',
         pcs: 85,
         purity: '22K 916',
         stream: 'Main Branch',
@@ -247,13 +248,19 @@
         status: 'In Marking',
         billNo: 'BILL-2024-04192',
         billPrinted: false,
-        disposition: { rejected: 0, destroyed: 0, nonFeasible: 0, irrucd: 0, passed: 85 }
+        disposition: { rejected: 0, destroyed: 0, nonFeasible: 0, irrucd: 0, passed: 85 },
+        tagStatus: 'PENDING',
+        tagData: [],
+        tagDimensions: { width: 50, height: 12, unit: 'mm', preset: 'butterfly' },
+        articlePhoto: null,
+        deliveryStatus: 'READY'
       },
       {
         jobDocket: 'JOB-2024-8841',
         customer: 'Kalyan Heritage Jewellers',
         bis: 'BIS-KA-99210',
         reqNo: 'REQ-8830-K',
+        metal: 'GOLD',
         pcs: 45,
         purity: '22K 916',
         stream: 'Main Branch',
@@ -266,13 +273,19 @@
         status: 'XRF Verified',
         billNo: 'BILL-2024-04191',
         billPrinted: true,
-        disposition: { rejected: 2, destroyed: 1, nonFeasible: 0, irrucd: 0, passed: 42 }
+        disposition: { rejected: 2, destroyed: 1, nonFeasible: 0, irrucd: 0, passed: 42 },
+        tagStatus: 'DONE',
+        tagData: [],
+        tagDimensions: { width: 48, height: 26, unit: 'mm', preset: 'dumbbell' },
+        articlePhoto: null,
+        deliveryStatus: 'READY'
       },
       {
         jobDocket: 'JOB-2024-8840',
         customer: 'Malabar Gold Craft',
         bis: 'BIS-KA-10492',
         reqNo: 'REQ-8828-M',
+        metal: 'GOLD',
         pcs: 112,
         purity: '22K 916',
         stream: 'Main Branch',
@@ -285,13 +298,19 @@
         status: 'In Marking',
         billNo: 'BILL-2024-04190',
         billPrinted: false,
-        disposition: { rejected: 0, destroyed: 0, nonFeasible: 0, irrucd: 0, passed: 112 }
+        disposition: { rejected: 0, destroyed: 0, nonFeasible: 0, irrucd: 0, passed: 112 },
+        tagStatus: 'PENDING',
+        tagData: [],
+        tagDimensions: { width: 50, height: 12, unit: 'mm', preset: 'butterfly' },
+        articlePhoto: null,
+        deliveryStatus: 'READY'
       },
       {
         jobDocket: 'JOB-2024-8839',
         customer: 'Tanishq Studio Boutique',
         bis: 'BIS-KA-88301',
         reqNo: 'REQ-8825-T',
+        metal: 'GOLD',
         pcs: 18,
         purity: '18K 750',
         stream: 'OFFSIDE',
@@ -304,13 +323,19 @@
         status: 'Fire Assay Q',
         billNo: 'BILL-2024-04189',
         billPrinted: true,
-        disposition: { rejected: 1, destroyed: 1, nonFeasible: 0, irrucd: 0, passed: 16 }
+        disposition: { rejected: 1, destroyed: 1, nonFeasible: 0, irrucd: 0, passed: 16 },
+        tagStatus: 'PENDING',
+        tagData: [],
+        tagDimensions: { width: 60, height: 30, unit: 'mm', preset: 'pouch' },
+        articlePhoto: null,
+        deliveryStatus: 'READY'
       },
       {
         jobDocket: 'JOB-2024-8838',
         customer: 'Navrathan Jewellers Ltd',
         bis: 'BIS-KA-77402',
         reqNo: 'REQ-8820-N',
+        metal: 'GOLD',
         pcs: 6,
         purity: '24K 999',
         stream: 'Main Branch',
@@ -323,7 +348,12 @@
         status: 'Dispatched',
         billNo: 'BILL-2024-04188',
         billPrinted: true,
-        disposition: { rejected: 0, destroyed: 0, nonFeasible: 0, irrucd: 0, passed: 6 }
+        disposition: { rejected: 0, destroyed: 0, nonFeasible: 0, irrucd: 0, passed: 6 },
+        tagStatus: 'DONE',
+        tagData: [],
+        tagDimensions: { width: 50, height: 12, unit: 'mm', preset: 'butterfly' },
+        articlePhoto: null,
+        deliveryStatus: 'DELIVERED'
       }
     ],
     billingItems: [
@@ -1443,10 +1473,14 @@
   // ========================================================
   // TAG GENERATION & BARCODE PRINTING MODULE
   // ========================================================
+  // TAG GENERATION & BARCODE PRINTING MODULE (REVAMPED)
+  // ========================================================
   let activeTagBatch = null;
+  let activeTagRows = [];
+  let tagQueueFilter = 'ALL';
   let currentGeneratedTags = [];
 
-  function generateBarcodeSvg(code, width = 140, height = 36) {
+  function generateBarcodeSvg(code, width = 140, height = 32) {
     const clean = String(code).replace(/[^A-Za-z0-9]/g, '');
     const bars = [];
     let x = 6;
@@ -1479,305 +1513,818 @@
   }
 
   function initTagGenerationView() {
-    const select = document.getElementById('tag-batch-select');
-    if (!select) return;
-
     if (!state.intakeBatches || state.intakeBatches.length === 0) {
-      select.innerHTML = '<option value="">NO BATCHES AVAILABLE</option>';
-      const grid = document.getElementById('tag-preview-grid');
-      if (grid) grid.innerHTML = '<div class="col-span-full py-12 text-center text-slate-400 font-bold uppercase text-xs">NO INTAKE BATCHES REGISTERED YET. PLEASE RECEIVE A BATCH FIRST.</div>';
+      const queueEl = document.getElementById('tag-batch-queue-container');
+      if (queueEl) queueEl.innerHTML = '<div class="py-8 text-center text-slate-400 font-bold uppercase text-xs w-full">NO INTAKE BATCHES REGISTERED. PLEASE RECEIVE A BATCH FIRST.</div>';
       return;
     }
 
-    select.innerHTML = state.intakeBatches.map(b => `
-      <option value="${escapeHtmlStr(b.jobDocket)}" ${activeTagBatch && activeTagBatch.jobDocket === b.jobDocket ? 'selected' : ''}>
-        ${escapeHtmlStr(b.receiptNo || 'REC')} • ${escapeHtmlStr(b.customer)} (${b.pcs} PCS, ${escapeHtmlStr(b.purity)})
-      </option>
-    `).join('');
+    if (!activeTagBatch) {
+      activeTagBatch = state.intakeBatches[0];
+    }
 
-    const targetDocket = activeTagBatch ? activeTagBatch.jobDocket : state.intakeBatches[0].jobDocket;
-    select.value = targetDocket;
-    onTagBatchSelected(targetDocket);
+    renderTagStatusQueue();
+    selectTagBatch(activeTagBatch.jobDocket);
   }
 
-  function onTagBatchSelected(docket) {
+  function renderTagStatusQueue(filterOverride) {
+    const queueContainer = document.getElementById('tag-batch-queue-container');
+    if (!queueContainer) return;
+
+    const filter = filterOverride || tagQueueFilter || 'ALL';
+    tagQueueFilter = filter;
+
+    const batches = state.intakeBatches || [];
+    const totalCount = batches.length;
+    const pendingCount = batches.filter(b => b.tagStatus !== 'DONE').length;
+    const doneCount = batches.filter(b => b.tagStatus === 'DONE').length;
+
+    const statAll = document.getElementById('tag-stat-all');
+    const statPending = document.getElementById('tag-stat-pending');
+    const statDone = document.getElementById('tag-stat-done');
+    if (statAll) statAll.textContent = `ALL: ${totalCount}`;
+    if (statPending) statPending.textContent = `PENDING: ${pendingCount}`;
+    if (statDone) statDone.textContent = `DONE: ${doneCount}`;
+
+    // Filter Buttons Styling
+    ['all', 'pending', 'done'].forEach(f => {
+      const btn = document.getElementById(`tag-filter-${f}`);
+      if (btn) {
+        if (f.toUpperCase() === filter) {
+          btn.className = 'px-2.5 py-1 rounded-md bg-white shadow-2xs text-slate-800';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800';
+        }
+      }
+    });
+
+    const filtered = batches.filter(b => {
+      if (filter === 'PENDING') return b.tagStatus !== 'DONE';
+      if (filter === 'DONE') return b.tagStatus === 'DONE';
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      queueContainer.innerHTML = '<div class="py-6 text-center text-slate-400 font-bold uppercase text-xs w-full">NO BATCHES MATCHING THIS QUEUE FILTER.</div>';
+      return;
+    }
+
+    queueContainer.innerHTML = filtered.map(b => {
+      const isActive = activeTagBatch && activeTagBatch.jobDocket === b.jobDocket;
+      const isDone = b.tagStatus === 'DONE';
+      const grossG = typeof b.grossWt === 'number' ? b.grossWt.toFixed(3) : parseFloat(b.grossWt || 0).toFixed(3);
+      const netG = typeof b.netWt === 'number' ? b.netWt.toFixed(3) : parseFloat(b.netWt || 0).toFixed(3);
+
+      return `
+        <div
+          onclick="selectTagBatch('${escapeHtmlStr(b.jobDocket)}')"
+          class="tag-queue-card p-3 rounded-xl bg-white ${isActive ? 'active-queue-batch' : 'hover:border-slate-300'}"
+        >
+          <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100">
+            <span class="font-mono font-bold text-xs text-primary-container">${escapeHtmlStr(b.jobDocket)}</span>
+            <span class="text-[9.5px] font-mono text-slate-400">${escapeHtmlStr(b.receiptNo || 'REC')}</span>
+          </div>
+
+          <div class="font-bold text-slate-900 text-xs uppercase truncate mb-1" title="${escapeHtmlStr(b.customer)}">
+            ${escapeHtmlStr(b.customer)}
+          </div>
+
+          <div class="flex items-center justify-between text-[10px] text-slate-600 mb-2 font-mono">
+            <span>${b.pcs} PCS • ${escapeHtmlStr(b.purity)}</span>
+            <span class="text-slate-400">TRAY: ${escapeHtmlStr(b.tray || '-')}</span>
+          </div>
+
+          <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px]">
+            <span class="font-mono text-slate-500">GR: ${grossG}g</span>
+            ${isDone ? `
+              <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold font-mono bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[12px]">check_circle</span>
+                <span>DONE</span>
+              </span>
+            ` : `
+              <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold font-mono bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[12px]">pending</span>
+                <span>PENDING DATA</span>
+              </span>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function filterTagQueue(filter) {
+    tagQueueFilter = filter;
+    renderTagStatusQueue(filter);
+  }
+
+  function selectTagBatch(docket) {
     if (!docket) return;
     const batch = state.intakeBatches.find(b => b.jobDocket === docket) || state.intakeBatches[0];
     if (!batch) return;
     activeTagBatch = batch;
 
-    const elCust = document.getElementById('tag-batch-customer');
-    const elBis = document.getElementById('tag-batch-bis');
-    const elJobs = document.getElementById('tag-batch-jobs');
-    const elPurity = document.getElementById('tag-batch-purity');
-    const elPcs = document.getElementById('tag-batch-pcs');
-    const elTray = document.getElementById('tag-batch-tray');
+    // Load existing tag data or synthesize initial draft rows
+    if (batch.tagData && Array.isArray(batch.tagData) && batch.tagData.length > 0) {
+      activeTagRows = JSON.parse(JSON.stringify(batch.tagData));
+    } else {
+      activeTagRows = generateDefaultTagRows(batch);
+    }
 
-    if (elCust) elCust.textContent = batch.customer || '-';
-    if (elBis) elBis.textContent = batch.bis || '-';
-    if (elJobs) elJobs.textContent = batch.jobDocket || '-';
-    if (elPurity) elPurity.textContent = `${batch.metal} • ${batch.purity}`;
-    if (elPcs) elPcs.textContent = `${batch.pcs} PIECES`;
-    if (elTray) elTray.textContent = batch.tray || '-';
-
-    generateTagsForActiveBatch();
+    renderExcelGrid();
+    renderBatchIntakeMetadata(batch);
+    updateTagMiniPreview();
+    syncTagPrintButtonState();
+    renderTagStatusQueue();
   }
 
-  function generateTagsForActiveBatch() {
-    if (!activeTagBatch) return;
-    const batch = activeTagBatch;
+  function cleanPurity(raw) {
+    const src = raw !== undefined && raw !== null && String(raw).trim() !== '' ? raw : (activeTagBatch ? activeTagBatch.purity : '916');
+    return String(src).replace(/[^0-9]/g, '').slice(0, 3) || '916';
+  }
+
+  function generateDefaultTagRows(batch) {
     const pcs = Math.min(Math.max(parseInt(batch.pcs, 10) || 1, 1), 200);
+    const cleanCust = (batch.customer || 'SSR').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
+    const cleanPurityCode = cleanPurity(batch.purity || '916');
+    const docketShort = (batch.receiptNo || batch.jobDocket || 'B01').replace(/[^A-Za-z0-9]/g, '').slice(-4);
 
-    const cleanCust = (batch.customer || 'SSR').replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase();
-    const cleanPurity = (batch.purity || '916').replace(/[^0-9]/g, '').slice(0, 3) || '916';
-    const docketShort = (batch.receiptNo || batch.jobDocket || 'B01').replace(/[^A-Za-z0-9]/g, '').slice(-5);
+    const grossTotal = typeof batch.grossWt === 'number' ? batch.grossWt : parseFloat(batch.grossWt || 0);
+    const netTotal = typeof batch.netWt === 'number' ? batch.netWt : parseFloat(batch.netWt || 0);
+    const avgGross = (grossTotal && pcs > 0 ? (grossTotal / pcs).toFixed(3) : '10.250');
+    const avgNet = (netTotal && pcs > 0 ? (netTotal / pcs).toFixed(3) : '10.100');
 
-    const avgNet = (batch.netWt && pcs > 0 ? (batch.netWt / pcs).toFixed(3) : '0.000');
-    const avgGross = (batch.grossWt && pcs > 0 ? (batch.grossWt / pcs).toFixed(3) : '0.000');
+    const sampleArticles = ['Gold Ring', 'Chain Tail', 'Bangle Set', 'Earring Stud', 'Pendant', 'Necklace Link', 'Bracelet', 'Kada'];
 
-    currentGeneratedTags = [];
+    const rows = [];
     for (let i = 1; i <= pcs; i++) {
       const padNum = String(i).padStart(3, '0');
-      const huidCode = `HUID-${cleanPurity}-${cleanCust.slice(0, 2)}${padNum}`;
-      const barcodeCode = `${docketShort}-${padNum}`;
-
-      currentGeneratedTags.push({
-        itemIndex: i,
-        totalItems: pcs,
-        huid: huidCode,
-        barcode: barcodeCode,
-        customer: batch.customer,
-        customerShort: cleanCust,
-        metal: batch.metal,
-        purity: batch.purity,
-        netWt: avgNet,
+      const itemDesc = sampleArticles[(i - 1) % sampleArticles.length];
+      rows.push({
+        selected: false,
+        slNo: i,
+        huid: `HUID-${cleanPurityCode}-${cleanCust}${padNum}`,
+        itemDesc: itemDesc,
+        pcs: 1,
         grossWt: avgGross,
-        totalNet: batch.netWt ? batch.netWt.toFixed(3) : '0.000',
-        totalGross: batch.grossWt ? batch.grossWt.toFixed(3) : '0.000',
-        docket: batch.jobDocket,
-        receiptNo: batch.receiptNo || 'REC-10948',
-        tray: batch.tray,
-        slotNumber: `#${padNum}`
+        netWt: avgNet,
+        purity: batch.purity || '22K 916',
+        barcode: `${docketShort}-${padNum}`
       });
     }
-
-    renderGeneratedTagsGrid();
+    return rows;
   }
 
-  function onTagFormatChanged() {
-    renderGeneratedTagsGrid();
-  }
+  function renderExcelGrid() {
+    const tbody = document.getElementById('excel-grid-body');
+    if (!tbody) return;
 
-  function refreshTagGenerationPreview() {
-    generateTagsForActiveBatch();
-    showToast('RE-GENERATED TAG HUID IDENTIFIERS FOR CURRENT BATCH.', 'info');
-  }
-
-  function renderGeneratedTagsGrid() {
-    const grid = document.getElementById('tag-preview-grid');
-    const totalBadge = document.getElementById('tag-total-badge');
-    if (!grid) return;
-
-    if (!currentGeneratedTags.length) {
-      grid.innerHTML = '<div class="col-span-full py-12 text-center text-slate-400 font-bold uppercase text-xs">NO TAGS GENERATED. SELECT A VALID BATCH.</div>';
-      if (totalBadge) totalBadge.textContent = '0 TAGS READY';
+    if (!activeTagRows || activeTagRows.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" class="py-12 text-center text-slate-400 font-bold uppercase text-xs">
+            GRID IS CURRENTLY EMPTY. CLICK '+ ADD ROW', 'AUTO-FILL FROM INTAKE', OR PASTE SPREADSHEET CELLS (CTRL+V).
+          </td>
+        </tr>
+      `;
+      updateGridReconciliation();
       return;
     }
 
-    if (totalBadge) totalBadge.textContent = `${currentGeneratedTags.length} TAGS READY`;
+    tbody.innerHTML = activeTagRows.map((row, idx) => `
+      <tr class="${row.selected ? 'excel-row-selected' : ''}">
+        <td class="text-center">
+          <input type="checkbox" ${row.selected ? 'checked' : ''} onchange="toggleSelectExcelRow(${idx}, this.checked)" class="rounded text-primary-container focus:ring-0 cursor-pointer"/>
+        </td>
+        <td class="text-center font-mono font-bold text-slate-600">${row.slNo || (idx + 1)}</td>
+        <td>
+          <input type="text" value="${escapeHtmlStr(row.huid || '')}" onchange="onExcelCellChange(${idx}, 'huid', this.value)" placeholder="HUID Code" class="excel-cell-input font-mono font-bold text-primary-container uppercase"/>
+        </td>
+        <td>
+          <input type="text" value="${escapeHtmlStr(row.itemDesc || '')}" onchange="onExcelCellChange(${idx}, 'itemDesc', this.value)" placeholder="Item Description" class="excel-cell-input font-semibold text-slate-800 uppercase"/>
+        </td>
+        <td>
+          <input type="number" min="1" step="1" value="${row.pcs || 1}" onchange="onExcelCellChange(${idx}, 'pcs', this.value)" class="excel-cell-input excel-cell-number font-bold text-slate-900"/>
+        </td>
+        <td>
+          <input type="number" step="0.001" min="0" value="${row.grossWt || ''}" onchange="onExcelCellChange(${idx}, 'grossWt', this.value)" placeholder="0.000" class="excel-cell-input excel-cell-number font-mono font-bold text-slate-900"/>
+        </td>
+        <td>
+          <input type="number" step="0.001" min="0" value="${row.netWt || ''}" onchange="onExcelCellChange(${idx}, 'netWt', this.value)" placeholder="0.000" class="excel-cell-input excel-cell-number font-mono text-slate-700"/>
+        </td>
+        <td>
+          <input type="text" value="${escapeHtmlStr(row.purity || (activeTagBatch ? activeTagBatch.purity : '22K 916'))}" onchange="onExcelCellChange(${idx}, 'purity', this.value)" class="excel-cell-input font-bold text-amber-800 font-mono uppercase"/>
+        </td>
+        <td>
+          <input type="text" value="${escapeHtmlStr(row.barcode || '')}" onchange="onExcelCellChange(${idx}, 'barcode', this.value)" placeholder="Barcode Serial" class="excel-cell-input font-mono font-extrabold text-slate-900"/>
+        </td>
+        <td class="text-center">
+          <button type="button" onclick="deleteExcelRow(${idx})" class="text-slate-400 hover:text-rose-600 cursor-pointer transition-colors" title="Delete Row">
+            <span class="material-symbols-outlined text-[16px]">close</span>
+          </button>
+        </td>
+      </tr>
+    `).join('');
 
-    const layoutRadio = document.querySelector('input[name="tag_layout"]:checked');
-    const layout = layoutRadio ? layoutRadio.value : 'BUTTERFLY';
+    updateGridReconciliation();
+  }
 
-    const incWeight = document.getElementById('tag-opt-weight') ? document.getElementById('tag-opt-weight').checked : true;
+  function onExcelCellChange(idx, field, val) {
+    if (!activeTagRows[idx]) return;
+    activeTagRows[idx][field] = val;
+
+    if (field === 'grossWt' || field === 'netWt' || field === 'pcs') {
+      updateGridReconciliation();
+    }
+
+    // Invalidate saved status on live edit
+    if (activeTagBatch && activeTagBatch.tagStatus === 'DONE') {
+      activeTagBatch.tagStatus = 'PENDING';
+      syncTagPrintButtonState();
+      renderTagStatusQueue();
+    }
+  }
+
+  function toggleSelectExcelRow(idx, checked) {
+    if (activeTagRows[idx]) {
+      activeTagRows[idx].selected = !!checked;
+      renderExcelGrid();
+    }
+  }
+
+  function toggleSelectAllExcelRows(checked) {
+    activeTagRows.forEach(r => { r.selected = !!checked; });
+    renderExcelGrid();
+  }
+
+  function addExcelRow(data = {}) {
+    const nextSl = activeTagRows.length + 1;
+    const cleanCust = (activeTagBatch ? activeTagBatch.customer : 'SSR').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
+    const cleanPurityCode = cleanPurity(activeTagBatch ? activeTagBatch.purity : '916');
+    const padNum = String(nextSl).padStart(3, '0');
+    const docketShort = (activeTagBatch ? (activeTagBatch.receiptNo || activeTagBatch.jobDocket) : 'B01').replace(/[^A-Za-z0-9]/g, '').slice(-4);
+
+    activeTagRows.push({
+      selected: false,
+      slNo: nextSl,
+      huid: data.huid !== undefined ? data.huid : `HUID-${cleanPurityCode}-${cleanCust}${padNum}`,
+      itemDesc: data.itemDesc || 'Jewellery Article',
+      pcs: parseInt(data.pcs, 10) || 1,
+      grossWt: data.grossWt !== undefined ? data.grossWt : '10.000',
+      netWt: data.netWt !== undefined ? data.netWt : '9.850',
+      purity: data.purity || (activeTagBatch ? activeTagBatch.purity : '22K 916'),
+      barcode: data.barcode || `${docketShort}-${padNum}`
+    });
+
+    if (activeTagBatch && activeTagBatch.tagStatus === 'DONE') {
+      activeTagBatch.tagStatus = 'PENDING';
+      syncTagPrintButtonState();
+      renderTagStatusQueue();
+    }
+
+    renderExcelGrid();
+  }
+
+  function deleteExcelRow(idx) {
+    activeTagRows.splice(idx, 1);
+    activeTagRows.forEach((r, i) => { r.slNo = i + 1; });
+    if (activeTagBatch) {
+      if (activeTagRows.length === 0 || activeTagBatch.tagStatus === 'DONE') {
+        activeTagBatch.tagStatus = 'PENDING';
+        syncTagPrintButtonState();
+        renderTagStatusQueue();
+      }
+    }
+    renderExcelGrid();
+  }
+
+  function deleteSelectedExcelRows() {
+    const remaining = activeTagRows.filter(r => !r.selected);
+    if (remaining.length === activeTagRows.length) {
+      showToast('NO ROWS SELECTED TO DELETE. SELECT CHECKBOXES FIRST.', 'warning');
+      return;
+    }
+    const removedCount = activeTagRows.length - remaining.length;
+    activeTagRows = remaining;
+    activeTagRows.forEach((r, i) => { r.slNo = i + 1; });
+    if (activeTagBatch) {
+      if (activeTagRows.length === 0 || activeTagBatch.tagStatus === 'DONE') {
+        activeTagBatch.tagStatus = 'PENDING';
+        syncTagPrintButtonState();
+        renderTagStatusQueue();
+      }
+    }
+    renderExcelGrid();
+    showToast(`DELETED ${removedCount} SELECTED ROWS.`, 'info');
+  }
+
+  function clearExcelGrid() {
+    if (!activeTagRows.length) return;
+    activeTagRows = [];
+    if (activeTagBatch) {
+      activeTagBatch.tagStatus = 'PENDING';
+      syncTagPrintButtonState();
+      renderTagStatusQueue();
+    }
+    renderExcelGrid();
+    showToast('EXCEL GRID CLEARED.', 'info');
+  }
+
+  function autoFillFromIntake() {
+    if (!activeTagBatch) {
+      showToast('PLEASE SELECT A BATCH FIRST.', 'warning');
+      return;
+    }
+    activeTagRows = generateDefaultTagRows(activeTagBatch);
+    if (activeTagBatch.tagStatus === 'DONE') {
+      activeTagBatch.tagStatus = 'PENDING';
+      syncTagPrintButtonState();
+      renderTagStatusQueue();
+    }
+    renderExcelGrid();
+    showToast(`AUTO-FILLED ${activeTagRows.length} ROWS FROM INTAKE DATA.`, 'success');
+  }
+
+  // --- TAB-DELIMITED CLIPBOARD PASTE ENGINE ---
+  function parseClipboardData(text) {
+    if (!text || !text.trim()) return [];
+    const lines = text.trim().split(/\r\n|\r|\n/);
+    const parsedRows = [];
+
+    const cleanPurityHelper = (raw) => {
+      const src = raw !== undefined && raw !== null && String(raw).trim() !== '' ? raw : (activeTagBatch ? activeTagBatch.purity : '916');
+      return String(src).replace(/[^0-9]/g, '').slice(0, 3) || '916';
+    };
+    cleanPurityHelper.toString = () => cleanPurityHelper();
+    cleanPurityHelper.valueOf = () => cleanPurityHelper();
+    const cleanPurity = cleanPurityHelper;
+
+    const defaultPurity = activeTagBatch ? activeTagBatch.purity : '22K 916';
+    const cleanCust = (activeTagBatch ? activeTagBatch.customer : 'SSR').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
+    const docketShort = (activeTagBatch ? (activeTagBatch.receiptNo || activeTagBatch.jobDocket) : 'B01').replace(/[^A-Za-z0-9]/g, '').slice(-4);
+    const headerTitleRegex = /^(sl\.?\s*no\.?|sr\.?\s*no\.?|serial(\s*no\.?)?|huid(\s*code)?|item(\s*desc(ription)?)?|description|pieces?|pcs|gross(\s*(wt\.?|weight))?|net(\s*(wt\.?|weight))?|purity|karat|barcode)$/i;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      let cells = [];
+      if (line.includes('\t')) {
+        cells = line.split('\t').map(c => c.trim().replace(/^["']|["']$/g, ''));
+      } else {
+        // Robust quote-aware CSV tokenizer
+        let current = '';
+        let inQuotes = false;
+        for (let j = 0; j < line.length; j++) {
+          const char = line[j];
+          if (char === '"' || char === "'") {
+            if (inQuotes && line[j + 1] === char) {
+              current += char;
+              j++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (char === ',' && !inQuotes) {
+            cells.push(current.trim().replace(/^["']|["']$/g, ''));
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        cells.push(current.trim().replace(/^["']|["']$/g, ''));
+      }
+
+      // Skip header line only if standard column titles match and NEVER if it contains data patterns (e.g. HUID-)
+      const isDataPattern = cells.some(c => /^HUID-|^JOB-|^GP-|^REQ-/i.test(c.trim()));
+      const matchingHeaders = cells.filter(c => headerTitleRegex.test(c.trim())).length;
+      if (i === 0 && !isDataPattern && matchingHeaders >= 2) {
+        continue;
+      }
+
+      const rowIdx = parsedRows.length + 1;
+      const padNum = String(rowIdx).padStart(3, '0');
+
+      let rowObj = {
+        selected: false,
+        slNo: rowIdx,
+        huid: '',
+        itemDesc: 'Jewellery Article',
+        pcs: 1,
+        grossWt: '0.000',
+        netWt: '0.000',
+        purity: defaultPurity,
+        barcode: `${docketShort}-${padNum}`
+      };
+
+      if (cells.length >= 8) {
+        if (/^HUID-/i.test(cells[0]) && !/^HUID-/i.test(cells[1])) {
+          // [HUID, Desc, Pcs, Gross, Net, Purity, Barcode, ...]
+          rowObj.huid = cells[0];
+          rowObj.itemDesc = cells[1] || 'Jewellery Article';
+          rowObj.pcs = parseInt(cells[2], 10) || 1;
+          rowObj.grossWt = parseFloat(cells[3] || 0).toFixed(3);
+          rowObj.netWt = parseFloat(cells[4] || 0).toFixed(3);
+          rowObj.purity = cells[5] || defaultPurity;
+          rowObj.barcode = cells[6] || `${docketShort}-${padNum}`;
+        } else {
+          // Standard [SlNo, HUID, Desc, Pcs, Gross, Net, Purity, Barcode]
+          rowObj.huid = cells[1] || `HUID-${cleanPurity(cells[6])}-${cleanCust}${padNum}`;
+          rowObj.itemDesc = cells[2] || 'Jewellery Article';
+          rowObj.pcs = parseInt(cells[3], 10) || 1;
+          rowObj.grossWt = parseFloat(cells[4] || 0).toFixed(3);
+          rowObj.netWt = parseFloat(cells[5] || 0).toFixed(3);
+          rowObj.purity = cells[6] || defaultPurity;
+          rowObj.barcode = cells[7] || `${docketShort}-${padNum}`;
+        }
+      } else if (cells.length === 7) {
+        // [HUID, Desc, Pcs, Gross, Net, Purity, Barcode]
+        rowObj.huid = cells[0];
+        rowObj.itemDesc = cells[1] || 'Jewellery Article';
+        rowObj.pcs = parseInt(cells[2], 10) || 1;
+        rowObj.grossWt = parseFloat(cells[3] || 0).toFixed(3);
+        rowObj.netWt = parseFloat(cells[4] || 0).toFixed(3);
+        rowObj.purity = cells[5] || defaultPurity;
+        rowObj.barcode = cells[6] || `${docketShort}-${padNum}`;
+      } else if (cells.length === 6) {
+        // [HUID, Desc, Gross, Net, Purity, Barcode]
+        rowObj.huid = cells[0];
+        rowObj.itemDesc = cells[1] || 'Jewellery Article';
+        rowObj.grossWt = parseFloat(cells[2] || 0).toFixed(3);
+        rowObj.netWt = parseFloat(cells[3] || 0).toFixed(3);
+        rowObj.purity = cells[4] || defaultPurity;
+        rowObj.barcode = cells[5] || `${docketShort}-${padNum}`;
+      } else if (cells.length === 5) {
+        // [HUID, Desc, Pcs, Gross, Net]
+        rowObj.huid = cells[0];
+        rowObj.itemDesc = cells[1] || 'Jewellery Article';
+        rowObj.pcs = parseInt(cells[2], 10) || 1;
+        rowObj.grossWt = parseFloat(cells[3] || 0).toFixed(3);
+        rowObj.netWt = parseFloat(cells[4] || 0).toFixed(3);
+      } else if (cells.length >= 2) {
+        // Minimal [HUID, GrossWt]
+        rowObj.huid = cells[0];
+        rowObj.grossWt = parseFloat(cells[1] || 0).toFixed(3);
+        rowObj.netWt = parseFloat(cells[1] || 0).toFixed(3);
+      }
+
+      parsedRows.push(rowObj);
+    }
+
+    return parsedRows;
+  }
+
+  function parseAndInsertClipboardText(text) {
+    const rows = parseClipboardData(text);
+    if (!rows || rows.length === 0) {
+      showToast('NO VALID SPREADSHEET ROWS DETECTED IN CLIPBOARD DATA.', 'warning');
+      return;
+    }
+
+    // Replace current rows or append
+    activeTagRows = rows;
+    activeTagRows.forEach((r, i) => { r.slNo = i + 1; });
+
+    if (activeTagBatch && activeTagBatch.tagStatus === 'DONE') {
+      activeTagBatch.tagStatus = 'PENDING';
+      syncTagPrintButtonState();
+      renderTagStatusQueue();
+    }
+
+    renderExcelGrid();
+    showToast(`PASTED & POPULATED ${rows.length} ROWS FROM CLIPBOARD.`, 'success');
+  }
+
+  function handleExcelGridPaste(e) {
+    if (!e) return;
+    const clipboardData = e.clipboardData || window.clipboardData;
+    if (!clipboardData) return;
+    const pastedText = clipboardData.getData('text');
+    if (pastedText && (pastedText.includes('\t') || pastedText.includes('\n'))) {
+      e.preventDefault();
+      parseAndInsertClipboardText(pastedText);
+    }
+  }
+
+  async function pasteFromClipboard() {
+    try {
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim()) {
+          parseAndInsertClipboardText(text);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Clipboard readText permission denied, falling back to prompt:', err);
+    }
+
+    const fallbackText = prompt('Paste tab-delimited or CSV rows from Excel / Google Sheets here (Ctrl+V):');
+    if (fallbackText && fallbackText.trim()) {
+      parseAndInsertClipboardText(fallbackText);
+    }
+  }
+
+  function importCsvToExcel(input) {
+    if (!input || !input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const content = e.target.result;
+      parseAndInsertClipboardText(content);
+      input.value = '';
+    };
+    reader.readAsText(file);
+  }
+
+  function updateGridReconciliation() {
+    const totalRows = activeTagRows.length;
+    let totalPcs = 0;
+    let totalGross = 0;
+    let totalNet = 0;
+
+    activeTagRows.forEach(r => {
+      totalPcs += (parseInt(r.pcs, 10) || 1);
+      totalGross += (parseFloat(r.grossWt) || 0);
+      totalNet += (parseFloat(r.netWt) || 0);
+    });
+
+    const elRows = document.getElementById('tag-total-rows');
+    const elPcs = document.getElementById('tag-total-pcs');
+    const elGross = document.getElementById('tag-total-gross');
+    const elNet = document.getElementById('tag-total-net');
+    const elPill = document.getElementById('tag-grid-reconcile-pill');
+    const elText = document.getElementById('tag-reconcile-text');
+
+    if (elRows) elRows.textContent = totalRows;
+    if (elPcs) elPcs.textContent = totalPcs;
+    if (elGross) elGross.textContent = totalGross.toFixed(3);
+    if (elNet) elNet.textContent = totalNet.toFixed(3);
+
+    if (elPill && elText && activeTagBatch) {
+      const intakeGross = typeof activeTagBatch.grossWt === 'number' ? activeTagBatch.grossWt : parseFloat(activeTagBatch.grossWt || 0);
+      const intakePcs = parseInt(activeTagBatch.pcs, 10) || 0;
+      const diffGross = Math.abs(totalGross - intakeGross);
+      const isPcsMatch = totalPcs === intakePcs;
+
+      if (totalRows > 0 && diffGross <= 0.010 && isPcsMatch) {
+        elPill.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
+        elText.innerHTML = `RECONCILED: 100% MATCH WITH INTAKE DOCKET (${totalPcs} PCS • ${totalGross.toFixed(3)}g)`;
+      } else if (totalRows === 0) {
+        elPill.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300';
+        elText.textContent = `AWAITING TAG ROWS (TARGET: ${intakePcs} PCS • ${intakeGross.toFixed(3)}g)`;
+      } else {
+        elPill.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300';
+        elText.innerHTML = `DISCREPANCY: GRID (${totalPcs} PCS / ${totalGross.toFixed(3)}g) VS INTAKE (${intakePcs} PCS / ${intakeGross.toFixed(3)}g)`;
+      }
+    }
+  }
+
+  function renderBatchIntakeMetadata(batch) {
+    if (!batch) return;
+    const elCust = document.getElementById('tag-meta-customer');
+    const elBis = document.getElementById('tag-meta-bis');
+    const elJob = document.getElementById('tag-meta-job');
+    const elReq = document.getElementById('tag-meta-req');
+    const elPurity = document.getElementById('tag-meta-purity');
+    const elPcs = document.getElementById('tag-meta-pcs');
+    const elGross = document.getElementById('tag-meta-gross');
+    const elNet = document.getElementById('tag-meta-net');
+    const elTray = document.getElementById('tag-meta-tray');
+    const elStaff = document.getElementById('tag-meta-staff');
+
+    if (elCust) elCust.textContent = batch.customer || '-';
+    if (elBis) elBis.textContent = batch.bis || 'N/A';
+    if (elJob) elJob.textContent = batch.jobDocket || '-';
+    if (elReq) elReq.textContent = batch.reqNo || 'REQ-8831-A';
+    if (elPurity) elPurity.textContent = `${batch.metal || 'GOLD'} • ${batch.purity}`;
+    if (elPcs) elPcs.textContent = `${batch.pcs} PIECES`;
+    if (elGross) elGross.textContent = `${Number(batch.grossWt || 0).toFixed(3)} g`;
+    if (elNet) elNet.textContent = `${Number(batch.netWt || 0).toFixed(3)} g`;
+    if (elTray) elTray.textContent = batch.tray || '-';
+    if (elStaff) elStaff.textContent = `${batch.depositor || 'N/A'} (Dep) / ${batch.receiver || 'Sarah Jenkins'} (Rec)`;
+  }
+
+  // --- CUSTOM TAG PRINT SIZING ENGINE ---
+  function onTagPresetChanged(preset) {
+    const widthInput = document.getElementById('tag-print-width');
+    const heightInput = document.getElementById('tag-print-height');
+    const unitSelect = document.getElementById('tag-print-unit');
+    if (!widthInput || !heightInput) return;
+
+    if (unitSelect) unitSelect.value = 'mm';
+    document.querySelectorAll('.tag-unit-label').forEach(el => { el.textContent = 'mm'; });
+
+    if (preset === 'butterfly') {
+      widthInput.value = 50;
+      heightInput.value = 12;
+    } else if (preset === 'dumbbell') {
+      widthInput.value = 48;
+      heightInput.value = 26;
+    } else if (preset === 'pouch') {
+      widthInput.value = 60;
+      heightInput.value = 30;
+    }
+
+    ['butterfly', 'dumbbell', 'pouch', 'custom'].forEach(p => {
+      const btn = document.getElementById(`tag-preset-${p}`);
+      if (btn) {
+        if (p === preset) {
+          btn.className = 'tag-preset-btn p-2.5 rounded-xl border-2 border-primary-container bg-primary-container/5 text-left font-bold text-slate-800 transition-all cursor-pointer';
+        } else {
+          btn.className = 'tag-preset-btn p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 text-left font-bold text-slate-700 transition-all cursor-pointer';
+        }
+      }
+    });
+
+    updateTagMiniPreview();
+  }
+
+  function onTagDimensionInput() {
+    onTagPresetChanged('custom');
+    updateTagMiniPreview();
+  }
+
+  function onTagUnitChanged() {
+    const unitSelect = document.getElementById('tag-print-unit');
+    const unit = unitSelect ? unitSelect.value : 'mm';
+    document.querySelectorAll('.tag-unit-label').forEach(el => { el.textContent = unit; });
+    updateTagMiniPreview();
+  }
+
+  function updateTagMiniPreview() {
+    const width = parseFloat(document.getElementById('tag-print-width') ? document.getElementById('tag-print-width').value : 50) || 50;
+    const height = parseFloat(document.getElementById('tag-print-height') ? document.getElementById('tag-print-height').value : 12) || 12;
+    const unit = document.getElementById('tag-print-unit') ? document.getElementById('tag-print-unit').value : 'mm';
+
+    const dimsLabel = document.getElementById('tag-preview-dims-label');
+    if (dimsLabel) dimsLabel.textContent = `${width} × ${height} ${unit}`;
+
+    const miniPreview = document.getElementById('tag-mini-preview');
+    if (miniPreview) {
+      const sampleRow = (activeTagRows && activeTagRows[0]) ? activeTagRows[0] : null;
+      const elHuid = document.getElementById('mini-tag-huid');
+      const elPurity = document.getElementById('mini-tag-purity');
+      const elBarcode = document.getElementById('mini-tag-barcode');
+      const elWeights = document.getElementById('mini-tag-weights');
+      const elCust = document.getElementById('mini-tag-cust');
+
+      if (sampleRow) {
+        if (elHuid) elHuid.textContent = sampleRow.huid || 'HUID-916-MA001';
+        if (elPurity) elPurity.textContent = sampleRow.purity || '22K 916';
+        if (elBarcode) elBarcode.innerHTML = generateBarcodeSvg(sampleRow.barcode || '9104-001', 120, 18);
+        if (elWeights) elWeights.textContent = `G: ${sampleRow.grossWt}g | N: ${sampleRow.netWt}g`;
+        if (elCust) elCust.textContent = (activeTagBatch ? activeTagBatch.customer : 'SSR').slice(0, 8);
+      }
+    }
+  }
+
+  // --- GATED SAVE & PRINT ACTIONS ---
+  function saveTagData() {
+    if (!activeTagBatch) {
+      showToast('NO ACTIVE BATCH SELECTED TO SAVE.', 'warning');
+      return;
+    }
+
+    if (!activeTagRows || activeTagRows.length === 0) {
+      showToast('GRID IS EMPTY. PLEASE ADD AT LEAST ONE ROW BEFORE SAVING.', 'warning');
+      if (activeTagBatch) {
+        activeTagBatch.tagStatus = 'PENDING';
+        syncTagPrintButtonState();
+        renderTagStatusQueue();
+      }
+      return;
+    }
+
+    const invalidRows = activeTagRows.filter(r => {
+      const huid = String(r.huid || '').trim();
+      const gross = parseFloat(r.grossWt);
+      return !huid || isNaN(gross) || gross <= 0;
+    });
+
+    if (invalidRows.length > 0) {
+      showToast(`VALIDATION ERROR: ${invalidRows.length} ROW(S) HAVE MISSING/INVALID HUID OR GROSS WEIGHT. FIX BEFORE SAVING.`, 'warning');
+      if (activeTagBatch && activeTagBatch.tagStatus === 'DONE') {
+        activeTagBatch.tagStatus = 'PENDING';
+        syncTagPrintButtonState();
+        renderTagStatusQueue();
+      }
+      return;
+    }
+
+    // Persist to active batch object
+    activeTagBatch.tagData = JSON.parse(JSON.stringify(activeTagRows));
+    activeTagBatch.tagStatus = 'DONE';
+
+    syncTagPrintButtonState();
+    renderTagStatusQueue();
+
+    showToast(`TAG DATA FOR ${activeTagBatch.jobDocket} SAVED & VALIDATED (${activeTagRows.length} ROWS). PRINT UNLOCKED.`, 'success');
+  }
+
+  function syncTagPrintButtonState() {
+    const btnTop = document.getElementById('btn-print-tags');
+    const btnBottom = document.getElementById('btn-print-tags-bottom');
+    const note = document.getElementById('tag-print-status-note');
+
+    const isDone = activeTagBatch && activeTagBatch.tagStatus === 'DONE' && activeTagRows.length > 0;
+
+    [btnTop, btnBottom].forEach(btn => {
+      if (!btn) return;
+      if (isDone) {
+        btn.removeAttribute('disabled');
+        btn.classList.remove('btn-print-disabled');
+        btn.classList.add('cursor-pointer');
+      } else {
+        btn.setAttribute('disabled', 'true');
+        btn.classList.add('btn-print-disabled');
+        btn.classList.remove('cursor-pointer');
+      }
+    });
+
+    if (note) {
+      if (isDone) {
+        note.innerHTML = `<span class="text-emerald-700 font-bold flex items-center gap-1"><span class="material-symbols-outlined text-[15px]">check_circle</span>READY TO PRINT (${activeTagRows.length} TAGS SAVED)</span>`;
+      } else {
+        note.innerHTML = '<span class="text-slate-500 font-semibold">SAVE DATA TO ENABLE PRINT</span>';
+      }
+    }
+  }
+
+  function printCustomTags() {
+    if (!activeTagBatch || activeTagBatch.tagStatus !== 'DONE' || !activeTagRows || !activeTagRows.length) {
+      showToast('PRINT LOCKED: PLEASE CLICK "SAVE TAG DATA" FIRST TO VALIDATE AND UNLOCK PRINTING.', 'warning');
+      return;
+    }
+
+    const width = parseFloat(document.getElementById('tag-print-width').value) || 50;
+    const height = parseFloat(document.getElementById('tag-print-height').value) || 12;
+    const unit = document.getElementById('tag-print-unit').value || 'mm';
+
+    const incBarcode = document.getElementById('tag-opt-barcode') ? document.getElementById('tag-opt-barcode').checked : true;
+    const incHuid = document.getElementById('tag-opt-huid') ? document.getElementById('tag-opt-huid').checked : true;
+    const incWeights = document.getElementById('tag-opt-weights') ? document.getElementById('tag-opt-weights').checked : true;
     const incPurity = document.getElementById('tag-opt-purity') ? document.getElementById('tag-opt-purity').checked : true;
-    const incSlot = document.getElementById('tag-opt-slot') ? document.getElementById('tag-opt-slot').checked : true;
-    const incCust = document.getElementById('tag-opt-customer') ? document.getElementById('tag-opt-customer').checked : true;
-
-    grid.innerHTML = currentGeneratedTags.map((tag, idx) => {
-      const barcodeSvg = generateBarcodeSvg(tag.barcode, 140, 32);
-
-      return `
-        <div class="bg-surface-container-low rounded-xl border-2 border-slate-300 p-3.5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between relative group overflow-hidden bg-white">
-          <!-- Tag Header -->
-          <div class="flex items-center justify-between pb-2 mb-2 border-b border-dashed border-slate-300">
-            <div class="flex items-center gap-1.5 min-w-0">
-              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 truncate">SSR HALLMARK</span>
-              ${incCust ? `<span class="px-1.5 py-0.2 bg-slate-100 text-slate-700 text-[9px] font-bold font-mono rounded border border-slate-300 uppercase">${escapeHtmlStr(tag.customerShort)}</span>` : ''}
-            </div>
-            <span class="text-[9.5px] font-bold font-mono text-slate-500 shrink-0">#${tag.itemIndex}/${tag.totalItems}</span>
-          </div>
-
-          <!-- Barcode Graphic -->
-          <div class="py-1 flex flex-col items-center bg-white rounded border border-slate-200 p-1 mb-2">
-            ${barcodeSvg}
-            <span class="font-mono font-extrabold text-[11px] text-slate-900 tracking-wider mt-0.5">${escapeHtmlStr(tag.barcode)}</span>
-          </div>
-
-          <!-- HUID & Purity -->
-          <div class="space-y-1.5 text-xs">
-            <div class="flex items-center justify-between">
-              <span class="text-[9.5px] font-bold text-slate-500 uppercase">BIS HUID:</span>
-              <span class="font-mono font-extrabold text-[11px] text-primary-container bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">${escapeHtmlStr(tag.huid)}</span>
-            </div>
-
-            ${incPurity ? `
-              <div class="flex items-center justify-between">
-                <span class="text-[9.5px] font-bold text-slate-500 uppercase">HALLMARK:</span>
-                <span class="font-extrabold text-[10.5px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 uppercase">${escapeHtmlStr(tag.metal)} • ${escapeHtmlStr(tag.purity)}</span>
-              </div>
-            ` : ''}
-
-            ${incWeight ? `
-              <div class="flex items-center justify-between text-[10px] pt-1 border-t border-dashed border-slate-200">
-                <span class="text-slate-500 font-medium">WEIGHT:</span>
-                <span class="font-mono font-bold text-slate-800">NET: ${tag.netWt}g | GR: ${tag.grossWt}g</span>
-              </div>
-            ` : ''}
-
-            ${incSlot ? `
-              <div class="flex items-center justify-between text-[9px] text-slate-500">
-                <span>TRAY SLOT:</span>
-                <span class="font-mono font-bold text-slate-700">${escapeHtmlStr(tag.tray.split(' ')[0])} (${tag.slotNumber})</span>
-              </div>
-            ` : ''}
-          </div>
-
-          <!-- Quick Actions -->
-          <div class="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between">
-            <span class="text-[9px] text-slate-400 font-bold uppercase font-mono">${escapeHtmlStr(layout)}</span>
-            <button onclick="printSingleTag(${idx})" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-bold rounded flex items-center gap-1 cursor-pointer transition-colors" title="Print this tag">
-              <span class="material-symbols-outlined text-[13px]">print</span>
-              <span>PRINT</span>
-            </button>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  function printTagSheet() {
-    if (!currentGeneratedTags.length) {
-      showToast('NO TAGS READY TO PRINT. PLEASE SELECT A BATCH FIRST.', 'warning');
-      return;
-    }
 
     let printFrame = document.getElementById('tag-print-iframe');
     if (!printFrame) {
       printFrame = document.createElement('iframe');
       printFrame.id = 'tag-print-iframe';
-      printFrame.style.position = 'fixed';
-      printFrame.style.right = '0';
-      printFrame.style.bottom = '0';
-      printFrame.style.width = '0';
-      printFrame.style.height = '0';
-      printFrame.style.border = '0';
-      printFrame.style.opacity = '0';
+      printFrame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;';
       document.body.appendChild(printFrame);
     }
 
-    const tagsHtml = currentGeneratedTags.map(tag => {
-      const barcodeSvg = generateBarcodeSvg(tag.barcode, 130, 28);
+    const tagsHtml = activeTagRows.map((row, idx) => {
+      const barcodeSvg = incBarcode ? generateBarcodeSvg(row.barcode || `${activeTagBatch.jobDocket}-${idx + 1}`, 110, 20) : '';
+
       return `
-        <div style="width: 48mm; height: 26mm; padding: 2mm; border: 1px dashed #000; box-sizing: border-box; page-break-inside: avoid; margin-bottom: 2mm; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; justify-content: space-between; background: #fff; color: #000;">
-          <div style="display: flex; justify-content: space-between; font-size: 8px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 1px;">
-            <span>SSR HALLMARK</span>
-            <span>${escapeHtmlStr(tag.purity)}</span>
+        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; page-break-after: always; box-sizing: border-box; padding: 1mm 1.5mm; font-family: 'Inter', -apple-system, sans-serif; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; background: #fff; border: 0.5px solid #ccc;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 7.5pt; font-weight: 800; border-bottom: 0.5px solid #000; padding-bottom: 0.5mm;">
+            <span>SSR BIS</span>
+            ${incPurity ? `<span style="font-size: 7pt; font-weight: 900;">${escapeHtmlStr(row.purity || '22K 916')}</span>` : ''}
           </div>
-          <div style="text-align: center; margin: 1px 0;">
-            ${barcodeSvg}
-            <div style="font-size: 9px; font-weight: 900; letter-spacing: 0.5px;">*${escapeHtmlStr(tag.barcode)}*</div>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 8px; font-weight: bold;">
-            <span>${escapeHtmlStr(tag.huid)}</span>
-            <span>${tag.netWt}g</span>
-          </div>
-        </div>
-      `;
-    }).join('');
 
-    const frameDoc = printFrame.contentWindow.document;
-    frameDoc.open();
-    frameDoc.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>TAG SHEET - ${escapeHtmlStr(activeTagBatch ? activeTagBatch.jobDocket : 'TAGS')}</title>
-          <style>
-            @page { size: auto; margin: 4mm; }
-            * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            body { margin: 0; padding: 0; background: #fff; color: #000; }
-            .sheet-grid { display: flex; flex-wrap: wrap; gap: 3mm; justify-content: flex-start; }
-          </style>
-        </head>
-        <body>
-          <div class="sheet-grid">
-            ${tagsHtml}
-          </div>
-        </body>
-      </html>
-    `);
-    frameDoc.close();
-
-    setTimeout(() => {
-      try {
-        printFrame.contentWindow.focus();
-        printFrame.contentWindow.print();
-      } catch (e) {
-        console.error('Print tag sheet error:', e);
-      }
-    }, 200);
-  }
-
-  function printSingleTag(index) {
-    const tag = currentGeneratedTags[index];
-    if (!tag) return;
-
-    let printFrame = document.getElementById('tag-print-iframe');
-    if (!printFrame) {
-      printFrame = document.createElement('iframe');
-      printFrame.id = 'tag-print-iframe';
-      printFrame.style.position = 'fixed';
-      printFrame.style.right = '0';
-      printFrame.style.bottom = '0';
-      printFrame.style.width = '0';
-      printFrame.style.height = '0';
-      printFrame.style.border = '0';
-      printFrame.style.opacity = '0';
-      document.body.appendChild(printFrame);
-    }
-
-    const barcodeSvg = generateBarcodeSvg(tag.barcode, 140, 30);
-    const frameDoc = printFrame.contentWindow.document;
-    frameDoc.open();
-    frameDoc.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>TAG - ${escapeHtmlStr(tag.huid)}</title>
-          <style>
-            @page { size: 50mm 25mm; margin: 1mm; }
-            * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            body { margin: 0; padding: 0; background: #fff; color: #000; font-family: 'Courier New', Courier, monospace; }
-          </style>
-        </head>
-        <body>
-          <div style="width: 48mm; height: 23mm; padding: 1.5mm; border: 1px solid #000; display: flex; flex-direction: column; justify-content: space-between;">
-            <div style="display: flex; justify-content: space-between; font-size: 8px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 1px;">
-              <span>SSR HALLMARK</span>
-              <span>${escapeHtmlStr(tag.purity)}</span>
-            </div>
-            <div style="text-align: center;">
+          ${incBarcode ? `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0.5mm 0;">
               ${barcodeSvg}
-              <div style="font-size: 8.5px; font-weight: 900;">${escapeHtmlStr(tag.barcode)}</div>
+              <div style="font-family: monospace; font-size: 6.5pt; font-weight: bold; letter-spacing: 0.5px;">${escapeHtmlStr(row.barcode)}</div>
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 7.5px; font-weight: bold;">
-              <span>${escapeHtmlStr(tag.huid)}</span>
-              <span>N: ${tag.netWt}g</span>
-            </div>
+          ` : ''}
+
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; font-size: 6.5pt; font-weight: 700;">
+            ${incHuid ? `<span style="font-family: monospace; font-weight: 900;">${escapeHtmlStr(row.huid)}</span>` : ''}
+            ${incWeights ? `<span>G: ${row.grossWt}g</span>` : ''}
           </div>
+        </div>
+      `;
+    }).join('');
+
+    const frameDoc = printFrame.contentWindow.document;
+    frameDoc.open();
+    frameDoc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>TAGS - ${escapeHtmlStr(activeTagBatch.jobDocket)}</title>
+          <style>
+            @page {
+              size: ${width}${unit} ${height}${unit};
+              margin: 0;
+            }
+            * {
+              box-sizing: border-box;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            html, body {
+              margin: 0;
+              padding: 0;
+              background: #ffffff;
+            }
+          </style>
+        </head>
+        <body>
+          ${tagsHtml}
         </body>
       </html>
     `);
@@ -1787,55 +2334,69 @@
       try {
         printFrame.contentWindow.focus();
         printFrame.contentWindow.print();
-      } catch (e) {
-        console.error('Print single tag error:', e);
+      } catch (err) {
+        console.error('Print tags error:', err);
       }
-    }, 200);
+    }, 250);
   }
 
   function exportTagsCSV() {
-    if (!currentGeneratedTags.length) {
-      showToast('NO TAGS AVAILABLE TO EXPORT.', 'warning');
+    const rows = activeTagRows.length ? activeTagRows : generateDefaultTagRows(activeTagBatch || state.intakeBatches[0]);
+    if (!rows.length) {
+      showToast('NO TAG DATA AVAILABLE TO EXPORT.', 'warning');
       return;
     }
 
-    const headers = ['Tag Index', 'Total In Batch', 'HUID Code', 'Barcode Serial', 'Customer Name', 'BIS License', 'Metal', 'Purity', 'Net Wt (G)', 'Gross Wt (G)', 'Job Docket', 'Vault Tray'];
-    const rows = currentGeneratedTags.map(t => [
-      t.itemIndex,
-      t.totalItems,
-      `"${t.huid}"`,
-      `"${t.barcode}"`,
-      `"${t.customer}"`,
-      `"${activeTagBatch ? activeTagBatch.bis : ''}"`,
-      `"${t.metal}"`,
-      `"${t.purity}"`,
-      t.netWt,
-      t.grossWt,
-      `"${t.docket}"`,
-      `"${t.tray}"`
-    ]);
+    const headers = ['Sl No', 'HUID Code', 'Item Description', 'Pcs', 'Gross Wt (g)', 'Net Wt (g)', 'Purity', 'Barcode Serial', 'Job Docket', 'Customer Name'];
+    const csvLines = [headers.join(',')];
 
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    rows.forEach(r => {
+      csvLines.push([
+        r.slNo,
+        `"${r.huid || ''}"`,
+        `"${r.itemDesc || ''}"`,
+        r.pcs || 1,
+        r.grossWt || '0.000',
+        r.netWt || '0.000',
+        `"${r.purity || ''}"`,
+        `"${r.barcode || ''}"`,
+        `"${activeTagBatch ? activeTagBatch.jobDocket : ''}"`,
+        `"${activeTagBatch ? activeTagBatch.customer : ''}"`
+      ].join(','));
+    });
+
+    const csvContent = csvLines.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `HUID_Tags_${(activeTagBatch ? activeTagBatch.jobDocket : 'Batch').replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+    link.download = `TAGS_${(activeTagBatch ? activeTagBatch.jobDocket : 'DOCKET').replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showToast(`EXPORTED ${currentGeneratedTags.length} TAGS TO CSV SUCCESSFULLY.`, 'success');
+    showToast(`EXPORTED ${rows.length} TAGS TO CSV SUCCESSFULLY.`, 'success');
   }
 
+  // Legacy compatibility functions
+  function onTagFormatChanged() { updateTagMiniPreview(); }
+  function refreshTagGenerationPreview() { autoFillFromIntake(); }
+  function printTagSheet() { printCustomTags(); }
+  function printSingleTag(idx) { printCustomTags(); }
+
   // ========================================================
-  // DELIVERY & OUTWARD DISPATCH MODULE
+  // OUTWARD DELIVERY & DISPATCH MODULE (REVAMPED)
   // ========================================================
   let activeDeliveryBatch = null;
+  let activeDeliveryPhoto = null;
+  let deliveryQueueFilter = 'ALL';
+  let deliverySearchQuery = '';
+
   const initialDeliveryRecords = [
     {
       gatePassNo: 'GP-8848',
-      jobDocket: '367447354638743',
+      jobDocket: 'JOB-2024-9104',
+      reqNo: 'REQ-8831-A',
       customer: 'TANISHQ LUXURY GUILD',
       bis: 'BIS-DL-4482',
       pcs: 67,
@@ -1847,11 +2408,13 @@
       releasedBy: 'SARAH JENKINS',
       sealNo: 'SEAL-SSR-8891',
       dispatchTime: '2024-10-24 14:15 IST',
-      status: 'DELIVERED'
+      status: 'DELIVERED',
+      articlePhoto: null
     },
     {
       gatePassNo: 'GP-8847',
-      jobDocket: '67890456',
+      jobDocket: 'JOB-2024-8841',
+      reqNo: 'REQ-8830-K',
       customer: 'KALYAN JEWELLERS HERITAGE',
       bis: 'BIS-KA-3391-B',
       pcs: 100,
@@ -1863,11 +2426,13 @@
       releasedBy: 'ARUN D\'SOUZA',
       sealNo: 'SEAL-SSR-8889',
       dispatchTime: '2024-10-24 13:40 IST',
-      status: 'OUT FOR TRANSIT'
+      status: 'OUT FOR TRANSIT',
+      articlePhoto: null
     },
     {
       gatePassNo: 'GP-8846',
-      jobDocket: '983628',
+      jobDocket: 'JOB-2024-8840',
+      reqNo: 'REQ-8828-M',
       customer: 'MALABAR GOLD & DIAMONDS',
       bis: 'BIS-MH-2022-771',
       pcs: 175,
@@ -1879,33 +2444,26 @@
       releasedBy: 'SARAH JENKINS',
       sealNo: 'SEAL-SSR-8880',
       dispatchTime: '2024-10-24 11:30 IST',
-      status: 'DELIVERED'
+      status: 'DELIVERED',
+      articlePhoto: null
     }
   ];
 
   state.deliveryLedger = [...initialDeliveryRecords];
 
   function initDeliveryView() {
-    const select = document.getElementById('delivery-batch-select');
-    if (!select) return;
+    updateDeliveryStats();
+    renderDeliveryQueue();
+    populateDeliverySelect();
 
-    if (!state.intakeBatches || state.intakeBatches.length === 0) {
-      select.innerHTML = '<option value="">NO BATCHES READY FOR DISPATCH</option>';
-      renderDeliveryLedgerTable();
-      return;
+    if (!activeDeliveryBatch && state.intakeBatches && state.intakeBatches.length > 0) {
+      const readyBatch = state.intakeBatches.find(b => b.status !== 'Delivered') || state.intakeBatches[0];
+      selectDeliveryBatch(readyBatch.jobDocket);
+    } else if (activeDeliveryBatch) {
+      selectDeliveryBatch(activeDeliveryBatch.jobDocket);
     }
 
-    select.innerHTML = state.intakeBatches.map(b => `
-      <option value="${escapeHtmlStr(b.jobDocket)}" ${activeDeliveryBatch && activeDeliveryBatch.jobDocket === b.jobDocket ? 'selected' : ''}>
-        ${escapeHtmlStr(b.receiptNo || 'REC')} • ${escapeHtmlStr(b.customer)} (${b.pcs} PCS, ${b.grossWt}g)
-      </option>
-    `).join('');
-
-    const targetDocket = activeDeliveryBatch ? activeDeliveryBatch.jobDocket : state.intakeBatches[0].jobDocket;
-    select.value = targetDocket;
-    onDeliveryBatchSelected(targetDocket);
     renderDeliveryLedgerTable();
-    updateDeliveryStats();
   }
 
   function updateDeliveryStats() {
@@ -1913,15 +2471,181 @@
     const transitEl = document.getElementById('deliv-stat-transit');
     const deliveredEl = document.getElementById('deliv-stat-delivered');
 
-    if (readyEl) readyEl.textContent = `${state.intakeBatches ? state.intakeBatches.length : 0} BATCHES`;
-    if (transitEl) {
-      const transitCount = state.deliveryLedger.filter(d => d.status === 'OUT FOR TRANSIT').length;
-      transitEl.textContent = `${transitCount} BATCHES`;
+    const batches = state.intakeBatches || [];
+    const readyBatches = batches.filter(b => b.status !== 'Delivered');
+    const transitCount = (state.deliveryLedger || []).filter(d => d.status === 'OUT FOR TRANSIT').length;
+    const deliveredCount = (state.deliveryLedger || []).filter(d => d.status === 'DELIVERED').length;
+
+    if (readyEl) readyEl.textContent = `${readyBatches.length} BATCHES`;
+    if (transitEl) transitEl.textContent = `${transitCount} BATCHES`;
+    if (deliveredEl) deliveredEl.textContent = `${deliveredCount} DOCKETS`;
+  }
+
+  function renderDeliveryQueue(filterOverride) {
+    const container = document.getElementById('delivery-queue-container');
+    if (!container) return;
+
+    const filter = filterOverride || deliveryQueueFilter || 'ALL';
+    deliveryQueueFilter = filter;
+
+    // Filter Buttons Styling
+    ['all', 'gold', 'silver', 'delivered'].forEach(f => {
+      const btn = document.getElementById(`deliv-filter-${f}`);
+      if (btn) {
+        if (f.toUpperCase() === filter) {
+          btn.className = 'px-2.5 py-1 rounded-md bg-white shadow-2xs text-slate-800';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800';
+        }
+      }
+    });
+
+    const batches = state.intakeBatches || [];
+    const q = (deliverySearchQuery || '').trim().toUpperCase();
+
+    const filtered = batches.filter(b => {
+      // Tab Filter
+      if (filter === 'ALL' && b.status === 'Delivered') return false;
+      if (filter === 'GOLD' && (b.status === 'Delivered' || !(b.metal === 'GOLD' || /916|750|999|GOLD/i.test(b.purity)))) return false;
+      if (filter === 'SILVER' && (b.status === 'Delivered' || !(b.metal === 'SILVER' || /925|SILVER/i.test(b.purity)))) return false;
+      if (filter === 'DELIVERED' && b.status !== 'Delivered') return false;
+
+      // Text Search Filter
+      if (q) {
+        const matchCustomer = (b.customer || '').toUpperCase().includes(q);
+        const matchJob = (b.jobDocket || '').toUpperCase().includes(q);
+        const matchReq = (b.reqNo || '').toUpperCase().includes(q);
+        const matchBis = (b.bis || '').toUpperCase().includes(q);
+        const matchReceipt = (b.receiptNo || '').toUpperCase().includes(q);
+        if (!matchCustomer && !matchJob && !matchReq && !matchBis && !matchReceipt) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="col-span-full py-8 text-center text-slate-400 font-bold uppercase text-xs">NO BATCHES MATCHING CRITERIA IN DELIVERY QUEUE.</div>';
+      return;
     }
-    if (deliveredEl) {
-      const deliveredCount = state.deliveryLedger.filter(d => d.status === 'DELIVERED').length;
-      deliveredEl.textContent = `${deliveredCount} DOCKETS`;
+
+    container.innerHTML = filtered.map(b => {
+      const isSelected = activeDeliveryBatch && activeDeliveryBatch.jobDocket === b.jobDocket;
+      const isDelivered = b.status === 'Delivered';
+      const grossG = typeof b.grossWt === 'number' ? b.grossWt.toFixed(3) : parseFloat(b.grossWt || 0).toFixed(3);
+      const netG = typeof b.netWt === 'number' ? b.netWt.toFixed(3) : parseFloat(b.netWt || 0).toFixed(3);
+
+      return `
+        <div
+          onclick="selectDeliveryBatch('${escapeHtmlStr(b.jobDocket)}')"
+          class="delivery-queue-card p-3.5 rounded-xl bg-white ${isSelected ? 'active-delivery-batch' : 'hover:border-slate-300'}"
+        >
+          <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100">
+            <span class="font-mono font-bold text-xs text-primary-container">${escapeHtmlStr(b.jobDocket)}</span>
+            <span class="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">${escapeHtmlStr(b.reqNo || 'REQ')}</span>
+          </div>
+
+          <div class="font-extrabold text-slate-900 text-xs uppercase truncate mb-1" title="${escapeHtmlStr(b.customer)}">
+            ${escapeHtmlStr(b.customer)}
+          </div>
+
+          <div class="text-[10px] text-slate-600 mb-2 font-mono flex items-center justify-between">
+            <span>${b.pcs} PCS • ${escapeHtmlStr(b.purity)}</span>
+            <span class="text-slate-400">TRAY: ${escapeHtmlStr(b.tray || '-')}</span>
+          </div>
+
+          <div class="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px]">
+            <span class="font-mono text-slate-500">GR: ${grossG}g</span>
+            ${isDelivered ? `
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold font-mono bg-blue-100 text-blue-800 border border-blue-200">
+                DISPATCHED
+              </span>
+            ` : `
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold font-mono bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[11px]">check_circle</span>
+                <span>READY</span>
+              </span>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function filterDeliveryQueue(filter) {
+    deliveryQueueFilter = filter;
+    renderDeliveryQueue(filter);
+  }
+
+  // --- MULTI-PARAMETER SEARCH & SELECTION FILTER ---
+  function handleDeliverySearch(query) {
+    deliverySearchQuery = (query || '').trim();
+    const q = deliverySearchQuery.toUpperCase();
+
+    const clearBtn = document.getElementById('delivery-search-clear');
+    if (clearBtn) {
+      if (q) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
     }
+
+    const batches = state.intakeBatches || [];
+    const matched = batches.filter(b => {
+      if (!q) return true;
+      return (
+        (b.customer || '').toUpperCase().includes(q) ||
+        (b.jobDocket || '').toUpperCase().includes(q) ||
+        (b.reqNo || '').toUpperCase().includes(q) ||
+        (b.receiptNo || '').toUpperCase().includes(q) ||
+        (b.bis || '').toUpperCase().includes(q)
+      );
+    });
+
+    const matchCountEl = document.getElementById('delivery-search-match-count');
+    if (matchCountEl) {
+      if (q) {
+        matchCountEl.textContent = `Showing ${matched.length} of ${batches.length} batches matching "${deliverySearchQuery}"`;
+      } else {
+        matchCountEl.textContent = '';
+      }
+    }
+
+    populateDeliverySelect(matched);
+    renderDeliveryQueue();
+
+    if (matched.length > 0) {
+      const isAlreadyActive = activeDeliveryBatch && matched.some(m => m.jobDocket === activeDeliveryBatch.jobDocket);
+      if (!isAlreadyActive) {
+        selectDeliveryBatch(matched[0].jobDocket);
+      }
+    }
+  }
+
+  function clearDeliverySearch() {
+    const input = document.getElementById('delivery-batch-search');
+    if (input) input.value = '';
+    handleDeliverySearch('');
+  }
+
+  function populateDeliverySelect(batchList) {
+    const select = document.getElementById('delivery-batch-select');
+    if (!select) return;
+
+    const list = batchList || state.intakeBatches || [];
+    if (!list.length) {
+      select.innerHTML = '<option value="">NO BATCHES MATCHING SEARCH</option>';
+      return;
+    }
+
+    select.innerHTML = list.map(b => `
+      <option value="${escapeHtmlStr(b.jobDocket)}" ${activeDeliveryBatch && activeDeliveryBatch.jobDocket === b.jobDocket ? 'selected' : ''}>
+        ${escapeHtmlStr(b.jobDocket)} • ${escapeHtmlStr(b.customer)} (${escapeHtmlStr(b.reqNo || 'REQ')} - ${b.pcs} PCS, ${b.grossWt}g)
+      </option>
+    `).join('');
+  }
+
+  function selectDeliveryBatch(docket) {
+    onDeliveryBatchSelected(docket);
   }
 
   function onDeliveryBatchSelected(docket) {
@@ -1930,25 +2654,146 @@
     if (!batch) return;
     activeDeliveryBatch = batch;
 
+    const select = document.getElementById('delivery-batch-select');
+    if (select && select.value !== batch.jobDocket) {
+      select.value = batch.jobDocket;
+    }
+
+    // Synchronize Article Photo for Session Persistence without cross-batch bleed
+    activeDeliveryPhoto = activeDeliveryBatch.articlePhoto || null;
+    updatePhotoPreviewDisplay();
+
     const custEl = document.getElementById('deliv-view-cust');
     const jobEl = document.getElementById('deliv-view-job');
     const metalEl = document.getElementById('deliv-view-metal');
     const weightEl = document.getElementById('deliv-view-weight');
     const trayEl = document.getElementById('deliv-view-tray');
+    const gpBadge = document.getElementById('deliv-gp-badge');
 
     if (custEl) custEl.textContent = batch.customer || '-';
-    if (jobEl) jobEl.textContent = batch.jobDocket || '-';
-    if (metalEl) metalEl.textContent = `${batch.pcs} PIECES • ${batch.metal} (${batch.purity})`;
-    if (weightEl) weightEl.textContent = `${(batch.grossWt || 0).toFixed(3)} GRAMS`;
+    if (jobEl) jobEl.textContent = `${batch.jobDocket} (${batch.reqNo || 'REQ-8831-A'})`;
+    if (metalEl) metalEl.textContent = `${batch.pcs} PIECES • ${batch.metal || 'GOLD'} (${batch.purity})`;
+    if (weightEl) weightEl.textContent = `${Number(batch.grossWt || 0).toFixed(3)} GRAMS`;
     if (trayEl) trayEl.textContent = batch.tray || '-';
+    if (gpBadge) gpBadge.textContent = batch.gatePassNo ? `GATE PASS #${batch.gatePassNo}` : 'GATE PASS #GP-8849';
 
     renderDeliveryGatePassPreview();
+    renderDeliveryQueue();
   }
 
+  // --- ARTICLE PHOTO UPLOAD & CANVAS DOWNSCALING ---
+  function handleArticlePhotoUpload(files) {
+    if (!files || !files[0]) return;
+    const file = files[0];
+
+    if (!file.type.startsWith('image/')) {
+      showToast('INVALID FILE: PLEASE UPLOAD A VALID IMAGE (JPEG/PNG/WEBP).', 'warning');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const rawUri = event.target.result;
+      const img = new Image();
+      img.onload = function() {
+        // Downscale to max 1200x1200 via canvas for optimal memory & instant printing
+        const maxDim = 1200;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const optimizedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+        activeDeliveryPhoto = optimizedBase64;
+
+        if (activeDeliveryBatch) {
+          activeDeliveryBatch.articlePhoto = optimizedBase64;
+        }
+
+        updatePhotoPreviewDisplay(file.name, Math.round(optimizedBase64.length * 0.75 / 1024) + ' KB');
+        renderDeliveryGatePassPreview();
+        showToast('ARTICLE VERIFICATION PHOTO ATTACHED & READY.', 'success');
+      };
+      img.src = rawUri;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function updatePhotoPreviewDisplay(name, sizeStr) {
+    const dropzone = document.getElementById('deliv-photo-dropzone');
+    const previewContainer = document.getElementById('deliv-photo-preview-container');
+    const previewImg = document.getElementById('deliv-photo-preview-img');
+    const metaName = document.getElementById('deliv-photo-meta-name');
+    const metaSize = document.getElementById('deliv-photo-meta-size');
+
+    if (!dropzone || !previewContainer) return;
+
+    if (activeDeliveryPhoto) {
+      dropzone.classList.add('hidden');
+      previewContainer.classList.remove('hidden');
+      if (previewImg) previewImg.src = activeDeliveryPhoto;
+      if (metaName) metaName.textContent = name || 'ARTICLE_VERIFICATION_PHOTO.JPG';
+      if (metaSize) metaSize.textContent = sizeStr || 'READY';
+    } else {
+      dropzone.classList.remove('hidden');
+      previewContainer.classList.add('hidden');
+      if (previewImg) previewImg.src = '';
+    }
+  }
+
+  function removeArticlePhoto() {
+    activeDeliveryPhoto = null;
+    if (activeDeliveryBatch) {
+      activeDeliveryBatch.articlePhoto = null;
+    }
+    const input = document.getElementById('deliv-photo-input');
+    if (input) input.value = '';
+
+    updatePhotoPreviewDisplay();
+    renderDeliveryGatePassPreview();
+    showToast('ARTICLE PHOTO REMOVED.', 'info');
+  }
+
+  function handlePhotoDragOver(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const dropzone = document.getElementById('deliv-photo-dropzone');
+    if (dropzone) dropzone.classList.add('drag-active');
+  }
+
+  function handlePhotoDragLeave(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const dropzone = document.getElementById('deliv-photo-dropzone');
+    if (dropzone) dropzone.classList.remove('drag-active');
+  }
+
+  function handlePhotoDrop(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const dropzone = document.getElementById('deliv-photo-dropzone');
+    if (dropzone) dropzone.classList.remove('drag-active');
+    if (e.dataTransfer && e.dataTransfer.files) {
+      handleArticlePhotoUpload(e.dataTransfer.files);
+    }
+  }
+
+  // --- GATE PASS HTML GENERATOR WITH EMBEDDED PHOTO & REQ # ---
   function generateGatePassHtml(batch, collector, collectorId, releasedBy, sealNo, gatePassNo, dispatchTime) {
     const watermarkSrc = (window && window.SSR_LOGO_WATERMARK_SRC) ? window.SSR_LOGO_WATERMARK_SRC : 'assets/ssr-logo-bw.png';
     const grossG = typeof batch.grossWt === 'number' ? batch.grossWt.toFixed(3) : parseFloat(batch.grossWt || 0).toFixed(3);
     const netG = typeof batch.netWt === 'number' ? batch.netWt.toFixed(3) : parseFloat(batch.netWt || 0).toFixed(3);
+    const photoSrc = activeDeliveryPhoto || batch.articlePhoto || null;
 
     return `
       <div style="position: relative; width: 74mm; max-width: 100%; margin: 0 auto; padding: 2mm; color: #000; background: #fff; font-family: 'Courier New', Courier, monospace; box-sizing: border-box; overflow: hidden;">
@@ -1977,6 +2822,7 @@
           <!-- Docket & Items -->
           <div style="font-size: 9px; padding: 3px 0; border-bottom: 1px dashed #000; line-height: 1.35;">
             <div><strong>JOB DOCKET:</strong> ${escapeHtmlStr(batch.jobDocket)}</div>
+            <div><strong>REQUEST NUMBER:</strong> ${escapeHtmlStr(batch.reqNo || 'REQ-8831-A')}</div>
             <div><strong>INTAKE RECEIPT #:</strong> ${escapeHtmlStr(batch.receiptNo || 'REC-10948')}</div>
             <div><strong>VAULT TRAY:</strong> ${escapeHtmlStr(batch.tray)}</div>
             <div><strong>SECURITY SEAL #:</strong> ${escapeHtmlStr(sealNo)}</div>
@@ -1985,11 +2831,19 @@
           <!-- Pieces & Weights Summary Box -->
           <div style="margin: 5px 0; padding: 5px; border: 2px solid #000; text-align: center; background: #fff;">
             <div style="font-size: 8.5px; font-weight: bold; text-transform: uppercase;">VERIFIED OUTWARD QUANTITY</div>
-            <div style="font-size: 18px; font-weight: 900; margin: 1px 0;">${batch.pcs} PIECES • ${escapeHtmlStr(batch.metal)}</div>
+            <div style="font-size: 18px; font-weight: 900; margin: 1px 0;">${batch.pcs} PIECES • ${escapeHtmlStr(batch.metal || 'GOLD')}</div>
             <div style="font-size: 11px; font-weight: 900; border-top: 1px solid #000; padding-top: 3px; margin-top: 3px;">
               GROSS: ${grossG}g | NET: ${netG}g | ${escapeHtmlStr(batch.purity)}
             </div>
           </div>
+
+          <!-- Article Verification Photo Embedded in Gate Pass -->
+          ${photoSrc ? `
+            <div style="margin: 4px 0; padding: 3px; border: 1.5px solid #000; text-align: center; background: #fff;">
+              <div style="font-size: 7.5px; font-weight: 900; text-transform: uppercase; margin-bottom: 2px;">CUSTODY ARTICLE VERIFICATION PHOTO</div>
+              <img src="${photoSrc}" alt="Article Verification" class="gatepass-photo-img" style="max-height: 28mm; max-width: 100%; object-fit: contain; display: block; margin: 0 auto; -webkit-print-color-adjust: exact; print-color-adjust: exact;" />
+            </div>
+          ` : ''}
 
           <!-- Custody Signatures -->
           <div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed #000; font-size: 8px;">
@@ -2021,14 +2875,21 @@
     const releasedBy = document.getElementById('deliv-released-by') ? document.getElementById('deliv-released-by').value : 'SARAH JENKINS';
     const sealNo = document.getElementById('deliv-seal-no') ? document.getElementById('deliv-seal-no').value.trim() : 'SEAL-SSR-9021';
     const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 16) + ' IST';
+    const gpNo = activeDeliveryBatch.gatePassNo || 'GP-8849';
 
-    previewEl.innerHTML = generateGatePassHtml(activeDeliveryBatch, collector, collectorId, releasedBy, sealNo, 'GP-8849', nowStr);
+    previewEl.innerHTML = generateGatePassHtml(activeDeliveryBatch, collector, collectorId, releasedBy, sealNo, gpNo, nowStr);
   }
 
+  // --- CUSTODY HANDOVER SUBMIT & LEDGER COMMIT ---
   function handleDeliverySubmit(e) {
     if (e && e.preventDefault) e.preventDefault();
     if (!activeDeliveryBatch) {
       showToast('NO ACTIVE BATCH SELECTED FOR DELIVERY.', 'warning');
+      return;
+    }
+
+    if (activeDeliveryBatch.status && activeDeliveryBatch.status.toLowerCase() === 'delivered') {
+      showToast(`BATCH ${activeDeliveryBatch.jobDocket} HAS ALREADY BEEN DELIVERED. CANNOT CREATE DUPLICATE HANDOVER.`, 'warning');
       return;
     }
 
@@ -2042,23 +2903,38 @@
     const newRecord = {
       gatePassNo: newGp,
       jobDocket: activeDeliveryBatch.jobDocket,
+      reqNo: activeDeliveryBatch.reqNo || 'REQ-8831-A',
       customer: activeDeliveryBatch.customer,
-      bis: activeDeliveryBatch.bis,
+      bis: activeDeliveryBatch.bis || 'N/A',
       pcs: activeDeliveryBatch.pcs,
-      metal: activeDeliveryBatch.metal,
+      metal: activeDeliveryBatch.metal || 'GOLD',
       purity: activeDeliveryBatch.purity,
       grossWt: activeDeliveryBatch.grossWt,
+      netWt: activeDeliveryBatch.netWt,
+      tray: activeDeliveryBatch.tray,
       collector: collector,
       collectorId: collectorId,
       releasedBy: releasedBy,
       sealNo: sealNo,
+      articlePhoto: activeDeliveryPhoto || null,
       dispatchTime: nowStr,
       status: 'DELIVERED'
     };
 
+    // Update batch in intakeBatches state
+    activeDeliveryBatch.status = 'Delivered';
+    activeDeliveryBatch.gatePassNo = newGp;
+    activeDeliveryBatch.deliveryTime = nowStr;
+    activeDeliveryBatch.articlePhoto = activeDeliveryPhoto;
+
+    // Commit to delivery ledger
     state.deliveryLedger.unshift(newRecord);
+
     renderDeliveryLedgerTable();
     updateDeliveryStats();
+    renderDeliveryQueue();
+    renderDeliveryGatePassPreview();
+
     showToast(`DELIVERY COMPLETED FOR ${activeDeliveryBatch.customer} (GATE PASS: ${newGp}).`, 'success');
 
     // Automatically prompt print of the gate pass
@@ -2070,6 +2946,8 @@
   function resetDeliveryForm() {
     const form = document.getElementById('delivery-handover-form');
     if (form) form.reset();
+    activeDeliveryPhoto = null;
+    updatePhotoPreviewDisplay();
     if (activeDeliveryBatch) onDeliveryBatchSelected(activeDeliveryBatch.jobDocket);
   }
 
@@ -2084,7 +2962,7 @@
     const releasedBy = document.getElementById('deliv-released-by') ? document.getElementById('deliv-released-by').value : 'SARAH JENKINS';
     const sealNo = document.getElementById('deliv-seal-no') ? document.getElementById('deliv-seal-no').value.trim() : 'SEAL-SSR-9021';
     const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 16) + ' IST';
-    const gpNo = customGp || 'GP-8849';
+    const gpNo = customGp || activeDeliveryBatch.gatePassNo || 'GP-8849';
 
     const slipHtml = generateGatePassHtml(activeDeliveryBatch, collector, collectorId, releasedBy, sealNo, gpNo, nowStr);
 
@@ -2092,13 +2970,7 @@
     if (!printFrame) {
       printFrame = document.createElement('iframe');
       printFrame.id = 'delivery-print-iframe';
-      printFrame.style.position = 'fixed';
-      printFrame.style.right = '0';
-      printFrame.style.bottom = '0';
-      printFrame.style.width = '0';
-      printFrame.style.height = '0';
-      printFrame.style.border = '0';
-      printFrame.style.opacity = '0';
+      printFrame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;';
       document.body.appendChild(printFrame);
     }
 
@@ -2114,6 +2986,68 @@
             @page { size: auto; margin: 3mm; }
             * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             body { margin: 0; padding: 0; background: #fff; color: #000; font-family: 'Courier New', Courier, monospace; }
+            .gatepass-photo-img { max-height: 28mm !important; max-width: 100% !important; object-fit: contain !important; }
+          </style>
+        </head>
+        <body>
+          ${slipHtml}
+        </body>
+      </html>
+    `);
+    frameDoc.close();
+
+    setTimeout(() => {
+      try {
+        printFrame.contentWindow.focus();
+        printFrame.contentWindow.print();
+      } catch (err) {
+        console.error('Print gate pass error:', err);
+      }
+    }, 200);
+  }
+
+  function printDeliveryGatePassDirect(gpNo) {
+    const rec = state.deliveryLedger.find(d => d.gatePassNo === gpNo);
+    if (!rec) return;
+
+    const mockBatch = {
+      customer: rec.customer,
+      bis: rec.bis,
+      jobDocket: rec.jobDocket,
+      reqNo: rec.reqNo || 'REQ-8831-A',
+      receiptNo: 'REC-10948',
+      pcs: rec.pcs,
+      metal: rec.metal,
+      purity: rec.purity,
+      grossWt: rec.grossWt,
+      netWt: rec.grossWt * 0.95,
+      tray: 'RELEASED',
+      articlePhoto: rec.articlePhoto || null
+    };
+
+    const slipHtml = generateGatePassHtml(mockBatch, rec.collector, rec.collectorId, rec.releasedBy, rec.sealNo || 'SEAL-SSR-9021', rec.gatePassNo, rec.dispatchTime);
+
+    let printFrame = document.getElementById('delivery-print-iframe');
+    if (!printFrame) {
+      printFrame = document.createElement('iframe');
+      printFrame.id = 'delivery-print-iframe';
+      printFrame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;';
+      document.body.appendChild(printFrame);
+    }
+
+    const frameDoc = printFrame.contentWindow.document;
+    frameDoc.open();
+    frameDoc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>GATE PASS - ${escapeHtmlStr(rec.gatePassNo)}</title>
+          <style>
+            @page { size: auto; margin: 3mm; }
+            * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body { margin: 0; padding: 0; background: #fff; color: #000; font-family: 'Courier New', Courier, monospace; }
+            .gatepass-photo-img { max-height: 28mm !important; max-width: 100% !important; object-fit: contain !important; }
           </style>
         </head>
         <body>
@@ -2139,100 +3073,59 @@
 
     const list = recordsToRender || state.deliveryLedger || [];
     if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-400 font-bold uppercase text-xs">NO DISPATCH RECORDS FOUND IN LEDGER.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="11" class="p-8 text-center text-slate-400 font-bold uppercase text-xs">NO DISPATCH RECORDS FOUND IN LEDGER.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = list.map(rec => `
-      <tr class="hover:bg-slate-50 transition-colors">
-        <td class="p-3 font-mono font-bold text-slate-900">${escapeHtmlStr(rec.gatePassNo)}</td>
-        <td class="p-3 font-mono font-bold text-primary-container">${escapeHtmlStr(rec.jobDocket)}</td>
-        <td class="p-3 font-bold text-slate-800 uppercase truncate max-w-[180px]">${escapeHtmlStr(rec.customer)}</td>
-        <td class="p-3 font-bold text-slate-700">${rec.pcs} PCS • ${escapeHtmlStr(rec.purity)}</td>
-        <td class="p-3 font-mono font-bold text-slate-900">${typeof rec.grossWt === 'number' ? rec.grossWt.toFixed(3) : rec.grossWt}g</td>
-        <td class="p-3 font-bold text-slate-800 uppercase">
-          <div>${escapeHtmlStr(rec.collector)}</div>
-          <div class="text-[10px] text-slate-400 font-mono">${escapeHtmlStr(rec.collectorId)}</div>
-        </td>
-        <td class="p-3 font-bold text-slate-700 uppercase">${escapeHtmlStr(rec.releasedBy)}</td>
-        <td class="p-3 font-mono text-[11px] text-slate-500">${escapeHtmlStr(rec.dispatchTime)}</td>
-        <td class="p-3">
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase ${rec.status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
-            ${escapeHtmlStr(rec.status)}
-          </span>
-        </td>
-        <td class="p-3 text-right">
-          <button onclick="printDeliveryGatePassDirect('${escapeHtmlStr(rec.gatePassNo)}')" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10.5px] transition-colors inline-flex items-center gap-1 cursor-pointer">
-            <span class="material-symbols-outlined text-[13px]">print</span>
-            <span>SLIP</span>
-          </button>
-        </td>
-      </tr>
-    `).join('');
-  }
-
-  function printDeliveryGatePassDirect(gpNo) {
-    const rec = state.deliveryLedger.find(d => d.gatePassNo === gpNo);
-    if (!rec) return;
-
-    const mockBatch = {
-      customer: rec.customer,
-      bis: rec.bis,
-      jobDocket: rec.jobDocket,
-      receiptNo: 'REC-10948',
-      pcs: rec.pcs,
-      metal: rec.metal,
-      purity: rec.purity,
-      grossWt: rec.grossWt,
-      netWt: rec.grossWt * 0.95,
-      tray: 'RELEASED'
-    };
-
-    const slipHtml = generateGatePassHtml(mockBatch, rec.collector, rec.collectorId, rec.releasedBy, rec.sealNo || 'SEAL-SSR-9021', rec.gatePassNo, rec.dispatchTime);
-
-    let printFrame = document.getElementById('delivery-print-iframe');
-    if (!printFrame) {
-      printFrame = document.createElement('iframe');
-      printFrame.id = 'delivery-print-iframe';
-      printFrame.style.position = 'fixed';
-      printFrame.style.right = '0';
-      printFrame.style.bottom = '0';
-      printFrame.style.width = '0';
-      printFrame.style.height = '0';
-      printFrame.style.border = '0';
-      printFrame.style.opacity = '0';
-      document.body.appendChild(printFrame);
-    }
-
-    const frameDoc = printFrame.contentWindow.document;
-    frameDoc.open();
-    frameDoc.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>GATE PASS - ${escapeHtmlStr(rec.gatePassNo)}</title>
-          <style>
-            @page { size: auto; margin: 3mm; }
-            * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            body { margin: 0; padding: 0; background: #fff; color: #000; font-family: 'Courier New', Courier, monospace; }
-          </style>
-        </head>
-        <body>
-          ${slipHtml}
-        </body>
-      </html>
-    `);
-    frameDoc.close();
-
-    setTimeout(() => {
-      try {
-        printFrame.contentWindow.focus();
-        printFrame.contentWindow.print();
-      } catch (err) {
-        console.error('Print gate pass error:', err);
-      }
-    }, 200);
+    tbody.innerHTML = list.map(rec => {
+      const grossG = typeof rec.grossWt === 'number' ? rec.grossWt.toFixed(3) : parseFloat(rec.grossWt || 0).toFixed(3);
+      return `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="p-3 font-mono font-bold text-slate-900">${escapeHtmlStr(rec.gatePassNo)}</td>
+          <td class="p-3">
+            <div class="font-mono font-bold text-primary-container">${escapeHtmlStr(rec.jobDocket)}</div>
+            <div class="text-[10px] text-amber-800 font-mono font-semibold">${escapeHtmlStr(rec.reqNo || 'REQ')}</div>
+          </td>
+          <td class="p-3 font-bold text-slate-800 uppercase truncate max-w-[170px]" title="${escapeHtmlStr(rec.customer)}">
+            ${escapeHtmlStr(rec.customer)}
+          </td>
+          <td class="p-3 text-center">
+            ${rec.articlePhoto ? `
+              <img
+                src="${rec.articlePhoto}"
+                alt="Article"
+                onclick="openPhotoLightbox('${escapeHtmlStr(rec.gatePassNo)}')"
+                class="delivery-photo-thumb w-10 h-10 object-cover rounded-lg border border-slate-300 mx-auto cursor-pointer shadow-2xs hover:border-amber-500"
+                title="Click to view article photo"
+              />
+            ` : `
+              <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300 mx-auto border border-dashed border-slate-200" title="No photo attached">
+                <span class="material-symbols-outlined text-[17px]">no_photography</span>
+              </div>
+            `}
+          </td>
+          <td class="p-3 font-bold text-slate-700">${rec.pcs} PCS • ${escapeHtmlStr(rec.purity)}</td>
+          <td class="p-3 font-mono font-bold text-slate-900">${grossG}g</td>
+          <td class="p-3 font-bold text-slate-800 uppercase">
+            <div>${escapeHtmlStr(rec.collector)}</div>
+            <div class="text-[10px] text-slate-400 font-mono">${escapeHtmlStr(rec.collectorId)}</div>
+          </td>
+          <td class="p-3 font-bold text-slate-700 uppercase">${escapeHtmlStr(rec.releasedBy)}</td>
+          <td class="p-3 font-mono text-[11px] text-slate-500">${escapeHtmlStr(rec.dispatchTime)}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase ${rec.status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
+              ${escapeHtmlStr(rec.status)}
+            </span>
+          </td>
+          <td class="p-3 text-right">
+            <button onclick="printDeliveryGatePassDirect('${escapeHtmlStr(rec.gatePassNo)}')" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10.5px] transition-colors inline-flex items-center gap-1 cursor-pointer">
+              <span class="material-symbols-outlined text-[13px]">print</span>
+              <span>SLIP</span>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
   function filterDeliveryLedger(query) {
@@ -2242,14 +3135,42 @@
     }
     const q = query.trim().toUpperCase();
     const filtered = state.deliveryLedger.filter(d =>
-      d.gatePassNo.toUpperCase().includes(q) ||
-      d.jobDocket.toUpperCase().includes(q) ||
-      d.customer.toUpperCase().includes(q) ||
-      d.collector.toUpperCase().includes(q) ||
-      d.releasedBy.toUpperCase().includes(q)
+      (d.gatePassNo || '').toUpperCase().includes(q) ||
+      (d.jobDocket || '').toUpperCase().includes(q) ||
+      (d.reqNo || '').toUpperCase().includes(q) ||
+      (d.customer || '').toUpperCase().includes(q) ||
+      (d.collector || '').toUpperCase().includes(q) ||
+      (d.releasedBy || '').toUpperCase().includes(q)
     );
     renderDeliveryLedgerTable(filtered);
   }
+
+  // --- PHOTO LIGHTBOX MODAL ---
+  function openPhotoLightbox(gpNo) {
+    const rec = (state.deliveryLedger || []).find(d => d.gatePassNo === gpNo);
+    const photo = rec && rec.articlePhoto ? rec.articlePhoto : activeDeliveryPhoto;
+    if (!photo) return;
+
+    const modal = document.getElementById('deliv-photo-lightbox');
+    const img = document.getElementById('lightbox-img');
+    const title = document.getElementById('lightbox-title');
+    const docket = document.getElementById('lightbox-docket');
+    const seal = document.getElementById('lightbox-seal');
+
+    if (modal && img) {
+      img.src = photo;
+      if (title) title.textContent = `ARTICLE VERIFICATION PHOTO • GATE PASS ${gpNo}`;
+      if (docket) docket.textContent = rec ? `${rec.jobDocket} (${rec.customer})` : 'JOB ARTICLE';
+      if (seal) seal.textContent = rec && rec.sealNo ? `SEAL: ${rec.sealNo}` : 'SEAL VERIFIED';
+      modal.classList.remove('hidden');
+    }
+  }
+
+  function closePhotoLightbox() {
+    const modal = document.getElementById('deliv-photo-lightbox');
+    if (modal) modal.classList.add('hidden');
+  }
+
 
   // --- MENU SCROLL HELPER (Prevents outer window from scrolling) ---
   function scrollMenuItemIntoView(menu, item) {
@@ -2915,7 +3836,7 @@
   function executeSaveReceiveEntry() {
     if (!activeDraftBatch) return;
 
-    // Attach billing and piece disposition metadata so batch automatically shows up in Bill Generation
+    // Attach billing, tag generation, and piece disposition metadata so batch automatically queues across modules
     const totalPcs = activeDraftBatch.pcs || 0;
     const nextSeq = 4193 + (state.intakeBatches ? state.intakeBatches.length : 0);
     activeDraftBatch.billNo = 'BILL-2024-' + String(nextSeq).padStart(5, '0');
@@ -2927,6 +3848,11 @@
       irrucd: 0,
       passed: totalPcs
     };
+    activeDraftBatch.tagStatus = 'PENDING';
+    activeDraftBatch.tagData = [];
+    activeDraftBatch.tagDimensions = { width: 50, height: 12, unit: 'mm', preset: 'butterfly' };
+    activeDraftBatch.articlePhoto = null;
+    activeDraftBatch.deliveryStatus = 'READY';
 
     state.intakeBatches.unshift(activeDraftBatch);
     renderIntakeBatchesTable();
@@ -2936,6 +3862,12 @@
     activeBillingBatch = activeDraftBatch;
     if (typeof renderBillQueue === 'function') {
       renderBillQueue();
+    }
+    if (typeof renderTagStatusQueue === 'function') {
+      renderTagStatusQueue();
+    }
+    if (typeof renderDeliveryQueue === 'function') {
+      renderDeliveryQueue();
     }
 
     const modal = document.getElementById('intakeConfirmationModal');
@@ -6521,14 +7453,47 @@
   window.printIntakeReceipt = printIntakeReceipt;
   window.generateIntakeReceiptContent = generateIntakeReceiptContent;
   window.initTagGenerationView = initTagGenerationView;
-  window.onTagBatchSelected = onTagBatchSelected;
+  window.renderTagStatusQueue = renderTagStatusQueue;
+  window.filterTagQueue = filterTagQueue;
+  window.selectTagBatch = selectTagBatch;
+  window.renderExcelGrid = renderExcelGrid;
+  window.addExcelRow = addExcelRow;
+  window.deleteExcelRow = deleteExcelRow;
+  window.deleteSelectedExcelRows = deleteSelectedExcelRows;
+  window.clearExcelGrid = clearExcelGrid;
+  window.toggleSelectExcelRow = toggleSelectExcelRow;
+  window.toggleSelectAllExcelRows = toggleSelectAllExcelRows;
+  window.onExcelCellChange = onExcelCellChange;
+  window.autoFillFromIntake = autoFillFromIntake;
+  window.pasteFromClipboard = pasteFromClipboard;
+  window.handleExcelGridPaste = handleExcelGridPaste;
+  window.importCsvToExcel = importCsvToExcel;
+  window.onTagPresetChanged = onTagPresetChanged;
+  window.onTagDimensionInput = onTagDimensionInput;
+  window.onTagUnitChanged = onTagUnitChanged;
+  window.updateTagMiniPreview = updateTagMiniPreview;
+  window.saveTagData = saveTagData;
+  window.printCustomTags = printCustomTags;
+  window.onTagBatchSelected = selectTagBatch;
   window.onTagFormatChanged = onTagFormatChanged;
   window.refreshTagGenerationPreview = refreshTagGenerationPreview;
   window.printTagSheet = printTagSheet;
   window.printSingleTag = printSingleTag;
   window.exportTagsCSV = exportTagsCSV;
   window.initDeliveryView = initDeliveryView;
+  window.renderDeliveryQueue = renderDeliveryQueue;
+  window.filterDeliveryQueue = filterDeliveryQueue;
+  window.handleDeliverySearch = handleDeliverySearch;
+  window.clearDeliverySearch = clearDeliverySearch;
+  window.selectDeliveryBatch = selectDeliveryBatch;
   window.onDeliveryBatchSelected = onDeliveryBatchSelected;
+  window.handleArticlePhotoUpload = handleArticlePhotoUpload;
+  window.removeArticlePhoto = removeArticlePhoto;
+  window.handlePhotoDragOver = handlePhotoDragOver;
+  window.handlePhotoDragLeave = handlePhotoDragLeave;
+  window.handlePhotoDrop = handlePhotoDrop;
+  window.openPhotoLightbox = openPhotoLightbox;
+  window.closePhotoLightbox = closePhotoLightbox;
   window.handleDeliverySubmit = handleDeliverySubmit;
   window.resetDeliveryForm = resetDeliveryForm;
   window.printCurrentDeliveryGatePass = printCurrentDeliveryGatePass;
