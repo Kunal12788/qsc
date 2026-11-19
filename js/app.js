@@ -1572,12 +1572,41 @@
     selectTagBatch(activeTagBatch.jobDocket);
   }
 
+  let tagQueueSearchQuery = '';
+
+  function onTagQueueSearchInput(val) {
+    tagQueueSearchQuery = (val || '').trim();
+    const clearBtn = document.getElementById('btn-clear-queue-search');
+    if (clearBtn) {
+      clearBtn.style.display = tagQueueSearchQuery ? 'block' : 'none';
+    }
+    renderTagStatusQueue();
+  }
+
+  function clearTagQueueSearch() {
+    const input = document.getElementById('tag-queue-search');
+    if (input) input.value = '';
+    tagQueueSearchQuery = '';
+    const clearBtn = document.getElementById('btn-clear-queue-search');
+    if (clearBtn) clearBtn.style.display = 'none';
+    renderTagStatusQueue();
+  }
+
   function renderTagStatusQueue(filterOverride) {
     const queueContainer = document.getElementById('tag-batch-queue-container');
     if (!queueContainer) return;
 
     const filter = filterOverride || tagQueueFilter || 'ALL';
     tagQueueFilter = filter;
+
+    const searchInput = document.getElementById('tag-queue-search');
+    const query = (searchInput ? searchInput.value : tagQueueSearchQuery || '').trim().toLowerCase();
+    tagQueueSearchQuery = query;
+
+    const clearBtn = document.getElementById('btn-clear-queue-search');
+    if (clearBtn) {
+      clearBtn.style.display = query ? 'block' : 'none';
+    }
 
     const batches = state.intakeBatches || [];
     const totalCount = batches.length;
@@ -1604,13 +1633,28 @@
     });
 
     const filtered = batches.filter(b => {
-      if (filter === 'PENDING') return b.tagStatus !== 'DONE';
-      if (filter === 'DONE') return b.tagStatus === 'DONE';
+      // 1. Status Filter
+      if (filter === 'PENDING' && b.tagStatus === 'DONE') return false;
+      if (filter === 'DONE' && b.tagStatus !== 'DONE') return false;
+
+      // 2. Real-time Search by Name, Job Docket, Request Number, BIS Number, Tray
+      if (query) {
+        const cust = (b.customer || '').toLowerCase();
+        const docket = (b.jobDocket || '').toLowerCase();
+        const req = (b.reqNo || '').toLowerCase();
+        const bis = (b.bis || '').toLowerCase();
+        const tray = (b.tray || '').toLowerCase();
+        const matches = cust.includes(query) || docket.includes(query) || req.includes(query) || bis.includes(query) || tray.includes(query);
+        if (!matches) return false;
+      }
       return true;
     });
 
     if (filtered.length === 0) {
-      queueContainer.innerHTML = '<div class="py-6 text-center text-slate-400 font-bold uppercase text-xs w-full">NO BATCHES MATCHING THIS QUEUE FILTER.</div>';
+      const emptyMsg = query 
+        ? `NO BATCHES FOUND MATCHING "${escapeHtmlStr(query)}".` 
+        : 'NO BATCHES MATCHING THIS QUEUE FILTER.';
+      queueContainer.innerHTML = `<div class="py-6 text-center text-slate-400 font-bold uppercase text-xs w-full">${emptyMsg}</div>`;
       return;
     }
 
@@ -1867,18 +1911,38 @@
 
     e.preventDefault();
 
-    const lines = text.trimEnd().split(/\r\n|\r|\n/);
-    if (!lines.length) return;
+    // Split text into raw lines
+    let rawLines = text.split(/\r\n|\r|\n/);
 
-    const startR = activeCellRow;
-    const startC = activeCellCol;
+    // Strip leading empty lines or lines with only whitespace, tabs, or commas
+    while (rawLines.length > 0 && (!rawLines[0] || !rawLines[0].trim() || rawLines[0].replace(/[\t,;\s]/g, '') === '')) {
+      rawLines.shift();
+    }
+    // Strip trailing empty lines
+    while (rawLines.length > 0 && (!rawLines[rawLines.length - 1] || !rawLines[rawLines.length - 1].trim() || rawLines[rawLines.length - 1].replace(/[\t,;\s]/g, '') === '')) {
+      rawLines.pop();
+    }
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
+    if (!rawLines.length) return;
+
+    // Target start row and column
+    let startR = activeCellRow >= 0 ? activeCellRow : 0;
+    let startC = activeCellCol >= 0 ? activeCellCol : 0;
+
+    // If user selected the first cell (row 0, col 0) or if sheet was empty, ensure start at strictly 0, 0
+    const isSheetCurrentlyEmpty = !excelSheetData.length || excelSheetData.every(r => !r || r.every(c => !c || !String(c).trim()));
+    if (isSheetCurrentlyEmpty || (startR === 0 && startC === 0)) {
+      startR = 0;
+      startC = 0;
+      excelSheetData = []; // clean slate for fresh paste
+    }
+
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i];
       let tokens = [];
 
-      if (line.includes('	')) {
-        tokens = line.split('	');
+      if (line.includes('\t')) {
+        tokens = line.split('\t');
       } else {
         // Quote-aware CSV tokenizer
         let cur = '';
@@ -1902,6 +1966,8 @@
         tokens.push(cur.trim().replace(/^["']|["']$/g, ''));
       }
 
+      tokens = tokens.map(t => t ? t.trim().replace(/^["']|["']$/g, '') : '');
+
       const targetR = startR + i;
       while (excelSheetData.length <= targetR) {
         excelSheetData.push([]);
@@ -1909,8 +1975,7 @@
 
       for (let j = 0; j < tokens.length; j++) {
         const targetC = startC + j;
-        const cleanVal = tokens[j].trim().replace(/^["']|["']$/g, '');
-        excelSheetData[targetR][targetC] = cleanVal;
+        excelSheetData[targetR][targetC] = tokens[j];
       }
     }
 
@@ -1924,10 +1989,10 @@
     renderExcelGrid();
     focusExcelCell(startR, startC);
     updateTagMiniPreview();
-    showToast('PASTED ' + lines.length + ' ROWS INTO EXCEL SPREADSHEET.', 'success');
+    showToast('PASTED ' + rawLines.length + ' ROWS INTO EXCEL SPREADSHEET.', 'success');
   }
 
-  function updateExcelGridStats() {
+    function updateExcelGridStats() {
     let dataRowCount = 0;
     let maxColCount = 0;
     let totalCellCount = 0;
@@ -1986,15 +2051,29 @@
     }
   }
   function deleteSelectedExcelRows() {}
-  function clearExcelGrid() {
+  function clearExcelSheetData() {
     excelSheetData = [];
     activeTagRows = [];
+    activeCellRow = 0;
+    activeCellCol = 0;
+
     if (activeTagBatch) {
+      activeTagBatch.excelData = [];
+      activeTagBatch.tagData = [];
       activeTagBatch.tagStatus = 'PENDING';
       syncTagPrintButtonState();
       renderTagStatusQueue();
     }
+
     renderExcelGrid();
+    updateTagMiniPreview();
+    updateExcelGridStats();
+
+    showToast('EXCEL SPREADSHEET DATA CLEARED.', 'info');
+  }
+
+  function clearExcelGrid() {
+    clearExcelSheetData();
   }
   function autoFillFromIntake() {}
   function pasteFromClipboard() {}
@@ -2024,8 +2103,8 @@
       const hasData = r.some(cell => cell !== undefined && cell !== null && String(cell).trim() !== '');
       if (!hasData) continue;
 
-      const isHeader = r.some(c => /^(sl\.?\s*no|huid|item|desc|pieces?|pcs|gross|net|purity|karat|barcode|box)$/i.test(String(c).trim()));
-      if (i === 0 && isHeader && !r.some(c => /^HUID-|^JOB-|^GP-|^REQ-/i.test(String(c).trim()))) {
+      const isHeader = r.some(c => /^(sl\.?\s*no|s\s*no\.?|huid|item|desc|category|pieces?|pcs|no\s*of\s*unit|gross|net|purity|karat|barcode|box|weight)/i.test(String(c).trim()));
+      if (rows.length === 0 && isHeader && !r.some(c => /^HUID-|^JOB-|^GP-|^REQ-/i.test(String(c).trim()))) {
         continue;
       }
 
@@ -7671,6 +7750,9 @@
   window.deleteExcelRow = deleteExcelRow;
   window.deleteSelectedExcelRows = deleteSelectedExcelRows;
   window.clearExcelGrid = clearExcelGrid;
+  window.clearExcelSheetData = clearExcelSheetData;
+  window.onTagQueueSearchInput = onTagQueueSearchInput;
+  window.clearTagQueueSearch = clearTagQueueSearch;
   window.toggleSelectExcelRow = toggleSelectExcelRow;
   window.toggleSelectAllExcelRows = toggleSelectAllExcelRows;
   window.onExcelCellChange = onExcelCellChange;

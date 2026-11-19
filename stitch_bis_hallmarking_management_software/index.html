@@ -1634,8 +1634,17 @@
                   <span class="text-xs text-slate-500 font-medium">REAL-TIME INTAKE DOCKET STATUS • SELECT A BATCH TO LOAD & EDIT TAGS</span>
                 </div>
               </div>
-              <div class="flex items-center gap-2 flex-wrap">
-                <div class="flex items-center gap-1.5 text-xs font-mono font-bold mr-2">
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <!-- Search Box by Name, Job Number, Request Number -->
+                <div class="relative flex items-center min-w-[230px] max-w-xs">
+                  <span class="material-symbols-outlined text-slate-400 text-[18px] absolute left-2.5 pointer-events-none">search</span>
+                  <input type="text" id="tag-queue-search" oninput="onTagQueueSearchInput(this.value)" placeholder="Search Name, Job #, Req #..." class="w-full h-8 pl-8 pr-7 bg-white rounded-lg text-xs font-medium text-slate-800 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container transition-all" />
+                  <button type="button" onclick="clearTagQueueSearch()" id="btn-clear-queue-search" style="display:none;" class="absolute right-2 text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <span class="material-symbols-outlined text-[15px]">close</span>
+                  </button>
+                </div>
+
+                <div class="flex items-center gap-1.5 text-xs font-mono font-bold">
                   <span class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 border border-slate-200" id="tag-stat-all">ALL: 5</span>
                   <span class="px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200" id="tag-stat-pending">PENDING: 4</span>
                   <span class="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200" id="tag-stat-done">DONE: 1</span>
@@ -1743,16 +1752,20 @@
                 </div>
               </div>
 
-              <!-- Excel Formula & Active Cell Bar (Clean, NO BUTTONS) -->
-              <div class="flex items-center gap-2 flex-1 sm:max-w-md w-full">
+              <!-- Excel Formula & Active Cell Bar & CLEAR ALL Button on Top Right -->
+              <div class="flex items-center gap-2 flex-1 lg:max-w-xl w-full justify-end">
                 <div class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded border border-slate-300 text-xs font-mono font-bold text-slate-700 min-w-[55px] text-center" title="Active Cell">
                   <span class="text-[9.5px] text-slate-400 font-sans">CELL</span>
                   <span id="excel-active-cell">A1</span>
                 </div>
-                <div class="flex-1 relative flex items-center">
+                <div class="flex-1 relative flex items-center min-w-[180px]">
                   <span class="absolute left-2.5 text-slate-400 font-serif italic font-bold text-xs pointer-events-none">fx</span>
                   <input type="text" id="excel-formula-bar" oninput="onFormulaBarInput(this.value)" placeholder="Click any cell or paste data from Excel..." class="w-full h-8 pl-7 pr-3 bg-white rounded text-xs font-mono text-slate-800 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 transition-all"/>
                 </div>
+                <button type="button" onclick="clearExcelSheetData()" class="px-3.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs" title="Clear all data at once and reset sheet">
+                  <span class="material-symbols-outlined text-[16px]">delete_sweep</span>
+                  <span>CLEAR ALL</span>
+                </button>
               </div>
             </div>
 
