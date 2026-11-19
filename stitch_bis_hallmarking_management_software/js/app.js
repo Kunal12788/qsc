@@ -2526,13 +2526,14 @@
     const wMm = unit === 'in' ? width * 25.4 : width;
 
     // Full Details Typography Scaling
-    const titlePt = Math.max(5.0, Math.min(8.0, hMm * 0.36));
-    const subPt = Math.max(4.4, Math.min(6.6, hMm * 0.29));
+    const titlePt = Math.max(5.2, Math.min(8.5, hMm * 0.38));
+    const subPt = Math.max(4.4, Math.min(6.6, hMm * 0.28));
     const metaPt = Math.max(3.6, Math.min(5.2, hMm * 0.22));
-    const badgePt = Math.max(4.2, Math.min(6.2, hMm * 0.26));
+    const badgePt = Math.max(4.0, Math.min(6.0, hMm * 0.25));
 
-    // QR Box dimension (square target on right side)
-    const qrBoxDimMm = Math.max(8.0, Math.min(hMm - 1.2, wMm * 0.30));
+    // Big QR dimension in the lower section (starts below Line 1)
+    const lowerSectionHMm = Math.max(6.0, hMm - 5.5);
+    const qrBoxDimMm = Math.max(8.5, Math.min(lowerSectionHMm, wMm * 0.34));
 
     const tagsHtml = activeTagRows.map((row, idx) => {
       const customerName = row.customer || defaultCustomer;
@@ -2543,77 +2544,84 @@
       const huidStr = row.huid || `HUID-${idx + 1}`;
       const boxNoStr = row.boxNo || defaultBox;
 
-      // High-precision vector QR code
-      const qrPixelDim = Math.max(24, Math.round(qrBoxDimMm * 3.78) - 10);
+      // High-precision vector QR code for large lower right quadrant
+      const qrPixelDim = Math.max(28, Math.round(qrBoxDimMm * 3.78) - 8);
       const qrSvg = incQr ? generateQrCodeSvg(huidStr, qrPixelDim) : '';
 
       return `
-        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; page-break-after: always; box-sizing: border-box; padding: 0.8mm 1mm; font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #ffffff; border: 0.8px solid #000000; outline: 0.35px solid #000000; outline-offset: -0.7mm; color: #000000; overflow: hidden; line-height: 1.15;">
+        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; box-sizing: border-box; padding: 0.8mm 1mm; font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #ffffff; border: 0.8px solid #000000; outline: 0.35px solid #000000; outline-offset: -0.7mm; color: #000000; overflow: hidden; line-height: 1.15;">
           
-          <!-- LEFT SIDE: Full Structured Assay Data (No Shortcuts) -->
-          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding-right: 1.2mm; overflow: hidden;">
+          ${incCust ? `
+            <!-- LINE 1: FULL WIDTH DEDICATED EXCLUSIVELY TO CUSTOMER NAME -->
+            <div style="width: 100%; border-bottom: 0.5px solid #000000; padding-bottom: 0.25mm; margin-bottom: 0.2mm;">
+              <span style="font-family: 'Cinzel', Georgia, 'Times New Roman', serif; font-size: ${titlePt}pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.15; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-align: left;">
+                ${escapeHtmlStr(customerName)}
+              </span>
+            </div>
+          ` : ''}
+
+          <!-- LOWER SECTION: SPLIT INTO LEFT METADATA & RIGHT BIG QR CODE -->
+          <div style="flex: 1; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; gap: 1mm; overflow: hidden;">
             
-            ${incCust ? `
-              <!-- Line 1: Full Customer Name (Wraps up to 2 lines) & Inverted Purity Badge -->
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 0.5px solid #000000; padding-bottom: 0.25mm; gap: 1mm;">
-                <span style="font-family: 'Cinzel', Georgia, 'Times New Roman', serif; font-size: ${titlePt}pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.15; flex: 1; min-width: 0; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                  ${escapeHtmlStr(customerName)}
-                </span>
-                <span style="font-family: 'Montserrat', sans-serif; font-size: ${badgePt}pt; font-weight: 900; letter-spacing: 0.5px; padding: 0.15mm 0.8mm; border-radius: 1.5px; white-space: nowrap; background: #000000; color: #ffffff; flex-shrink: 0; margin-top: 0.1mm;">
-                  ${escapeHtmlStr(purityVal)}
-                </span>
-              </div>
-            ` : ''}
+            <!-- LEFT SIDE: Full Structured Assay Data (No Shortcuts) -->
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding-right: 0.8mm; overflow: hidden;">
+              
+              ${incOrnament ? `
+                <!-- Row 1: Full ARTICLE & Purity Badge -->
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; padding: 0.1mm 0;">
+                  <span style="font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <span style="font-size: ${metaPt}pt; font-weight: 900; color: #000000; letter-spacing: 0.3px;">ARTICLE:</span> ${escapeHtmlStr(articleType)}
+                  </span>
+                  <span style="font-family: 'Montserrat', sans-serif; font-size: ${badgePt}pt; font-weight: 900; letter-spacing: 0.5px; padding: 0.1mm 0.6mm; border-radius: 1px; white-space: nowrap; background: #000000; color: #ffffff;">
+                    ${escapeHtmlStr(purityVal)}
+                  </span>
+                </div>
 
-            ${incOrnament ? `
-              <!-- Line 2: Full ARTICLE & Full ORNAMENT (No Shortcuts) -->
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; padding: 0.15mm 0;">
-                <span style="font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                  <span style="font-size: ${metaPt}pt; font-weight: 900; color: #000000; letter-spacing: 0.3px;">ARTICLE:</span> ${escapeHtmlStr(articleType)}
-                </span>
-                <span style="font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;">
+                <!-- Row 2: Full ORNAMENT -->
+                <div style="font-size: ${subPt}pt; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0.1mm 0;">
                   <span style="font-size: ${metaPt}pt; font-weight: 900; color: #000000; letter-spacing: 0.3px;">ORNAMENT:</span> ${escapeHtmlStr(ornamentsType)}
-                </span>
-              </div>
+                </div>
 
-              <!-- Line 3: Full WEIGHT & Full BOX NUMBER (No Shortcuts) -->
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; border-top: 0.35px dashed #000000; border-bottom: 0.35px dashed #000000; padding: 0.2mm 0; background: #fcfcfc;">
-                <span style="font-weight: 800; font-family: 'JetBrains Mono', 'Courier New', monospace; white-space: nowrap;">
-                  <span style="font-size: ${metaPt}pt; font-family: 'Montserrat', sans-serif; font-weight: 900; color: #000000; letter-spacing: 0.3px;">WEIGHT:</span> ${escapeHtmlStr(weightStr)}
-                </span>
-                <span style="font-weight: 700; font-family: 'JetBrains Mono', 'Courier New', monospace; white-space: nowrap; text-align: right;">
-                  <span style="font-size: ${metaPt}pt; font-family: 'Montserrat', sans-serif; font-weight: 900; color: #000000; letter-spacing: 0.3px;">BOX NUMBER:</span> ${escapeHtmlStr(boxNoStr)}
-                </span>
-              </div>
-            ` : ''}
+                <!-- Row 3: Full WEIGHT & Full BOX NUMBER (Technical Dashed Strip) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; border-top: 0.35px dashed #000000; border-bottom: 0.35px dashed #000000; padding: 0.15mm 0; background: #fafafa;">
+                  <span style="font-weight: 800; font-family: 'JetBrains Mono', 'Courier New', monospace; white-space: nowrap;">
+                    <span style="font-size: ${metaPt}pt; font-family: 'Montserrat', sans-serif; font-weight: 900; color: #000000; letter-spacing: 0.3px;">WEIGHT:</span> ${escapeHtmlStr(weightStr)}
+                  </span>
+                  <span style="font-weight: 700; font-family: 'JetBrains Mono', 'Courier New', monospace; white-space: nowrap; text-align: right;">
+                    <span style="font-size: ${metaPt}pt; font-family: 'Montserrat', sans-serif; font-weight: 900; color: #000000; letter-spacing: 0.3px;">BOX NUMBER:</span> ${escapeHtmlStr(boxNoStr)}
+                  </span>
+                </div>
+              ` : ''}
 
-            ${incHuid ? `
-              <!-- Line 4: Full HUID NUMBER & BIS Certification Seal (No Shortcuts) -->
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; padding-top: 0.2mm;">
-                <span style="font-size: ${titlePt}pt; font-weight: 900; font-family: 'JetBrains Mono', 'Courier New', monospace; letter-spacing: 0.8px; white-space: nowrap;">
-                  <span style="font-size: ${metaPt}pt; font-family: 'Montserrat', sans-serif; font-weight: 900; letter-spacing: 0.3px;">HUID NUMBER:</span> ${escapeHtmlStr(huidStr)}
+              ${incHuid ? `
+                <!-- Row 4: Full HUID NUMBER & BIS Certification Seal -->
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; padding-top: 0.15mm;">
+                  <span style="font-size: ${titlePt}pt; font-weight: 900; font-family: 'JetBrains Mono', 'Courier New', monospace; letter-spacing: 0.8px; white-space: nowrap;">
+                    <span style="font-size: ${metaPt}pt; font-family: 'Montserrat', sans-serif; font-weight: 900; letter-spacing: 0.3px;">HUID NUMBER:</span> ${escapeHtmlStr(huidStr)}
+                  </span>
+                  <span style="font-family: 'Cinzel', serif; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; color: #000000;">
+                    ✦ BIS ASSAY ✦
+                  </span>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- RIGHT SIDE: BIG QR SCAN TARGET BOX (STARTS JUST BELOW LINE 1) -->
+            ${incQr ? `
+              <div style="width: ${qrBoxDimMm}mm; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; flex-shrink: 0; background: #ffffff; padding: 0.2mm; border-left: 0.6px solid #000000; box-sizing: border-box;">
+                <span style="font-family: 'Montserrat', sans-serif; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.8px; text-transform: uppercase; line-height: 1; text-align: center;">
+                  [ SCAN QR ]
                 </span>
-                <span style="font-family: 'Cinzel', serif; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; color: #000000;">
-                  ✦ BIS ASSAY ✦
+                <div style="display: flex; align-items: center; justify-content: center; width: 100%; flex: 1; overflow: hidden; padding: 0.15mm 0;">
+                  ${qrSvg}
+                </div>
+                <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.5px; line-height: 1; text-align: center;">
+                  ${escapeHtmlStr(huidStr)}
                 </span>
               </div>
             ` : ''}
           </div>
 
-          <!-- RIGHT SIDE: Precision QR Scan Target Box -->
-          ${incQr ? `
-            <div style="width: ${qrBoxDimMm}mm; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; flex-shrink: 0; background: #ffffff; padding: 0.3mm; border-left: 0.5px solid #000000; box-sizing: border-box;">
-              <span style="font-family: 'Montserrat', sans-serif; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.8px; text-transform: uppercase; line-height: 1; text-align: center;">
-                [ SCAN QR ]
-              </span>
-              <div style="display: flex; align-items: center; justify-content: center; width: 100%; flex: 1; overflow: hidden; padding: 0.2mm 0;">
-                ${qrSvg}
-              </div>
-              <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.5px; line-height: 1; text-align: center;">
-                ${escapeHtmlStr(huidStr)}
-              </span>
-            </div>
-          ` : ''}
         </div>
       `;
     }).join('');
