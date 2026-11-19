@@ -1477,8 +1477,23 @@
   // ========================================================
   let activeTagBatch = null;
   let activeTagRows = [];
+  let excelSheetData = [];
+  let activeCellRow = 0;
+  let activeCellCol = 0;
+  const EXCEL_DEFAULT_ROWS = 35;
+  const EXCEL_DEFAULT_COLS = 26;
   let tagQueueFilter = 'ALL';
   let currentGeneratedTags = [];
+
+  function getExcelColName(n) {
+    let s = '';
+    let num = n;
+    while (num >= 0) {
+      s = String.fromCharCode((num % 26) + 65) + s;
+      num = Math.floor(num / 26) - 1;
+    }
+    return s;
+  }
 
   function generateBarcodeSvg(code, width = 140, height = 32) {
     const clean = String(code).replace(/[^A-Za-z0-9]/g, '');
@@ -1624,12 +1639,30 @@
     if (!batch) return;
     activeTagBatch = batch;
 
-    // Load existing tag data or synthesize initial draft rows
-    if (batch.tagData && Array.isArray(batch.tagData) && batch.tagData.length > 0) {
+    // Load existing tag data or initialize completely empty Excel spreadsheet
+    if (batch.excelData && Array.isArray(batch.excelData) && batch.excelData.length > 0) {
+      excelSheetData = JSON.parse(JSON.stringify(batch.excelData));
+      activeTagRows = batch.tagData ? JSON.parse(JSON.stringify(batch.tagData)) : convertExcelSheetToRows(excelSheetData);
+    } else if (batch.tagData && Array.isArray(batch.tagData) && batch.tagData.length > 0) {
+      excelSheetData = batch.tagData.map((r, i) => [
+        String(r.slNo || i + 1),
+        r.huid || '',
+        r.itemDesc || '',
+        String(r.pcs || 1),
+        String(r.grossWt || ''),
+        String(r.netWt || ''),
+        r.purity || '',
+        r.barcode || ''
+      ]);
       activeTagRows = JSON.parse(JSON.stringify(batch.tagData));
     } else {
-      activeTagRows = generateDefaultTagRows(batch);
+      // By default: STRICTLY EMPTY EXCEL SHEET (no mock/sample rows!)
+      excelSheetData = [];
+      activeTagRows = [];
     }
+
+    activeCellRow = 0;
+    activeCellCol = 0;
 
     renderExcelGrid();
     renderBatchIntakeMetadata(batch);
@@ -1643,101 +1676,94 @@
     return String(src).replace(/[^0-9]/g, '').slice(0, 3) || '916';
   }
 
-  function generateDefaultTagRows(batch) {
-    const pcs = Math.min(Math.max(parseInt(batch.pcs, 10) || 1, 1), 200);
-    const cleanCust = (batch.customer || 'SSR').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
-    const cleanPurityCode = cleanPurity(batch.purity || '916');
-    const docketShort = (batch.receiptNo || batch.jobDocket || 'B01').replace(/[^A-Za-z0-9]/g, '').slice(-4);
-
-    const grossTotal = typeof batch.grossWt === 'number' ? batch.grossWt : parseFloat(batch.grossWt || 0);
-    const netTotal = typeof batch.netWt === 'number' ? batch.netWt : parseFloat(batch.netWt || 0);
-    const avgGross = (grossTotal && pcs > 0 ? (grossTotal / pcs).toFixed(3) : '10.250');
-    const avgNet = (netTotal && pcs > 0 ? (netTotal / pcs).toFixed(3) : '10.100');
-
-    const sampleArticles = ['Gold Ring', 'Chain Tail', 'Bangle Set', 'Earring Stud', 'Pendant', 'Necklace Link', 'Bracelet', 'Kada'];
-
-    const rows = [];
-    for (let i = 1; i <= pcs; i++) {
-      const padNum = String(i).padStart(3, '0');
-      const itemDesc = sampleArticles[(i - 1) % sampleArticles.length];
-      rows.push({
-        selected: false,
-        slNo: i,
-        huid: `HUID-${cleanPurityCode}-${cleanCust}${padNum}`,
-        itemDesc: itemDesc,
-        pcs: 1,
-        grossWt: avgGross,
-        netWt: avgNet,
-        purity: batch.purity || '22K 916',
-        barcode: `${docketShort}-${padNum}`
-      });
-    }
-    return rows;
-  }
-
   function renderExcelGrid() {
-    const tbody = document.getElementById('excel-grid-body');
-    if (!tbody) return;
+    const container = document.getElementById('excel-grid-container');
+    if (!container) return;
 
-    if (!activeTagRows || activeTagRows.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="10" class="py-12 text-center text-slate-400 font-bold uppercase text-xs">
-            GRID IS CURRENTLY EMPTY. CLICK '+ ADD ROW', 'AUTO-FILL FROM INTAKE', OR PASTE SPREADSHEET CELLS (CTRL+V).
-          </td>
-        </tr>
-      `;
-      updateGridReconciliation();
-      return;
+    let dataRows = excelSheetData.length;
+    let maxDataCol = 0;
+    for (let r = 0; r < dataRows; r++) {
+      if (excelSheetData[r] && excelSheetData[r].length > maxDataCol) {
+        maxDataCol = excelSheetData[r].length;
+      }
     }
 
-    tbody.innerHTML = activeTagRows.map((row, idx) => `
-      <tr class="${row.selected ? 'excel-row-selected' : ''}">
-        <td class="text-center">
-          <input type="checkbox" ${row.selected ? 'checked' : ''} onchange="toggleSelectExcelRow(${idx}, this.checked)" class="rounded text-primary-container focus:ring-0 cursor-pointer"/>
-        </td>
-        <td class="text-center font-mono font-bold text-slate-600">${row.slNo || (idx + 1)}</td>
-        <td>
-          <input type="text" value="${escapeHtmlStr(row.huid || '')}" onchange="onExcelCellChange(${idx}, 'huid', this.value)" placeholder="HUID Code" class="excel-cell-input font-mono font-bold text-primary-container uppercase"/>
-        </td>
-        <td>
-          <input type="text" value="${escapeHtmlStr(row.itemDesc || '')}" onchange="onExcelCellChange(${idx}, 'itemDesc', this.value)" placeholder="Item Description" class="excel-cell-input font-semibold text-slate-800 uppercase"/>
-        </td>
-        <td>
-          <input type="number" min="1" step="1" value="${row.pcs || 1}" onchange="onExcelCellChange(${idx}, 'pcs', this.value)" class="excel-cell-input excel-cell-number font-bold text-slate-900"/>
-        </td>
-        <td>
-          <input type="number" step="0.001" min="0" value="${row.grossWt || ''}" onchange="onExcelCellChange(${idx}, 'grossWt', this.value)" placeholder="0.000" class="excel-cell-input excel-cell-number font-mono font-bold text-slate-900"/>
-        </td>
-        <td>
-          <input type="number" step="0.001" min="0" value="${row.netWt || ''}" onchange="onExcelCellChange(${idx}, 'netWt', this.value)" placeholder="0.000" class="excel-cell-input excel-cell-number font-mono text-slate-700"/>
-        </td>
-        <td>
-          <input type="text" value="${escapeHtmlStr(row.purity || (activeTagBatch ? activeTagBatch.purity : '22K 916'))}" onchange="onExcelCellChange(${idx}, 'purity', this.value)" class="excel-cell-input font-bold text-amber-800 font-mono uppercase"/>
-        </td>
-        <td>
-          <input type="text" value="${escapeHtmlStr(row.barcode || '')}" onchange="onExcelCellChange(${idx}, 'barcode', this.value)" placeholder="Barcode Serial" class="excel-cell-input font-mono font-extrabold text-slate-900"/>
-        </td>
-        <td class="text-center">
-          <button type="button" onclick="deleteExcelRow(${idx})" class="text-slate-400 hover:text-rose-600 cursor-pointer transition-colors" title="Delete Row">
-            <span class="material-symbols-outlined text-[16px]">close</span>
-          </button>
-        </td>
-      </tr>
-    `).join('');
+    const renderedRows = Math.max(EXCEL_DEFAULT_ROWS, dataRows + 5);
+    const renderedCols = Math.max(EXCEL_DEFAULT_COLS, maxDataCol + 3);
 
-    updateGridReconciliation();
+    let colHeadersHtml = '<th class="excel-corner-header" title="Select All">◢</th>';
+    for (let c = 0; c < renderedCols; c++) {
+      const colName = getExcelColName(c);
+      const isActive = (c === activeCellCol);
+      colHeadersHtml += '<th class="excel-col-header ' + (isActive ? 'excel-header-active' : '') + '" id="excel-col-head-' + c + '">' + colName + '</th>';
+    }
+
+    let bodyHtml = '';
+    for (let r = 0; r < renderedRows; r++) {
+      const rowNum = r + 1;
+      const isActiveRow = (r === activeCellRow);
+      let cellsHtml = '<th class="excel-row-header ' + (isActiveRow ? 'excel-header-active' : '') + '" id="excel-row-head-' + r + '">' + rowNum + '</th>';
+      for (let c = 0; c < renderedCols; c++) {
+        const val = (excelSheetData[r] && excelSheetData[r][c] !== undefined && excelSheetData[r][c] !== null) ? excelSheetData[r][c] : '';
+        cellsHtml += '<td class="excel-cell">' +
+          '<input type="text" id="excel-cell-' + r + '-' + c + '" data-row="' + r + '" data-col="' + c + '" ' +
+          'value="' + escapeHtmlStr(val) + '" ' +
+          'onfocus="onExcelCellFocus(' + r + ', ' + c + ')" ' +
+          'oninput="onExcelCellInput(' + r + ', ' + c + ', this.value)" ' +
+          'onkeydown="onExcelCellKeydown(event, ' + r + ', ' + c + ')" ' +
+          'class="excel-cell-input" autocomplete="off" spellcheck="false"/>' +
+          '</td>';
+      }
+      bodyHtml += '<tr>' + cellsHtml + '</tr>';
+    }
+
+    container.innerHTML = '<table class="excel-sheet-table"><thead><tr>' + colHeadersHtml + '</tr></thead><tbody>' + bodyHtml + '</tbody></table>';
+
+    const coordEl = document.getElementById('excel-active-cell');
+    if (coordEl) coordEl.textContent = getExcelColName(activeCellCol) + (activeCellRow + 1);
+
+    const formulaBar = document.getElementById('excel-formula-bar');
+    if (formulaBar) {
+      const activeVal = (excelSheetData[activeCellRow] && excelSheetData[activeCellRow][activeCellCol] !== undefined) ? excelSheetData[activeCellRow][activeCellCol] : '';
+      formulaBar.value = activeVal;
+    }
+
+    updateExcelGridStats();
   }
 
-  function onExcelCellChange(idx, field, val) {
-    if (!activeTagRows[idx]) return;
-    activeTagRows[idx][field] = val;
+  function onExcelCellFocus(r, c) {
+    activeCellRow = r;
+    activeCellCol = c;
 
-    if (field === 'grossWt' || field === 'netWt' || field === 'pcs') {
-      updateGridReconciliation();
+    const coordEl = document.getElementById('excel-active-cell');
+    if (coordEl) coordEl.textContent = getExcelColName(c) + (r + 1);
+
+    const formulaBar = document.getElementById('excel-formula-bar');
+    if (formulaBar) {
+      const val = (excelSheetData[r] && excelSheetData[r][c] !== undefined) ? excelSheetData[r][c] : '';
+      formulaBar.value = val;
     }
 
-    // Invalidate saved status on live edit
+    document.querySelectorAll('.excel-col-header.excel-header-active').forEach(el => el.classList.remove('excel-header-active'));
+    document.querySelectorAll('.excel-row-header.excel-header-active').forEach(el => el.classList.remove('excel-header-active'));
+
+    const colEl = document.getElementById('excel-col-head-' + c);
+    const rowEl = document.getElementById('excel-row-head-' + r);
+    if (colEl) colEl.classList.add('excel-header-active');
+    if (rowEl) rowEl.classList.add('excel-header-active');
+  }
+
+  function onExcelCellInput(r, c, val) {
+    while (excelSheetData.length <= r) {
+      excelSheetData.push([]);
+    }
+    excelSheetData[r][c] = val;
+
+    const formulaBar = document.getElementById('excel-formula-bar');
+    if (formulaBar) formulaBar.value = val;
+
+    updateExcelGridStats();
+
     if (activeTagBatch && activeTagBatch.tagStatus === 'DONE') {
       activeTagBatch.tagStatus = 'PENDING';
       syncTagPrintButtonState();
@@ -1745,81 +1771,191 @@
     }
   }
 
-  function toggleSelectExcelRow(idx, checked) {
-    if (activeTagRows[idx]) {
-      activeTagRows[idx].selected = !!checked;
+  function onFormulaBarInput(val) {
+    const r = activeCellRow;
+    const c = activeCellCol;
+
+    while (excelSheetData.length <= r) {
+      excelSheetData.push([]);
+    }
+    excelSheetData[r][c] = val;
+
+    const cellInput = document.getElementById('excel-cell-' + r + '-' + c);
+    if (cellInput) cellInput.value = val;
+
+    updateExcelGridStats();
+
+    if (activeTagBatch && activeTagBatch.tagStatus === 'DONE') {
+      activeTagBatch.tagStatus = 'PENDING';
+      syncTagPrintButtonState();
+      renderTagStatusQueue();
+    }
+  }
+
+  function onExcelCellKeydown(e, r, c) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      focusExcelCell(r + 1, c);
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        focusExcelCell(r, Math.max(0, c - 1));
+      } else {
+        focusExcelCell(r, c + 1);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      focusExcelCell(r + 1, c);
+    } else if (e.key === 'ArrowUp') {
+      if (r > 0) {
+        e.preventDefault();
+        focusExcelCell(r - 1, c);
+      }
+    }
+  }
+
+  function focusExcelCell(r, c) {
+    activeCellRow = r;
+    activeCellCol = c;
+    let target = document.getElementById('excel-cell-' + r + '-' + c);
+    if (!target) {
+      renderExcelGrid();
+      target = document.getElementById('excel-cell-' + r + '-' + c);
+    }
+    if (target) {
+      target.focus();
+      target.select();
+    }
+  }
+
+  function handleExcelGridPaste(e) {
+    if (!e) return;
+    const clipboardData = e.clipboardData || window.clipboardData;
+    if (!clipboardData) return;
+    const text = clipboardData.getData('text');
+    if (!text) return;
+
+    e.preventDefault();
+
+    const lines = text.trimEnd().split(/\r\n|\r|\n/);
+    if (!lines.length) return;
+
+    const startR = activeCellRow;
+    const startC = activeCellCol;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      let tokens = [];
+
+      if (line.includes('	')) {
+        tokens = line.split('	');
+      } else {
+        // Quote-aware CSV tokenizer
+        let cur = '';
+        let inQ = false;
+        for (let k = 0; k < line.length; k++) {
+          const ch = line[k];
+          if (ch === '"' || ch === "'") {
+            if (inQ && line[k + 1] === ch) {
+              cur += ch;
+              k++;
+            } else {
+              inQ = !inQ;
+            }
+          } else if (ch === ',' && !inQ) {
+            tokens.push(cur.trim().replace(/^["']|["']$/g, ''));
+            cur = '';
+          } else {
+            cur += ch;
+          }
+        }
+        tokens.push(cur.trim().replace(/^["']|["']$/g, ''));
+      }
+
+      const targetR = startR + i;
+      while (excelSheetData.length <= targetR) {
+        excelSheetData.push([]);
+      }
+
+      for (let j = 0; j < tokens.length; j++) {
+        const targetC = startC + j;
+        const cleanVal = tokens[j].trim().replace(/^["']|["']$/g, '');
+        excelSheetData[targetR][targetC] = cleanVal;
+      }
+    }
+
+    if (activeTagBatch && activeTagBatch.tagStatus === 'DONE') {
+      activeTagBatch.tagStatus = 'PENDING';
+      syncTagPrintButtonState();
+      renderTagStatusQueue();
+    }
+
+    renderExcelGrid();
+    focusExcelCell(startR, startC);
+    showToast('PASTED ' + lines.length + ' ROWS INTO EXCEL SPREADSHEET.', 'success');
+  }
+
+  function updateExcelGridStats() {
+    let dataRowCount = 0;
+    let maxColCount = 0;
+    let totalCellCount = 0;
+
+    for (let r = 0; r < excelSheetData.length; r++) {
+      const row = excelSheetData[r];
+      if (!row) continue;
+      let rowHasData = false;
+      for (let c = 0; c < row.length; c++) {
+        const val = row[c];
+        if (val !== undefined && val !== null && String(val).trim() !== '') {
+          rowHasData = true;
+          totalCellCount++;
+          if (c + 1 > maxColCount) maxColCount = c + 1;
+        }
+      }
+      if (rowHasData) dataRowCount++;
+    }
+
+    const elRows = document.getElementById('tag-total-rows');
+    const elCols = document.getElementById('tag-total-cols');
+    const elCells = document.getElementById('tag-total-cells');
+    const elPill = document.getElementById('tag-grid-reconcile-pill');
+    const elText = document.getElementById('tag-reconcile-text');
+
+    if (elRows) elRows.textContent = dataRowCount;
+    if (elCols) elCols.textContent = maxColCount;
+    if (elCells) elCells.textContent = totalCellCount;
+
+    if (elPill && elText) {
+      if (dataRowCount === 0) {
+        elPill.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200';
+        elText.textContent = 'EMPTY SHEET (CLICK ANY CELL & CTRL+V TO PASTE)';
+      } else {
+        const isSaved = activeTagBatch && activeTagBatch.tagStatus === 'DONE';
+        if (isSaved) {
+          elPill.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
+          elText.innerHTML = 'SAVED & READY: ' + dataRowCount + ' ROWS SAVED • PRINT UNLOCKED';
+        } else {
+          elPill.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300';
+          elText.innerHTML = 'UNSAVED: ' + dataRowCount + ' DATA ROWS DETECTED • CLICK \'SAVE TAG DATA\' TO UNLOCK PRINT';
+        }
+      }
+    }
+  }
+
+  // Backwards compatibility stubs
+  function addExcelRow() {
+    excelSheetData.push([]);
+    renderExcelGrid();
+  }
+  function deleteExcelRow(idx) {
+    if (excelSheetData[idx]) {
+      excelSheetData.splice(idx, 1);
       renderExcelGrid();
     }
   }
-
-  function toggleSelectAllExcelRows(checked) {
-    activeTagRows.forEach(r => { r.selected = !!checked; });
-    renderExcelGrid();
-  }
-
-  function addExcelRow(data = {}) {
-    const nextSl = activeTagRows.length + 1;
-    const cleanCust = (activeTagBatch ? activeTagBatch.customer : 'SSR').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
-    const cleanPurityCode = cleanPurity(activeTagBatch ? activeTagBatch.purity : '916');
-    const padNum = String(nextSl).padStart(3, '0');
-    const docketShort = (activeTagBatch ? (activeTagBatch.receiptNo || activeTagBatch.jobDocket) : 'B01').replace(/[^A-Za-z0-9]/g, '').slice(-4);
-
-    activeTagRows.push({
-      selected: false,
-      slNo: nextSl,
-      huid: data.huid !== undefined ? data.huid : `HUID-${cleanPurityCode}-${cleanCust}${padNum}`,
-      itemDesc: data.itemDesc || 'Jewellery Article',
-      pcs: parseInt(data.pcs, 10) || 1,
-      grossWt: data.grossWt !== undefined ? data.grossWt : '10.000',
-      netWt: data.netWt !== undefined ? data.netWt : '9.850',
-      purity: data.purity || (activeTagBatch ? activeTagBatch.purity : '22K 916'),
-      barcode: data.barcode || `${docketShort}-${padNum}`
-    });
-
-    if (activeTagBatch && activeTagBatch.tagStatus === 'DONE') {
-      activeTagBatch.tagStatus = 'PENDING';
-      syncTagPrintButtonState();
-      renderTagStatusQueue();
-    }
-
-    renderExcelGrid();
-  }
-
-  function deleteExcelRow(idx) {
-    activeTagRows.splice(idx, 1);
-    activeTagRows.forEach((r, i) => { r.slNo = i + 1; });
-    if (activeTagBatch) {
-      if (activeTagRows.length === 0 || activeTagBatch.tagStatus === 'DONE') {
-        activeTagBatch.tagStatus = 'PENDING';
-        syncTagPrintButtonState();
-        renderTagStatusQueue();
-      }
-    }
-    renderExcelGrid();
-  }
-
-  function deleteSelectedExcelRows() {
-    const remaining = activeTagRows.filter(r => !r.selected);
-    if (remaining.length === activeTagRows.length) {
-      showToast('NO ROWS SELECTED TO DELETE. SELECT CHECKBOXES FIRST.', 'warning');
-      return;
-    }
-    const removedCount = activeTagRows.length - remaining.length;
-    activeTagRows = remaining;
-    activeTagRows.forEach((r, i) => { r.slNo = i + 1; });
-    if (activeTagBatch) {
-      if (activeTagRows.length === 0 || activeTagBatch.tagStatus === 'DONE') {
-        activeTagBatch.tagStatus = 'PENDING';
-        syncTagPrintButtonState();
-        renderTagStatusQueue();
-      }
-    }
-    renderExcelGrid();
-    showToast(`DELETED ${removedCount} SELECTED ROWS.`, 'info');
-  }
-
+  function deleteSelectedExcelRows() {}
   function clearExcelGrid() {
-    if (!activeTagRows.length) return;
+    excelSheetData = [];
     activeTagRows = [];
     if (activeTagBatch) {
       activeTagBatch.tagStatus = 'PENDING';
@@ -1827,256 +1963,117 @@
       renderTagStatusQueue();
     }
     renderExcelGrid();
-    showToast('EXCEL GRID CLEARED.', 'info');
+  }
+  function autoFillFromIntake() {}
+  function pasteFromClipboard() {}
+  function importCsvToExcel() {}
+  function toggleSelectExcelRow() {}
+  function toggleSelectAllExcelRows() {}
+  function onExcelCellChange() {}
+  function updateGridReconciliation() {
+    updateExcelGridStats();
   }
 
-  function autoFillFromIntake() {
-    if (!activeTagBatch) {
-      showToast('PLEASE SELECT A BATCH FIRST.', 'warning');
-      return;
-    }
-    activeTagRows = generateDefaultTagRows(activeTagBatch);
-    if (activeTagBatch.tagStatus === 'DONE') {
-      activeTagBatch.tagStatus = 'PENDING';
-      syncTagPrintButtonState();
-      renderTagStatusQueue();
-    }
-    renderExcelGrid();
-    showToast(`AUTO-FILLED ${activeTagRows.length} ROWS FROM INTAKE DATA.`, 'success');
-  }
+  function convertExcelSheetToRows(sheet) {
+    const rows = [];
+    if (!sheet || !sheet.length) return rows;
 
-  // --- TAB-DELIMITED CLIPBOARD PASTE ENGINE ---
-  function parseClipboardData(text) {
-    if (!text || !text.trim()) return [];
-    const lines = text.trim().split(/\r\n|\r|\n/);
-    const parsedRows = [];
+    for (let i = 0; i < sheet.length; i++) {
+      const r = sheet[i];
+      if (!r || !r.length) continue;
 
-    const cleanPurityHelper = (raw) => {
-      const src = raw !== undefined && raw !== null && String(raw).trim() !== '' ? raw : (activeTagBatch ? activeTagBatch.purity : '916');
-      return String(src).replace(/[^0-9]/g, '').slice(0, 3) || '916';
-    };
-    cleanPurityHelper.toString = () => cleanPurityHelper();
-    cleanPurityHelper.valueOf = () => cleanPurityHelper();
-    const cleanPurity = cleanPurityHelper;
+      const hasData = r.some(cell => cell !== undefined && cell !== null && String(cell).trim() !== '');
+      if (!hasData) continue;
 
-    const defaultPurity = activeTagBatch ? activeTagBatch.purity : '22K 916';
-    const cleanCust = (activeTagBatch ? activeTagBatch.customer : 'SSR').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
-    const docketShort = (activeTagBatch ? (activeTagBatch.receiptNo || activeTagBatch.jobDocket) : 'B01').replace(/[^A-Za-z0-9]/g, '').slice(-4);
-    const headerTitleRegex = /^(sl\.?\s*no\.?|sr\.?\s*no\.?|serial(\s*no\.?)?|huid(\s*code)?|item(\s*desc(ription)?)?|description|pieces?|pcs|gross(\s*(wt\.?|weight))?|net(\s*(wt\.?|weight))?|purity|karat|barcode)$/i;
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-
-      let cells = [];
-      if (line.includes('\t')) {
-        cells = line.split('\t').map(c => c.trim().replace(/^["']|["']$/g, ''));
-      } else {
-        // Robust quote-aware CSV tokenizer
-        let current = '';
-        let inQuotes = false;
-        for (let j = 0; j < line.length; j++) {
-          const char = line[j];
-          if (char === '"' || char === "'") {
-            if (inQuotes && line[j + 1] === char) {
-              current += char;
-              j++;
-            } else {
-              inQuotes = !inQuotes;
-            }
-          } else if (char === ',' && !inQuotes) {
-            cells.push(current.trim().replace(/^["']|["']$/g, ''));
-            current = '';
-          } else {
-            current += char;
-          }
-        }
-        cells.push(current.trim().replace(/^["']|["']$/g, ''));
-      }
-
-      // Skip header line only if standard column titles match and NEVER if it contains data patterns (e.g. HUID-)
-      const isDataPattern = cells.some(c => /^HUID-|^JOB-|^GP-|^REQ-/i.test(c.trim()));
-      const matchingHeaders = cells.filter(c => headerTitleRegex.test(c.trim())).length;
-      if (i === 0 && !isDataPattern && matchingHeaders >= 2) {
+      const isHeader = r.some(c => /^(sl\.?\s*no|huid|item|desc|pieces?|pcs|gross|net|purity|karat|barcode)$/i.test(String(c).trim()));
+      if (i === 0 && isHeader && !r.some(c => /^HUID-|^JOB-|^GP-|^REQ-/i.test(String(c).trim()))) {
         continue;
       }
 
-      const rowIdx = parsedRows.length + 1;
+      const rowIdx = rows.length + 1;
       const padNum = String(rowIdx).padStart(3, '0');
+      const cleanCust = (activeTagBatch ? activeTagBatch.customer : 'SSR').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
+      const cleanPurityCode = cleanPurity(activeTagBatch ? activeTagBatch.purity : '916');
+      const docketShort = (activeTagBatch ? (activeTagBatch.receiptNo || activeTagBatch.jobDocket) : 'B01').replace(/[^A-Za-z0-9]/g, '').slice(-4);
+      const defaultPurity = activeTagBatch ? activeTagBatch.purity : '22K 916';
 
-      let rowObj = {
-        selected: false,
-        slNo: rowIdx,
-        huid: '',
-        itemDesc: 'Jewellery Article',
-        pcs: 1,
-        grossWt: '0.000',
-        netWt: '0.000',
-        purity: defaultPurity,
-        barcode: `${docketShort}-${padNum}`
-      };
+      const cells = r.map(c => (c !== undefined && c !== null) ? String(c).trim() : '');
+
+      let huid = '';
+      let itemDesc = 'Jewellery Article';
+      let pcs = 1;
+      let grossWt = '0.000';
+      let netWt = '0.000';
+      let purity = defaultPurity;
+      let barcode = docketShort + '-' + padNum;
 
       if (cells.length >= 8) {
-        if (/^HUID-/i.test(cells[0]) && !/^HUID-/i.test(cells[1])) {
-          // [HUID, Desc, Pcs, Gross, Net, Purity, Barcode, ...]
-          rowObj.huid = cells[0];
-          rowObj.itemDesc = cells[1] || 'Jewellery Article';
-          rowObj.pcs = parseInt(cells[2], 10) || 1;
-          rowObj.grossWt = parseFloat(cells[3] || 0).toFixed(3);
-          rowObj.netWt = parseFloat(cells[4] || 0).toFixed(3);
-          rowObj.purity = cells[5] || defaultPurity;
-          rowObj.barcode = cells[6] || `${docketShort}-${padNum}`;
+        if (/^HUID-/i.test(cells[0])) {
+          huid = cells[0];
+          itemDesc = cells[1] || 'Jewellery Article';
+          pcs = parseInt(cells[2], 10) || 1;
+          grossWt = parseFloat(cells[3] || 0).toFixed(3);
+          netWt = parseFloat(cells[4] || 0).toFixed(3);
+          purity = cells[5] || defaultPurity;
+          barcode = cells[6] || (docketShort + '-' + padNum);
         } else {
-          // Standard [SlNo, HUID, Desc, Pcs, Gross, Net, Purity, Barcode]
-          rowObj.huid = cells[1] || `HUID-${cleanPurity(cells[6])}-${cleanCust}${padNum}`;
-          rowObj.itemDesc = cells[2] || 'Jewellery Article';
-          rowObj.pcs = parseInt(cells[3], 10) || 1;
-          rowObj.grossWt = parseFloat(cells[4] || 0).toFixed(3);
-          rowObj.netWt = parseFloat(cells[5] || 0).toFixed(3);
-          rowObj.purity = cells[6] || defaultPurity;
-          rowObj.barcode = cells[7] || `${docketShort}-${padNum}`;
+          huid = cells[1] || ('HUID-' + cleanPurityCode + '-' + cleanCust + padNum);
+          itemDesc = cells[2] || 'Jewellery Article';
+          pcs = parseInt(cells[3], 10) || 1;
+          grossWt = parseFloat(cells[4] || 0).toFixed(3);
+          netWt = parseFloat(cells[5] || 0).toFixed(3);
+          purity = cells[6] || defaultPurity;
+          barcode = cells[7] || (docketShort + '-' + padNum);
         }
       } else if (cells.length === 7) {
-        // [HUID, Desc, Pcs, Gross, Net, Purity, Barcode]
-        rowObj.huid = cells[0];
-        rowObj.itemDesc = cells[1] || 'Jewellery Article';
-        rowObj.pcs = parseInt(cells[2], 10) || 1;
-        rowObj.grossWt = parseFloat(cells[3] || 0).toFixed(3);
-        rowObj.netWt = parseFloat(cells[4] || 0).toFixed(3);
-        rowObj.purity = cells[5] || defaultPurity;
-        rowObj.barcode = cells[6] || `${docketShort}-${padNum}`;
+        huid = cells[0];
+        itemDesc = cells[1] || 'Jewellery Article';
+        pcs = parseInt(cells[2], 10) || 1;
+        grossWt = parseFloat(cells[3] || 0).toFixed(3);
+        netWt = parseFloat(cells[4] || 0).toFixed(3);
+        purity = cells[5] || defaultPurity;
+        barcode = cells[6] || (docketShort + '-' + padNum);
       } else if (cells.length === 6) {
-        // [HUID, Desc, Gross, Net, Purity, Barcode]
-        rowObj.huid = cells[0];
-        rowObj.itemDesc = cells[1] || 'Jewellery Article';
-        rowObj.grossWt = parseFloat(cells[2] || 0).toFixed(3);
-        rowObj.netWt = parseFloat(cells[3] || 0).toFixed(3);
-        rowObj.purity = cells[4] || defaultPurity;
-        rowObj.barcode = cells[5] || `${docketShort}-${padNum}`;
+        huid = cells[0];
+        itemDesc = cells[1] || 'Jewellery Article';
+        grossWt = parseFloat(cells[2] || 0).toFixed(3);
+        netWt = parseFloat(cells[3] || 0).toFixed(3);
+        purity = cells[4] || defaultPurity;
+        barcode = cells[5] || (docketShort + '-' + padNum);
       } else if (cells.length === 5) {
-        // [HUID, Desc, Pcs, Gross, Net]
-        rowObj.huid = cells[0];
-        rowObj.itemDesc = cells[1] || 'Jewellery Article';
-        rowObj.pcs = parseInt(cells[2], 10) || 1;
-        rowObj.grossWt = parseFloat(cells[3] || 0).toFixed(3);
-        rowObj.netWt = parseFloat(cells[4] || 0).toFixed(3);
+        huid = cells[0];
+        itemDesc = cells[1] || 'Jewellery Article';
+        pcs = parseInt(cells[2], 10) || 1;
+        grossWt = parseFloat(cells[3] || 0).toFixed(3);
+        netWt = parseFloat(cells[4] || 0).toFixed(3);
       } else if (cells.length >= 2) {
-        // Minimal [HUID, GrossWt]
-        rowObj.huid = cells[0];
-        rowObj.grossWt = parseFloat(cells[1] || 0).toFixed(3);
-        rowObj.netWt = parseFloat(cells[1] || 0).toFixed(3);
+        huid = cells[0];
+        itemDesc = cells[1] || 'Jewellery Article';
+        if (cells[2]) grossWt = parseFloat(cells[2] || 0).toFixed(3);
+        if (cells[3]) netWt = parseFloat(cells[3] || 0).toFixed(3);
+      } else if (cells.length === 1 && cells[0]) {
+        huid = cells[0];
       }
 
-      parsedRows.push(rowObj);
-    }
+      if (!huid) huid = 'HUID-' + cleanPurityCode + '-' + cleanCust + padNum;
 
-    return parsedRows;
+      rows.push({
+        slNo: rowIdx,
+        huid: huid,
+        itemDesc: itemDesc,
+        pcs: pcs,
+        grossWt: grossWt,
+        netWt: netWt,
+        purity: purity,
+        barcode: barcode,
+        rawCells: cells
+      });
+    }
+    return rows;
   }
 
-  function parseAndInsertClipboardText(text) {
-    const rows = parseClipboardData(text);
-    if (!rows || rows.length === 0) {
-      showToast('NO VALID SPREADSHEET ROWS DETECTED IN CLIPBOARD DATA.', 'warning');
-      return;
-    }
-
-    // Replace current rows or append
-    activeTagRows = rows;
-    activeTagRows.forEach((r, i) => { r.slNo = i + 1; });
-
-    if (activeTagBatch && activeTagBatch.tagStatus === 'DONE') {
-      activeTagBatch.tagStatus = 'PENDING';
-      syncTagPrintButtonState();
-      renderTagStatusQueue();
-    }
-
-    renderExcelGrid();
-    showToast(`PASTED & POPULATED ${rows.length} ROWS FROM CLIPBOARD.`, 'success');
-  }
-
-  function handleExcelGridPaste(e) {
-    if (!e) return;
-    const clipboardData = e.clipboardData || window.clipboardData;
-    if (!clipboardData) return;
-    const pastedText = clipboardData.getData('text');
-    if (pastedText && (pastedText.includes('\t') || pastedText.includes('\n'))) {
-      e.preventDefault();
-      parseAndInsertClipboardText(pastedText);
-    }
-  }
-
-  async function pasteFromClipboard() {
-    try {
-      if (navigator.clipboard && navigator.clipboard.readText) {
-        const text = await navigator.clipboard.readText();
-        if (text && text.trim()) {
-          parseAndInsertClipboardText(text);
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn('Clipboard readText permission denied, falling back to prompt:', err);
-    }
-
-    const fallbackText = prompt('Paste tab-delimited or CSV rows from Excel / Google Sheets here (Ctrl+V):');
-    if (fallbackText && fallbackText.trim()) {
-      parseAndInsertClipboardText(fallbackText);
-    }
-  }
-
-  function importCsvToExcel(input) {
-    if (!input || !input.files || !input.files[0]) return;
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const content = e.target.result;
-      parseAndInsertClipboardText(content);
-      input.value = '';
-    };
-    reader.readAsText(file);
-  }
-
-  function updateGridReconciliation() {
-    const totalRows = activeTagRows.length;
-    let totalPcs = 0;
-    let totalGross = 0;
-    let totalNet = 0;
-
-    activeTagRows.forEach(r => {
-      totalPcs += (parseInt(r.pcs, 10) || 1);
-      totalGross += (parseFloat(r.grossWt) || 0);
-      totalNet += (parseFloat(r.netWt) || 0);
-    });
-
-    const elRows = document.getElementById('tag-total-rows');
-    const elPcs = document.getElementById('tag-total-pcs');
-    const elGross = document.getElementById('tag-total-gross');
-    const elNet = document.getElementById('tag-total-net');
-    const elPill = document.getElementById('tag-grid-reconcile-pill');
-    const elText = document.getElementById('tag-reconcile-text');
-
-    if (elRows) elRows.textContent = totalRows;
-    if (elPcs) elPcs.textContent = totalPcs;
-    if (elGross) elGross.textContent = totalGross.toFixed(3);
-    if (elNet) elNet.textContent = totalNet.toFixed(3);
-
-    if (elPill && elText && activeTagBatch) {
-      const intakeGross = typeof activeTagBatch.grossWt === 'number' ? activeTagBatch.grossWt : parseFloat(activeTagBatch.grossWt || 0);
-      const intakePcs = parseInt(activeTagBatch.pcs, 10) || 0;
-      const diffGross = Math.abs(totalGross - intakeGross);
-      const isPcsMatch = totalPcs === intakePcs;
-
-      if (totalRows > 0 && diffGross <= 0.010 && isPcsMatch) {
-        elPill.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
-        elText.innerHTML = `RECONCILED: 100% MATCH WITH INTAKE DOCKET (${totalPcs} PCS • ${totalGross.toFixed(3)}g)`;
-      } else if (totalRows === 0) {
-        elPill.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300';
-        elText.textContent = `AWAITING TAG ROWS (TARGET: ${intakePcs} PCS • ${intakeGross.toFixed(3)}g)`;
-      } else {
-        elPill.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300';
-        elText.innerHTML = `DISCREPANCY: GRID (${totalPcs} PCS / ${totalGross.toFixed(3)}g) VS INTAKE (${intakePcs} PCS / ${intakeGross.toFixed(3)}g)`;
-      }
-    }
+  function generateDefaultTagRows(batch) {
+    return [];
   }
 
   function renderBatchIntakeMetadata(batch) {
@@ -2157,7 +2154,7 @@
     const unit = document.getElementById('tag-print-unit') ? document.getElementById('tag-print-unit').value : 'mm';
 
     const dimsLabel = document.getElementById('tag-preview-dims-label');
-    if (dimsLabel) dimsLabel.textContent = `${width} × ${height} ${unit}`;
+    if (dimsLabel) dimsLabel.textContent = width + ' × ' + height + ' ' + unit;
 
     const miniPreview = document.getElementById('tag-mini-preview');
     if (miniPreview) {
@@ -2172,7 +2169,13 @@
         if (elHuid) elHuid.textContent = sampleRow.huid || 'HUID-916-MA001';
         if (elPurity) elPurity.textContent = sampleRow.purity || '22K 916';
         if (elBarcode) elBarcode.innerHTML = generateBarcodeSvg(sampleRow.barcode || '9104-001', 120, 18);
-        if (elWeights) elWeights.textContent = `G: ${sampleRow.grossWt}g | N: ${sampleRow.netWt}g`;
+        if (elWeights) elWeights.textContent = 'G: ' + sampleRow.grossWt + 'g | N: ' + sampleRow.netWt + 'g';
+        if (elCust) elCust.textContent = (activeTagBatch ? activeTagBatch.customer : 'SSR').slice(0, 8);
+      } else {
+        if (elHuid) elHuid.textContent = 'HUID-PREVIEW';
+        if (elPurity) elPurity.textContent = (activeTagBatch ? activeTagBatch.purity : '22K 916');
+        if (elBarcode) elBarcode.innerHTML = generateBarcodeSvg('PREVIEW', 120, 18);
+        if (elWeights) elWeights.textContent = 'G: 0.000g | N: 0.000g';
         if (elCust) elCust.textContent = (activeTagBatch ? activeTagBatch.customer : 'SSR').slice(0, 8);
       }
     }
@@ -2185,8 +2188,10 @@
       return;
     }
 
-    if (!activeTagRows || activeTagRows.length === 0) {
-      showToast('GRID IS EMPTY. PLEASE ADD AT LEAST ONE ROW BEFORE SAVING.', 'warning');
+    const rows = convertExcelSheetToRows(excelSheetData);
+
+    if (!rows || rows.length === 0) {
+      showToast('EXCEL SPREADSHEET IS EMPTY. PLEASE PASTE OR ENTER TAG DATA BEFORE SAVING.', 'warning');
       if (activeTagBatch) {
         activeTagBatch.tagStatus = 'PENDING';
         syncTagPrintButtonState();
@@ -2195,30 +2200,17 @@
       return;
     }
 
-    const invalidRows = activeTagRows.filter(r => {
-      const huid = String(r.huid || '').trim();
-      const gross = parseFloat(r.grossWt);
-      return !huid || isNaN(gross) || gross <= 0;
-    });
-
-    if (invalidRows.length > 0) {
-      showToast(`VALIDATION ERROR: ${invalidRows.length} ROW(S) HAVE MISSING/INVALID HUID OR GROSS WEIGHT. FIX BEFORE SAVING.`, 'warning');
-      if (activeTagBatch && activeTagBatch.tagStatus === 'DONE') {
-        activeTagBatch.tagStatus = 'PENDING';
-        syncTagPrintButtonState();
-        renderTagStatusQueue();
-      }
-      return;
-    }
-
-    // Persist to active batch object
-    activeTagBatch.tagData = JSON.parse(JSON.stringify(activeTagRows));
+    activeTagBatch.excelData = JSON.parse(JSON.stringify(excelSheetData));
+    activeTagBatch.tagData = JSON.parse(JSON.stringify(rows));
+    activeTagRows = rows;
     activeTagBatch.tagStatus = 'DONE';
 
     syncTagPrintButtonState();
     renderTagStatusQueue();
+    updateExcelGridStats();
+    updateTagMiniPreview();
 
-    showToast(`TAG DATA FOR ${activeTagBatch.jobDocket} SAVED & VALIDATED (${activeTagRows.length} ROWS). PRINT UNLOCKED.`, 'success');
+    showToast('TAG DATA FOR ' + activeTagBatch.jobDocket + ' SAVED & VALIDATED (' + rows.length + ' ROWS). PRINT UNLOCKED.', 'success');
   }
 
   function syncTagPrintButtonState() {
@@ -7457,6 +7449,13 @@
   window.filterTagQueue = filterTagQueue;
   window.selectTagBatch = selectTagBatch;
   window.renderExcelGrid = renderExcelGrid;
+  window.onExcelCellFocus = onExcelCellFocus;
+  window.onExcelCellInput = onExcelCellInput;
+  window.onFormulaBarInput = onFormulaBarInput;
+  window.onExcelCellKeydown = onExcelCellKeydown;
+  window.focusExcelCell = focusExcelCell;
+  window.getExcelColName = getExcelColName;
+  window.updateExcelGridStats = updateExcelGridStats;
   window.addExcelRow = addExcelRow;
   window.deleteExcelRow = deleteExcelRow;
   window.deleteSelectedExcelRows = deleteSelectedExcelRows;
