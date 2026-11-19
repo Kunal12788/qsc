@@ -1889,37 +1889,41 @@
 
                   <!-- Scaled Tag Sample -->
                   <div class="w-full h-36 flex items-center justify-center p-2 bg-slate-200/50 rounded-lg overflow-hidden">
-                    <div id="tag-mini-preview" class="tag-miniature-box shadow-xs flex flex-row items-center justify-between overflow-hidden p-2 bg-white border border-slate-300 rounded-md gap-2">
-                      <!-- LEFT SIDE: All Writing Portion -->
+                    <div id="tag-mini-preview" class="tag-miniature-box shadow-xs flex flex-row items-stretch justify-between overflow-hidden p-1.5 bg-white border border-slate-900 rounded-md gap-1.5">
+                      <!-- LEFT SIDE: Professional Structured Data -->
                       <div class="flex-1 min-w-0 flex flex-col justify-between h-full pr-1 overflow-hidden leading-tight">
-                        <!-- 1. Customer Name -->
-                        <div id="mini-row-cust" class="text-[8.5px] font-extrabold text-slate-900 uppercase truncate border-b border-slate-200 pb-0.5">
-                          <span id="mini-tag-cust">KALYAN HERITAGE</span>
+                        <!-- Line 1: Customer Name & Inverted Purity Badge -->
+                        <div id="mini-row-cust" class="flex items-center justify-between border-b border-slate-900 pb-0.5 gap-1">
+                          <span id="mini-tag-cust" class="font-black text-[9px] text-slate-900 uppercase truncate">KALYAN HERITAGE</span>
+                          <span id="mini-tag-purity" class="font-mono text-[7px] font-black px-1 py-0.2 bg-black text-white rounded-[1px] shrink-0">22K 916</span>
                         </div>
 
-                        <!-- 2. Article Type & 3. Ornaments Type -->
-                        <div id="mini-row-ornament" class="flex items-center justify-between gap-1 text-[7.5px] pt-0.5">
-                          <span class="text-slate-600 truncate"><span class="text-slate-400 text-[6.5px] font-bold">ART: </span><b id="mini-tag-article" class="text-amber-800 font-bold uppercase font-mono">GOLD 22K</b></span>
-                          <span class="text-slate-700 truncate text-right"><span class="text-slate-400 text-[6.5px] font-bold">ORN: </span><b id="mini-tag-ornament" class="text-slate-900 font-bold uppercase">HANDWEAR</b></span>
+                        <!-- Line 2: Article & Ornament -->
+                        <div id="mini-row-ornament" class="flex items-center justify-between text-[7.5px] pt-0.5">
+                          <span class="text-slate-800 font-semibold truncate"><b class="text-[6.5px] font-bold text-slate-900">ART:</b> <span id="mini-tag-article" class="uppercase">GOLD</span></span>
+                          <span class="text-slate-900 font-extrabold truncate text-right"><b class="text-[6.5px] font-bold text-slate-900">ORN:</b> <span id="mini-tag-ornament" class="uppercase">HANDWEAR</span></span>
                         </div>
 
-                        <!-- 4. Weight & 5. HUID Number -->
-                        <div id="mini-row-huid" class="flex items-center justify-between gap-1 text-[7.5px] font-mono pt-0.5">
-                          <span class="text-slate-800 font-bold shrink-0"><span class="text-slate-400 font-sans text-[6.5px] font-bold">WT: </span><span id="mini-tag-weight">1.674g</span></span>
-                          <span class="text-slate-900 font-extrabold tracking-wide truncate text-right"><span class="text-slate-400 font-sans text-[6.5px] font-bold">HUID: </span><span id="mini-tag-huid">Y6P2F5</span></span>
+                        <!-- Line 3: Weight & Box -->
+                        <div id="mini-row-metric" class="flex items-center justify-between text-[7.5px] font-mono border-y border-dashed border-slate-400 py-0.5 bg-slate-50/80 px-0.5">
+                          <span class="text-slate-900 font-black"><b class="text-[6.5px] font-bold font-sans">WT:</b> <span id="mini-tag-weight">1.674g</span></span>
+                          <span class="text-slate-900 font-bold text-right"><b class="text-[6.5px] font-bold font-sans">BOX:</b> <span id="mini-tag-box">BOX-TR-09</span></span>
                         </div>
 
-                        <!-- 6. Box Number -->
-                        <div id="mini-row-box" class="text-[7.5px] font-mono font-bold text-slate-700 pt-0.5 border-t border-slate-200 truncate">
-                          <span class="text-slate-400 font-sans text-[6.5px] font-bold">BOX: </span><span id="mini-tag-box">BOX-TR-09</span>
+                        <!-- Line 4: HUID & Certified Badge -->
+                        <div id="mini-row-huid" class="flex items-center justify-between text-[7.5px] pt-0.5">
+                          <span class="font-mono font-black text-[8.5px] text-slate-900 tracking-wider truncate"><b class="text-[6.5px] font-bold font-sans">HUID:</b> <span id="mini-tag-huid">Y6P2F5</span></span>
+                          <span class="text-[6.5px] font-black tracking-widest text-slate-900 shrink-0">★ BIS AHC ★</span>
                         </div>
                       </div>
 
-                      <!-- RIGHT SIDE: QR Code (Barcode Removed) -->
-                      <div id="mini-row-qr" class="w-16 h-16 shrink-0 flex items-center justify-center p-0.5 bg-white border-l border-dashed border-slate-300">
-                        <div id="mini-tag-qr" class="w-full h-full flex items-center justify-center">
+                      <!-- RIGHT SIDE: Precision QR Scan Target Box -->
+                      <div id="mini-row-qr" class="w-16 h-full shrink-0 flex flex-col items-center justify-between p-0.5 bg-white border-l border-slate-900">
+                        <span class="text-[6px] font-black tracking-widest text-slate-900 uppercase leading-none">SCAN</span>
+                        <div id="mini-tag-qr" class="w-full flex-1 flex items-center justify-center overflow-hidden py-0.5">
                           <!-- Dynamically rendered via generateQrCodeSvg() -->
                         </div>
+                        <span id="mini-tag-qr-label" class="font-mono text-[6px] font-black text-slate-900 tracking-wider leading-none">Y6P2F5</span>
                       </div>
                     </div>
                   </div>

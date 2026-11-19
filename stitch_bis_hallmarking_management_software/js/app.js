@@ -2376,48 +2376,52 @@
 
       const elRowCust = document.getElementById('mini-row-cust');
       const elRowOrnament = document.getElementById('mini-row-ornament');
+      const elRowMetric = document.getElementById('mini-row-metric');
       const elRowHuid = document.getElementById('mini-row-huid');
-      const elRowBox = document.getElementById('mini-row-box');
       const elRowQr = document.getElementById('mini-row-qr');
 
-      if (elRowCust) elRowCust.style.display = optCust ? 'block' : 'none';
+      if (elRowCust) elRowCust.style.display = optCust ? 'flex' : 'none';
       if (elRowOrnament) elRowOrnament.style.display = optOrnament ? 'flex' : 'none';
+      if (elRowMetric) elRowMetric.style.display = optOrnament ? 'flex' : 'none';
       if (elRowHuid) elRowHuid.style.display = optHuid ? 'flex' : 'none';
-      if (elRowBox) elRowBox.style.display = optHuid ? 'block' : 'none';
       if (elRowQr) elRowQr.style.display = optQr ? 'flex' : 'none';
 
       // Pick top sample row from activeTagRows, or fallback to activeTagBatch defaults
       const sampleRow = (activeTagRows && activeTagRows[0]) ? activeTagRows[0] : null;
 
       const custName = sampleRow ? (sampleRow.customer || (activeTagBatch ? activeTagBatch.customer : 'CUSTOMER')) : (activeTagBatch ? activeTagBatch.customer : 'KALYAN HERITAGE');
-      const articleVal = sampleRow ? (sampleRow.articleType || ((activeTagBatch ? activeTagBatch.metal : 'GOLD') + ' ' + (activeTagBatch ? activeTagBatch.purity : '22K 916'))) : ((activeTagBatch ? activeTagBatch.metal : 'GOLD') + ' ' + (activeTagBatch ? activeTagBatch.purity : '22K 916'));
+      const purityVal = sampleRow ? (sampleRow.purity || (activeTagBatch ? activeTagBatch.purity : '22K 916')) : (activeTagBatch ? activeTagBatch.purity : '22K 916');
+      const articleVal = sampleRow ? (sampleRow.articleType || (activeTagBatch ? activeTagBatch.metal : 'GOLD')) : (activeTagBatch ? activeTagBatch.metal : 'GOLD');
       const ornamentVal = sampleRow ? (sampleRow.ornamentsType || sampleRow.itemDesc || 'HANDWEAR') : 'HANDWEAR';
       const weightVal = sampleRow ? (sampleRow.weight ? (sampleRow.weight + 'g') : (sampleRow.grossWt + 'g')) : '1.674g';
       const huidVal = sampleRow ? (sampleRow.huid || 'Y6P2F5') : 'Y6P2F5';
       const boxVal = sampleRow ? (sampleRow.boxNo || (activeTagBatch ? (activeTagBatch.tray || activeTagBatch.boxNo) : 'BOX-TR-09')) : (activeTagBatch ? (activeTagBatch.tray || activeTagBatch.boxNo || 'BOX-TR-09') : 'BOX-TR-09');
 
       const elCust = document.getElementById('mini-tag-cust');
+      const elPurity = document.getElementById('mini-tag-purity');
       const elArticle = document.getElementById('mini-tag-article');
       const elOrnament = document.getElementById('mini-tag-ornament');
       const elWeight = document.getElementById('mini-tag-weight');
-      const elHuid = document.getElementById('mini-tag-huid');
       const elBox = document.getElementById('mini-tag-box');
+      const elHuid = document.getElementById('mini-tag-huid');
       const elQr = document.getElementById('mini-tag-qr');
+      const elQrLabel = document.getElementById('mini-tag-qr-label');
 
-      if (elCust) elCust.textContent = custName.slice(0, 20);
-      if (elArticle) elArticle.textContent = articleVal.slice(0, 14);
-      if (elOrnament) elOrnament.textContent = ornamentVal.slice(0, 16);
+      if (elCust) elCust.textContent = custName.slice(0, 18);
+      if (elPurity) elPurity.textContent = purityVal;
+      if (elArticle) elArticle.textContent = articleVal.replace(purityVal, '').trim() || 'GOLD';
+      if (elOrnament) elOrnament.textContent = ornamentVal.slice(0, 14);
       if (elWeight) elWeight.textContent = weightVal;
-      if (elHuid) elHuid.textContent = huidVal;
       if (elBox) elBox.textContent = boxVal;
+      if (elHuid) elHuid.textContent = huidVal;
+      if (elQrLabel) elQrLabel.textContent = huidVal;
 
       if (elRowQr) {
-        const qrSize = Math.max(28, Math.min(targetH - 12, Math.round(targetW * 0.35)));
-        elRowQr.style.width = qrSize + 'px';
-        elRowQr.style.height = qrSize + 'px';
+        const qrBoxW = Math.max(34, Math.min(targetH, Math.round(targetW * 0.30)));
+        elRowQr.style.width = qrBoxW + 'px';
       }
       if (elQr && optQr) {
-        const qrSize = Math.max(24, Math.min(targetH - 14, 80));
+        const qrSize = Math.max(22, Math.min(targetH - 24, 75));
         elQr.innerHTML = generateQrCodeSvg(huidVal, qrSize);
       }
     }
@@ -2515,62 +2519,93 @@
     const hMm = unit === 'in' ? height * 25.4 : height;
     const wMm = unit === 'in' ? width * 25.4 : width;
 
-    // QR Box dimension (square on right)
-    const qrBoxDimMm = Math.max(7, Math.min(hMm - 1.6, wMm * 0.35));
+    // Professional Black & White Typography Scaling
+    const titlePt = Math.max(5.2, Math.min(8.0, hMm * 0.38));
+    const subPt = Math.max(4.5, Math.min(6.8, hMm * 0.30));
+    const metaPt = Math.max(3.8, Math.min(5.5, hMm * 0.24));
+    const badgePt = Math.max(4.2, Math.min(6.2, hMm * 0.27));
 
-    // Dynamic typography scaling based on tag height in mm
-    const titlePt = Math.max(5.5, Math.min(8.5, hMm * 0.40));
-    const bodyPt = Math.max(4.8, Math.min(7.2, hMm * 0.32));
-    const metaPt = Math.max(4.0, Math.min(6.0, hMm * 0.26));
+    // QR Box size (square target on right side)
+    const qrBoxDimMm = Math.max(8.0, Math.min(hMm - 1.2, wMm * 0.30));
 
     const tagsHtml = activeTagRows.map((row, idx) => {
       const customerName = row.customer || defaultCustomer;
-      const articleType = row.articleType || (defaultMetal + ' ' + (row.purity || defaultPurity));
+      const purityVal = row.purity || defaultPurity;
+      const articleType = (row.articleType || defaultMetal).replace(purityVal, '').trim() || defaultMetal;
       const ornamentsType = row.ornamentsType || row.itemDesc || 'Jewellery Article';
       const weightStr = (row.weight || row.grossWt || '0.000') + 'g';
       const huidStr = row.huid || `HUID-${idx + 1}`;
       const boxNoStr = row.boxNo || defaultBox;
 
-      // Clean vector QR code on the right side
-      const qrSvg = incQr ? generateQrCodeSvg(huidStr, Math.round(qrBoxDimMm * 3.78)) : '';
+      // High-precision vector QR code
+      const qrPixelDim = Math.max(22, Math.round(qrBoxDimMm * 3.78) - 12);
+      const qrSvg = incQr ? generateQrCodeSvg(huidStr, qrPixelDim) : '';
 
       return `
-        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: center; justify-content: space-between; page-break-after: always; box-sizing: border-box; padding: 0.8mm 1.2mm; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #ffffff; border: 0.4px solid #222; color: #000; overflow: hidden; line-height: 1.15;">
-          <!-- LEFT SIDE: All Writing Portion -->
+        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; page-break-after: always; box-sizing: border-box; padding: 0.8mm 1mm; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #ffffff; border: 0.6px solid #000; color: #000; overflow: hidden; line-height: 1.15;">
+          
+          <!-- LEFT SIDE: Professional Structured Data -->
           <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding-right: 1.2mm; overflow: hidden;">
+            
             ${incCust ? `
-              <!-- 1. Customer Name -->
-              <div style="font-size: ${titlePt}pt; font-weight: 900; text-transform: uppercase; letter-spacing: -0.15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-bottom: 0.35px solid #222; padding-bottom: 0.2mm;">
-                ${escapeHtmlStr(customerName)}
+              <!-- Line 1: Customer Name & Inverted Purity Badge -->
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid #000; padding-bottom: 0.25mm; gap: 1mm;">
+                <span style="font-size: ${titlePt}pt; font-weight: 900; text-transform: uppercase; letter-spacing: -0.15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${escapeHtmlStr(customerName)}
+                </span>
+                <span style="font-size: ${badgePt}pt; font-weight: 900; font-family: monospace; border: 0.4px solid #000; padding: 0.1mm 0.8mm; border-radius: 1px; white-space: nowrap; background: #000; color: #fff;">
+                  ${escapeHtmlStr(purityVal)}
+                </span>
               </div>
             ` : ''}
 
             ${incOrnament ? `
-              <!-- 2. Article Type & 3. Ornaments Type -->
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${bodyPt}pt; padding-top: 0.15mm;">
-                <span style="font-weight: 800; font-family: monospace; text-transform: uppercase; white-space: nowrap;"><span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 600; color: #333;">ART: </span>${escapeHtmlStr(articleType)}</span>
-                <span style="font-weight: 700; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right;"><span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 600; color: #333;">ORN: </span>${escapeHtmlStr(ornamentsType)}</span>
+              <!-- Line 2: Article & Ornament -->
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; padding: 0.15mm 0;">
+                <span style="font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  <span style="font-size: ${metaPt}pt; font-weight: 800; color: #000; letter-spacing: 0.2px;">ART:</span> ${escapeHtmlStr(articleType)}
+                </span>
+                <span style="font-weight: 900; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;">
+                  <span style="font-size: ${metaPt}pt; font-weight: 800; color: #000; letter-spacing: 0.2px;">ORN:</span> ${escapeHtmlStr(ornamentsType)}
+                </span>
               </div>
 
-              <!-- 4. Weight & 5. HUID Number -->
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${bodyPt}pt; font-family: monospace; padding-top: 0.15mm;">
-                <span style="font-weight: 800; white-space: nowrap;"><span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 600; color: #333;">WT: </span>${escapeHtmlStr(weightStr)}</span>
-                <span style="font-weight: 900; letter-spacing: 0.3px; white-space: nowrap; text-align: right;"><span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 700; color: #333;">HUID: </span>${escapeHtmlStr(huidStr)}</span>
+              <!-- Line 3: Precision Weight & Box Number -->
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; border-top: 0.35px dashed #666; border-bottom: 0.35px dashed #666; padding: 0.2mm 0; background: #fafafa;">
+                <span style="font-weight: 900; font-family: monospace; white-space: nowrap;">
+                  <span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 800; color: #000;">WT:</span> ${escapeHtmlStr(weightStr)}
+                </span>
+                <span style="font-weight: 800; font-family: monospace; white-space: nowrap; text-align: right;">
+                  <span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 800; color: #000;">BOX:</span> ${escapeHtmlStr(boxNoStr)}
+                </span>
               </div>
             ` : ''}
 
             ${incHuid ? `
-              <!-- 6. Box Number -->
-              <div style="font-size: ${bodyPt}pt; font-family: monospace; font-weight: 800; white-space: nowrap; border-top: 0.35px solid #222; padding-top: 0.15mm;">
-                <span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 700; color: #333;">BOX: </span>${escapeHtmlStr(boxNoStr)}
+              <!-- Line 4: BIS HUID High-Security Code -->
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; padding-top: 0.2mm;">
+                <span style="font-size: ${titlePt}pt; font-weight: 900; font-family: monospace; letter-spacing: 0.5px; white-space: nowrap;">
+                  <span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 900;">HUID:</span> ${escapeHtmlStr(huidStr)}
+                </span>
+                <span style="font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; color: #000;">
+                  ★ BIS AHC ★
+                </span>
               </div>
             ` : ''}
           </div>
 
-          <!-- RIGHT SIDE: QR Code (Barcode Removed) -->
+          <!-- RIGHT SIDE: Precision QR Scan Target Box -->
           ${incQr ? `
-            <div style="width: ${qrBoxDimMm}mm; height: ${qrBoxDimMm}mm; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #ffffff; padding: 0.2mm; border-left: 0.35px dashed #555;">
-              ${qrSvg}
+            <div style="width: ${qrBoxDimMm}mm; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; flex-shrink: 0; background: #ffffff; padding: 0.3mm; border-left: 0.5px solid #000; box-sizing: border-box;">
+              <span style="font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1; text-align: center;">
+                SCAN
+              </span>
+              <div style="display: flex; align-items: center; justify-content: center; width: 100%; flex: 1; overflow: hidden; padding: 0.2mm 0;">
+                ${qrSvg}
+              </div>
+              <span style="font-size: ${metaPt}pt; font-family: monospace; font-weight: 900; letter-spacing: 0.4px; line-height: 1; text-align: center;">
+                ${escapeHtmlStr(huidStr)}
+              </span>
             </div>
           ` : ''}
         </div>
