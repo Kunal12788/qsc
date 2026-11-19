@@ -2489,29 +2489,32 @@
   }
 
   function printCustomTags() {
-    if (!activeTagBatch || activeTagBatch.tagStatus !== 'DONE' || !activeTagRows || !activeTagRows.length) {
-      showToast('PRINT LOCKED: PLEASE CLICK "SUBMIT" FIRST TO VALIDATE AND UNLOCK PRINTING.', 'warning');
+    if (!activeTagBatch) {
+      showToast('NO ACTIVE BATCH SELECTED FOR PRINTING.', 'warning');
       return;
     }
 
-    const width = parseFloat(document.getElementById('tag-print-width').value) || 50;
-    const height = parseFloat(document.getElementById('tag-print-height').value) || 12;
-    const unit = document.getElementById('tag-print-unit').value || 'mm';
-
-    const incCust = document.getElementById('tag-opt-cust') ? document.getElementById('tag-opt-cust').checked : true;
-    const incOrnament = document.getElementById('tag-opt-ornament') ? document.getElementById('tag-opt-ornament').checked : true;
-    const incHuid = document.getElementById('tag-opt-huid') ? document.getElementById('tag-opt-huid').checked : true;
-    const incQr = document.getElementById('tag-opt-qr') ? document.getElementById('tag-opt-qr').checked : true;
-
-    let printFrame = document.getElementById('tag-print-iframe');
-    if (!printFrame) {
-      printFrame = document.createElement('iframe');
-      printFrame.id = 'tag-print-iframe';
-      printFrame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;';
-      document.body.appendChild(printFrame);
+    if (!activeTagRows || activeTagRows.length === 0) {
+      showToast('NO TAG DATA AVAILABLE TO PRINT. PLEASE PASTE & SAVE DATA FIRST.', 'warning');
+      return;
     }
 
-    const defaultCustomer = activeTagBatch.customer || 'SSR Bullion';
+    const printFrame = document.getElementById('tag-print-frame');
+    if (!printFrame) {
+      showToast('Print system unavailable.', 'error');
+      return;
+    }
+
+    const width = parseFloat(document.getElementById('tag-cfg-width')?.value || 50);
+    const height = parseFloat(document.getElementById('tag-cfg-height')?.value || 17);
+    const unit = document.getElementById('tag-cfg-unit')?.value || 'mm';
+
+    const incCust = document.getElementById('tag-opt-cust')?.checked !== false;
+    const incOrnament = document.getElementById('tag-opt-ornament')?.checked !== false;
+    const incHuid = document.getElementById('tag-opt-huid')?.checked !== false;
+    const incQr = document.getElementById('tag-opt-qr')?.checked !== false;
+
+    const defaultCustomer = activeTagBatch.customer || 'SSR BULLION CLIENT';
     const defaultMetal = activeTagBatch.metal || 'GOLD';
     const defaultPurity = activeTagBatch.purity || '22K 916';
     const defaultBox = activeTagBatch.tray || activeTagBatch.boxNo || 'BOX-TR-01';
@@ -2519,13 +2522,13 @@
     const hMm = unit === 'in' ? height * 25.4 : height;
     const wMm = unit === 'in' ? width * 25.4 : width;
 
-    // Professional Black & White Typography Scaling
-    const titlePt = Math.max(5.2, Math.min(8.0, hMm * 0.38));
-    const subPt = Math.max(4.5, Math.min(6.8, hMm * 0.30));
-    const metaPt = Math.max(3.8, Math.min(5.5, hMm * 0.24));
-    const badgePt = Math.max(4.2, Math.min(6.2, hMm * 0.27));
+    // Luxury Black & White Typography Scaling
+    const titlePt = Math.max(5.4, Math.min(8.6, hMm * 0.40));
+    const subPt = Math.max(4.6, Math.min(7.0, hMm * 0.31));
+    const metaPt = Math.max(3.8, Math.min(5.6, hMm * 0.24));
+    const badgePt = Math.max(4.4, Math.min(6.5, hMm * 0.28));
 
-    // QR Box size (square target on right side)
+    // QR Box dimension (square target on right side)
     const qrBoxDimMm = Math.max(8.0, Math.min(hMm - 1.2, wMm * 0.30));
 
     const tagsHtml = activeTagRows.map((row, idx) => {
@@ -2538,57 +2541,57 @@
       const boxNoStr = row.boxNo || defaultBox;
 
       // High-precision vector QR code
-      const qrPixelDim = Math.max(22, Math.round(qrBoxDimMm * 3.78) - 12);
+      const qrPixelDim = Math.max(24, Math.round(qrBoxDimMm * 3.78) - 10);
       const qrSvg = incQr ? generateQrCodeSvg(huidStr, qrPixelDim) : '';
 
       return `
-        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; page-break-after: always; box-sizing: border-box; padding: 0.8mm 1mm; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #ffffff; border: 0.6px solid #000; color: #000; overflow: hidden; line-height: 1.15;">
+        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; page-break-after: always; box-sizing: border-box; padding: 0.8mm 1mm; font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #ffffff; border: 0.65px solid #000000; color: #000000; overflow: hidden; line-height: 1.15;">
           
-          <!-- LEFT SIDE: Professional Structured Data -->
+          <!-- LEFT SIDE: Professional Structured Assay Data -->
           <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding-right: 1.2mm; overflow: hidden;">
             
             ${incCust ? `
-              <!-- Line 1: Customer Name & Inverted Purity Badge -->
-              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid #000; padding-bottom: 0.25mm; gap: 1mm;">
-                <span style="font-size: ${titlePt}pt; font-weight: 900; text-transform: uppercase; letter-spacing: -0.15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <!-- Line 1: Customer Name (Cinzel Roman Serif) & Inverted Purity Badge -->
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid #000000; padding-bottom: 0.25mm; gap: 1mm;">
+                <span style="font-family: 'Cinzel', Georgia, 'Times New Roman', serif; font-size: ${titlePt}pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                   ${escapeHtmlStr(customerName)}
                 </span>
-                <span style="font-size: ${badgePt}pt; font-weight: 900; font-family: monospace; border: 0.4px solid #000; padding: 0.1mm 0.8mm; border-radius: 1px; white-space: nowrap; background: #000; color: #fff;">
+                <span style="font-family: 'Montserrat', sans-serif; font-size: ${badgePt}pt; font-weight: 900; letter-spacing: 0.5px; padding: 0.1mm 0.8mm; border-radius: 1.5px; white-space: nowrap; background: #000000; color: #ffffff;">
                   ${escapeHtmlStr(purityVal)}
                 </span>
               </div>
             ` : ''}
 
             ${incOrnament ? `
-              <!-- Line 2: Article & Ornament -->
+              <!-- Line 2: Article & Ornament (Crisp Montserrat Hierarchy) -->
               <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; padding: 0.15mm 0;">
                 <span style="font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                  <span style="font-size: ${metaPt}pt; font-weight: 800; color: #000; letter-spacing: 0.2px;">ART:</span> ${escapeHtmlStr(articleType)}
+                  <span style="font-size: ${metaPt}pt; font-weight: 900; color: #000000; letter-spacing: 0.3px;">ART:</span> ${escapeHtmlStr(articleType)}
                 </span>
-                <span style="font-weight: 900; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;">
-                  <span style="font-size: ${metaPt}pt; font-weight: 800; color: #000; letter-spacing: 0.2px;">ORN:</span> ${escapeHtmlStr(ornamentsType)}
+                <span style="font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;">
+                  <span style="font-size: ${metaPt}pt; font-weight: 900; color: #000000; letter-spacing: 0.3px;">ORN:</span> ${escapeHtmlStr(ornamentsType)}
                 </span>
               </div>
 
-              <!-- Line 3: Precision Weight & Box Number -->
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; border-top: 0.35px dashed #666; border-bottom: 0.35px dashed #666; padding: 0.2mm 0; background: #fafafa;">
-                <span style="font-weight: 900; font-family: monospace; white-space: nowrap;">
-                  <span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 800; color: #000;">WT:</span> ${escapeHtmlStr(weightStr)}
+              <!-- Line 3: Precision Weight & Box (Technical Monospace Strip) -->
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; border-top: 0.35px dashed #000000; border-bottom: 0.35px dashed #000000; padding: 0.2mm 0; background: #fcfcfc;">
+                <span style="font-weight: 800; font-family: 'JetBrains Mono', 'Courier New', monospace; white-space: nowrap;">
+                  <span style="font-size: ${metaPt}pt; font-family: 'Montserrat', sans-serif; font-weight: 900; color: #000000; letter-spacing: 0.3px;">WT:</span> ${escapeHtmlStr(weightStr)}
                 </span>
-                <span style="font-weight: 800; font-family: monospace; white-space: nowrap; text-align: right;">
-                  <span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 800; color: #000;">BOX:</span> ${escapeHtmlStr(boxNoStr)}
+                <span style="font-weight: 700; font-family: 'JetBrains Mono', 'Courier New', monospace; white-space: nowrap; text-align: right;">
+                  <span style="font-size: ${metaPt}pt; font-family: 'Montserrat', sans-serif; font-weight: 900; color: #000000; letter-spacing: 0.3px;">BOX:</span> ${escapeHtmlStr(boxNoStr)}
                 </span>
               </div>
             ` : ''}
 
             ${incHuid ? `
-              <!-- Line 4: BIS HUID High-Security Code -->
+              <!-- Line 4: BIS HUID Monospace Code & Assay Authenticity Seal -->
               <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; padding-top: 0.2mm;">
-                <span style="font-size: ${titlePt}pt; font-weight: 900; font-family: monospace; letter-spacing: 0.5px; white-space: nowrap;">
-                  <span style="font-size: ${metaPt}pt; font-family: sans-serif; font-weight: 900;">HUID:</span> ${escapeHtmlStr(huidStr)}
+                <span style="font-size: ${titlePt}pt; font-weight: 900; font-family: 'JetBrains Mono', 'Courier New', monospace; letter-spacing: 0.8px; white-space: nowrap;">
+                  <span style="font-size: ${metaPt}pt; font-family: 'Montserrat', sans-serif; font-weight: 900; letter-spacing: 0.3px;">HUID:</span> ${escapeHtmlStr(huidStr)}
                 </span>
-                <span style="font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; color: #000;">
-                  ★ BIS AHC ★
+                <span style="font-family: 'Cinzel', serif; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap; color: #000000;">
+                  ✦ BIS AHC ✦
                 </span>
               </div>
             ` : ''}
@@ -2596,14 +2599,14 @@
 
           <!-- RIGHT SIDE: Precision QR Scan Target Box -->
           ${incQr ? `
-            <div style="width: ${qrBoxDimMm}mm; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; flex-shrink: 0; background: #ffffff; padding: 0.3mm; border-left: 0.5px solid #000; box-sizing: border-box;">
-              <span style="font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1; text-align: center;">
+            <div style="width: ${qrBoxDimMm}mm; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; flex-shrink: 0; background: #ffffff; padding: 0.3mm; border-left: 0.5px solid #000000; box-sizing: border-box;">
+              <span style="font-family: 'Montserrat', sans-serif; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.6px; text-transform: uppercase; line-height: 1; text-align: center;">
                 SCAN
               </span>
               <div style="display: flex; align-items: center; justify-content: center; width: 100%; flex: 1; overflow: hidden; padding: 0.2mm 0;">
                 ${qrSvg}
               </div>
-              <span style="font-size: ${metaPt}pt; font-family: monospace; font-weight: 900; letter-spacing: 0.4px; line-height: 1; text-align: center;">
+              <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.5px; line-height: 1; text-align: center;">
                 ${escapeHtmlStr(huidStr)}
               </span>
             </div>
@@ -2620,6 +2623,9 @@
         <head>
           <meta charset="utf-8">
           <title>TAGS - ${escapeHtmlStr(activeTagBatch.jobDocket)}</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Montserrat:wght@600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
           <style>
             @page {
               size: ${width}${unit} ${height}${unit};
@@ -2634,6 +2640,8 @@
               margin: 0;
               padding: 0;
               background: #ffffff;
+              color: #000000;
+              font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
             .print-tag {
               page-break-inside: avoid;
@@ -2647,14 +2655,25 @@
     `);
     frameDoc.close();
 
-    setTimeout(() => {
+    // Ensure fonts are fully rendered before print dialog opens
+    const triggerPrint = () => {
       try {
         printFrame.contentWindow.focus();
         printFrame.contentWindow.print();
       } catch (err) {
         console.error('Print tags error:', err);
       }
-    }, 250);
+    };
+
+    if (frameDoc.fonts && frameDoc.fonts.ready) {
+      frameDoc.fonts.ready.then(() => {
+        setTimeout(triggerPrint, 150);
+      }).catch(() => {
+        setTimeout(triggerPrint, 350);
+      });
+    } else {
+      setTimeout(triggerPrint, 350);
+    }
   }
 
     function exportTagsCSV() {
