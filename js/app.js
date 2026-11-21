@@ -6918,7 +6918,13 @@
 </html>`;
   }
 
+  let isPrintingInvoice = false;
+
   function printTaxInvoice() {
+    if (isPrintingInvoice) return;
+    isPrintingInvoice = true;
+    setTimeout(() => { isPrintingInvoice = false; }, 1200);
+
     if (!activeBillingBatch) {
       if (state.intakeBatches && state.intakeBatches.length > 0) {
         activeBillingBatch = state.intakeBatches[0];
@@ -6935,45 +6941,44 @@
     const invoiceHtml = generateTaxInvoicePrintContent();
 
     try {
-      let oldFrame = document.getElementById('invoice-print-iframe');
-      if (oldFrame) {
-        oldFrame.remove();
+      let printFrame = document.getElementById('invoice-print-iframe');
+      if (!printFrame) {
+        printFrame = document.createElement('iframe');
+        printFrame.id = 'invoice-print-iframe';
+        printFrame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;z-index:-9999;';
+        document.body.appendChild(printFrame);
       }
-
-      const printFrame = document.createElement('iframe');
-      printFrame.id = 'invoice-print-iframe';
-      printFrame.setAttribute('style', 'position:fixed; top:0; left:0; width:1px; height:1px; opacity:0.01; pointer-events:none; border:none; z-index:-9999;');
-      printFrame.setAttribute('aria-hidden', 'true');
-      document.body.appendChild(printFrame);
 
       const frameDoc = printFrame.contentWindow.document;
       frameDoc.open();
       frameDoc.write(invoiceHtml);
       frameDoc.close();
 
-      setTimeout(() => {
+      const triggerPrint = () => {
         try {
-          printFrame.contentWindow.focus();
-          printFrame.contentWindow.print();
-        } catch (err) {
-          console.warn('Iframe print failed, falling back to window.open print:', err);
-          const printWin = window.open('', '_blank', 'width=900,height=800');
-          if (printWin) {
-            printWin.document.open();
-            printWin.document.write(invoiceHtml);
-            printWin.document.close();
-            printWin.focus();
-            printWin.print();
-          } else {
-            window.print();
+          if (printFrame && printFrame.contentWindow) {
+            printFrame.contentWindow.focus();
+            printFrame.contentWindow.print();
           }
+        } catch (err) {
+          console.error('Print invoice error:', err);
         }
-      }, 300);
+      };
+
+      if (frameDoc.fonts && frameDoc.fonts.ready) {
+        frameDoc.fonts.ready.then(() => {
+          setTimeout(triggerPrint, 120);
+        }).catch(() => {
+          setTimeout(triggerPrint, 200);
+        });
+      } else {
+        setTimeout(triggerPrint, 200);
+      }
 
       showToast(`Opening Print dialog for Tax Invoice ${activeBillingBatch.billNo || ''}...`, 'info');
     } catch (e) {
       console.error('Print Tax Invoice error:', e);
-      showToast('Unable to open print preview. Please check browser pop-up settings.', 'error');
+      showToast('Unable to open print preview.', 'error');
     }
   }
 
@@ -7981,12 +7986,6 @@
     const btnOffSide = document.getElementById('btnOffSide');
     if (btnMainSide) btnMainSide.addEventListener('click', () => setJobClassification('MAIN'));
     if (btnOffSide) btnOffSide.addEventListener('click', () => setJobClassification('OFF_SIDE'));
-
-    // Direct listeners for Bill Generation controls
-    const btnPrintBill = document.getElementById('btnPrintTaxInvoice');
-    if (btnPrintBill) btnPrintBill.addEventListener('click', printTaxInvoice);
-    const btnSaveBill = document.getElementById('btnSaveBillChanges');
-    if (btnSaveBill) btnSaveBill.addEventListener('click', () => saveActiveBillChanges());
 
     const btnAddRow = document.getElementById('btnAddRow');
     if (btnAddRow) btnAddRow.addEventListener('click', addBillingItemRow);
