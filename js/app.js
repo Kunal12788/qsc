@@ -6278,6 +6278,37 @@
     renderBillQueue();
   }
 
+  let billSearchQuery = '';
+
+  function handleBillSearch(query) {
+    billSearchQuery = (query || '').trim().toLowerCase();
+
+    const btnClear = document.getElementById('btn-clear-bill-search');
+    if (btnClear) {
+      if (billSearchQuery) {
+        btnClear.classList.remove('hidden');
+      } else {
+        btnClear.classList.add('hidden');
+      }
+    }
+
+    renderBillQueue();
+  }
+
+  function clearBillSearch() {
+    billSearchQuery = '';
+    const input = document.getElementById('bill-search-input');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    const btnClear = document.getElementById('btn-clear-bill-search');
+    if (btnClear) {
+      btnClear.classList.add('hidden');
+    }
+    renderBillQueue();
+  }
+
   function renderBillQueue() {
     const container = document.getElementById('bill-queue-container');
     const countBadge = document.getElementById('bill-queue-count');
@@ -6293,11 +6324,39 @@
       return;
     }
 
+    const filteredBatches = state.intakeBatches.filter(b => {
+      if (!billSearchQuery) return true;
+      const q = billSearchQuery;
+      const cust = (b.customer || '').toLowerCase();
+      const job = (b.jobDocket || '').toLowerCase();
+      const req = (b.reqNo || '').toLowerCase();
+      const rec = (b.receiptNo || '').toLowerCase();
+      const bill = (b.billNo || '').toLowerCase();
+
+      return cust.includes(q) || job.includes(q) || req.includes(q) || rec.includes(q) || bill.includes(q);
+    });
+
     if (countBadge) {
-      countBadge.textContent = `${state.intakeBatches.length} Batches Available`;
+      if (billSearchQuery) {
+        countBadge.textContent = `${filteredBatches.length} of ${state.intakeBatches.length} Found`;
+      } else {
+        countBadge.textContent = `${state.intakeBatches.length} Batches Available`;
+      }
     }
 
-    container.innerHTML = state.intakeBatches.map(b => {
+    if (filteredBatches.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full py-8 text-center bg-surface-container-low/30 rounded-xl border border-dashed border-surface-container flex flex-col items-center justify-center gap-1.5">
+          <span class="material-symbols-outlined text-[28px] text-slate-400">search_off</span>
+          <p class="text-xs font-semibold text-on-surface">No batches found matching "${escapeHtmlStr(billSearchQuery)}"</p>
+          <p class="text-[11px] text-on-surface-variant">Try searching by jeweller name, job docket (e.g. JOB-2024-9104), or request number (e.g. REQ-8831-A).</p>
+          <button type="button" onclick="clearBillSearch()" class="mt-1 text-xs text-secondary font-bold hover:underline cursor-pointer">Clear Search</button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = filteredBatches.map(b => {
       const isSelected = activeBillingBatch && activeBillingBatch.jobDocket === b.jobDocket;
 
       return `
@@ -6306,28 +6365,37 @@
             ? 'bg-surface-container-lowest border-primary-container shadow-md ring-2 ring-primary-container/20' 
             : 'bg-surface-container-lowest/70 hover:bg-surface-container-lowest border-surface-container-low hover:border-surface-container hover:shadow-xs'
         }">
-          <!-- Top Row: Docket / Receipt Number & Bill Number -->
-          <div class="flex items-center justify-between gap-1.5">
-            <span class="font-mono text-[11px] font-bold text-on-surface truncate">${escapeHtmlStr(b.receiptNo || b.jobDocket)}</span>
-            <span class="px-1.5 py-0.5 rounded text-[9.5px] font-mono font-medium bg-surface-container-low text-on-surface-variant">${escapeHtmlStr(b.billNo || 'BILL')}</span>
+          <!-- Top Row: Bill Number & Job Docket -->
+          <div class="flex items-center justify-between gap-1.5 pb-1.5 border-b border-surface-container-low/70">
+            <div class="flex items-center gap-1 font-mono min-w-0">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 shrink-0">BILL:</span>
+              <span class="text-xs font-bold text-slate-900 group-hover:text-primary-container transition-colors truncate">${escapeHtmlStr(b.billNo || 'BILL-PENDING')}</span>
+            </div>
+            <span class="font-mono text-[10px] font-semibold text-slate-600 bg-surface-container-low px-1.5 py-0.5 rounded border border-surface-container/60 shrink-0">${escapeHtmlStr(b.jobDocket || b.receiptNo)}</span>
           </div>
 
           <!-- Customer Name & Details -->
           <div class="flex flex-col gap-0.5">
-            <span class="text-xs font-semibold text-on-surface truncate group-hover:text-primary-container transition-colors">${escapeHtmlStr(b.customer)}</span>
+            <span class="text-xs font-bold text-on-surface truncate group-hover:text-primary-container transition-colors">${escapeHtmlStr(b.customer)}</span>
             <div class="flex items-center gap-2 text-[10px] font-mono text-on-surface-variant">
               <span>${b.pcs || 0} Pcs</span>
               <span>•</span>
-              <span class="text-secondary font-semibold">${escapeHtmlStr(b.purity || '22K 916')}</span>
+              <span class="text-secondary font-bold">${escapeHtmlStr(b.purity || '22K 916')}</span>
               <span>•</span>
               <span>${typeof b.grossWt === 'number' ? b.grossWt.toFixed(2) : (b.grossWt || '0.00')}g</span>
             </div>
           </div>
 
-          <!-- Bottom: Ref Req No & Active Indicator -->
-          <div class="pt-2 border-t border-surface-container-low flex items-center justify-between text-[10px]">
-            <span class="font-mono text-slate-500 truncate text-[10px]">${escapeHtmlStr(b.reqNo || b.jobDocket)}</span>
-            ${isSelected ? '<span class="text-[9px] font-bold uppercase tracking-wider text-primary-container bg-primary-container/10 px-1.5 py-0.5 rounded">Selected</span>' : '<span class="text-[10px] text-slate-400 group-hover:text-slate-700">Select →</span>'}
+          <!-- Bottom: Clearly Display Request Number & Selection Status -->
+          <div class="pt-2 border-t border-surface-container-low flex items-center justify-between gap-2 text-[11px]">
+            <div class="flex items-center gap-1 font-mono text-[11px] min-w-0 truncate">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 shrink-0">REQ:</span>
+              <span class="font-bold text-slate-800 truncate">${escapeHtmlStr(b.reqNo || b.jobDocket)}</span>
+            </div>
+            ${isSelected 
+              ? '<span class="shrink-0 text-[9px] font-bold uppercase tracking-wider text-primary-container bg-primary-container/10 px-2 py-0.5 rounded-full border border-primary-container/20">Selected</span>' 
+              : '<span class="shrink-0 text-[10.5px] font-medium text-slate-400 group-hover:text-slate-700">Select →</span>'
+            }
           </div>
         </div>
       `;
@@ -8303,6 +8371,8 @@
   window.initBillGenerationView = initBillGenerationView;
   window.filterBillQueue = filterBillQueue;
   window.renderBillQueue = renderBillQueue;
+  window.handleBillSearch = handleBillSearch;
+  window.clearBillSearch = clearBillSearch;
   window.selectBillingBatch = selectBillingBatch;
   window.updateExactBillDisposition = updateExactBillDisposition;
   window.updateExactBillCalculations = updateExactBillCalculations;
