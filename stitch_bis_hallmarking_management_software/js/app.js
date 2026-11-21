@@ -6360,25 +6360,27 @@
       const isSelected = activeBillingBatch && activeBillingBatch.jobDocket === b.jobDocket;
 
       return `
-        <div onclick="selectBillingBatch('${escapeHtmlStr(b.jobDocket)}')" class="group relative rounded-xl p-3 border transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+        <div onclick="selectBillingBatch('${escapeHtmlStr(b.jobDocket)}')" class="bill-queue-card tag-queue-card p-3 rounded-xl bg-white ${
           isSelected 
-            ? 'bg-surface-container-lowest border-primary-container shadow-md ring-2 ring-primary-container/20' 
-            : 'bg-surface-container-lowest/70 hover:bg-surface-container-lowest border-surface-container-low hover:border-surface-container hover:shadow-xs'
+            ? 'active-queue-batch' 
+            : 'hover:border-slate-300'
         }">
           <!-- Top Row: Bill Number & Job Docket -->
-          <div class="flex items-center justify-between gap-1.5 pb-1.5 border-b border-surface-container-low/70">
+          <div class="flex items-center justify-between gap-1.5 pb-1.5 mb-1.5 border-b border-slate-100">
             <div class="flex items-center gap-1 font-mono min-w-0">
               <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 shrink-0">BILL:</span>
               <span class="text-xs font-bold text-slate-900 group-hover:text-primary-container transition-colors truncate">${escapeHtmlStr(b.billNo || 'BILL-PENDING')}</span>
             </div>
-            <span class="font-mono text-[10px] font-semibold text-slate-600 bg-surface-container-low px-1.5 py-0.5 rounded border border-surface-container/60 shrink-0">${escapeHtmlStr(b.jobDocket || b.receiptNo)}</span>
+            <span class="font-mono text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 shrink-0">${escapeHtmlStr(b.jobDocket || b.receiptNo)}</span>
           </div>
 
           <!-- Customer Name & Details -->
-          <div class="flex flex-col gap-0.5">
-            <span class="text-xs font-bold text-on-surface truncate group-hover:text-primary-container transition-colors">${escapeHtmlStr(b.customer)}</span>
-            <div class="flex items-center gap-2 text-[10px] font-mono text-on-surface-variant">
-              <span>${b.pcs || 0} Pcs</span>
+          <div class="flex flex-col gap-0.5 mb-2">
+            <div class="font-bold text-slate-900 text-xs uppercase truncate" title="${escapeHtmlStr(b.customer)}">
+              ${escapeHtmlStr(b.customer)}
+            </div>
+            <div class="flex items-center gap-2 text-[10px] font-mono text-slate-500">
+              <span>${b.pcs || 0} PCS</span>
               <span>•</span>
               <span class="text-secondary font-bold">${escapeHtmlStr(b.purity || '22K 916')}</span>
               <span>•</span>
@@ -6387,14 +6389,14 @@
           </div>
 
           <!-- Bottom: Clearly Display Request Number & Selection Status -->
-          <div class="pt-2 border-t border-surface-container-low flex items-center justify-between gap-2 text-[11px]">
-            <div class="flex items-center gap-1 font-mono text-[11px] min-w-0 truncate">
+          <div class="pt-1.5 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
+            <div class="flex items-center gap-1 font-mono min-w-0 truncate">
               <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 shrink-0">REQ:</span>
-              <span class="font-bold text-slate-800 truncate">${escapeHtmlStr(b.reqNo || b.jobDocket)}</span>
+              <span class="font-bold text-slate-800 text-[11px] truncate">${escapeHtmlStr(b.reqNo || b.jobDocket)}</span>
             </div>
             ${isSelected 
-              ? '<span class="shrink-0 text-[9px] font-bold uppercase tracking-wider text-primary-container bg-primary-container/10 px-2 py-0.5 rounded-full border border-primary-container/20">Selected</span>' 
-              : '<span class="shrink-0 text-[10.5px] font-medium text-slate-400 group-hover:text-slate-700">Select →</span>'
+              ? '<span class="shrink-0 text-[9px] font-bold uppercase tracking-wider text-amber-900 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-300">Selected</span>' 
+              : '<span class="shrink-0 text-[10.5px] font-medium text-slate-400 hover:text-slate-700">Select →</span>'
             }
           </div>
         </div>
