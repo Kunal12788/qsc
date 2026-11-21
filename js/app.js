@@ -6252,6 +6252,14 @@
         if (!b.billNo) {
           b.billNo = 'BILL-2024-' + String(4192 - idx).padStart(5, '0');
         }
+        // First batch has default billing date/time, others leave open for user configuration
+        if (idx === 0 && !b.billDate) {
+          b.billDate = '2026-11-14';
+          b.billTimeHH = '08';
+          b.billTimeMM = '01';
+          b.billTimeAmPm = 'PM';
+          b.billDateTime = '14-11-2026 / 08:01 PM';
+        }
         if (!b.disposition) {
           b.disposition = {
             rejected: 0,
@@ -6279,6 +6287,33 @@
   }
 
   let billSearchQuery = '';
+  let billDateTimeFilter = 'all'; // 'all', 'saved', 'missing'
+
+  function filterBillQueueByDateTime(filter) {
+    billDateTimeFilter = filter;
+
+    const btnAll = document.getElementById('btn-bill-dt-all');
+    const btnSaved = document.getElementById('btn-bill-dt-saved');
+    const btnMissing = document.getElementById('btn-bill-dt-missing');
+
+    if (btnAll) {
+      btnAll.className = filter === 'all'
+        ? 'px-2.5 py-1 rounded-md bg-surface-container-lowest shadow-xs text-on-surface transition-all cursor-pointer'
+        : 'px-2.5 py-1 rounded-md text-on-surface-variant hover:text-on-surface transition-all cursor-pointer';
+    }
+    if (btnSaved) {
+      btnSaved.className = filter === 'saved'
+        ? 'px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-xs transition-all flex items-center gap-1 cursor-pointer'
+        : 'px-2.5 py-1 rounded-md text-emerald-700 hover:text-emerald-900 transition-all flex items-center gap-1 cursor-pointer';
+    }
+    if (btnMissing) {
+      btnMissing.className = filter === 'missing'
+        ? 'px-2.5 py-1 rounded-md bg-amber-100 text-amber-900 border border-amber-300 shadow-xs transition-all flex items-center gap-1 cursor-pointer'
+        : 'px-2.5 py-1 rounded-md text-amber-700 hover:text-amber-900 transition-all flex items-center gap-1 cursor-pointer';
+    }
+
+    renderBillQueue();
+  }
 
   function handleBillSearch(query) {
     billSearchQuery = (query || '').trim().toLowerCase();
@@ -6312,6 +6347,7 @@
   function renderBillQueue() {
     const container = document.getElementById('bill-queue-container');
     const countBadge = document.getElementById('bill-queue-count');
+    const missingBadge = document.getElementById('bill-missing-dt-count');
     if (!container) return;
 
     if (!state.intakeBatches || state.intakeBatches.length === 0) {
@@ -6321,10 +6357,23 @@
         </div>
       `;
       if (countBadge) countBadge.textContent = '0 Batches';
+      if (missingBadge) missingBadge.textContent = '0';
       return;
     }
 
+    // Update missing Date/Time count
+    const missingCount = state.intakeBatches.filter(b => !b.billDateTime).length;
+    if (missingBadge) {
+      missingBadge.textContent = String(missingCount);
+    }
+
     const filteredBatches = state.intakeBatches.filter(b => {
+      // 1. Date/Time Status Filter
+      const hasDt = !!b.billDateTime;
+      if (billDateTimeFilter === 'saved' && !hasDt) return false;
+      if (billDateTimeFilter === 'missing' && hasDt) return false;
+
+      // 2. Search Query Filter
       if (!billSearchQuery) return true;
       const q = billSearchQuery;
       const cust = (b.customer || '').toLowerCase();
@@ -6337,20 +6386,28 @@
     });
 
     if (countBadge) {
-      if (billSearchQuery) {
-        countBadge.textContent = `${filteredBatches.length} of ${state.intakeBatches.length} Found`;
+      if (billSearchQuery || billDateTimeFilter !== 'all') {
+        countBadge.textContent = `${filteredBatches.length} of ${state.intakeBatches.length} Batches`;
       } else {
         countBadge.textContent = `${state.intakeBatches.length} Batches Available`;
       }
     }
 
     if (filteredBatches.length === 0) {
+      let emptyMsg = 'No batches match the current filter criteria.';
+      if (billDateTimeFilter === 'missing') {
+        emptyMsg = 'All registered batches have Date & Time saved!';
+      } else if (billDateTimeFilter === 'saved') {
+        emptyMsg = 'No batches currently have Date & Time saved.';
+      } else if (billSearchQuery) {
+        emptyMsg = `No batches found matching "${escapeHtmlStr(billSearchQuery)}".`;
+      }
+
       container.innerHTML = `
-        <div class="col-span-full py-8 text-center bg-surface-container-low/30 rounded-xl border border-dashed border-surface-container flex flex-col items-center justify-center gap-1.5">
-          <span class="material-symbols-outlined text-[28px] text-slate-400">search_off</span>
-          <p class="text-xs font-semibold text-on-surface">No batches found matching "${escapeHtmlStr(billSearchQuery)}"</p>
-          <p class="text-[11px] text-on-surface-variant">Try searching by jeweller name, job docket (e.g. JOB-2024-9104), or request number (e.g. REQ-8831-A).</p>
-          <button type="button" onclick="clearBillSearch()" class="mt-1 text-xs text-secondary font-bold hover:underline cursor-pointer">Clear Search</button>
+        <div class="col-span-full py-8 text-center bg-surface-container-low/30 rounded-xl border border-dashed border-surface-container flex flex-col items-center justify-center gap-1.5 w-full">
+          <span class="material-symbols-outlined text-[28px] text-slate-400">filter_alt_off</span>
+          <p class="text-xs font-semibold text-on-surface">${emptyMsg}</p>
+          <button type="button" onclick="filterBillQueueByDateTime('all'); clearBillSearch();" class="mt-1 text-xs text-secondary font-bold hover:underline cursor-pointer">Reset Filters</button>
         </div>
       `;
       return;
@@ -6358,6 +6415,7 @@
 
     container.innerHTML = filteredBatches.map(b => {
       const isSelected = activeBillingBatch && activeBillingBatch.jobDocket === b.jobDocket;
+      const hasDateTime = !!b.billDateTime;
 
       return `
         <div onclick="selectBillingBatch('${escapeHtmlStr(b.jobDocket)}')" class="bill-queue-card tag-queue-card p-3 rounded-xl bg-white ${
@@ -6386,6 +6444,21 @@
               <span>•</span>
               <span>${typeof b.grossWt === 'number' ? b.grossWt.toFixed(2) : (b.grossWt || '0.00')}g</span>
             </div>
+          </div>
+
+          <!-- Date & Time Row (Clearly Visible) -->
+          <div class="flex items-center justify-between text-[10px] font-mono py-1 px-1.5 rounded mb-2 ${
+            hasDateTime 
+              ? 'bg-slate-50 border border-slate-200 text-slate-800' 
+              : 'bg-amber-50 border border-amber-300 text-amber-900'
+          }">
+            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 shrink-0">DATE/TIME:</span>
+            ${hasDateTime 
+              ? `<span class="font-bold truncate text-[10.5px]">${escapeHtmlStr(b.billDateTime)}</span>`
+              : `<span class="inline-flex items-center gap-1 font-bold text-[9.5px] shrink-0 text-amber-800">
+                   <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>NOT SAVED
+                 </span>`
+            }
           </div>
 
           <!-- Bottom: Clearly Display Request Number & Selection Status -->
@@ -6504,24 +6577,30 @@
       };
     }
 
-    // Get customer specifics
+    // Customer specifics
     const custInfo = getCustomerDetailsForBill(batch.customer);
 
     // 1. Populate Toolbar Controls
     const inputRate = document.getElementById('bill-input-rate');
     const inputProduct = document.getElementById('bill-input-product-name');
-    const inputWeight = document.getElementById('bill-input-weight');
     const inputRevCharge = document.getElementById('bill-input-rev-charge');
 
     if (inputRate) inputRate.value = parseFloat(batch.rate || 75.00).toFixed(2);
     if (inputProduct) {
       inputProduct.value = batch.productBreakdown || (',' + (batch.articleType || 'MIX ITEM') + '-' + (batch.pcs || 94));
     }
-    if (inputWeight) {
-      const wtVal = batch.billWeight || (typeof batch.netWt === 'number' ? batch.netWt : parseFloat(batch.netWt) || 375);
-      inputWeight.value = typeof wtVal === 'number' ? Math.round(wtVal) : wtVal;
-    }
     if (inputRevCharge) inputRevCharge.value = batch.reverseCharge || 'NO';
+
+    // Populate Date & Time Inputs
+    const inputDate = document.getElementById('bill-input-date');
+    const inputHH = document.getElementById('bill-input-time-hh');
+    const inputMM = document.getElementById('bill-input-time-mm');
+    const inputAmPm = document.getElementById('bill-input-time-ampm');
+
+    if (inputDate) inputDate.value = batch.billDate || '';
+    if (inputHH) inputHH.value = batch.billTimeHH || '';
+    if (inputMM) inputMM.value = batch.billTimeMM || '';
+    if (inputAmPm) inputAmPm.value = batch.billTimeAmPm || 'PM';
 
     // Populate Steppers
     const ctrlReceived = document.getElementById('bill-ctrl-disp-received');
@@ -6550,23 +6629,105 @@
     if (elCustState) elCustState.textContent = custInfo.stateCode || batch.customerStateCode || '19';
 
     const elDocNo = document.getElementById('bill-doc-no');
-    const elDocDateTime = document.getElementById('bill-doc-datetime');
     const elDocLocation = document.getElementById('bill-doc-location');
     const elDocReq = document.getElementById('bill-doc-req');
     const elDocMetal = document.getElementById('bill-doc-metal');
     const elDocDepositor = document.getElementById('bill-doc-depositor');
 
     if (elDocNo) elDocNo.textContent = batch.billNo;
-    if (elDocDateTime) elDocDateTime.textContent = batch.time || (batch.date ? `${batch.date} / 08:01 PM` : '14-11-2026 / 08:01 PM');
     if (elDocLocation) elDocLocation.textContent = (batch.stream && !batch.stream.includes('Branch')) ? batch.stream.toUpperCase() : 'CHINSURAH';
     if (elDocReq) elDocReq.textContent = batch.reqNo || '119813505';
     if (elDocMetal) elDocMetal.textContent = batch.metal ? (batch.metal.charAt(0).toUpperCase() + batch.metal.slice(1).toLowerCase()) : 'Gold';
     if (elDocDepositor) elDocDepositor.textContent = (batch.depositor || 'KOUSHIK GHOSH').toUpperCase();
 
-    // 3. Update Dynamic Disposition and Calculations
+    // 3. Update Dynamic Disposition, Date/Time, and Calculations
     updateExactBillDisposition();
+    updateExactBillDateTime();
     updateExactBillPreview();
     renderBillQueue();
+  }
+
+  function updateExactBillDateTime() {
+    if (!activeBillingBatch) return;
+
+    const inputDate = document.getElementById('bill-input-date');
+    const inputHH = document.getElementById('bill-input-time-hh');
+    const inputMM = document.getElementById('bill-input-time-mm');
+    const inputAmPm = document.getElementById('bill-input-time-ampm');
+
+    const dateVal = inputDate ? inputDate.value : '';
+    let hhVal = inputHH ? inputHH.value.trim() : '';
+    let mmVal = inputMM ? inputMM.value.trim() : '';
+    const ampmVal = inputAmPm ? inputAmPm.value : 'PM';
+
+    if (hhVal) {
+      const numH = parseInt(hhVal, 10);
+      if (!isNaN(numH) && numH >= 1 && numH <= 12) {
+        hhVal = String(numH).padStart(2, '0');
+      }
+    }
+    if (mmVal) {
+      const numM = parseInt(mmVal, 10);
+      if (!isNaN(numM) && numM >= 0 && numM <= 59) {
+        mmVal = String(numM).padStart(2, '0');
+      }
+    }
+
+    activeBillingBatch.billDate = dateVal;
+    activeBillingBatch.billTimeHH = hhVal;
+    activeBillingBatch.billTimeMM = mmVal;
+    activeBillingBatch.billTimeAmPm = ampmVal;
+
+    let formattedDisplay = '';
+    if (dateVal && hhVal && mmVal) {
+      const parts = dateVal.split('-');
+      const ddmmyyyy = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : dateVal;
+      formattedDisplay = `${ddmmyyyy} / ${hhVal}:${mmVal} ${ampmVal}`;
+      activeBillingBatch.billDateTime = formattedDisplay;
+    } else {
+      activeBillingBatch.billDateTime = '';
+    }
+
+    const elDocDateTime = document.getElementById('bill-doc-datetime');
+    if (elDocDateTime) {
+      if (formattedDisplay) {
+        elDocDateTime.textContent = formattedDisplay;
+        elDocDateTime.style.color = '#000000';
+      } else {
+        elDocDateTime.textContent = 'DATE & TIME NOT SET (REQUIRED)';
+        elDocDateTime.style.color = '#dc2626';
+      }
+    }
+
+    renderBillQueue();
+  }
+
+  function setBillingDateTimeNow() {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+
+    let hours = now.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const hhStr = String(hours).padStart(2, '0');
+    const minStr = String(now.getMinutes()).padStart(2, '0');
+
+    const inputDate = document.getElementById('bill-input-date');
+    const inputHH = document.getElementById('bill-input-time-hh');
+    const inputMM = document.getElementById('bill-input-time-mm');
+    const inputAmPm = document.getElementById('bill-input-time-ampm');
+
+    if (inputDate) inputDate.value = dateStr;
+    if (inputHH) inputHH.value = hhStr;
+    if (inputMM) inputMM.value = minStr;
+    if (inputAmPm) inputAmPm.value = ampm;
+
+    updateExactBillDateTime();
+    showToast('Current Date & Time set.', 'info');
   }
 
   function updateExactBillDisposition() {
@@ -6661,15 +6822,13 @@
     if (!activeBillingBatch) return;
 
     const inputProduct = document.getElementById('bill-input-product-name');
-    const inputWeight = document.getElementById('bill-input-weight');
     const inputRevCharge = document.getElementById('bill-input-rev-charge');
 
     const productVal = inputProduct ? inputProduct.value.trim() : ',CHAIN-26,TOPS-34,RING-34';
-    const weightVal = inputWeight ? inputWeight.value.trim() : '375';
     const revChargeVal = inputRevCharge ? inputRevCharge.value : 'NO';
+    const weightVal = activeBillingBatch.billWeight || (typeof activeBillingBatch.netWt === 'number' ? Math.round(activeBillingBatch.netWt) : (parseInt(activeBillingBatch.netWt) || 375));
 
     activeBillingBatch.productBreakdown = productVal;
-    activeBillingBatch.billWeight = weightVal;
     activeBillingBatch.reverseCharge = revChargeVal;
 
     const elProduct = document.getElementById('bill-doc-product');
@@ -6699,7 +6858,6 @@
 
     const inputRate = document.getElementById('bill-input-rate');
     const inputProduct = document.getElementById('bill-input-product-name');
-    const inputWeight = document.getElementById('bill-input-weight');
     const inputRevCharge = document.getElementById('bill-input-rev-charge');
 
     if (inputRate) {
@@ -6708,20 +6866,23 @@
     if (inputProduct) {
       activeBillingBatch.productBreakdown = inputProduct.value.trim();
     }
-    if (inputWeight) {
-      activeBillingBatch.billWeight = inputWeight.value.trim();
-    }
     if (inputRevCharge) {
       activeBillingBatch.reverseCharge = inputRevCharge.value;
     }
 
+    // Save Date & Time
+    updateExactBillDateTime();
     updateExactBillDisposition();
     updateExactBillPreview();
     updateExactBillCalculations();
     renderBillQueue();
 
     if (!silent) {
-      showToast('Bill parameters and piece breakdown saved successfully.', 'success');
+      if (activeBillingBatch.billDateTime) {
+        showToast('Bill parameters and Date & Time saved successfully.', 'success');
+      } else {
+        showToast('Bill saved, but Date & Time is not set. Note: Date & Time is required to print.', 'warning');
+      }
     }
   }
 
@@ -7014,6 +7175,19 @@
       showToast('Please select a batch first to print its bill.', 'warning');
       return;
     }
+
+    // Mandatory check: Date & Time must be saved before printing!
+    if (!activeBillingBatch.billDateTime) {
+      showToast('Billing Date & Time are required! Please set and save Date & Time in AM/PM before printing.', 'error');
+      const inputDate = document.getElementById('bill-input-date');
+      if (inputDate) {
+        inputDate.focus();
+        inputDate.classList.add('ring-2', 'ring-red-500');
+        setTimeout(() => inputDate.classList.remove('ring-2', 'ring-red-500'), 2500);
+      }
+      return;
+    }
+
     const modal = document.getElementById('billPrintOptionsModal');
     if (modal) {
       modal.classList.remove('hidden');
@@ -8375,6 +8549,9 @@
   window.renderBillQueue = renderBillQueue;
   window.handleBillSearch = handleBillSearch;
   window.clearBillSearch = clearBillSearch;
+  window.filterBillQueueByDateTime = filterBillQueueByDateTime;
+  window.updateExactBillDateTime = updateExactBillDateTime;
+  window.setBillingDateTimeNow = setBillingDateTimeNow;
   window.selectBillingBatch = selectBillingBatch;
   window.updateExactBillDisposition = updateExactBillDisposition;
   window.updateExactBillCalculations = updateExactBillCalculations;
