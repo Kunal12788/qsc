@@ -6655,7 +6655,7 @@
     }
   }
 
-  function generateTaxInvoicePrintContent() {
+  function generateTaxInvoicePrintContent(withLetterhead = true) {
     if (!activeBillingBatch) return '';
 
     const b = activeBillingBatch;
@@ -6752,7 +6752,8 @@
 </head>
 <body>
   <div class="bill-wrapper">
-    <!-- HEADER -->
+    ${withLetterhead ? `
+    <!-- HEADER (SSR Monogram Logo, Title, Address, BIS Logo, Phone Numbers) -->
     <div class="flex-row" style="align-items: center; padding-bottom: 2px;">
       <!-- SSR Monogram Logo -->
       <div style="width: 58px; height: 50px; border: 2px solid #000; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
@@ -6782,7 +6783,10 @@
     </div>
 
     <div class="solid-line"></div>
-
+    ` : `
+    <!-- RESERVED EMPTY SPACE FOR PRE-PRINTED LETTERHEAD -->
+    <div style="height: 38mm; width: 100%;"></div>
+    `}
     <!-- RECIPIENT & DOCKET -->
     <div class="flex-row" style="font-size: 11.5px; line-height: 1.35;">
       <!-- TO Section -->
@@ -6920,7 +6924,36 @@
 
   let isPrintingInvoice = false;
 
+  function openBillPrintOptionsModal() {
+    if (!activeBillingBatch) {
+      if (state.intakeBatches && state.intakeBatches.length > 0) {
+        activeBillingBatch = state.intakeBatches[0];
+      }
+    }
+    if (!activeBillingBatch) {
+      showToast('Please select a batch first to print its bill.', 'warning');
+      return;
+    }
+    const modal = document.getElementById('billPrintOptionsModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+    }
+  }
+
+  function closeBillPrintOptionsModal() {
+    const modal = document.getElementById('billPrintOptionsModal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+
   function printTaxInvoice() {
+    openBillPrintOptionsModal();
+  }
+
+  function executePrintTaxInvoice(withLetterhead = true) {
+    closeBillPrintOptionsModal();
+
     if (isPrintingInvoice) return;
     isPrintingInvoice = true;
     setTimeout(() => { isPrintingInvoice = false; }, 1200);
@@ -6938,7 +6971,7 @@
     // Silently save any pending changes
     saveActiveBillChanges(true);
 
-    const invoiceHtml = generateTaxInvoicePrintContent();
+    const invoiceHtml = generateTaxInvoicePrintContent(withLetterhead);
 
     try {
       let printFrame = document.getElementById('invoice-print-iframe');
@@ -6975,7 +7008,8 @@
         setTimeout(triggerPrint, 200);
       }
 
-      showToast(`Opening Print dialog for Tax Invoice ${activeBillingBatch.billNo || ''}...`, 'info');
+      const modeStr = withLetterhead ? 'with Letterhead' : 'without Letterhead (Blank Header)';
+      showToast(`Opening Print dialog (${modeStr}) for Tax Invoice ${activeBillingBatch.billNo || ''}...`, 'info');
     } catch (e) {
       console.error('Print Tax Invoice error:', e);
       showToast('Unable to open print preview.', 'error');
@@ -8265,6 +8299,9 @@
   window.updateExactBillPreview = updateExactBillPreview;
   window.saveActiveBillChanges = saveActiveBillChanges;
   window.printTaxInvoice = printTaxInvoice;
+  window.openBillPrintOptionsModal = openBillPrintOptionsModal;
+  window.closeBillPrintOptionsModal = closeBillPrintOptionsModal;
+  window.executePrintTaxInvoice = executePrintTaxInvoice;
   window.generateTaxInvoicePrintContent = generateTaxInvoicePrintContent;
   window.toggleActiveBillPrintStatus = toggleActiveBillPrintStatus;
   window.finalizeCurrentBill = finalizeCurrentBill;

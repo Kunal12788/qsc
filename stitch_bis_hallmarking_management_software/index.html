@@ -3830,6 +3830,69 @@
   <!-- Dedicated Hidden Tag Print Frame -->
   <iframe id="tag-print-frame" name="tag-print-frame" style="position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;" title="Tag Print Frame"></iframe>
 
+  <!-- ========================================== -->
+  <!-- BILL PRINT OPTIONS MODAL (With / Without Letterhead) -->
+  <!-- ========================================== -->
+  <div id="billPrintOptionsModal" onclick="if (event.target === this) closeBillPrintOptionsModal()" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
+    <div class="w-full max-w-lg bg-surface-container-lowest rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-primary-container/30 animate-in fade-in zoom-in-95 duration-150">
+      <!-- Header -->
+      <div class="p-4 bg-primary-container text-secondary-fixed flex items-center justify-between border-b border-[#c5a059]/40">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-slate-900 border border-[#c5a059]/60 flex items-center justify-center text-amber-400 shrink-0 shadow-xs">
+            <span class="material-symbols-outlined text-[22px]">print</span>
+          </div>
+          <div>
+            <h3 class="font-headline font-bold text-sm text-[#ffdea5] tracking-wide uppercase">Print Tax Invoice</h3>
+            <span class="text-[11px] text-slate-300 font-medium">Select letterhead format for this print</span>
+          </div>
+        </div>
+        <button type="button" onclick="closeBillPrintOptionsModal()" class="p-1.5 text-slate-400 hover:text-white rounded-lg cursor-pointer transition-colors">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <!-- Options -->
+      <div class="p-5 flex flex-col gap-3.5 bg-surface-container-lowest">
+        <p class="text-xs text-on-surface-variant font-medium">Please select whether to include the SSR Hallmarking Center letterhead or leave the header empty for pre-printed stationery:</p>
+
+        <!-- Option 1: Print with Letterhead -->
+        <button type="button" onclick="executePrintTaxInvoice(true)" class="group w-full p-4 rounded-xl border-2 border-surface-container hover:border-primary-container hover:bg-primary-container/5 transition-all text-left flex items-start gap-3.5 cursor-pointer shadow-xs hover:shadow-md">
+          <div class="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-primary-container text-amber-700 group-hover:text-amber-300 border border-amber-200 group-hover:border-[#c5a059] flex items-center justify-center shrink-0 transition-colors">
+            <span class="material-symbols-outlined text-[22px]">branding_watermark</span>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-on-surface group-hover:text-primary-container">Print with Letterhead</span>
+              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">Full Standard</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Includes the full header: SSR SS Monogram logo, center name, address, GSTIN, and BIS hallmark emblem.</p>
+          </div>
+        </button>
+
+        <!-- Option 2: Print without Letterhead -->
+        <button type="button" onclick="executePrintTaxInvoice(false)" class="group w-full p-4 rounded-xl border-2 border-surface-container hover:border-amber-600 hover:bg-amber-500/5 transition-all text-left flex items-start gap-3.5 cursor-pointer shadow-xs hover:shadow-md">
+          <div class="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-amber-600 text-slate-700 group-hover:text-white border border-slate-300 group-hover:border-amber-600 flex items-center justify-center shrink-0 transition-colors">
+            <span class="material-symbols-outlined text-[22px]">space_dashboard</span>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-on-surface group-hover:text-amber-800">Print without Letterhead</span>
+              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">Empty Header</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Leaves the top 38mm completely empty with no header text or logo, perfect for pre-printed letterhead paper.</p>
+          </div>
+        </button>
+      </div>
+
+      <!-- Footer -->
+      <div class="p-3.5 bg-surface-container-low border-t border-surface-container flex justify-end">
+        <button type="button" onclick="closeBillPrintOptionsModal()" class="px-4 py-2 rounded-lg border border-slate-300 hover:bg-surface-container text-slate-700 font-bold text-xs tracking-wider transition-all cursor-pointer">
+          CANCEL
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Watermark Logo Asset Script -->
   <script src="js/logo-data.js"></script>
   <!-- Application Engine Script -->
