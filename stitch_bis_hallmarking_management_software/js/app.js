@@ -13,6 +13,20 @@
     sidebarCollapsed: false,
     customers: [
       {
+        id: 'CUST-100',
+        name: 'ROYCO JEWELLERS (CHINSURAH)',
+        code: 'ROYCO-CHIN',
+        address: 'CENTRAL MARKET,N.S. ROAD',
+        area: 'CHINSURAH,HOOGHLY,712101',
+        region: 'Hooghly',
+        mobile: '+91 98362 82449',
+        bis: '5439472',
+        gst: '19AFKPR4571E1Z3',
+        stateCode: '19',
+        activeJobs: 18,
+        since: '2019'
+      },
+      {
         id: 'CUST-101',
         name: 'Zaveri & Sons Jewellers Pvt Ltd',
         code: 'ZAVERI-BOM',
@@ -230,6 +244,45 @@
       }
     ],
     intakeBatches: [
+      {
+        jobDocket: 'JOB-2026-2369',
+        receiptNo: 'REC-11981',
+        customer: 'ROYCO JEWELLERS (CHINSURAH)',
+        customerAddress: 'CENTRAL MARKET,N.S. ROAD, CHINSURAH,HOOGHLY,712101',
+        bis: '5439472',
+        customerGst: '19AFKPR4571E1Z3',
+        customerStateCode: '19',
+        reqNo: '119813505',
+        metal: 'Gold',
+        articleType: 'CHAIN, TOPS, RING',
+        productBreakdown: ',CHAIN-26,TOPS-34,RING-34',
+        pcs: 94,
+        purity: '22K 916',
+        rate: 75.00,
+        stream: 'CHINSURAH',
+        tray: 'BOX-TR-05',
+        netWt: 375.000,
+        grossWt: 375.000,
+        depositor: 'KOUSHIK GHOSH',
+        receiver: 'Sarah Jenkins',
+        date: '14-11-2026',
+        time: '14-11-2026 / 08:01 PM',
+        status: 'XRF Verified',
+        billNo: '26-27/HM/2369',
+        billPrinted: true,
+        disposition: {
+          rejected: 0,
+          destroyed: 0,
+          nonFeasible: 0,
+          irrucd: 0,
+          passed: 94
+        },
+        tagStatus: 'DONE',
+        tagData: [],
+        tagDimensions: { width: 50, height: 12, unit: 'mm', preset: 'butterfly' },
+        articlePhoto: null,
+        deliveryStatus: 'READY'
+      },
       {
         jobDocket: 'JOB-2024-9104',
         customer: 'Malabar Gold & Diamonds',
@@ -6336,6 +6389,48 @@
     }).join('');
   }
 
+  function getCustomerDetailsForBill(custName) {
+    if (!custName) {
+      return {
+        name: 'ROYCO JEWELLERS (CHINSURAH)',
+        address: 'CENTRAL MARKET,N.S. ROAD, CHINSURAH,HOOGHLY,712101',
+        bis: '5439472',
+        gst: '19AFKPR4571E1Z3',
+        stateCode: '19'
+      };
+    }
+
+    const found = state.customers ? state.customers.find(c => 
+      c.name.toLowerCase().includes(custName.toLowerCase()) || 
+      custName.toLowerCase().includes(c.name.toLowerCase())
+    ) : null;
+
+    if (found) {
+      return {
+        name: found.name,
+        address: found.address + (found.area ? ', ' + found.area : ''),
+        bis: found.bis || '5439472',
+        gst: found.gst || '19AFKPR4571E1Z3',
+        stateCode: found.stateCode || '19'
+      };
+    }
+
+    return {
+      name: custName,
+      address: 'CENTRAL MARKET,N.S. ROAD, CHINSURAH,HOOGHLY,712101',
+      bis: '5439472',
+      gst: '19AFKPR4571E1Z3',
+      stateCode: '19'
+    };
+  }
+
+  function formatRupeesWords(num) {
+    const n = Math.round(num);
+    let raw = numberToIndianWords(n);
+    raw = raw.replace(/^Indian Rupees\s*/i, '').replace(/\s*Only$/i, '').trim();
+    return raw;
+  }
+
   function selectBillingBatch(docket) {
     if (!docket) return;
     const batch = state.intakeBatches.find(b => b.jobDocket === docket) || state.intakeBatches[0];
@@ -6345,261 +6440,212 @@
 
     if (batch.billPrinted === undefined) batch.billPrinted = false;
     if (!batch.billNo) {
-      batch.billNo = 'BILL-2024-' + (batch.jobDocket ? batch.jobDocket.replace(/\D/g, '').slice(-5) : '04192');
+      const seq = batch.jobDocket ? batch.jobDocket.replace(/\D/g, '').slice(-4) : '2369';
+      batch.billNo = `26-27/HM/${seq}`;
     }
+    if (batch.rate === undefined) batch.rate = 75.00;
     if (!batch.disposition) {
       batch.disposition = {
         rejected: 0,
         destroyed: 0,
         nonFeasible: 0,
         irrucd: 0,
-        passed: batch.pcs || 85
+        passed: batch.pcs || 94
       };
     }
 
-    // Populate inputs
-    const billNoInput = document.getElementById('inputBillNo');
-    const reqNoInput = document.getElementById('inputReqNo');
-    const dateInput = document.getElementById('inputDate');
-    const clientSelect = document.getElementById('clientSelect');
+    // Get customer specifics
+    const custInfo = getCustomerDetailsForBill(batch.customer);
 
-    if (billNoInput) billNoInput.value = batch.billNo;
-    if (reqNoInput) reqNoInput.value = batch.reqNo || ('REQ-' + batch.jobDocket.slice(-6));
-    if (dateInput) {
-      dateInput.value = batch.time || (new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
+    // 1. Populate Toolbar Controls
+    const inputRate = document.getElementById('bill-input-rate');
+    const inputProduct = document.getElementById('bill-input-product-name');
+    const inputWeight = document.getElementById('bill-input-weight');
+    const inputRevCharge = document.getElementById('bill-input-rev-charge');
+
+    if (inputRate) inputRate.value = parseFloat(batch.rate || 75.00).toFixed(2);
+    if (inputProduct) {
+      inputProduct.value = batch.productBreakdown || (',' + (batch.articleType || 'MIX ITEM') + '-' + (batch.pcs || 94));
     }
-
-    if (clientSelect && batch.customer) {
-      let matched = false;
-      for (let i = 0; i < clientSelect.options.length; i++) {
-        const optText = clientSelect.options[i].text.toLowerCase();
-        const custLower = batch.customer.toLowerCase();
-        if (optText.includes(custLower) || custLower.includes(optText.split(' ')[0].toLowerCase())) {
-          clientSelect.selectedIndex = i;
-          matched = true;
-          break;
-        }
-      }
-      if (!matched) {
-        let customOpt = Array.from(clientSelect.options).find(o => o.value === 'batch_custom');
-        if (customOpt) {
-          customOpt.text = batch.customer;
-          customOpt.selected = true;
-        } else {
-          customOpt = new Option(batch.customer, 'batch_custom', true, true);
-          clientSelect.add(customOpt);
-        }
-      }
+    if (inputWeight) {
+      const wtVal = batch.billWeight || (typeof batch.netWt === 'number' ? batch.netWt : parseFloat(batch.netWt) || 375);
+      inputWeight.value = typeof wtVal === 'number' ? Math.round(wtVal) : wtVal;
     }
+    if (inputRevCharge) inputRevCharge.value = batch.reverseCharge || 'NO';
 
-    if (batch.stream && batch.stream.toUpperCase().includes('OFF')) {
-      setJobClassification('OFF_SIDE');
-    } else {
-      setJobClassification('MAIN');
-    }
+    // Populate Steppers
+    const ctrlReceived = document.getElementById('bill-ctrl-disp-received');
+    const ctrlRejected = document.getElementById('bill-ctrl-disp-rejected');
+    const ctrlDestroyed = document.getElementById('bill-ctrl-disp-destroyed');
+    const ctrlNonFeasible = document.getElementById('bill-ctrl-disp-nonfeasible');
+    const ctrlIrrucd = document.getElementById('bill-ctrl-disp-irrucd');
 
+    if (ctrlReceived) ctrlReceived.textContent = batch.pcs || 94;
+    if (ctrlRejected) ctrlRejected.value = batch.disposition.rejected || 0;
+    if (ctrlDestroyed) ctrlDestroyed.value = batch.disposition.destroyed || 0;
+    if (ctrlNonFeasible) ctrlNonFeasible.value = batch.disposition.nonFeasible || 0;
+    if (ctrlIrrucd) ctrlIrrucd.value = batch.disposition.irrucd || 0;
+
+    // 2. Populate Bill Preview DOM
+    const elCustName = document.getElementById('bill-cust-name');
+    const elCustAddr = document.getElementById('bill-cust-addr');
+    const elCustBis = document.getElementById('bill-cust-bis');
+    const elCustGst = document.getElementById('bill-cust-gst');
+    const elCustState = document.getElementById('bill-cust-state');
+
+    if (elCustName) elCustName.textContent = custInfo.name.toUpperCase();
+    if (elCustAddr) elCustAddr.textContent = (custInfo.address || batch.customerAddress || 'CENTRAL MARKET,N.S. ROAD, CHINSURAH,HOOGHLY,712101').toUpperCase();
+    if (elCustBis) elCustBis.textContent = custInfo.bis || batch.bis || '5439472';
+    if (elCustGst) elCustGst.textContent = custInfo.gst || batch.customerGst || '19AFKPR4571E1Z3';
+    if (elCustState) elCustState.textContent = custInfo.stateCode || batch.customerStateCode || '19';
+
+    const elDocNo = document.getElementById('bill-doc-no');
+    const elDocDateTime = document.getElementById('bill-doc-datetime');
+    const elDocLocation = document.getElementById('bill-doc-location');
+    const elDocReq = document.getElementById('bill-doc-req');
+    const elDocMetal = document.getElementById('bill-doc-metal');
+    const elDocDepositor = document.getElementById('bill-doc-depositor');
+
+    if (elDocNo) elDocNo.textContent = batch.billNo;
+    if (elDocDateTime) elDocDateTime.textContent = batch.time || (batch.date ? `${batch.date} / 08:01 PM` : '14-11-2026 / 08:01 PM');
+    if (elDocLocation) elDocLocation.textContent = (batch.stream && !batch.stream.includes('Branch')) ? batch.stream.toUpperCase() : 'CHINSURAH';
+    if (elDocReq) elDocReq.textContent = batch.reqNo || '119813505';
+    if (elDocMetal) elDocMetal.textContent = batch.metal ? (batch.metal.charAt(0).toUpperCase() + batch.metal.slice(1).toLowerCase()) : 'Gold';
+    if (elDocDepositor) elDocDepositor.textContent = (batch.depositor || 'KOUSHIK GHOSH').toUpperCase();
+
+    // 3. Update Dynamic Disposition and Calculations
+    updateExactBillDisposition();
+    updateExactBillPreview();
     updatePrintStatusUI(batch.billPrinted);
-
-    const inputRej = document.getElementById('inputPcsRejected');
-    const inputDes = document.getElementById('inputPcsDestroyed');
-    const inputNon = document.getElementById('inputPcsNonFeasible');
-    const inputIrr = document.getElementById('inputPcsIRRUCD');
-
-    if (inputRej) inputRej.value = batch.disposition.rejected || 0;
-    if (inputDes) inputDes.value = batch.disposition.destroyed || 0;
-    if (inputNon) inputNon.value = batch.disposition.nonFeasible || 0;
-    if (inputIrr) inputIrr.value = batch.disposition.irrucd || 0;
-
-    onDispositionInputChanged();
-
-    const passed = batch.disposition.passed !== undefined ? batch.disposition.passed : (batch.pcs || 85);
-    const itemWeight = typeof batch.netWt === 'number' ? batch.netWt : (parseFloat(batch.netWt) || 482.40);
-    
-    state.billingItems = [
-      {
-        id: 1,
-        desc: `BIS Hallmarking Laser Inscription (Gold ${batch.purity || '22K 916'})`,
-        subtext: `SAC Code: 998346 • HUID Laser Gen (${batch.jobDocket || 'JOB'})`,
-        qty: passed,
-        wt: itemWeight,
-        rate: 45.00
-      },
-      {
-        id: 2,
-        desc: 'Fire Assay Purity Verification Certification',
-        subtext: 'IS 1418:2009 Cupellation Protocol',
-        qty: Math.max(1, batch.disposition.destroyed || 0),
-        wt: 2.50,
-        rate: 750.00
-      },
-      {
-        id: 3,
-        desc: 'Secure Vault Handling & Tamper-Evident Packaging',
-        subtext: `Tamper Evident Seal Security Box #${batch.tray || 'SSR-9941'}`,
-        qty: 1,
-        wt: 0.00,
-        rate: 250.00
-      }
-    ];
-
-    updateInvoiceDispositionStrip(batch.pcs || 85, batch.disposition);
-
-    renderBillingItemsForm();
-    recalculateBill();
     renderBillQueue();
   }
 
+  function updateExactBillDisposition() {
+    if (!activeBillingBatch) return;
+
+    const received = activeBillingBatch.pcs || 94;
+    const rejected = Math.max(0, parseInt(document.getElementById('bill-ctrl-disp-rejected')?.value) || 0);
+    const destroyed = Math.max(0, parseInt(document.getElementById('bill-ctrl-disp-destroyed')?.value) || 0);
+    const nonFeasible = Math.max(0, parseInt(document.getElementById('bill-ctrl-disp-nonfeasible')?.value) || 0);
+    const irrucd = Math.max(0, parseInt(document.getElementById('bill-ctrl-disp-irrucd')?.value) || 0);
+
+    const deductions = rejected + destroyed + nonFeasible + irrucd;
+    const hallmarked = Math.max(0, received - deductions);
+
+    activeBillingBatch.disposition = {
+      rejected: rejected,
+      destroyed: destroyed,
+      nonFeasible: nonFeasible,
+      irrucd: irrucd,
+      passed: hallmarked
+    };
+
+    // Update Control Bar Badges
+    const badgePassed = document.getElementById('bill-disp-passed-badge');
+    const deductionsLabel = document.getElementById('bill-ctrl-disp-deductions');
+    if (badgePassed) badgePassed.textContent = `${hallmarked} Pcs`;
+    if (deductionsLabel) deductionsLabel.textContent = `${deductions}`;
+
+    // Update Bill Canvas Breakdown Table
+    const docPcsRec = document.getElementById('bill-doc-pcs-rec');
+    const docPcsRej = document.getElementById('bill-doc-pcs-rej');
+    const docPcsNon = document.getElementById('bill-doc-pcs-non');
+    const docPcsHal = document.getElementById('bill-doc-pcs-hal');
+    const docPcsDes = document.getElementById('bill-doc-pcs-des');
+    const docPcsIrr = document.getElementById('bill-doc-pcs-irr');
+    const docPcsCharge = document.getElementById('bill-doc-pcs-charge');
+
+    if (docPcsRec) docPcsRec.textContent = received;
+    if (docPcsRej) docPcsRej.textContent = rejected;
+    if (docPcsNon) docPcsNon.textContent = nonFeasible;
+    if (docPcsHal) docPcsHal.textContent = hallmarked;
+    if (docPcsDes) docPcsDes.textContent = destroyed;
+    if (docPcsIrr) docPcsIrr.textContent = irrucd;
+    if (docPcsCharge) docPcsCharge.textContent = hallmarked;
+
+    updateExactBillCalculations();
+  }
+
+  function updateExactBillCalculations() {
+    if (!activeBillingBatch) return;
+
+    const rateInput = document.getElementById('bill-input-rate');
+    const rate = parseFloat(rateInput ? rateInput.value : 75.00) || 75.00;
+    activeBillingBatch.rate = rate;
+
+    const hallmarked = activeBillingBatch.disposition?.passed !== undefined 
+      ? activeBillingBatch.disposition.passed 
+      : (activeBillingBatch.pcs || 94);
+
+    const gross = hallmarked * rate;
+    const cgst = Math.round(gross * 9) / 100;
+    const sgst = Math.round(gross * 9) / 100;
+    const net = gross + cgst + sgst;
+
+    // Update Table & Financial Summary
+    const elHdrRate = document.getElementById('bill-table-hdr-rate');
+    const elHdrGross = document.getElementById('bill-table-hdr-gross');
+    const elRowRate = document.getElementById('bill-table-row-rate');
+    const elRowAmt = document.getElementById('bill-table-row-amt');
+
+    if (elHdrRate) elHdrRate.textContent = rate.toFixed(2);
+    if (elHdrGross) elHdrGross.textContent = gross.toFixed(2);
+    if (elRowRate) elRowRate.textContent = rate.toFixed(2);
+    if (elRowAmt) elRowAmt.textContent = gross.toFixed(2);
+
+    const elDocGross = document.getElementById('bill-doc-gross');
+    const elDocCgst = document.getElementById('bill-doc-cgst');
+    const elDocSgst = document.getElementById('bill-doc-sgst');
+    const elDocRound = document.getElementById('bill-doc-round');
+    const elDocNet = document.getElementById('bill-doc-net');
+    const elDocWords = document.getElementById('bill-doc-words');
+
+    if (elDocGross) elDocGross.textContent = gross.toFixed(2);
+    if (elDocCgst) elDocCgst.textContent = cgst.toFixed(2);
+    if (elDocSgst) elDocSgst.textContent = sgst.toFixed(2);
+    if (elDocRound) elDocRound.textContent = '.00';
+    if (elDocNet) elDocNet.textContent = net.toFixed(2);
+    if (elDocWords) elDocWords.textContent = formatRupeesWords(net);
+  }
+
+  function updateExactBillPreview() {
+    if (!activeBillingBatch) return;
+
+    const inputProduct = document.getElementById('bill-input-product-name');
+    const inputWeight = document.getElementById('bill-input-weight');
+    const inputRevCharge = document.getElementById('bill-input-rev-charge');
+
+    const productVal = inputProduct ? inputProduct.value.trim() : ',CHAIN-26,TOPS-34,RING-34';
+    const weightVal = inputWeight ? inputWeight.value.trim() : '375';
+    const revChargeVal = inputRevCharge ? inputRevCharge.value : 'NO';
+
+    activeBillingBatch.productBreakdown = productVal;
+    activeBillingBatch.billWeight = weightVal;
+    activeBillingBatch.reverseCharge = revChargeVal;
+
+    const elProduct = document.getElementById('bill-doc-product');
+    const elHdrWt = document.getElementById('bill-table-hdr-wt');
+    const elRowWt = document.getElementById('bill-table-row-wt');
+    const elRevCharge = document.getElementById('bill-doc-rev-charge');
+
+    if (elProduct) elProduct.textContent = productVal;
+    if (elHdrWt) elHdrWt.textContent = weightVal;
+    if (elRowWt) elRowWt.textContent = weightVal;
+    if (elRevCharge) elRevCharge.textContent = revChargeVal;
+  }
+
   function updatePrintStatusUI(isPrinted) {
-    const ind = document.getElementById('active-batch-print-indicator');
-    const badge = document.getElementById('previewPrintStatusBadge');
+    const btnToggle = document.getElementById('btnTogglePrintStatus');
+    const textToggle = document.getElementById('btnTogglePrintStatusText');
+    if (!btnToggle || !textToggle) return;
 
     if (isPrinted) {
-      if (ind) {
-        ind.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-900 border border-emerald-300';
-        ind.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> PRINTED';
-      }
-      if (badge) {
-        badge.className = 'px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 font-label-sm text-[10px] font-bold uppercase tracking-wider flex items-center gap-1';
-        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> PRINTED';
-      }
+      btnToggle.className = 'px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-xs font-semibold text-emerald-900 border border-emerald-300 transition-all flex items-center gap-1.5 cursor-pointer';
+      btnToggle.innerHTML = '<span class="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span><span>Mark as Not Printed</span>';
     } else {
-      if (ind) {
-        ind.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300';
-        ind.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> NOT PRINTED';
-      }
-      if (badge) {
-        badge.className = 'px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-label-sm text-[10px] font-bold uppercase tracking-wider flex items-center gap-1';
-        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> NOT PRINTED';
-      }
+      btnToggle.className = 'px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-on-surface transition-all flex items-center gap-1.5 cursor-pointer border border-surface-container';
+      btnToggle.innerHTML = '<span class="material-symbols-outlined text-[16px] text-amber-600">radio_button_unchecked</span><span>Mark as Printed</span>';
     }
-  }
-
-  function updateInvoiceDispositionStrip(totalIntake, disp) {
-    const invIntake = document.getElementById('invDispIntake');
-    const invPassed = document.getElementById('invDispPassed');
-    const invRej = document.getElementById('invDispRejected');
-    const invDes = document.getElementById('invDispDestroyed');
-    const invNon = document.getElementById('invDispNonFeasible');
-    const invIrr = document.getElementById('invDispIRRUCD');
-
-    if (invIntake) invIntake.textContent = totalIntake;
-    if (invPassed) invPassed.textContent = disp.passed !== undefined ? disp.passed : totalIntake;
-    if (invRej) invRej.textContent = disp.rejected || 0;
-    if (invDes) invDes.textContent = disp.destroyed || 0;
-    if (invNon) invNon.textContent = disp.nonFeasible || 0;
-    if (invIrr) invIrr.textContent = disp.irrucd || 0;
-  }
-
-  function onDispositionInputChanged() {
-    const inputRej = document.getElementById('inputPcsRejected');
-    const inputDes = document.getElementById('inputPcsDestroyed');
-    const inputNon = document.getElementById('inputPcsNonFeasible');
-    const inputIrr = document.getElementById('inputPcsIRRUCD');
-
-    const rej = Math.max(0, parseInt(inputRej ? inputRej.value : 0) || 0);
-    const des = Math.max(0, parseInt(inputDes ? inputDes.value : 0) || 0);
-    const non = Math.max(0, parseInt(inputNon ? inputNon.value : 0) || 0);
-    const irr = Math.max(0, parseInt(inputIrr ? inputIrr.value : 0) || 0);
-
-    const total = activeBillingBatch ? (activeBillingBatch.pcs || 0) : 85;
-    const deductions = rej + des + non + irr;
-    const passed = Math.max(0, total - deductions);
-
-    const elTotal = document.getElementById('disp-total-pcs');
-    const elDed = document.getElementById('disp-deductions');
-    const elPassed = document.getElementById('disp-passed-pcs');
-
-    if (elTotal) elTotal.textContent = `${total} Pcs`;
-    if (elDed) elDed.textContent = `${deductions} Pcs`;
-    if (elPassed) elPassed.textContent = `${passed} Pcs`;
-
-    return { total, rej, des, non, irr, deductions, passed };
-  }
-
-  function openDispositionConfirmationModal() {
-    const math = onDispositionInputChanged();
-    const modal = document.getElementById('dispositionConfirmModal');
-    if (!modal) return;
-
-    const modalClient = document.getElementById('modal-client-name');
-    const modalReq = document.getElementById('modal-req-no');
-    const modalBill = document.getElementById('modal-bill-no');
-
-    const inputBillNo = document.getElementById('inputBillNo');
-    const inputReqNo = document.getElementById('inputReqNo');
-    const clientSelect = document.getElementById('clientSelect');
-
-    if (modalClient) {
-      if (clientSelect) {
-        const opt = clientSelect.options[clientSelect.selectedIndex];
-        modalClient.textContent = opt ? opt.text.split(' (')[0] : (activeBillingBatch ? activeBillingBatch.customer : 'Client Jeweller');
-      } else if (activeBillingBatch) {
-        modalClient.textContent = activeBillingBatch.customer;
-      }
-    }
-
-    if (modalReq && inputReqNo) modalReq.textContent = inputReqNo.value;
-    if (modalBill && inputBillNo) modalBill.textContent = inputBillNo.value;
-
-    const elTot = document.getElementById('modal-total-pcs');
-    const elRej = document.getElementById('modal-rejected-pcs');
-    const elDes = document.getElementById('modal-destroyed-pcs');
-    const elNon = document.getElementById('modal-nonfeasible-pcs');
-    const elIrr = document.getElementById('modal-irrucd-pcs');
-    const elPassed = document.getElementById('modal-passed-pcs');
-
-    if (elTot) elTot.textContent = `${math.total} Pcs`;
-    if (elRej) elRej.textContent = `${math.rej} Pcs`;
-    if (elDes) elDes.textContent = `${math.des} Pcs`;
-    if (elNon) elNon.textContent = `${math.non} Pcs`;
-    if (elIrr) elIrr.textContent = `${math.irr} Pcs`;
-    if (elPassed) elPassed.textContent = `${math.passed} Pcs`;
-
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeDispositionConfirmationModal() {
-    const modal = document.getElementById('dispositionConfirmModal');
-    if (modal) modal.classList.add('hidden');
-    document.body.style.overflow = '';
-  }
-
-  function executeApplyDisposition() {
-    const math = onDispositionInputChanged();
-    
-    if (activeBillingBatch) {
-      activeBillingBatch.disposition = {
-        rejected: math.rej,
-        destroyed: math.des,
-        nonFeasible: math.non,
-        irrucd: math.irr,
-        passed: math.passed
-      };
-    }
-
-    updateInvoiceDispositionStrip(math.total, {
-      rejected: math.rej,
-      destroyed: math.des,
-      nonFeasible: math.non,
-      irrucd: math.irr,
-      passed: math.passed
-    });
-
-    if (state.billingItems && state.billingItems.length > 0) {
-      state.billingItems[0].qty = math.passed;
-      if (math.total > 0 && activeBillingBatch && activeBillingBatch.netWt) {
-        state.billingItems[0].wt = parseFloat(((activeBillingBatch.netWt / math.total) * math.passed).toFixed(2));
-      }
-      if (state.billingItems[1]) {
-        state.billingItems[1].qty = Math.max(1, math.des);
-      }
-    }
-
-    renderBillingItemsForm();
-    recalculateBill();
-    closeDispositionConfirmationModal();
-    showToast(`Piece breakdown verified: ${math.passed} passed pcs billed. ${math.deductions} pcs deducted.`, 'success');
   }
 
   function toggleActiveBillPrintStatus() {
@@ -6610,81 +6656,50 @@
     showToast(`Bill ${activeBillingBatch.billNo} marked as ${activeBillingBatch.billPrinted ? 'PRINTED' : 'NOT PRINTED'}.`, 'info');
   }
 
+  function saveActiveBillChanges() {
+    if (!activeBillingBatch) return;
+    updateExactBillPreview();
+    updateExactBillCalculations();
+    renderBillQueue();
+    showToast(`Bill parameters and piece breakdown saved for batch ${activeBillingBatch.jobDocket}.`, 'success');
+  }
+
   function generateTaxInvoicePrintContent() {
-    const billNoInput = document.getElementById('inputBillNo');
-    const reqNoInput = document.getElementById('inputReqNo');
-    const dateInput = document.getElementById('inputDate');
-    const clientSelect = document.getElementById('clientSelect');
+    if (!activeBillingBatch) return '';
 
-    const billNo = billNoInput ? billNoInput.value : (activeBillingBatch ? activeBillingBatch.billNo : 'BILL-2024-04192');
-    const reqNo = reqNoInput ? reqNoInput.value : (activeBillingBatch ? activeBillingBatch.reqNo : 'REQ-8831-A');
-    const billDate = dateInput ? dateInput.value : '24 Oct 2024, 02:45 PM';
+    const b = activeBillingBatch;
+    const custInfo = getCustomerDetailsForBill(b.customer);
 
-    let customerName = activeBillingBatch ? activeBillingBatch.customer : 'Tanishq Luxury Guild';
-    if (clientSelect) {
-      const opt = clientSelect.options[clientSelect.selectedIndex];
-      if (opt) customerName = opt.text.split(' (')[0];
-    }
+    const custName = custInfo.name.toUpperCase();
+    const custAddr = (custInfo.address || b.customerAddress || 'CENTRAL MARKET,N.S. ROAD, CHINSURAH,HOOGHLY,712101').toUpperCase();
+    const custBis = custInfo.bis || b.bis || '5439472';
+    const custGst = custInfo.gst || b.customerGst || '19AFKPR4571E1Z3';
+    const custState = custInfo.stateCode || b.customerStateCode || '19';
 
-    const customerBis = (activeBillingBatch && activeBillingBatch.bis) ? activeBillingBatch.bis : 'BIS #JWL-99210-W';
-    const customerGstin = '27AABCT' + (activeBillingBatch && activeBillingBatch.jobDocket ? activeBillingBatch.jobDocket.replace(/\D/g, '').slice(-4) : '3920') + 'F1ZV';
+    const billNo = b.billNo || '26-27/HM/2369';
+    const billDateTime = b.time || (b.date ? `${b.date} / 08:01 PM` : '14-11-2026 / 08:01 PM');
+    const billLocation = (b.stream && !b.stream.includes('Branch')) ? b.stream.toUpperCase() : 'CHINSURAH';
+    const reqNo = b.reqNo || '119813505';
+    const metalName = b.metal ? (b.metal.charAt(0).toUpperCase() + b.metal.slice(1).toLowerCase()) : 'Gold';
+    const depositorName = (b.depositor || 'KOUSHIK GHOSH').toUpperCase();
 
-    const isOffside = activeBillingBatch && activeBillingBatch.stream && activeBillingBatch.stream.toUpperCase().includes('OFF');
-    const streamClassification = isOffside ? 'OFFSIDE' : 'MAIN BRANCH';
+    const productStr = b.productBreakdown || ',CHAIN-26,TOPS-34,RING-34';
+    const weightVal = b.billWeight || (typeof b.netWt === 'number' ? Math.round(b.netWt) : (parseInt(b.netWt) || 375));
+    const rateVal = parseFloat(b.rate || 75.00);
 
-    const rows = (state.billingItems && state.billingItems.length > 0) ? state.billingItems : [
-      { desc: 'BIS Hallmarking Laser Inscription', subtext: 'SAC Code: 998346 • HUID Laser Gen', qty: 85, wt: 482.40, rate: 45.00 },
-      { desc: 'Fire Assay Purity Verification Certification', subtext: 'IS 1418:2009 Cupellation Protocol', qty: 1, wt: 2.50, rate: 750.00 },
-      { desc: 'Secure Vault Handling & Tamper-Evident Packaging', subtext: 'Tamper Evident Seal Security Box #SSR-9941', qty: 1, wt: 0.00, rate: 250.00 }
-    ];
+    const received = b.pcs || 94;
+    const rejected = b.disposition?.rejected || 0;
+    const destroyed = b.disposition?.destroyed || 0;
+    const nonFeasible = b.disposition?.nonFeasible || 0;
+    const irrucd = b.disposition?.irrucd || 0;
+    const hallmarked = b.disposition?.passed !== undefined ? b.disposition.passed : (received - (rejected + destroyed + nonFeasible + irrucd));
 
-    let subtotal = 0;
-    const particularsRows = rows.map((item, idx) => {
-      const itemQty = parseFloat(item.qty) || 0;
-      const itemRate = parseFloat(item.rate) || 0;
-      const itemWt = parseFloat(item.wt) || 0;
-      const lineTotal = itemQty * itemRate;
-      subtotal += lineTotal;
-
-      return `
-        <tr>
-          <td class="text-center mono" style="font-size: 10px;">${idx + 1}</td>
-          <td>
-            <div style="font-weight: 700; color: #0f172a; font-size: 10.5px;">${escapeHtmlStr(item.desc)}</div>
-            <div style="font-size: 8.5px; color: #64748b; font-family: ui-monospace, monospace;">${escapeHtmlStr(item.subtext || '')}</div>
-          </td>
-          <td class="text-right mono">${itemQty}</td>
-          <td class="text-right mono">${itemWt.toFixed(2)}</td>
-          <td class="text-right mono">${itemRate.toFixed(2)}</td>
-          <td class="text-right mono" style="font-weight: 700;">${lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        </tr>
-      `;
-    }).join('');
-
-    const cgst = subtotal * 0.09;
-    const sgst = subtotal * 0.09;
-    const grandTotal = subtotal + cgst + sgst;
-
-    const subtotalFormatted = subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const cgstFormatted = cgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const sgstFormatted = sgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const grandTotalFormatted = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const amountInWords = numberToIndianWords(grandTotal);
-
-    const disp = (activeBillingBatch && activeBillingBatch.disposition) ? activeBillingBatch.disposition : {
-      rejected: 0,
-      destroyed: 0,
-      nonFeasible: 0,
-      irrucd: 0,
-      passed: activeBillingBatch ? activeBillingBatch.pcs : 85
-    };
-
-    const dispIntake = activeBillingBatch ? (activeBillingBatch.pcs || 85) : 85;
-    const dispPassed = disp.passed !== undefined ? disp.passed : dispIntake;
-    const dispRejected = disp.rejected || 0;
-    const dispDestroyed = disp.destroyed || 0;
-    const dispNonFeasible = disp.nonFeasible || 0;
-    const dispIrrucd = disp.irrucd || 0;
+    const gross = hallmarked * rateVal;
+    const cgst = Math.round(gross * 9) / 100;
+    const sgst = Math.round(gross * 9) / 100;
+    const net = gross + cgst + sgst;
+    const words = formatRupeesWords(net);
+    const revCharge = b.reverseCharge || 'NO';
 
     return `<!DOCTYPE html>
 <html>
@@ -6693,8 +6708,8 @@
   <title>TAX INVOICE - ${escapeHtmlStr(billNo)}</title>
   <style>
     @page {
-      size: 210mm 17.9cm;
-      margin: 0;
+      size: A4 portrait;
+      margin: 10mm 12mm 10mm 12mm;
     }
     * {
       box-sizing: border-box;
@@ -6704,268 +6719,207 @@
     html, body {
       margin: 0;
       padding: 0;
-      width: 210mm;
-      height: 17.9cm;
-      max-height: 17.9cm;
-      overflow: hidden;
+      width: 100%;
       background: #ffffff;
       color: #000000;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: 'Courier New', Courier, monospace, monospace;
+      font-size: 13px;
+      line-height: 1.25;
     }
-    .print-sheet {
-      width: 210mm;
-      height: 17.9cm;
-      max-height: 17.9cm;
-      padding: 0 10mm 3mm 10mm;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      position: relative;
-    }
-    /* Exactly 3.8 cm blank top space reserved for physical letterhead / brand name */
-    .letterhead-reserve {
-      height: 3.8cm;
-      min-height: 3.8cm;
+    .bill-wrapper {
       width: 100%;
-      visibility: hidden;
+      max-width: 195mm;
+      margin: 0 auto;
+      padding: 4mm 0;
+      background: #ffffff;
     }
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1.3fr 1fr;
-      gap: 8px;
-      padding: 6px 10px;
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      font-size: 10px;
-      margin-bottom: 5px;
-    }
-    .info-label {
-      font-size: 9px;
-      font-weight: 700;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .info-val {
-      font-size: 12px;
-      font-weight: 800;
-      color: #0f172a;
-    }
-    .info-sub {
-      font-size: 9.5px;
-      color: #334155;
-      font-family: ui-monospace, monospace;
-    }
-    .particulars-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 5px;
-      font-size: 10px;
-    }
-    .particulars-table th {
-      background: #f1f5f9;
-      color: #1e293b;
-      font-weight: 700;
-      font-size: 9px;
-      text-transform: uppercase;
-      padding: 3.5px 6px;
-      border: 1px solid #cbd5e1;
-    }
-    .particulars-table td {
-      padding: 3px 6px;
-      border: 1px solid #e2e8f0;
-      vertical-align: middle;
-    }
-    .mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-    .text-right {
-      text-align: right;
-    }
-    .text-center {
-      text-align: center;
-    }
-    .disposition-strip {
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      border-radius: 4px;
-      padding: 3px 8px;
+    .flex-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      font-family: ui-monospace, monospace;
-      font-size: 9px;
-      margin-bottom: 5px;
+      align-items: flex-start;
     }
-    .calc-grid {
-      display: grid;
-      grid-template-columns: 1.35fr 1fr;
-      gap: 8px;
-      margin-bottom: 5px;
+    .bold {
+      font-weight: 900;
     }
-    .undertaking-box {
-      font-size: 8.5px;
-      color: #334155;
-      line-height: 1.25;
-      padding: 5px 8px;
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
+    .dashed-line {
+      border-top: 1px dashed #000;
+      margin: 6px 0;
     }
-    .words-box {
-      font-size: 9.5px;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 2px;
+    .solid-line {
+      border-top: 2px solid #000;
+      margin: 6px 0;
     }
-    .totals-table {
-      width: 100%;
-      font-size: 10px;
-      border-collapse: collapse;
+    .thin-line {
+      border-top: 1px solid #000;
+      margin: 3px 0;
     }
-    .totals-table td {
-      padding: 1.5px 3px;
-    }
-    .grand-total-row {
-      font-weight: 800;
-      font-size: 12px;
-      border-top: 1.5px solid #0f172a;
-      color: #0f172a;
-    }
-    .footer-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      align-items: flex-end;
-      padding-top: 4px;
-      border-top: 1px solid #e2e8f0;
-      margin-top: auto;
-    }
-    .signatory {
-      text-align: right;
-      font-size: 10.5px;
-      font-weight: 700;
-      color: #0f172a;
-    }
-    .signatory-space {
-      height: 16px;
+    .double-line {
+      border-top: 2px solid #000;
+      margin: 2px 0 0 0;
     }
   </style>
 </head>
 <body>
-  <div class="print-sheet">
-    <!-- Exactly 3.8 cm blank top space reserved for physical letterhead / brand name -->
-    <div class="letterhead-reserve"></div>
-
-    <!-- Billed To & Invoice Specifics -->
-    <div class="info-grid">
-      <div>
-        <div class="info-label">Billed To (Licensed Jeweller)</div>
-        <div class="info-val">${escapeHtmlStr(customerName)}</div>
-        <div class="info-sub">GSTIN: ${escapeHtmlStr(customerGstin)} • BIS: ${escapeHtmlStr(customerBis)}</div>
-        <div class="info-sub">Registered Commercial Trade Account</div>
-      </div>
-      <div style="text-align: right;">
-        <div class="info-label">Statutory Tax Invoice</div>
-        <div class="info-val mono">${escapeHtmlStr(billNo)}</div>
-        <div class="info-sub">Date: ${escapeHtmlStr(billDate)}</div>
-        <div class="info-sub">Ref Job: ${escapeHtmlStr(reqNo)} • <strong style="color: #0f172a;">${streamClassification}</strong></div>
-      </div>
-    </div>
-
-    <!-- Particulars Table -->
-    <table class="particulars-table">
-      <thead>
-        <tr>
-          <th style="width: 25px;" class="text-center">#</th>
-          <th>Description of Assay / Service</th>
-          <th style="width: 45px;" class="text-right">Qty</th>
-          <th style="width: 60px;" class="text-right">Net Wt (g)</th>
-          <th style="width: 55px;" class="text-right">Rate (₹)</th>
-          <th style="width: 75px;" class="text-right">Amount (₹)</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${particularsRows}
-      </tbody>
-    </table>
-
-    <!-- BIS IS 1417 Quality Disposition Summary Strip -->
-    <div class="disposition-strip">
-      <span style="font-weight: 700; color: #0f172a;">IS 1417 QUALITY SUMMARY:</span>
-      <span>INTAKE: <strong>${dispIntake}</strong></span>
-      <span>•</span>
-      <span style="color: #047857; font-weight: 700;">PASSED: <strong>${dispPassed}</strong></span>
-      <span>•</span>
-      <span style="color: #b91c1c;">REJECTED: <strong>${dispRejected}</strong></span>
-      <span>•</span>
-      <span style="color: #b45309;">DESTROYED: <strong>${dispDestroyed}</strong></span>
-      <span>•</span>
-      <span style="color: #c2410c;">NON-FEASIBLE: <strong>${dispNonFeasible}</strong></span>
-      <span>•</span>
-      <span style="color: #7e22ce;">IRRUCD: <strong>${dispIrrucd}</strong></span>
-    </div>
-
-    <!-- Calculations & Words -->
-    <div class="calc-grid">
-      <div class="undertaking-box">
-        <div class="info-label">Amount Chargeable (in words)</div>
-        <div class="words-box">${escapeHtmlStr(amountInWords)}</div>
-        <div style="font-weight: 700; color: #0f172a; margin-top: 2px;">BIS Regulatory Undertaking:</div>
-        Articles above have been assayed via BIS approved cupellation/XRF methods and inscribed with 6-digit HUID stamps per IS 1417:2019 standards.
-      </div>
-
-      <div>
-        <table class="totals-table">
-          <tr>
-            <td style="color: #475569;">Taxable Subtotal:</td>
-            <td class="text-right mono" style="font-weight: 600;">₹${subtotalFormatted}</td>
-          </tr>
-          <tr>
-            <td style="color: #475569;">CGST (9.0%):</td>
-            <td class="text-right mono" style="font-weight: 600;">₹${cgstFormatted}</td>
-          </tr>
-          <tr>
-            <td style="color: #475569;">SGST (9.0%):</td>
-            <td class="text-right mono" style="font-weight: 600;">₹${sgstFormatted}</td>
-          </tr>
-          <tr class="grand-total-row">
-            <td>Total Payable:</td>
-            <td class="text-right mono">₹${grandTotalFormatted}</td>
-          </tr>
-        </table>
-      </div>
-    </div>
-
-    <!-- Signatures & Authentic BIS QR (NO Brand Name or Logo) -->
-    <div class="footer-grid">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <svg style="width: 34px; height: 34px; color: #0f172a;" viewBox="0 0 100 100" fill="currentColor">
-          <rect fill="none" height="24" rx="2" stroke="currentColor" stroke-width="4" width="24" x="10" y="10"></rect>
-          <rect height="10" rx="1" width="10" x="17" y="17"></rect>
-          <rect fill="none" height="24" rx="2" stroke="currentColor" stroke-width="4" width="24" x="66" y="10"></rect>
-          <rect height="10" rx="1" width="10" x="73" y="17"></rect>
-          <rect fill="none" height="24" rx="2" stroke="currentColor" stroke-width="4" width="24" x="10" y="66"></rect>
-          <rect height="10" rx="1" width="10" x="17" y="73"></rect>
-          <rect height="6" width="6" x="42" y="12"></rect>
-          <rect height="6" width="6" x="52" y="12"></rect>
-          <rect height="12" width="6" x="52" y="30"></rect>
-          <rect height="6" width="8" x="12" y="44"></rect>
-          <rect height="6" width="16" x="42" y="46"></rect>
-          <rect height="8" width="16" x="44" y="80"></rect>
-        </svg>
-        <div>
-          <div style="font-size: 8.5px; font-weight: 700; color: #b45309; text-transform: uppercase;">Verify on BIS Care</div>
-          <div style="font-size: 8px; color: #64748b; font-family: ui-monospace, monospace;">Central HUID Database</div>
+  <div class="bill-wrapper">
+    <!-- HEADER -->
+    <div class="flex-row" style="align-items: center; padding-bottom: 2px;">
+      <!-- SSR Monogram Logo -->
+      <div style="width: 58px; height: 50px; border: 2px solid #000; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <div style="width: 50px; height: 42px; border: 1px solid #000; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <span style="font-family: 'Times New Roman', Georgia, serif; font-size: 26px; font-weight: 900; font-style: italic; letter-spacing: -2px; line-height: 1;">SS</span>
         </div>
       </div>
 
-      <div class="signatory">
-        <div style="font-size: 8px; color: #64748b; text-transform: uppercase;">ASSAY AUTHORITY SIGN-OFF</div>
-        <div class="signatory-space"></div>
-        <div>Authorized Assay Master / Signatory</div>
+      <!-- Center Title & Contact -->
+      <div style="text-align: center; flex: 1;">
+        <div style="font-size: 22px; font-weight: 900; letter-spacing: 0.5px; font-family: 'Times New Roman', serif;">SSR HALLMARKING CENTER</div>
+        <div style="font-size: 11px; font-weight: 700; margin-top: 1px;">1244, Manindra Gopal Mitra Sarani, Chandannagar, Hooghly-712136</div>
+        <div style="font-size: 11px; font-weight: 700;">Email:- ssrhallmarkcenter1@gmail.com</div>
+        <div style="font-size: 12px; font-weight: 900; margin-top: 1px;">GST-NO. 19BCTPM4362H1Z1</div>
+      </div>
+
+      <!-- BIS Hallmark Triangle & Phones -->
+      <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
+        <svg viewBox="0 0 100 80" style="width: 48px; height: 38px;">
+          <polygon points="50,4 96,76 4,76" fill="none" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
+          <polygon points="50,22 80,68 20,68" fill="#000"/>
+          <circle cx="50" cy="49" r="7" fill="#fff"/>
+        </svg>
+        <div style="font-size: 10.5px; font-weight: 900; margin-top: 2px;">9836282449</div>
+        <div style="font-size: 10.5px; font-weight: 900;">9836282499</div>
+      </div>
+    </div>
+
+    <div class="solid-line"></div>
+
+    <!-- RECIPIENT & DOCKET -->
+    <div class="flex-row" style="font-size: 11.5px; line-height: 1.35;">
+      <!-- TO Section -->
+      <div style="flex: 1.3;">
+        <div class="bold">TO :</div>
+        <div class="bold" style="font-size: 12px;">${escapeHtmlStr(custName)}</div>
+        <div style="font-weight: 700;">${escapeHtmlStr(custAddr)}</div>
+        <div>BIS Regn No : <span class="bold">${escapeHtmlStr(custBis)}</span></div>
+        <div>GST No : <span class="bold">${escapeHtmlStr(custGst)}</span> &nbsp;&nbsp;&nbsp; State Code : <span class="bold">${escapeHtmlStr(custState)}</span></div>
+      </div>
+
+      <!-- TAX INVOICE -->
+      <div style="text-align: center; flex: 0.8;">
+        <div class="bold" style="font-size: 15px; letter-spacing: 0.5px;">TAX INVOICE</div>
+      </div>
+
+      <!-- Right Metadata -->
+      <div style="flex: 1.4; text-align: right;">
+        <div style="font-size: 10px; font-weight: 700;">Original for Recipient / Duplicate for Supplier</div>
+        <div>BILL NO : <span class="bold">${escapeHtmlStr(billNo)}</span></div>
+        <div>DATE/Time : <span class="bold">${escapeHtmlStr(billDateTime)}</span></div>
+        <div class="bold">${escapeHtmlStr(billLocation)}</div>
+        <div>Request No : <span class="bold">${escapeHtmlStr(reqNo)}</span> &nbsp;&nbsp;&nbsp; <span class="bold">${escapeHtmlStr(metalName)}</span></div>
+        <div>Depositor Name : <span class="bold">${escapeHtmlStr(depositorName)}</span></div>
+      </div>
+    </div>
+
+    <div class="dashed-line"></div>
+
+    <!-- PRODUCT BREAKDOWN & PIECE DISPOSITION -->
+    <div style="font-size: 11.5px; line-height: 1.4;">
+      <div>Product Name : <span class="bold">${escapeHtmlStr(productStr)}</span></div>
+      
+      <div class="flex-row" style="margin-top: 3px;">
+        <div style="width: 50%;">
+          <div>No of Pcs Received for HALLMARKING : <span class="bold">${received}</span></div>
+          <div>No of Pcs Rejected&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span class="bold">${rejected}</span></div>
+          <div>No of Pcs Non-Feasible&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span class="bold">${nonFeasible}</span></div>
+        </div>
+
+        <div style="width: 50%;">
+          <div>No of Pcs HALLMARKED : <span class="bold">${hallmarked}</span></div>
+          <div>No of Pcs Destroyed&nbsp;&nbsp;: <span class="bold">${destroyed}</span></div>
+          <div>No of Pcs IRRUCD&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span class="bold">${irrucd}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashed-line"></div>
+
+    <!-- SERVICES TABLE -->
+    <div style="font-size: 11.5px; line-height: 1.45;">
+      <div class="flex-row bold" style="padding-bottom: 2px;">
+        <div style="flex: 2;">Description of Services</div>
+        <div style="flex: 1; text-align: center;">${weightVal}</div>
+        <div style="flex: 1; text-align: right;">@Rs.&nbsp;&nbsp;&nbsp;&nbsp;${rateVal.toFixed(2)}</div>
+        <div style="flex: 1; text-align: right;">${gross.toFixed(2)}</div>
+      </div>
+
+      <div class="flex-row bold">
+        <div style="flex: 2;">HALL MARKING CHARGES for ${hallmarked} pcs</div>
+        <div style="flex: 1; text-align: center;">${weightVal}</div>
+        <div style="flex: 1; text-align: right;">@Rs.&nbsp;&nbsp;&nbsp;&nbsp;${rateVal.toFixed(2)}</div>
+        <div style="flex: 1; text-align: right;">${gross.toFixed(2)}</div>
+      </div>
+    </div>
+
+    <div class="dashed-line"></div>
+
+    <!-- STATUTORY & TOTALS -->
+    <div class="flex-row" style="font-size: 11.5px; line-height: 1.4;">
+      <!-- Statutory Left -->
+      <div style="flex: 1.3; font-weight: 700;">
+        <div>GST No : <span class="bold">19BCTPM4362H1Z1</span></div>
+        <div>PAN : <span class="bold">BCTPM43621Z</span></div>
+        <div style="margin: 3px 0;">SAC - <span class="bold">998346</span></div>
+        <div>License No : <span class="bold">ERO/RAHC/R-7112060</span></div>
+        <div>Tax is payable on reverse charge (Yes/No) : <span class="bold">${escapeHtmlStr(revCharge)}</span></div>
+      </div>
+
+      <!-- Calculation Right -->
+      <div style="flex: 1; text-align: right; font-weight: 900; max-width: 320px;">
+        <div class="flex-row">
+          <span>Gross Amount</span>
+          <span>${gross.toFixed(2)}</span>
+        </div>
+        <div class="flex-row">
+          <span>CGST @9%</span>
+          <span>${cgst.toFixed(2)}</span>
+        </div>
+        <div class="flex-row">
+          <span>SGST @9%</span>
+          <span>${sgst.toFixed(2)}</span>
+        </div>
+        <div class="flex-row">
+          <span>Round Off</span>
+          <span>.00</span>
+        </div>
+        <div class="thin-line"></div>
+        <div class="flex-row" style="font-size: 12.5px;">
+          <span>Net Amount</span>
+          <span>${net.toFixed(2)}</span>
+        </div>
+        <div class="double-line"></div>
+      </div>
+    </div>
+
+    <!-- AMOUNT IN WORDS -->
+    <div style="font-size: 12px; font-weight: 900; margin: 9px 0 12px 0;">
+      Rupees ${escapeHtmlStr(words)} only.
+    </div>
+
+    <!-- SIGNATURES -->
+    <div class="flex-row bold" style="font-size: 11px; margin-top: 18px;">
+      <div style="padding-top: 20px;">Customer's Signature</div>
+      <div style="text-align: right;">
+        <div style="margin-bottom: 20px;">E & O E</div>
+        <div>Authorised Signatory</div>
+      </div>
+    </div>
+
+    <!-- BANK DETAILS & JURISDICTION -->
+    <div style="font-size: 11px; font-weight: 700; line-height: 1.4; margin-top: 12px; border-top: 1px dashed #000; padding-top: 6px;">
+      <div>Bank Details : <strong class="bold">HDFC Bank Ltd , Chandannagar</strong></div>
+      <div>A/C No - <strong class="bold">50200064805225</strong>, IFSCcode : <strong class="bold">HDFC0000981</strong></div>
+      <div class="flex-row bold" style="margin-top: 3px;">
+        <span>Record No : F-30</span>
+        <span>Subject to CHANDANNAGAR Jurisdiction</span>
       </div>
     </div>
   </div>
@@ -6974,21 +6928,12 @@
   }
 
   function printTaxInvoice() {
-    const billNoInput = document.getElementById('inputBillNo');
-    const reqNoInput = document.getElementById('inputReqNo');
-    const dateInput = document.getElementById('inputDate');
+    if (!activeBillingBatch) return;
 
-    if (activeBillingBatch) {
-      activeBillingBatch.billPrinted = true;
-      if (billNoInput) activeBillingBatch.billNo = billNoInput.value;
-      if (reqNoInput) activeBillingBatch.reqNo = reqNoInput.value;
-      if (dateInput) activeBillingBatch.time = dateInput.value;
-    }
-
+    activeBillingBatch.billPrinted = true;
     updatePrintStatusUI(true);
     renderBillQueue();
 
-    // Use dedicated isolated iframe print so ZERO other screens or UI elements leak into the print/PDF dialog
     const invoiceHtml = generateTaxInvoicePrintContent();
 
     let printFrame = document.getElementById('invoice-print-iframe');
@@ -7015,35 +6960,23 @@
       printFrame.contentWindow.print();
     }, 250);
 
-    showToast(`Tax Invoice ${activeBillingBatch ? activeBillingBatch.billNo : ''} sent to print (Height: 17.9cm). Marked as PRINTED.`, 'success');
+    showToast(`Tax Invoice ${activeBillingBatch.billNo} sent to print. Marked as PRINTED.`, 'success');
   }
 
+  // Compatibility stubs
+  function recalculateBill() {
+    updateExactBillCalculations();
+  }
+  function renderBillingItemsForm() {}
+  function addBillingItemRow() {}
+  function syncInvoicePreviewHeader() {}
   function finalizeCurrentBill() {
-    const billNoInput = document.getElementById('inputBillNo');
-    const reqNoInput = document.getElementById('inputReqNo');
-    const dateInput = document.getElementById('inputDate');
-    const clientSelect = document.getElementById('clientSelect');
-
-    const billNo = billNoInput ? billNoInput.value : (activeBillingBatch ? activeBillingBatch.billNo : 'BILL-2024-04192');
-    const reqNo = reqNoInput ? reqNoInput.value : (activeBillingBatch ? activeBillingBatch.reqNo : 'REQ-8831-A');
-    const date = dateInput ? dateInput.value : 'Today';
-    let customer = activeBillingBatch ? activeBillingBatch.customer : 'Tanishq Luxury Guild';
-    if (clientSelect) {
-      const opt = clientSelect.options[clientSelect.selectedIndex];
-      if (opt) customer = opt.text.split(' (')[0];
-    }
-
     if (activeBillingBatch) {
       activeBillingBatch.billPrinted = true;
-      activeBillingBatch.billNo = billNo;
-      activeBillingBatch.reqNo = reqNo;
-      activeBillingBatch.customer = customer;
-      activeBillingBatch.time = date;
+      updatePrintStatusUI(true);
+      renderBillQueue();
+      showToast(`Tax Invoice ${activeBillingBatch.billNo} successfully recorded and finalized in BIS Audit Ledger.`, 'success');
     }
-
-    updatePrintStatusUI(true);
-    renderBillQueue();
-    showToast(`Tax Invoice ${billNo} successfully recorded and finalized in BIS Audit Ledger.`, 'success');
   }
 
   // --- RECORDS / HISTORY MODULE ---

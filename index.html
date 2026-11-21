@@ -2295,501 +2295,308 @@
             </div>
           </div>
 
-          <!-- Workspace Grid: Builder on Left, Live Invoice on Right -->
-          <div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start mt-2">
-            <!-- LEFT COLUMN: Intake & Billing Builder (5 cols) -->
-            <div class="xl:col-span-5 flex flex-col gap-4">
-              <!-- Meta & Intake Parameters Card -->
-              <div class="bg-surface-container-lowest rounded-xl p-4 sm:p-space-lg shadow-sm flex flex-col gap-4">
-                <div class="flex items-center justify-between pb-3 border-b border-surface-container-low">
-                  <div class="flex items-center gap-2">
-                    <span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-bold">Metadata & Source Batch</span>
-                    <span class="text-on-surface-variant font-data-mono text-[11px]">• Step 1/2</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span id="active-batch-print-indicator" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> NOT PRINTED
-                    </span>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-label-sm font-semibold bg-surface-container text-on-surface">
-                      <span class="material-symbols-outlined text-[13px] text-secondary">verified</span> Auto-Numbered
-                    </span>
+          <!-- BATCH BILL CONTROLS & EXACT INVOICE VIEW -->
+          <div class="flex flex-col gap-4 mt-2">
+            <!-- Quick Interactive Control Bar for the Bill -->
+            <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container flex flex-col gap-3">
+              <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-surface-container-low">
+                <div class="flex items-center gap-2.5">
+                  <span class="material-symbols-outlined text-secondary text-[22px]">tune</span>
+                  <div>
+                    <div class="text-xs font-bold text-on-surface uppercase tracking-wide">Bill Configuration & Parameters</div>
+                    <div class="text-[11px] text-on-surface-variant">Configure rate per piece, article breakdown, and piece disposition for the selected batch</div>
                   </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div class="flex flex-col gap-1.5">
-                    <div class="flex items-center justify-between">
-                      <label class="font-label-md text-label-md text-on-surface" for="inputBillNo">Bill Number</label>
-                      <span class="text-[10px] text-slate-400">Editable</span>
-                    </div>
-                    <div class="relative">
-                      <input id="inputBillNo" class="w-full h-10 px-3 pr-8 rounded-lg bg-surface-container-low font-data-mono text-data-mono text-on-surface font-semibold focus:outline-none focus:ring-2 focus:ring-primary-container/20" type="text" value="BILL-2024-04192" oninput="syncInvoicePreviewHeader()"/>
-                      <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-secondary text-[18px]">edit</span>
-                    </div>
-                  </div>
-
-                  <div class="flex flex-col gap-1.5">
-                    <div class="flex items-center justify-between">
-                      <label class="font-label-md text-label-md text-on-surface" for="inputReqNo">Request Job #</label>
-                      <span class="text-[10px] text-slate-400">Editable</span>
-                    </div>
-                    <div class="relative">
-                      <input id="inputReqNo" class="w-full h-10 pl-8 pr-3 rounded-lg bg-surface-container-low text-on-surface font-data-mono text-data-mono font-medium focus:outline-none focus:ring-2 focus:ring-primary-container/20" type="text" value="REQ-8831-A" oninput="syncInvoicePreviewHeader()"/>
-                      <span class="material-symbols-outlined absolute left-2.5 top-2.5 text-secondary text-[18px]">link</span>
-                    </div>
-                  </div>
-
-                  <div class="sm:col-span-2 flex flex-col gap-1.5">
-                    <label class="font-label-md text-label-md text-on-surface" for="clientSelect">Client Jeweller / Bullion Entity</label>
-                    <div class="relative">
-                      <select id="clientSelect" class="w-full h-10 pl-9 pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none appearance-none cursor-pointer" onchange="syncInvoicePreviewHeader()">
-                        <option value="tanishq">Tanishq Luxury Guild (Flagship Zaveri Bazar)</option>
-                        <option value="kalyan">Kalyan Jewellers Heritage Division</option>
-                        <option value="malabar">Malabar Gold & Diamonds Trade Hub</option>
-                        <option value="malabar_craft">Malabar Gold Craft</option>
-                        <option value="navrathan">Navrathan Jewellers Ltd</option>
-                        <option value="custom">Custom Wholesale Bullion Account</option>
-                      </select>
-                      <span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">storefront</span>
-                      <span class="material-symbols-outlined absolute right-3 top-2.5 text-outline text-[18px] pointer-events-none">expand_more</span>
-                    </div>
-                  </div>
-
-                  <div class="flex flex-col gap-1.5">
-                    <label class="font-label-md text-label-md text-on-surface" for="inputDate">Invoice Timestamp</label>
-                    <div class="relative">
-                      <input id="inputDate" class="w-full h-10 pl-8 pr-3 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-container/20" type="text" value="24 Oct 2024, 02:45 PM" oninput="syncInvoicePreviewHeader()"/>
-                      <span class="material-symbols-outlined absolute left-2.5 top-2.5 text-outline text-[18px]">calendar_today</span>
-                    </div>
-                  </div>
-
-                  <div class="flex flex-col gap-1.5">
-                    <label class="font-label-md text-label-md text-on-surface">Job Classification</label>
-                    <div class="flex h-10 p-1 rounded-lg bg-surface-container-low">
-                      <button id="btnMainSide" class="flex-1 rounded-md bg-surface-container-lowest shadow-sm text-on-surface font-label-md text-label-md font-semibold transition-all cursor-pointer" type="button" onclick="setJobClassification('MAIN')">Main Branch</button>
-                      <button id="btnOffSide" class="flex-1 rounded-md text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all cursor-pointer" type="button" onclick="setJobClassification('OFF_SIDE')">OFFSIDE</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Quality & Piece Disposition Card (BIS Testing Defects) -->
-              <div class="bg-surface-container-lowest rounded-xl p-4 sm:p-space-lg shadow-sm flex flex-col gap-3.5 border border-surface-container-low">
-                <div class="flex items-center justify-between pb-2 border-b border-surface-container-low">
-                  <div class="flex items-center gap-2">
-                    <span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-bold">Piece Disposition & BIS Quality Testing</span>
-                    <span class="text-on-surface-variant font-data-mono text-[11px]">• Required</span>
-                  </div>
-                  <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">IS 1417:2019 Testing</span>
-                </div>
-
-                <p class="text-[11px] text-on-surface-variant leading-relaxed">
-                  Enter piece counts for rejection, destructive fire assay, or non-feasibility. Net passed units will be marked with HUID and billed on the invoice.
-                </p>
-
-                <!-- 4-Input Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <!-- 1. Rejected -->
-                  <div class="flex flex-col gap-1 p-2 rounded-lg bg-red-50/60 border border-red-200">
-                    <div class="flex items-center justify-between">
-                      <label class="text-[10px] font-bold text-red-800 uppercase" for="inputPcsRejected">Rejected</label>
-                      <span class="material-symbols-outlined text-red-600 text-[14px]">cancel</span>
-                    </div>
-                    <input id="inputPcsRejected" type="number" min="0" value="0" class="w-full h-8 px-2 bg-white rounded border border-red-300 text-xs font-mono font-bold text-red-900 focus:outline-none focus:ring-1 focus:ring-red-500" oninput="onDispositionInputChanged()"/>
-                    <span class="text-[9px] text-red-600 font-medium">Purity fail</span>
-                  </div>
-
-                  <!-- 2. Destroyed -->
-                  <div class="flex flex-col gap-1 p-2 rounded-lg bg-amber-50/60 border border-amber-200">
-                    <div class="flex items-center justify-between">
-                      <label class="text-[10px] font-bold text-amber-800 uppercase" for="inputPcsDestroyed">Destroyed</label>
-                      <span class="material-symbols-outlined text-amber-600 text-[14px]">local_fire_department</span>
-                    </div>
-                    <input id="inputPcsDestroyed" type="number" min="0" value="0" class="w-full h-8 px-2 bg-white rounded border border-amber-300 text-xs font-mono font-bold text-amber-900 focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="onDispositionInputChanged()"/>
-                    <span class="text-[9px] text-amber-600 font-medium">Fire assay</span>
-                  </div>
-
-                  <!-- 3. Non-Feasible -->
-                  <div class="flex flex-col gap-1 p-2 rounded-lg bg-orange-50/60 border border-orange-200">
-                    <div class="flex items-center justify-between">
-                      <label class="text-[10px] font-bold text-orange-800 uppercase" for="inputPcsNonFeasible">Non-Feasible</label>
-                      <span class="material-symbols-outlined text-orange-600 text-[14px]">report_problem</span>
-                    </div>
-                    <input id="inputPcsNonFeasible" type="number" min="0" value="0" class="w-full h-8 px-2 bg-white rounded border border-orange-300 text-xs font-mono font-bold text-orange-900 focus:outline-none focus:ring-1 focus:ring-orange-500" oninput="onDispositionInputChanged()"/>
-                    <span class="text-[9px] text-orange-600 font-medium">Laser unfit</span>
-                  </div>
-
-                  <!-- 4. IRRUCD -->
-                  <div class="flex flex-col gap-1 p-2 rounded-lg bg-purple-50/60 border border-purple-200">
-                    <div class="flex items-center justify-between">
-                      <label class="text-[10px] font-bold text-purple-800 uppercase" for="inputPcsIRRUCD">IRRUCD</label>
-                      <span class="material-symbols-outlined text-purple-600 text-[14px]">swap_horizontal_circle</span>
-                    </div>
-                    <input id="inputPcsIRRUCD" type="number" min="0" value="0" class="w-full h-8 px-2 bg-white rounded border border-purple-300 text-xs font-mono font-bold text-purple-900 focus:outline-none focus:ring-1 focus:ring-purple-500" oninput="onDispositionInputChanged()"/>
-                    <span class="text-[9px] text-purple-600 font-medium">Irregular / UCD</span>
-                  </div>
-                </div>
-
-                <!-- Live Disposition Math Calculation Strip -->
-                <div class="p-2.5 bg-surface-container-low rounded-lg flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-                  <div class="flex items-center gap-1">
-                    <span class="text-slate-500">Total Intake:</span>
-                    <span id="disp-total-pcs" class="font-bold text-slate-800">85 Pcs</span>
-                  </div>
-                  <div class="flex items-center gap-1">
-                    <span class="text-slate-500">Deductions:</span>
-                    <span id="disp-deductions" class="font-bold text-red-600">0 Pcs</span>
-                  </div>
-                  <div class="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300">
-                    <span class="font-bold">Net Inscribed (Passed):</span>
-                    <span id="disp-passed-pcs" class="font-bold">85 Pcs</span>
-                  </div>
-                </div>
-
-                <!-- Confirmation Trigger Button -->
-                <div class="pt-1 flex items-center justify-between">
-                  <span class="text-[10px] text-slate-400 font-medium">Click to review and apply to invoice</span>
-                  <button type="button" onclick="openDispositionConfirmationModal()" class="px-3.5 py-1.5 rounded-lg bg-primary-container text-white text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer border border-[#c5a059]/40">
-                    <span class="material-symbols-outlined text-[15px] text-amber-400">check_circle</span>
-                    <span>Confirm Piece Breakdown</span>
+                <!-- Action Buttons: Print, Mark Printed, Save -->
+                <div class="flex flex-wrap items-center gap-2">
+                  <button type="button" onclick="printTaxInvoice()" class="px-5 py-2 rounded-xl bg-primary-container hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-md cursor-pointer border border-[#c5a059]/50">
+                    <span class="material-symbols-outlined text-[18px] text-amber-400">print</span>
+                    <span>Print Tax Invoice</span>
                   </button>
-                </div>
-              </div>
 
-              <!-- Billing Particulars Table -->
-              <div class="bg-surface-container-lowest rounded-xl p-4 sm:p-space-lg shadow-sm flex flex-col gap-4">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-bold">Assay & Hallmarking Particulars</span>
-                    <span id="itemsBadgeCount" class="px-2 py-0.5 rounded-full text-[10px] font-data-mono font-semibold bg-surface-container-low text-on-surface-variant">3 Items</span>
-                  </div>
-                  <button id="btnAddRow" onclick="addBillingItemRow()" class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm font-semibold transition-colors cursor-pointer" type="button">
-                    <span class="material-symbols-outlined text-[16px]">add_circle</span>
-                    <span>Add Item</span>
-                  </button>
-                </div>
-
-                <div class="overflow-x-auto rounded-lg bg-surface-container-lowest">
-                  <table class="w-full text-left min-w-[500px]">
-                    <thead>
-                      <tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-[11px] uppercase tracking-wider">
-                        <th class="py-2.5 px-3 w-10 text-center">#</th>
-                        <th class="py-2.5 px-3">Particulars</th>
-                        <th class="py-2.5 px-2 w-16 text-right">Qty</th>
-                        <th class="py-2.5 px-2 w-20 text-right">Wt (g)</th>
-                        <th class="py-2.5 px-2 w-24 text-right">Rate (₹)</th>
-                        <th class="py-2.5 px-3 w-28 text-right">Total (₹)</th>
-                        <th class="py-2.5 px-2 w-8 text-center"></th>
-                      </tr>
-                    </thead>
-                    <tbody id="itemsBody" class="divide-y divide-surface-container-low font-body-sm text-body-sm text-on-surface">
-                      <!-- Rendered by app.js -->
-                    </tbody>
-                  </table>
-                </div>
-
-                <!-- Payment Details -->
-                <div class="pt-3 border-t border-surface-container-low flex flex-col gap-3">
-                  <span class="font-label-sm text-[11px] uppercase tracking-wider text-secondary font-bold">Payment & Settlement</span>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <select class="h-10 px-3 bg-surface-container-low rounded-lg text-body-sm">
-                      <option>RTGS / Direct Bank Transfer</option>
-                      <option>UPI / QR Instant Payment</option>
-                      <option>Cheque Deposit</option>
-                      <option>Cash Vault Custody</option>
-                    </select>
-                    <input class="h-10 px-3 bg-surface-container-low rounded-lg text-body-sm font-data-mono" placeholder="UTR / Ref: UTR-99482104" type="text" value="UTR-MH-849201"/>
-                  </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="pt-2 flex flex-col sm:flex-row items-center gap-2.5">
-                  <button onclick="printTaxInvoice()" class="w-full sm:flex-1 h-11 rounded-lg bg-primary-container text-surface-container-lowest font-label-md text-label-md font-semibold flex items-center justify-center gap-2 shadow-sm hover:bg-inverse-surface transition-all cursor-pointer">
-                    <span class="material-symbols-outlined text-[18px] text-secondary-fixed">print</span>
-                    <span>Print Tax Invoice (17.9 cm)</span>
-                  </button>
-                  <button id="btnTogglePrintStatus" onclick="toggleActiveBillPrintStatus()" class="w-full sm:w-auto h-11 px-4 rounded-lg bg-surface-container-high hover:bg-surface-container text-on-surface font-label-md text-label-md font-semibold transition-colors flex items-center gap-1.5 cursor-pointer">
-                    <span class="material-symbols-outlined text-[18px] text-amber-500">check_circle</span>
+                  <button type="button" id="btnTogglePrintStatus" onclick="toggleActiveBillPrintStatus()" class="px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-on-surface transition-all flex items-center gap-1.5 cursor-pointer border border-surface-container">
+                    <span class="material-symbols-outlined text-[16px] text-amber-600">check_circle</span>
                     <span id="btnTogglePrintStatusText">Mark as Printed</span>
                   </button>
-                  <button onclick="finalizeCurrentBill()" class="w-full sm:w-auto h-11 px-4 rounded-lg bg-surface-container-high hover:bg-surface-container text-on-surface font-label-md text-label-md font-semibold transition-colors cursor-pointer">
-                    Finalize Bill
+
+                  <button type="button" onclick="saveActiveBillChanges()" class="px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-on-surface transition-all flex items-center gap-1.5 cursor-pointer border border-surface-container">
+                    <span class="material-symbols-outlined text-[16px] text-secondary">save</span>
+                    <span>Save Changes</span>
                   </button>
+                </div>
+              </div>
+
+              <!-- Parameter Inputs Grid -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3 text-xs">
+                <!-- 1. Hallmarking Rate per Pc -->
+                <div class="flex flex-col gap-1">
+                  <label class="font-semibold text-slate-700 text-[11px] uppercase" for="bill-input-rate">Rate Per Pc (@Rs.)</label>
+                  <div class="relative">
+                    <span class="absolute left-2.5 top-2 text-slate-400 font-mono">₹</span>
+                    <input id="bill-input-rate" type="number" step="0.5" value="75.00" class="w-full h-8 pl-6 pr-2 bg-surface-container-low text-slate-900 font-mono font-bold rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary" oninput="updateExactBillCalculations()" />
+                  </div>
+                </div>
+
+                <!-- 2. Product Breakdown String -->
+                <div class="flex flex-col gap-1 sm:col-span-2">
+                  <label class="font-semibold text-slate-700 text-[11px] uppercase" for="bill-input-product-name">Product Name Breakdown</label>
+                  <input id="bill-input-product-name" type="text" value=",CHAIN-26,TOPS-34,RING-34" class="w-full h-8 px-2.5 bg-surface-container-low text-slate-900 font-mono font-semibold text-[11.5px] rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary uppercase" oninput="updateExactBillPreview()" />
+                </div>
+
+                <!-- 3. Net / Bill Weight -->
+                <div class="flex flex-col gap-1">
+                  <label class="font-semibold text-slate-700 text-[11px] uppercase" for="bill-input-weight">Weight (g) / Code</label>
+                  <input id="bill-input-weight" type="text" value="375" class="w-full h-8 px-2.5 bg-surface-container-low text-slate-900 font-mono font-bold rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary" oninput="updateExactBillPreview()" />
+                </div>
+
+                <!-- 4. Reverse Charge -->
+                <div class="flex flex-col gap-1">
+                  <label class="font-semibold text-slate-700 text-[11px] uppercase" for="bill-input-rev-charge">Reverse Charge</label>
+                  <select id="bill-input-rev-charge" class="w-full h-8 px-2 bg-surface-container-low text-slate-900 font-mono font-bold rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary cursor-pointer" onchange="updateExactBillPreview()">
+                    <option value="NO" selected>NO</option>
+                    <option value="YES">YES</option>
+                  </select>
+                </div>
+
+                <!-- 5. Piece Disposition Summary -->
+                <div class="flex flex-col gap-1 sm:col-span-2 xl:col-span-1">
+                  <label class="font-semibold text-slate-700 text-[11px] uppercase">Net Hallmarked Pcs</label>
+                  <div class="h-8 px-2.5 bg-emerald-50 border border-emerald-300 rounded-lg flex items-center justify-between text-emerald-900 font-mono font-bold">
+                    <span>HALLMARKED:</span>
+                    <span id="bill-disp-passed-badge" class="text-sm">94 Pcs</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quality & Piece Disposition Breakdown Steppers -->
+              <div class="pt-2 border-t border-surface-container-low flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
+                <span class="font-bold text-slate-600 uppercase text-[10.5px]">Piece Disposition Breakdown:</span>
+                
+                <div class="flex items-center gap-1.5 font-mono text-[11px]">
+                  <span class="text-slate-500">Received:</span>
+                  <strong id="bill-ctrl-disp-received" class="text-slate-900 px-1.5 py-0.5 bg-slate-100 rounded border border-slate-300">94</strong>
+                </div>
+
+                <div class="flex items-center gap-1.5 font-mono text-[11px]">
+                  <span class="text-red-700 font-medium">Rejected:</span>
+                  <input id="bill-ctrl-disp-rejected" type="number" min="0" value="0" class="w-12 h-6 px-1.5 text-center bg-white border border-red-300 rounded text-red-900 font-bold focus:outline-none focus:ring-1 focus:ring-red-500" oninput="updateExactBillDisposition()" />
+                </div>
+
+                <div class="flex items-center gap-1.5 font-mono text-[11px]">
+                  <span class="text-amber-700 font-medium">Destroyed:</span>
+                  <input id="bill-ctrl-disp-destroyed" type="number" min="0" value="0" class="w-12 h-6 px-1.5 text-center bg-white border border-amber-300 rounded text-amber-900 font-bold focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="updateExactBillDisposition()" />
+                </div>
+
+                <div class="flex items-center gap-1.5 font-mono text-[11px]">
+                  <span class="text-orange-700 font-medium">Non-Feasible:</span>
+                  <input id="bill-ctrl-disp-nonfeasible" type="number" min="0" value="0" class="w-12 h-6 px-1.5 text-center bg-white border border-orange-300 rounded text-orange-900 font-bold focus:outline-none focus:ring-1 focus:ring-orange-500" oninput="updateExactBillDisposition()" />
+                </div>
+
+                <div class="flex items-center gap-1.5 font-mono text-[11px]">
+                  <span class="text-purple-700 font-medium">IRRUCD:</span>
+                  <input id="bill-ctrl-disp-irrucd" type="number" min="0" value="0" class="w-12 h-6 px-1.5 text-center bg-white border border-purple-300 rounded text-purple-900 font-bold focus:outline-none focus:ring-1 focus:ring-purple-500" oninput="updateExactBillDisposition()" />
+                </div>
+
+                <div class="ml-auto font-mono text-[11px] text-slate-500">
+                  Total Deductions: <strong id="bill-ctrl-disp-deductions" class="text-red-600">0</strong>
                 </div>
               </div>
             </div>
 
-            <!-- RIGHT COLUMN: Live Interactive Tax Invoice Preview (7 cols, 17.9 cm Standard) -->
-            <div class="xl:col-span-7 flex flex-col">
-              <!-- Visual Indicator for 17.9 cm Letterhead Mode -->
-              <div class="flex items-center justify-between px-2 py-1.5 mb-1 text-[11px] text-slate-500 font-mono no-print">
-                <span class="flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[15px] text-secondary">straighten</span>
-                  <span>Invoice Dimensions: <strong>17.9 cm</strong> Standard • Top 3.8 cm Reserved for Letterhead</span>
-                </span>
-                <span class="text-amber-800 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Brand Logo Omitted in Print</span>
-              </div>
-
-              <div id="invoiceSheet" class="relative bg-surface-container-lowest rounded-xl p-4 sm:p-6 shadow-md border border-surface-container-low transition-all">
-                <!-- Status Watermark Badge on Screen Preview -->
-                <div class="absolute right-4 sm:right-6 top-4 sm:top-6 flex items-center gap-2 print:hidden">
-                  <div id="previewPrintStatusBadge" class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-label-sm text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> NOT PRINTED
-                  </div>
-                  <div class="px-2 py-0.5 rounded-full bg-secondary-container/40 text-on-secondary-container font-label-sm text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Original Tax Invoice
-                  </div>
-                </div>
-
-                <!-- LETTERHEAD RESERVE SPACE (On Print: Exactly 3.8 cm blank top space, No Logo/Brand) -->
-                <div id="printLetterheadSpacer" class="print-letterhead-reserve hidden print:block" style="height: 3.8cm; width: 100%;"></div>
-
-                <!-- On-Screen Visual Guide / Letterhead Header (Hidden in Print Mode) -->
-                <div id="invoiceBrandHeader" class="invoice-brand-header print:hidden flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-surface-container-low">
-                  <div class="flex items-start gap-3">
-                    <img alt="SSR Logo" class="w-12 h-12 object-contain shrink-0 rounded-xl shadow-sm" src="assets/logo.svg"/>
-                    <div class="flex flex-col">
-                      <span class="font-headline-sm text-base sm:text-headline-sm font-bold tracking-tight text-on-surface">SSR BULLION ASSAY & HALLMARKING CENTRE</span>
-                      <span class="font-label-sm text-label-sm text-secondary font-semibold tracking-wider uppercase">BIS Recognized Assaying and Hallmarking Centre</span>
-                      <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 font-data-mono text-[11px] text-on-surface-variant">
-                        <span>BIS LAB: <strong class="text-on-surface">AHC-88492</strong></span>
-                        <span>•</span>
-                        <span>GSTIN: <strong class="text-on-surface">27AAHCS1948Q1Z4</strong></span>
+            <!-- THE EXACT BILL (MATCHING THE UPLOADED SCANNED INVOICE 100%) -->
+            <div class="flex justify-center w-full overflow-x-auto pb-8">
+              <div id="bill-invoice-paper" class="w-full max-w-[850px] bg-white text-black p-6 sm:p-9 rounded-xl shadow-2xl border border-slate-300 select-text" style="font-family: 'Courier New', Courier, monospace; line-height: 1.25;">
+                
+                <!-- HEADER (SSR Monogram Logo, Title, Address, BIS Logo, Phone Numbers) -->
+                <div class="flex items-center justify-between gap-4 pb-2">
+                  <!-- Left: Oval SS Monogram Logo -->
+                  <div class="shrink-0 flex items-center justify-center">
+                    <div style="width: 64px; height: 54px; border: 2.5px solid #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff;">
+                      <div style="width: 56px; height: 46px; border: 1.2px solid #000; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <span style="font-family: 'Times New Roman', Georgia, serif; font-size: 28px; font-weight: 900; font-style: italic; letter-spacing: -2px; line-height: 1;">SS</span>
                       </div>
-                      <span class="font-body-sm text-[11px] text-on-surface-variant mt-0.5">Plot 44-B, Precious Metals SEZ, Zaveri Compound, Mumbai 400002</span>
                     </div>
                   </div>
 
-                  <div class="self-end sm:self-auto flex flex-col items-center justify-center p-2 rounded-xl bg-surface-container-low text-center min-w-[90px]">
-                    <span class="material-symbols-outlined text-[24px] text-secondary">workspace_premium</span>
-                    <span class="font-data-mono text-[9px] uppercase tracking-wider text-secondary font-bold">BIS Standard</span>
-                    <span class="font-data-mono text-[10px] font-bold text-on-surface">IS 1417:2019</span>
+                  <!-- Center: Business Information -->
+                  <div class="flex-1 text-center" style="color: #000;">
+                    <div style="font-size: 24px; font-weight: 900; letter-spacing: 0.5px; font-family: 'Times New Roman', Times, serif; line-height: 1.1;">
+                      SSR HALLMARKING CENTER
+                    </div>
+                    <div style="font-size: 11.5px; font-weight: 700; margin-top: 2px;">
+                      1244, Manindra Gopal Mitra Sarani, Chandannagar, Hooghly-712136
+                    </div>
+                    <div style="font-size: 11px; font-weight: 700;">
+                      Email:- ssrhallmarkcenter1@gmail.com
+                    </div>
+                    <div style="font-size: 12.5px; font-weight: 900; margin-top: 1px;">
+                      GST-NO. 19BCTPM4362H1Z1
+                    </div>
                   </div>
-                </div>
 
-                <!-- Billed To & Invoice Specifics (Visible on screen and on print below letterhead) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 py-3 my-2 bg-surface-container-low/60 rounded-xl px-4 border border-surface-container-low">
-                  <div class="flex flex-col gap-1">
-                    <span class="font-label-sm text-[10px] uppercase tracking-wider text-secondary font-bold">Billed To (Licensed Jeweller)</span>
-                    <span id="previewClientName" class="font-headline-sm text-headline-sm font-bold text-on-surface">Tanishq Luxury Guild</span>
-                    <div class="flex flex-col text-[11px] text-on-surface-variant">
-                      <span id="previewClientAddress">Flagship Zaveri Bazar, Mumbai - 400002</span>
-                      <span id="previewClientGst" class="font-data-mono">GSTIN: 27AABCT3920F1ZV | BIS: #JWL-99210-W</span>
-                    </div>
-                  </div>
-                  <div class="flex flex-col gap-1 sm:text-right sm:items-end">
-                    <span class="font-label-sm text-[10px] uppercase tracking-wider text-secondary font-bold">Invoice Details</span>
-                    <div class="flex items-center gap-2">
-                      <span class="font-label-sm text-[11px] text-on-surface-variant">Tax Invoice No:</span>
-                      <span id="previewBillNo" class="font-headline-sm text-headline-sm font-bold text-on-surface font-data-mono">BILL-2024-04192</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-[11px] text-on-surface-variant">
-                      <span>Date:</span>
-                      <span id="previewDateTime" class="font-data-mono text-on-surface font-medium">24 Oct 2024, 02:45 PM</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-[11px] text-on-surface-variant">
-                      <span>Ref:</span>
-                      <span id="previewReqNo" class="font-data-mono text-secondary font-semibold">REQ-8831-A</span>
-                      <span id="previewClassificationTag" class="px-1.5 py-0.2 rounded text-[10px] bg-surface-container text-on-surface font-semibold">MAIN JOB</span>
-                    </div>
+                  <!-- Right: BIS Triangle Hallmark Emblem & Phone Numbers -->
+                  <div class="shrink-0 flex flex-col items-end justify-center" style="color: #000;">
+                    <svg viewBox="0 0 100 80" style="width: 54px; height: 42px;">
+                      <!-- Outer Hallmark Triangle -->
+                      <polygon points="50,4 96,76 4,76" fill="none" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
+                      <!-- Inner Inscription Shape -->
+                      <polygon points="50,22 80,68 20,68" fill="#000"/>
+                      <circle cx="50" cy="49" r="7" fill="#fff"/>
+                    </svg>
+                    <div style="font-size: 11px; font-weight: 900; margin-top: 2px; letter-spacing: 0.5px;">9836282449</div>
+                    <div style="font-size: 11px; font-weight: 900; letter-spacing: 0.5px;">9836282499</div>
                   </div>
                 </div>
 
-                <!-- Rendered Table -->
-                <div class="mt-2.5 overflow-x-auto">
-                  <table class="w-full text-left min-w-[500px]">
-                    <thead>
-                      <tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-[11px] uppercase tracking-wider">
-                        <th class="py-2 px-3 w-10 text-center">Sr.</th>
-                        <th class="py-2 px-3">Description of Assay / Service</th>
-                        <th class="py-2 px-2 text-right">Qty</th>
-                        <th class="py-2 px-3 text-right">Net Wt (g)</th>
-                        <th class="py-2 px-3 text-right">Rate (₹)</th>
-                        <th class="py-2 px-3 text-right">Amount (₹)</th>
-                      </tr>
-                    </thead>
-                    <tbody id="previewTableBody" class="divide-y divide-surface-container-low font-body-sm text-body-sm text-on-surface">
-                      <!-- Rendered by recalculateBill() -->
-                    </tbody>
-                  </table>
-                </div>
+                <!-- Full-width Horizontal Divider Line -->
+                <div style="border-top: 2px solid #000; margin: 6px 0 8px 0;"></div>
 
-                <!-- BIS Quality & Piece Disposition Summary Strip on Invoice -->
-                <div id="previewDispositionStrip" class="my-2 p-2 bg-slate-50 border border-slate-200 rounded-lg flex flex-wrap items-center justify-between gap-1.5 text-[10px] font-mono">
-                  <span class="font-bold text-slate-800">IS 1417 QUALITY SUMMARY:</span>
-                  <span>INTAKE: <strong id="invDispIntake" class="text-slate-900">85</strong></span>
-                  <span>•</span>
-                  <span class="text-emerald-700 font-bold">PASSED: <strong id="invDispPassed">85</strong></span>
-                  <span>•</span>
-                  <span class="text-red-700">REJECTED: <strong id="invDispRejected">0</strong></span>
-                  <span>•</span>
-                  <span class="text-amber-700">DESTROYED: <strong id="invDispDestroyed">0</strong></span>
-                  <span>•</span>
-                  <span class="text-orange-700">NON-FEASIBLE: <strong id="invDispNonFeasible">0</strong></span>
-                  <span>•</span>
-                  <span class="text-purple-700">IRRUCD: <strong id="invDispIRRUCD">0</strong></span>
-                </div>
-
-                <!-- Calculations & Words -->
-                <div class="mt-2 pt-2 flex flex-col md:flex-row justify-between items-start gap-4">
-                  <div class="flex-1 flex flex-col gap-2">
-                    <div class="p-2.5 rounded-lg bg-surface-container-low/70 flex flex-col gap-0.5">
-                      <span class="font-label-sm text-[9.5px] uppercase tracking-wider text-on-surface-variant font-bold">Amount Chargeable (in words)</span>
-                      <span id="previewWords" class="font-body-sm text-xs font-semibold text-on-surface">Indian Rupees Five Thousand Six Hundred Ninety-Three and Fifty Paise Only</span>
-                    </div>
-                    <div class="text-[10px] text-on-surface-variant flex flex-col gap-0.5 leading-tight">
-                      <span class="font-semibold text-on-surface">BIS Hallmarking Regulatory Undertaking:</span>
-                      <p>Articles indicated above have been duly assayed via BIS approved cupellation/XRF methods and inscribed with 6-digit HUID stamps per IS 1417:2019 standards.</p>
-                    </div>
+                <!-- RECIPIENT INFORMATION & INVOICE SPECIFICS -->
+                <div class="flex justify-between items-start gap-4" style="font-size: 11.5px; line-height: 1.35;">
+                  <!-- Left: Customer / TO Details -->
+                  <div style="flex: 1.3;">
+                    <div style="font-weight: 900;">TO :</div>
+                    <div id="bill-cust-name" style="font-weight: 900; font-size: 12.5px; text-transform: uppercase;">ROYCO JEWELLERS (CHINSURAH)</div>
+                    <div id="bill-cust-addr" style="font-weight: 700; text-transform: uppercase;">CENTRAL MARKET,N.S. ROAD, CHINSURAH,HOOGHLY,712101</div>
+                    <div>BIS Regn No : <span id="bill-cust-bis" style="font-weight: 900;">5439472</span></div>
+                    <div>GST No : <span id="bill-cust-gst" style="font-weight: 900;">19AFKPR4571E1Z3</span> &nbsp;&nbsp;&nbsp; State Code : <span id="bill-cust-state" style="font-weight: 900;">19</span></div>
                   </div>
 
-                  <!-- Math Summary -->
-                  <div class="w-full md:w-64 flex flex-col gap-1.5 bg-surface-container-low/40 p-2.5 rounded-xl border border-surface-container-low">
-                    <div class="flex justify-between items-center text-[11px] font-body-sm">
-                      <span class="text-on-surface-variant">Taxable Subtotal:</span>
-                      <span id="previewSubtotal" class="font-data-mono font-medium text-on-surface">₹4,825.00</span>
+                  <!-- Center: TAX INVOICE Title -->
+                  <div style="text-align: center; flex: 0.8; padding-top: 2px;">
+                    <div style="font-size: 15px; font-weight: 900; letter-spacing: 0.75px;">TAX INVOICE</div>
+                  </div>
+
+                  <!-- Right: Docket & Bill Metadata -->
+                  <div style="flex: 1.4; text-align: right;">
+                    <div style="font-size: 10px; font-weight: 700;">Original for Recipient / Duplicate for Supplier</div>
+                    <div>BILL NO : <span id="bill-doc-no" style="font-weight: 900;">26-27/HM/2369</span></div>
+                    <div>DATE/Time : <span id="bill-doc-datetime" style="font-weight: 900;">14-11-2026 / 08:01 PM</span></div>
+                    <div id="bill-doc-location" style="font-weight: 900;">CHINSURAH</div>
+                    <div>Request No : <span id="bill-doc-req" style="font-weight: 900;">119813505</span> &nbsp;&nbsp;&nbsp; <span id="bill-doc-metal" style="font-weight: 900;">Gold</span></div>
+                    <div>Depositor Name : <span id="bill-doc-depositor" style="font-weight: 900;">KOUSHIK GHOSH</span></div>
+                  </div>
+                </div>
+
+                <!-- Dividing Dashed Line -->
+                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
+
+                <!-- PRODUCT NAME & PIECE DISPOSITION BREAKDOWN -->
+                <div style="font-size: 11.5px; line-height: 1.4;">
+                  <div>Product Name : <span id="bill-doc-product" style="font-weight: 900;">,CHAIN-26,TOPS-34,RING-34</span></div>
+                  
+                  <div class="flex justify-between items-start mt-1">
+                    <!-- Left Breakdown Column -->
+                    <div style="width: 50%;">
+                      <div>No of Pcs Received for HALLMARKING : <span id="bill-doc-pcs-rec" style="font-weight: 900;">94</span></div>
+                      <div>No of Pcs Rejected&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span id="bill-doc-pcs-rej" style="font-weight: 900;">0</span></div>
+                      <div>No of Pcs Non-Feasible&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span id="bill-doc-pcs-non" style="font-weight: 900;">0</span></div>
                     </div>
-                    <div class="flex justify-between items-center text-[11px] font-body-sm">
-                      <span class="text-on-surface-variant">CGST (9.0%):</span>
-                      <span id="previewCgst" class="font-data-mono font-medium text-on-surface">₹434.25</span>
-                    </div>
-                    <div class="flex justify-between items-center text-[11px] font-body-sm">
-                      <span class="text-on-surface-variant">SGST (9.0%):</span>
-                      <span id="previewSgst" class="font-data-mono font-medium text-on-surface">₹434.25</span>
-                    </div>
-                    <div class="pt-1.5 mt-0.5 border-t border-surface-container flex justify-between items-center">
-                      <span class="font-label-md text-xs font-bold text-on-surface">Total Payable:</span>
-                      <span id="previewGrandTotal" class="font-headline-sm text-sm font-bold text-on-surface font-data-mono">₹5,693.50</span>
+
+                    <!-- Right Breakdown Column -->
+                    <div style="width: 50%;">
+                      <div>No of Pcs HALLMARKED : <span id="bill-doc-pcs-hal" style="font-weight: 900;">94</span></div>
+                      <div>No of Pcs Destroyed&nbsp;&nbsp;: <span id="bill-doc-pcs-des" style="font-weight: 900;">0</span></div>
+                      <div>No of Pcs IRRUCD&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span id="bill-doc-pcs-irr" style="font-weight: 900;">0</span></div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Signatures & Authentic BIS QR -->
-                <div class="mt-4 pt-3 border-t border-surface-container-low grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-                  <div class="flex items-center gap-2.5">
-                    <div class="p-1.5 rounded-lg bg-surface-container-lowest shadow-sm flex flex-col items-center border border-surface-container-low">
-                      <svg class="w-12 h-12 text-on-surface" fill="currentColor" viewBox="0 0 100 100">
-                        <rect fill="none" height="24" rx="2" stroke="currentColor" stroke-width="4" width="24" x="10" y="10"></rect>
-                        <rect height="10" rx="1" width="10" x="17" y="17"></rect>
-                        <rect fill="none" height="24" rx="2" stroke="currentColor" stroke-width="4" width="24" x="66" y="10"></rect>
-                        <rect height="10" rx="1" width="10" x="73" y="17"></rect>
-                        <rect fill="none" height="24" rx="2" stroke="currentColor" stroke-width="4" width="24" x="10" y="66"></rect>
-                        <rect height="10" rx="1" width="10" x="17" y="73"></rect>
-                        <rect height="6" width="6" x="42" y="12"></rect>
-                        <rect height="6" width="6" x="52" y="12"></rect>
-                        <rect height="12" width="6" x="52" y="30"></rect>
-                        <rect height="6" width="8" x="12" y="44"></rect>
-                        <rect height="6" width="16" x="42" y="46"></rect>
-                        <rect height="8" width="16" x="44" y="80"></rect>
-                      </svg>
-                    </div>
-                    <div class="flex flex-col">
-                      <span class="font-label-sm text-[9.5px] uppercase font-bold text-secondary">Verify on BIS Care</span>
-                      <span class="font-data-mono text-[9px] text-on-surface-variant">Central HUID Database</span>
-                    </div>
+                <!-- Dividing Dashed Line -->
+                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
+
+                <!-- DESCRIPTION OF SERVICES & CHARGES TABLE -->
+                <div style="font-size: 11.5px; line-height: 1.45;">
+                  <!-- Table Header -->
+                  <div class="flex justify-between font-bold" style="padding-bottom: 2px;">
+                    <div style="flex: 2;">Description of Services</div>
+                    <div style="flex: 1; text-align: center;" id="bill-table-hdr-wt">375</div>
+                    <div style="flex: 1; text-align: right;">@Rs.&nbsp;&nbsp;&nbsp;&nbsp;<span id="bill-table-hdr-rate">75.00</span></div>
+                    <div style="flex: 1; text-align: right;" id="bill-table-hdr-gross">7050.00</div>
                   </div>
 
-                  <div class="flex flex-col sm:items-end text-left sm:text-right">
-                    <span class="font-label-sm text-[9px] text-on-surface-variant uppercase print:hidden">For SSR BULLION ASSAY CENTER</span>
-                    <div class="h-6 my-0.5"></div>
-                    <span class="font-label-md text-xs font-bold text-on-surface">Authorized Assay Master / Signatory</span>
+                  <!-- Service Row Item -->
+                  <div class="flex justify-between font-bold">
+                    <div style="flex: 2;">HALL MARKING CHARGES for <span id="bill-doc-pcs-charge">94</span> pcs</div>
+                    <div style="flex: 1; text-align: center;" id="bill-table-row-wt">375</div>
+                    <div style="flex: 1; text-align: right;">@Rs.&nbsp;&nbsp;&nbsp;&nbsp;<span id="bill-table-row-rate">75.00</span></div>
+                    <div style="flex: 1; text-align: right;" id="bill-table-row-amt">7050.00</div>
                   </div>
                 </div>
+
+                <!-- Dividing Dashed Line -->
+                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
+
+                <!-- STATUTORY INFORMATION & FINANCIAL SUMMARY -->
+                <div class="flex justify-between items-start gap-4" style="font-size: 11.5px; line-height: 1.4;">
+                  <!-- Left: Statutory Registration Details -->
+                  <div style="flex: 1.3; font-weight: 700;">
+                    <div>GST No : <span style="font-weight: 900;">19BCTPM4362H1Z1</span></div>
+                    <div>PAN : <span style="font-weight: 900;">BCTPM43621Z</span></div>
+                    <div style="margin: 3px 0;">SAC - <span style="font-weight: 900;">998346</span></div>
+                    <div>License No : <span style="font-weight: 900;">ERO/RAHC/R-7112060</span></div>
+                    <div>Tax is payable on reverse charge (Yes/No) : <span id="bill-doc-rev-charge" style="font-weight: 900;">NO</span></div>
+                  </div>
+
+                  <!-- Right: Financial Calculations -->
+                  <div style="flex: 1; text-align: right; font-weight: 900; max-width: 320px;">
+                    <div class="flex justify-between">
+                      <span>Gross Amount</span>
+                      <span id="bill-doc-gross">7050.00</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>CGST @9%</span>
+                      <span id="bill-doc-cgst">634.50</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>SGST @9%</span>
+                      <span id="bill-doc-sgst">634.50</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>Round Off</span>
+                      <span id="bill-doc-round">.00</span>
+                    </div>
+                    <!-- Single Solid Divider Line -->
+                    <div style="border-top: 1px solid #000; margin: 4px 0 3px 0;"></div>
+                    <div class="flex justify-between" style="font-size: 12.5px;">
+                      <span>Net Amount</span>
+                      <span id="bill-doc-net">8319.00</span>
+                    </div>
+                    <!-- Double Solid Divider Lines -->
+                    <div style="border-top: 2px solid #000; margin: 3px 0 0 0;"></div>
+                  </div>
+                </div>
+
+                <!-- AMOUNT IN WORDS -->
+                <div style="font-size: 12px; font-weight: 900; margin: 10px 0 14px 0;">
+                  Rupees <span id="bill-doc-words">Eight Thousand Three Hundred Nineteen</span> only.
+                </div>
+
+                <!-- SIGNATURES & E & O E -->
+                <div class="flex justify-between items-end" style="font-size: 11px; margin-top: 20px;">
+                  <div style="font-weight: 900;">
+                    Customer's Signature
+                  </div>
+                  <div style="text-align: right; font-weight: 900;">
+                    <div style="margin-bottom: 24px;">E & O E</div>
+                    <div>Authorised Signatory</div>
+                  </div>
+                </div>
+
+                <!-- BANK DETAILS & JURISDICTION FOOTER -->
+                <div style="font-size: 11px; font-weight: 700; line-height: 1.4; margin-top: 14px; border-top: 1px dashed #000; padding-top: 8px;">
+                  <div>Bank Details : <strong style="font-weight: 900;">HDFC Bank Ltd , Chandannagar</strong></div>
+                  <div>A/C No - <strong style="font-weight: 900;">50200064805225</strong>, IFSCcode : <strong style="font-weight: 900;">HDFC0000981</strong></div>
+                  <div class="flex justify-between items-center mt-1" style="font-weight: 900;">
+                    <span>Record No : F-30</span>
+                    <span>Subject to CHANDANNAGAR Jurisdiction</span>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
-
-          <!-- MODAL: Confirmation for Piece Disposition -->
-          <div id="dispositionConfirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-            <div class="w-full max-w-lg bg-surface-container-lowest rounded-2xl shadow-2xl overflow-hidden border border-surface-container flex flex-col">
-              <!-- Header -->
-              <div class="p-4 bg-primary-container text-white flex items-center justify-between border-b border-amber-500/30">
-                <div class="flex items-center gap-2.5">
-                  <span class="material-symbols-outlined text-amber-400 text-[24px]">verified</span>
-                  <div>
-                    <h3 class="text-sm font-bold uppercase tracking-wide text-white">Confirm Piece Breakdown & Quality Report</h3>
-                    <p class="text-[11px] text-[#ffdea5]">Verify defect deductions before recalculating Tax Invoice</p>
-                  </div>
-                </div>
-                <button type="button" onclick="closeDispositionConfirmationModal()" class="text-slate-400 hover:text-white transition-colors cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">close</span>
-                </button>
-              </div>
-
-              <!-- Modal Content -->
-              <div class="p-5 flex flex-col gap-4 text-xs">
-                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-2">
-                  <div class="flex justify-between items-center text-slate-600">
-                    <span>Client / Jeweller:</span>
-                    <span id="modal-client-name" class="font-bold text-slate-900">Tanishq Luxury Guild</span>
-                  </div>
-                  <div class="flex justify-between items-center text-slate-600">
-                    <span>Request Job #:</span>
-                    <span id="modal-req-no" class="font-mono font-bold text-secondary">REQ-8831-A</span>
-                  </div>
-                  <div class="flex justify-between items-center text-slate-600">
-                    <span>Tax Invoice #:</span>
-                    <span id="modal-bill-no" class="font-mono font-bold text-slate-900">BILL-2024-04192</span>
-                  </div>
-                </div>
-
-                <!-- Disposition Table -->
-                <div class="border border-slate-200 rounded-xl overflow-hidden">
-                  <table class="w-full text-left text-xs">
-                    <thead class="bg-slate-100 text-slate-600 font-bold uppercase text-[10px]">
-                      <tr>
-                        <th class="py-2 px-3">Classification</th>
-                        <th class="py-2 px-3 text-right">Count</th>
-                        <th class="py-2 px-3 text-right">Billing Status</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 font-mono">
-                      <tr>
-                        <td class="py-2 px-3 font-semibold text-slate-800">Total Intake Received</td>
-                        <td id="modal-total-pcs" class="py-2 px-3 text-right font-bold text-slate-900">85 Pcs</td>
-                        <td class="py-2 px-3 text-right text-slate-500">Gross Baseline</td>
-                      </tr>
-                      <tr class="bg-red-50/40 text-red-900">
-                        <td class="py-2 px-3 font-medium">No. of Pcs Rejected</td>
-                        <td id="modal-rejected-pcs" class="py-2 px-3 text-right font-bold">0 Pcs</td>
-                        <td class="py-2 px-3 text-right text-red-700">Deducted (Not Billed)</td>
-                      </tr>
-                      <tr class="bg-amber-50/40 text-amber-900">
-                        <td class="py-2 px-3 font-medium">No. of Pcs Destroyed (Fire Assay)</td>
-                        <td id="modal-destroyed-pcs" class="py-2 px-3 text-right font-bold">0 Pcs</td>
-                        <td class="py-2 px-3 text-right text-amber-700">Testing Fee Applied</td>
-                      </tr>
-                      <tr class="bg-orange-50/40 text-orange-900">
-                        <td class="py-2 px-3 font-medium">No. of Pcs Non-Feasible</td>
-                        <td id="modal-nonfeasible-pcs" class="py-2 px-3 text-right font-bold">0 Pcs</td>
-                        <td class="py-2 px-3 text-right text-orange-700">Returned Unmarked</td>
-                      </tr>
-                      <tr class="bg-purple-50/40 text-purple-900">
-                        <td class="py-2 px-3 font-medium">No. of Pcs IRRUCD</td>
-                        <td id="modal-irrucd-pcs" class="py-2 px-3 text-right font-bold">0 Pcs</td>
-                        <td class="py-2 px-3 text-right text-purple-700">Audit Noted</td>
-                      </tr>
-                      <tr class="bg-emerald-50 text-emerald-950 font-bold border-t-2 border-emerald-300">
-                        <td class="py-2.5 px-3">NET PASSED / INSCRIBED WITH HUID</td>
-                        <td id="modal-passed-pcs" class="py-2.5 px-3 text-right text-emerald-800 text-sm">85 Pcs</td>
-                        <td class="py-2.5 px-3 text-right text-emerald-700">Billed @ Laser Rate</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <!-- Footer Buttons -->
-                <div class="pt-2 flex items-center justify-end gap-3">
-                  <button type="button" onclick="closeDispositionConfirmationModal()" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-colors cursor-pointer">
-                    Modify Data
-                  </button>
-                  <button type="button" onclick="executeApplyDisposition()" class="px-5 py-2 rounded-lg bg-primary-container text-white font-bold uppercase tracking-wider hover:bg-slate-800 shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
-                    <span class="material-symbols-outlined text-[16px] text-amber-400">check</span>
-                    <span>Confirm & Update Bill</span>
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 
