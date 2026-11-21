@@ -2419,7 +2419,7 @@
 
     miniPreview.style.width = targetW + 'px';
     miniPreview.style.height = targetH + 'px';
-    miniPreview.style.padding = '6px 8px 6px 12px';
+    miniPreview.style.padding = '6px 8px';
     miniPreview.style.maxWidth = '100%';
     miniPreview.style.transition = 'width 0.22s cubic-bezier(0.4, 0, 0.2, 1), height 0.22s cubic-bezier(0.4, 0, 0.2, 1)';
 
@@ -2603,11 +2603,11 @@
     const hMm = unit === 'in' ? height * 25.4 : height;
     const wMm = unit === 'in' ? width * 25.4 : width;
 
-    // Safe decent margins from all 4 sides
-    const padTopMm = Math.max(1.0, Math.min(2.5, hMm * 0.10)).toFixed(2);
-    const padBotMm = Math.max(1.0, Math.min(2.5, hMm * 0.10)).toFixed(2);
-    const padLeftMm = Math.max(2.0, Math.min(3.2, wMm * 0.045)).toFixed(2);
-    const padRightMm = Math.max(1.8, Math.min(3.0, wMm * 0.04)).toFixed(2);
+    // Balanced margins from all 4 sides with subtle left margin
+    const padTopMm = Math.max(0.9, Math.min(2.0, hMm * 0.08)).toFixed(2);
+    const padBotMm = Math.max(0.9, Math.min(2.0, hMm * 0.08)).toFixed(2);
+    const padLeftMm = Math.max(1.6, Math.min(2.6, wMm * 0.035)).toFixed(2);
+    const padRightMm = Math.max(1.6, Math.min(2.6, wMm * 0.035)).toFixed(2);
     const usableH = Math.max(7.5, hMm - (parseFloat(padTopMm) + parseFloat(padBotMm)));
     const usableW = Math.max(18.0, wMm - (parseFloat(padLeftMm) + parseFloat(padRightMm)));
 
