@@ -6825,7 +6825,7 @@
     const inputRevCharge = document.getElementById('bill-input-rev-charge');
 
     const productVal = inputProduct ? inputProduct.value.trim() : ',CHAIN-26,TOPS-34,RING-34';
-    const revChargeVal = inputRevCharge ? inputRevCharge.value : 'NO';
+    const revChargeVal = inputRevCharge ? inputRevCharge.value : (activeBillingBatch.reverseCharge || 'NO');
     const weightVal = activeBillingBatch.billWeight || (typeof activeBillingBatch.netWt === 'number' ? Math.round(activeBillingBatch.netWt) : (parseInt(activeBillingBatch.netWt) || 375));
 
     activeBillingBatch.productBreakdown = productVal;

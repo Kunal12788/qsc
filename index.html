@@ -2350,59 +2350,103 @@
                 </div>
               </div>
 
-              <!-- Parameter Inputs Grid -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3 text-xs">
-                <!-- 1. Hallmarking Rate per Pc -->
-                <div class="flex flex-col gap-1">
-                  <label class="font-semibold text-slate-700 text-[11px] uppercase" for="bill-input-rate">Rate Per Pc (@Rs.)</label>
-                  <div class="relative">
-                    <span class="absolute left-2.5 top-2 text-slate-400 font-mono">₹</span>
-                    <input id="bill-input-rate" type="number" step="0.5" value="75.00" class="w-full h-8 pl-6 pr-2 bg-surface-container-low text-slate-900 font-mono font-bold rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary" oninput="updateExactBillCalculations()" />
-                  </div>
-                </div>
-
-                <!-- 2. Product Breakdown String -->
-                <div class="flex flex-col gap-1 sm:col-span-2">
-                  <label class="font-semibold text-slate-700 text-[11px] uppercase" for="bill-input-product-name">Product Name Breakdown</label>
-                  <input id="bill-input-product-name" type="text" value=",CHAIN-26,TOPS-34,RING-34" class="w-full h-8 px-2.5 bg-surface-container-low text-slate-900 font-mono font-semibold text-[11.5px] rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary uppercase" oninput="updateExactBillPreview()" />
-                </div>
-
-                <!-- 3. Billing Date & Time (AM/PM) -->
-                <div class="flex flex-col gap-1 sm:col-span-2">
-                  <div class="flex items-center justify-between">
-                    <label class="font-semibold text-slate-700 text-[11px] uppercase flex items-center gap-1" for="bill-input-date">
+              <!-- Parameter Inputs Layout: Line 1 (Billing Date & Time), Line 2 (Rate, Net Pcs, Product Breakdown) -->
+              <div class="flex flex-col gap-3 text-xs">
+                <!-- LINE 1: Billing Date & Time with Set Current (Now) -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-xl bg-surface-container-low/60 border border-surface-container">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px] text-secondary">schedule</span>
+                    <label class="font-bold text-slate-800 text-xs uppercase flex items-center gap-1" for="bill-input-date">
                       <span>Billing Date & Time</span>
-                      <span class="text-red-500 font-bold">*</span>
+                      <span class="text-red-500 font-bold text-sm">*</span>
                     </label>
-                    <button type="button" onclick="setBillingDateTimeNow()" class="text-[10px] font-bold text-secondary hover:text-amber-800 transition-colors uppercase cursor-pointer">Set Current (Now)</button>
                   </div>
-                  <div class="flex items-center gap-1.5">
-                    <input id="bill-input-date" type="date" class="flex-1 min-w-0 h-8 px-2 bg-surface-container-low text-slate-900 font-mono font-bold text-xs rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary" onchange="updateExactBillDateTime()" />
-                    <input id="bill-input-time-hh" type="number" min="1" max="12" placeholder="HH" class="w-12 h-8 text-center bg-surface-container-low text-slate-900 font-mono font-bold text-xs rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary" oninput="updateExactBillDateTime()" />
-                    <span class="font-bold text-slate-400 font-mono text-xs">:</span>
-                    <input id="bill-input-time-mm" type="number" min="0" max="59" placeholder="MM" class="w-12 h-8 text-center bg-surface-container-low text-slate-900 font-mono font-bold text-xs rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary" oninput="updateExactBillDateTime()" />
-                    <select id="bill-input-time-ampm" class="h-8 px-2 bg-surface-container-low text-slate-900 font-mono font-bold text-xs rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary cursor-pointer shrink-0" onchange="updateExactBillDateTime()">
-                      <option value="AM">AM</option>
-                      <option value="PM" selected>PM</option>
-                    </select>
+
+                  <div class="flex flex-wrap items-center gap-2">
+                    <input 
+                      id="bill-input-date" 
+                      type="date" 
+                      class="h-8 px-2.5 bg-surface-container-lowest text-slate-900 font-mono font-bold text-xs rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary shadow-2xs" 
+                      onchange="updateExactBillDateTime()" 
+                    />
+                    <div class="flex items-center gap-1 bg-surface-container-lowest px-2 py-0.5 rounded-lg border border-surface-container shadow-2xs">
+                      <input 
+                        id="bill-input-time-hh" 
+                        type="number" 
+                        min="1" 
+                        max="12" 
+                        placeholder="HH" 
+                        class="w-10 h-7 text-center bg-transparent text-slate-900 font-mono font-bold text-xs focus:outline-none" 
+                        oninput="updateExactBillDateTime()" 
+                      />
+                      <span class="font-bold text-slate-400 font-mono text-xs">:</span>
+                      <input 
+                        id="bill-input-time-mm" 
+                        type="number" 
+                        min="0" 
+                        max="59" 
+                        placeholder="MM" 
+                        class="w-10 h-7 text-center bg-transparent text-slate-900 font-mono font-bold text-xs focus:outline-none" 
+                        oninput="updateExactBillDateTime()" 
+                      />
+                      <select 
+                        id="bill-input-time-ampm" 
+                        class="h-7 px-1.5 bg-surface-container-low text-slate-900 font-mono font-bold text-xs rounded border border-surface-container focus:outline-none cursor-pointer" 
+                        onchange="updateExactBillDateTime()"
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM" selected>PM</option>
+                      </select>
+                    </div>
+
+                    <button 
+                      type="button" 
+                      onclick="setBillingDateTimeNow()" 
+                      class="h-8 px-3 rounded-lg bg-secondary/10 hover:bg-secondary/20 text-secondary border border-secondary/30 font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors shadow-2xs uppercase"
+                    >
+                      <span class="material-symbols-outlined text-[16px]">update</span>
+                      <span>Set Current (Now)</span>
+                    </button>
                   </div>
                 </div>
 
-                <!-- 4. Reverse Charge -->
-                <div class="flex flex-col gap-1">
-                  <label class="font-semibold text-slate-700 text-[11px] uppercase" for="bill-input-rev-charge">Reverse Charge</label>
-                  <select id="bill-input-rev-charge" class="w-full h-8 px-2 bg-surface-container-low text-slate-900 font-mono font-bold rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary cursor-pointer" onchange="updateExactBillPreview()">
-                    <option value="NO" selected>NO</option>
-                    <option value="YES">YES</option>
-                  </select>
-                </div>
+                <!-- LINE 2: Rate Per Pc (@Rs.), Net Hallmarked Pcs, Product Name Breakdown -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+                  <!-- 1. Hallmarking Rate per Pc -->
+                  <div class="flex flex-col gap-1">
+                    <label class="font-semibold text-slate-700 text-[11px] uppercase" for="bill-input-rate">Rate Per Pc (@Rs.)</label>
+                    <div class="relative">
+                      <span class="absolute left-2.5 top-2 text-slate-400 font-mono font-bold">₹</span>
+                      <input 
+                        id="bill-input-rate" 
+                        type="number" 
+                        step="0.5" 
+                        value="75.00" 
+                        class="w-full h-8 pl-6 pr-2 bg-surface-container-low text-slate-900 font-mono font-bold rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary" 
+                        oninput="updateExactBillCalculations()" 
+                      />
+                    </div>
+                  </div>
 
-                <!-- 5. Piece Disposition Summary -->
-                <div class="flex flex-col gap-1 sm:col-span-2 xl:col-span-1">
-                  <label class="font-semibold text-slate-700 text-[11px] uppercase">Net Hallmarked Pcs</label>
-                  <div class="h-8 px-2.5 bg-emerald-50 border border-emerald-300 rounded-lg flex items-center justify-between text-emerald-900 font-mono font-bold">
-                    <span>HALLMARKED:</span>
-                    <span id="bill-disp-passed-badge" class="text-sm">94 Pcs</span>
+                  <!-- 2. Net Hallmarked Pcs -->
+                  <div class="flex flex-col gap-1">
+                    <label class="font-semibold text-slate-700 text-[11px] uppercase">Net Hallmarked Pcs</label>
+                    <div class="h-8 px-2.5 bg-emerald-50 border border-emerald-300 rounded-lg flex items-center justify-between text-emerald-900 font-mono font-bold">
+                      <span class="text-[11px]">HALLMARKED:</span>
+                      <span id="bill-disp-passed-badge" class="text-xs sm:text-sm">94 Pcs</span>
+                    </div>
+                  </div>
+
+                  <!-- 3. Product Breakdown String (spans 2 columns on lg screens) -->
+                  <div class="flex flex-col gap-1 sm:col-span-2 lg:col-span-2">
+                    <label class="font-semibold text-slate-700 text-[11px] uppercase" for="bill-input-product-name">Product Name Breakdown</label>
+                    <input 
+                      id="bill-input-product-name" 
+                      type="text" 
+                      value=",CHAIN-26,TOPS-34,RING-34" 
+                      class="w-full h-8 px-2.5 bg-surface-container-low text-slate-900 font-mono font-semibold text-[11.5px] rounded-lg border border-surface-container focus:outline-none focus:ring-1 focus:ring-secondary uppercase" 
+                      oninput="updateExactBillPreview()" 
+                    />
                   </div>
                 </div>
               </div>
