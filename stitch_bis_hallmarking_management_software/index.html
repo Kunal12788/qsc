@@ -1889,10 +1889,10 @@
 
                   <!-- Scaled Tag Sample -->
                   <div class="w-full h-36 flex items-center justify-center p-2 bg-slate-200/50 rounded-lg overflow-hidden">
-                    <div id="tag-mini-preview" class="tag-miniature-box shadow-sm flex flex-row items-stretch justify-between overflow-hidden p-1.5 bg-white text-black" style="font-family: 'Montserrat', Arial, sans-serif; box-sizing: border-box; border: 1px solid #d1d5db;">
+                    <div id="tag-mini-preview" class="tag-miniature-box shadow-sm flex flex-row items-stretch justify-between overflow-hidden p-2 sm:p-2.5 bg-white text-black" style="font-family: 'Montserrat', Arial, sans-serif; box-sizing: border-box; border: 1px solid #d1d5db;">
                       
-                      <!-- LEFT SIDE: Strictly 48% width, NEVER crosses the middle of the tag -->
-                      <div id="mini-left-zone" style="width: 48%; max-width: 48%; display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; overflow: hidden; padding-right: 2px;">
+                      <!-- LEFT SIDE: Decent margin, bounded left section -->
+                      <div id="mini-left-zone" style="width: 52%; max-width: 54%; display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; overflow: hidden; padding-right: 4px;">
                         
                         <!-- Customer Jeweller Header (Centered serif) -->
                         <div id="mini-row-cust" class="w-full text-center">
@@ -1915,10 +1915,10 @@
                             DATE: <span id="mini-tag-date">21-11-2026</span>
                           </div>
 
-                          <!-- ARTICLE & BOX NUMBER (Same line) -->
+                          <!-- ARTICLE & BOX NUMBER (Same line, no truncation) -->
                           <div id="mini-row-art-box" style="display: flex; justify-content: space-between; align-items: baseline; overflow: hidden; white-space: nowrap;">
                             <span class="truncate pr-1">ARTICLE: <span id="mini-tag-article">GOLD</span></span>
-                            <span class="truncate text-right">BOX NUMBER: <span id="mini-tag-box">BOX-TR-09</span></span>
+                            <span class="truncate text-right">BOX: <span id="mini-tag-box">BOX-TR-09</span></span>
                           </div>
 
                           <!-- ORNAMENT -->
@@ -1944,8 +1944,8 @@
 
                       </div>
 
-                      <!-- RIGHT SIDE: Centered SCAN QR, QR Code, and HUID (Strictly Right Half) -->
-                      <div id="mini-row-qr" style="width: 50%; max-width: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; overflow: hidden;">
+                      <!-- RIGHT SIDE: Centered SCAN QR, QR Code, and HUID with decent space -->
+                      <div id="mini-row-qr" style="width: 44%; max-width: 46%; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; overflow: hidden;">
                         <span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 900; letter-spacing: 0.8px; text-transform: uppercase; line-height: 1; margin-bottom: 2px; text-align: center;">
                           SCAN QR
                         </span>

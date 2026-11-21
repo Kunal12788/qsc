@@ -2462,7 +2462,7 @@
     // Auto font-size adjustment based on letter count
     const custLen = custName.length;
     const custEffectiveChars = custLen > 18 ? Math.ceil(custLen / 2) : custLen;
-    const artBoxChars = ('ARTICLE: ' + articleVal + '  BOX NUMBER: ' + boxVal).length;
+    const artBoxChars = ('ARTICLE: ' + articleVal + '  BOX: ' + boxVal).length;
     const ornChars = ('ORNAMENT: ' + ornamentVal).length;
     const grossChars = ('GROSS WEIGHT: ' + grossVal).length;
     const netChars = ('NET WEIGHT: ' + netVal).length;
@@ -2471,17 +2471,17 @@
     const maxChars = Math.max(custEffectiveChars, artBoxChars, ornChars, grossChars, netChars, huidChars);
 
     let fontScale = 1.0;
-    if (maxChars > 26) {
-      fontScale = Math.min(1.0, 26 / maxChars);
+    if (maxChars > 24) {
+      fontScale = Math.min(1.0, 24 / maxChars);
     }
-    if (custLen > 36) {
-      fontScale = Math.min(fontScale, Math.max(0.55, 36 / custLen + 0.1));
+    if (custLen > 32) {
+      fontScale = Math.min(fontScale, Math.max(0.50, 32 / custLen + 0.05));
     }
-    fontScale = Math.max(0.55, fontScale);
+    fontScale = Math.max(0.50, fontScale);
 
     // Apply auto-adjusted font sizes to preview elements
-    const baseTitlePx = Math.max(6.5, Math.min(10.5, targetH * 0.08));
-    const baseDataPx = Math.max(5.5, Math.min(8.5, targetH * 0.065));
+    const baseTitlePx = Math.max(6.0, Math.min(10.0, targetH * 0.075));
+    const baseDataPx = Math.max(5.0, Math.min(8.0, targetH * 0.060));
 
     const titlePx = (baseTitlePx * fontScale).toFixed(1);
     const dataPx = (baseDataPx * fontScale).toFixed(1);
@@ -2512,8 +2512,8 @@
     if (elQrLabel) elQrLabel.textContent = huidVal;
     if (elDataZone) elDataZone.style.fontSize = dataPx + 'px';
 
-    // QR size is fixed strictly by preview height, NEVER changed by font scaling!
-    const qrSize = Math.max(26, Math.min(targetH - 30, Math.round(targetW * 0.42), 85));
+    // QR size is fixed strictly by preview height with decent padding
+    const qrSize = Math.max(22, Math.min(targetH - 34, Math.round(targetW * 0.36), 75));
     if (elQr && optQr) {
       elQr.innerHTML = generateQrCodeSvg(huidVal, qrSize);
     }
@@ -2602,12 +2602,23 @@
     const hMm = unit === 'in' ? height * 25.4 : height;
     const wMm = unit === 'in' ? width * 25.4 : width;
 
-    // QR size is fixed strictly by physical dimensions, NEVER changed by font scaling!
-    const qrBoxDimMm = Math.max(8.0, Math.min(hMm - 4.5, wMm * 0.40));
-    const qrPixelDim = Math.max(26, Math.round(qrBoxDimMm * 3.78));
+    // Safe decent margins from all 4 sides (prevents thermal cut/edge clipping)
+    const padTopMm = Math.max(1.0, Math.min(2.5, hMm * 0.10)).toFixed(2);
+    const padBotMm = Math.max(1.0, Math.min(2.5, hMm * 0.10)).toFixed(2);
+    const padSideMm = Math.max(1.5, Math.min(3.5, wMm * 0.04)).toFixed(2);
+    const usableH = Math.max(7.5, hMm - (parseFloat(padTopMm) + parseFloat(padBotMm)));
+    const usableW = Math.max(18.0, wMm - (parseFloat(padSideMm) * 2));
 
-    const qrHeaderPt = Math.max(4.0, Math.min(6.5, (hMm / 17) * 5.2)).toFixed(2);
-    const qrFooterPt = Math.max(4.2, Math.min(7.0, (hMm / 17) * 5.6)).toFixed(2);
+    // Right side QR section: sized strictly to fit within usableH with decent padding
+    const qrHeaderPt = Math.max(3.0, Math.min(5.5, usableH * 0.38)).toFixed(1);
+    const qrFooterPt = Math.max(3.4, Math.min(6.2, usableH * 0.42)).toFixed(1);
+    const headerHeightMm = parseFloat(qrHeaderPt) * 0.3527 * 1.15;
+    const footerHeightMm = parseFloat(qrFooterPt) * 0.3527 * 1.15;
+    const qrGapMm = Math.max(0.15, Math.min(0.45, usableH * 0.03)).toFixed(2);
+
+    const maxQrHeightMm = usableH - headerHeightMm - footerHeightMm - (parseFloat(qrGapMm) * 2);
+    const qrBoxDimMm = Math.max(4.5, Math.min(maxQrHeightMm, usableW * 0.35, 18.0)).toFixed(2);
+    const qrPixelDim = Math.max(22, Math.round(parseFloat(qrBoxDimMm) * 3.78));
 
     const tagsHtml = activeTagRows.map((row, idx) => {
       const customerName = row.customer || defaultCustomer;
@@ -2620,10 +2631,10 @@
       const huidStr = row.huid || ('SGG9RZ' + (idx > 0 ? (idx + 1) : ''));
       const boxNoStr = row.boxNo || defaultBox;
 
-      // Auto font-size adjustment based on letter count
+      // Auto font-size adjustment based on letter count and usable height
       const custLen = customerName.length;
       const custEffectiveChars = custLen > 18 ? Math.ceil(custLen / 2) : custLen;
-      const artBoxChars = ('ARTICLE: ' + articleVal + '  BOX NUMBER: ' + boxNoStr).length;
+      const artBoxChars = ('ARTICLE: ' + articleVal + '  BOX: ' + boxNoStr).length;
       const ornChars = ('ORNAMENT: ' + ornamentsType).length;
       const grossChars = ('GROSS WEIGHT: ' + grossVal).length;
       const netChars = ('NET WEIGHT: ' + netVal).length;
@@ -2632,30 +2643,32 @@
       const maxChars = Math.max(custEffectiveChars, artBoxChars, ornChars, grossChars, netChars, huidChars);
 
       let fontScale = 1.0;
-      if (maxChars > 26) {
-        fontScale = Math.min(1.0, 26 / maxChars);
+      if (maxChars > 24) {
+        fontScale = Math.min(1.0, 24 / maxChars);
       }
-      if (custLen > 36) {
-        fontScale = Math.min(fontScale, Math.max(0.55, 36 / custLen + 0.1));
+      if (custLen > 32) {
+        fontScale = Math.min(fontScale, Math.max(0.50, 32 / custLen + 0.05));
       }
-      fontScale = Math.max(0.55, fontScale);
+      fontScale = Math.max(0.50, fontScale);
 
-      // Base font sizes dependent on physical tag height
-      const baseDataPt = Math.max(3.2, Math.min(5.5, (hMm / 17) * 4.8));
-      const baseTitlePt = Math.max(4.0, Math.min(6.8, (hMm / 17) * 5.8));
+      // Base font sizes dependent on physical usable tag height
+      const baseDataPt = usableH <= 10.5 ? 3.0 : Math.max(3.2, Math.min(5.5, (usableH / 14) * 4.6));
+      const baseTitlePt = usableH <= 10.5 ? 3.8 : Math.max(4.0, Math.min(6.8, (usableH / 14) * 5.6));
 
       const dataPt = (baseDataPt * fontScale).toFixed(2);
       const titlePt = (baseTitlePt * fontScale).toFixed(2);
-      const dividerPt = (Math.max(4.0, baseDataPt * 1.1 * fontScale)).toFixed(2);
+      const dividerPt = (Math.max(3.0, baseDataPt * 1.05 * fontScale)).toFixed(2);
+      const dividerMarginMm = usableH <= 10.5 ? '0.15mm' : '0.3mm';
+      const boxLabel = (artBoxChars > 26 || wMm <= 52) ? 'BOX' : 'BOX NUMBER';
 
       // Vector QR code SVG
       const qrSvg = incQr ? generateQrCodeSvg(huidStr, qrPixelDim) : '';
 
       return `
-        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; page-break-after: always; box-sizing: border-box; padding: 0.6mm 0.8mm; font-family: 'Montserrat', Arial, Helvetica, sans-serif; background: #ffffff; color: #000000; overflow: hidden; line-height: 1.15;">
+        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; page-break-after: always; page-break-inside: avoid; box-sizing: border-box; padding: ${padTopMm}mm ${padSideMm}mm ${padBotMm}mm ${padSideMm}mm; font-family: 'Montserrat', Arial, Helvetica, sans-serif; background: #ffffff; color: #000000; overflow: hidden; line-height: 1.15;">
           
-          <!-- LEFT SIDE: Exactly 48% width, NEVER crosses the middle of the tag -->
-          <div style="width: 48%; max-width: 48%; display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; overflow: hidden; padding-right: 0.5mm;">
+          <!-- LEFT SIDE: Decent margin, bounded left section -->
+          <div style="width: 53%; max-width: 55%; display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; overflow: hidden; padding-right: 0.8mm;">
             
             ${incCust ? `
               <!-- Customer Jeweller Header (Centered serif) -->
@@ -2665,10 +2678,10 @@
                 </div>
 
                 <!-- Diamond Divider -->
-                <div style="display: flex; align-items: center; justify-content: center; width: 100%; margin: 0.3mm 0 0.5mm 0;">
-                  <div style="flex: 1; height: 0.6px; background: #000000;"></div>
-                  <div style="margin: 0 1mm; font-size: ${dividerPt}pt; line-height: 1; color: #000000;">◆</div>
-                  <div style="flex: 1; height: 0.6px; background: #000000;"></div>
+                <div style="display: flex; align-items: center; justify-content: center; width: 100%; margin: ${dividerMarginMm} 0;">
+                  <div style="flex: 1; height: 0.5px; background: #000000;"></div>
+                  <div style="margin: 0 0.8mm; font-size: ${dividerPt}pt; line-height: 1; color: #000000;">◆</div>
+                  <div style="flex: 1; height: 0.5px; background: #000000;"></div>
                 </div>
               </div>
             ` : ''}
@@ -2682,10 +2695,10 @@
               </div>
 
               ${incOrnament ? `
-                <!-- ARTICLE & BOX NUMBER (Same row) -->
+                <!-- ARTICLE & BOX (Same row, no forced truncation) -->
                 <div style="display: flex; justify-content: space-between; align-items: baseline; white-space: nowrap; overflow: hidden;">
-                  <span style="overflow: hidden; text-overflow: ellipsis; padding-right: 1mm;">ARTICLE: ${escapeHtmlStr(articleVal)}</span>
-                  <span style="overflow: hidden; text-overflow: ellipsis; text-align: right;">BOX NUMBER: ${escapeHtmlStr(boxNoStr)}</span>
+                  <span style="white-space: nowrap; flex-shrink: 0;">ARTICLE: ${escapeHtmlStr(articleVal)}</span>
+                  <span style="white-space: nowrap; flex-shrink: 0; padding-left: 0.8mm; text-align: right;">${boxLabel}: ${escapeHtmlStr(boxNoStr)}</span>
                 </div>
 
                 <!-- ORNAMENT -->
@@ -2714,16 +2727,16 @@
             </div>
           </div>
 
-          <!-- RIGHT SIDE: Centered QR Code with SCAN QR and HUID (Strictly Right Half) -->
+          <!-- RIGHT SIDE: Centered QR Code with SCAN QR and HUID with decent margins -->
           ${incQr ? `
-            <div style="width: 50%; max-width: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; overflow: hidden;">
-              <div style="font-family: 'Montserrat', sans-serif; font-size: ${qrHeaderPt}pt; font-weight: 900; letter-spacing: 0.8px; text-transform: uppercase; line-height: 1; margin-bottom: 0.4mm; text-align: center;">
+            <div style="width: 44%; max-width: 46%; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; overflow: hidden;">
+              <div style="font-family: 'Montserrat', sans-serif; font-size: ${qrHeaderPt}pt; font-weight: 900; letter-spacing: 0.6px; text-transform: uppercase; line-height: 1; margin-bottom: ${qrGapMm}mm; text-align: center;">
                 SCAN QR
               </div>
               <div style="display: flex; align-items: center; justify-content: center; width: ${qrBoxDimMm}mm; height: ${qrBoxDimMm}mm;">
                 ${qrSvg}
               </div>
-              <div style="font-family: 'Montserrat', 'JetBrains Mono', monospace; font-size: ${qrFooterPt}pt; font-weight: 900; letter-spacing: 0.8px; line-height: 1; margin-top: 0.4mm; text-align: center;">
+              <div style="font-family: 'Montserrat', 'JetBrains Mono', monospace; font-size: ${qrFooterPt}pt; font-weight: 900; letter-spacing: 0.6px; line-height: 1; margin-top: ${qrGapMm}mm; text-align: center;">
                 ${escapeHtmlStr(huidStr)}
               </div>
             </div>
@@ -2748,6 +2761,33 @@
             @page {
               size: ${width}${unit} ${height}${unit};
               margin: 0;
+            }
+            @media print {
+              @page {
+                size: ${width}${unit} ${height}${unit};
+                margin: 0;
+              }
+              html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              .print-tag {
+                page-break-after: always;
+                page-break-inside: avoid;
+              }
+            }
+            * {
+              box-sizing: border-box;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            html, body {
+              margin: 0;
+              padding: 0;
+              background: #ffffff;
+              color: #000000;
+              font-family: 'Montserrat', Arial, sans-serif;
+            }
             }
             * {
               box-sizing: border-box;
