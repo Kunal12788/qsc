@@ -1531,9 +1531,16 @@
     const cleanText = String(text || 'HUID-PREVIEW').trim();
     if (typeof qrcode === 'function') {
       try {
-        const qr = qrcode(0, 'M');
-        qr.addData(cleanText);
-        qr.make();
+        let qr;
+        try {
+          qr = qrcode(0, 'L');
+          qr.addData(cleanText);
+          qr.make();
+        } catch (e1) {
+          qr = qrcode(0, 'M');
+          qr.addData(cleanText);
+          qr.make();
+        }
         const svgTag = qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true });
         return svgTag.replace('<svg ', `<svg width="${size}" height="${size}" style="max-width:100%;max-height:100%;display:block;" `);
       } catch (err) {
@@ -2520,7 +2527,17 @@
     // QR size is fixed strictly by preview height with decent padding
     const qrSize = Math.max(22, Math.min(targetH - 34, Math.round(targetW * 0.36), 75));
     if (elQr && optQr) {
-      elQr.innerHTML = generateQrCodeSvg(huidVal, qrSize);
+      const samplePayload = [
+        'CUSTOMER: ' + custName,
+        'DATE: ' + dateStr,
+        'ARTICLE: ' + (articleVal.replace(purityVal, '').trim() || 'GOLD'),
+        'BOX NUMBER: ' + boxVal,
+        'ORNAMENT: ' + ornamentVal,
+        'GROSS WEIGHT: ' + grossVal,
+        'NET WEIGHT: ' + netVal,
+        'HUID NUMBER: ' + huidVal
+      ].join('\n');
+      elQr.innerHTML = generateQrCodeSvg(samplePayload, qrSize);
     }
   }
 
@@ -2667,8 +2684,20 @@
       const dividerMarginMm = usableH <= 10.5 ? '0.15mm' : '0.3mm';
       const boxLabel = (artBoxChars > 24 || wMm <= 52) ? 'BOX' : 'BOX NUMBER';
 
-      // Vector QR code SVG
-      const qrSvg = incQr ? generateQrCodeSvg(huidStr, qrPixelDim) : '';
+      // Full tag data encoded into the QR code
+      const qrPayload = [
+        'CUSTOMER: ' + customerName,
+        'DATE: ' + dateStr,
+        'ARTICLE: ' + articleVal,
+        'BOX NUMBER: ' + boxNoStr,
+        'ORNAMENT: ' + ornamentsType,
+        'GROSS WEIGHT: ' + grossVal,
+        'NET WEIGHT: ' + netVal,
+        'HUID NUMBER: ' + huidStr
+      ].join('\n');
+
+      // Vector QR code SVG with full tag data
+      const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
 
       return `
         <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: grid; grid-template-columns: 48% 50%; justify-content: space-between; align-items: stretch; page-break-after: always; page-break-inside: avoid; box-sizing: border-box; padding: ${padTopMm}mm ${padRightMm}mm ${padBotMm}mm ${padLeftMm}mm; font-family: 'Montserrat', Arial, Helvetica, sans-serif; background: #ffffff; color: #000000; overflow: hidden; line-height: 1.15;">
