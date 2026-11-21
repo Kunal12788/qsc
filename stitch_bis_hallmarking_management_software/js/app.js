@@ -2419,7 +2419,11 @@
 
     miniPreview.style.width = targetW + 'px';
     miniPreview.style.height = targetH + 'px';
-    miniPreview.style.padding = '6px 8px';
+    miniPreview.style.display = 'grid';
+    miniPreview.style.gridTemplateColumns = '48% 50%';
+    miniPreview.style.justifyContent = 'space-between';
+    miniPreview.style.alignItems = 'stretch';
+    miniPreview.style.padding = '6px 8px 6px 10px';
     miniPreview.style.maxWidth = '100%';
     miniPreview.style.transition = 'width 0.22s cubic-bezier(0.4, 0, 0.2, 1), height 0.22s cubic-bezier(0.4, 0, 0.2, 1)';
 
@@ -2603,11 +2607,11 @@
     const hMm = unit === 'in' ? height * 25.4 : height;
     const wMm = unit === 'in' ? width * 25.4 : width;
 
-    // Balanced margins from all 4 sides with subtle left margin
+    // Balanced margins from all 4 sides: safe left margin prevents printer edge cut
     const padTopMm = Math.max(0.9, Math.min(2.0, hMm * 0.08)).toFixed(2);
     const padBotMm = Math.max(0.9, Math.min(2.0, hMm * 0.08)).toFixed(2);
-    const padLeftMm = Math.max(1.6, Math.min(2.6, wMm * 0.035)).toFixed(2);
-    const padRightMm = Math.max(1.6, Math.min(2.6, wMm * 0.035)).toFixed(2);
+    const padLeftMm = Math.max(2.2, Math.min(3.2, wMm * 0.048)).toFixed(2);
+    const padRightMm = Math.max(1.8, Math.min(2.8, wMm * 0.04)).toFixed(2);
     const usableH = Math.max(7.5, hMm - (parseFloat(padTopMm) + parseFloat(padBotMm)));
     const usableW = Math.max(18.0, wMm - (parseFloat(padLeftMm) + parseFloat(padRightMm)));
 
@@ -2645,21 +2649,21 @@
       const maxChars = Math.max(custEffectiveChars, artBoxChars, ornChars, grossChars, netChars, huidChars);
 
       let fontScale = 1.0;
-      if (maxChars > 22) {
-        fontScale = Math.min(1.0, 22 / maxChars);
+      if (maxChars > 20) {
+        fontScale = Math.min(1.0, 20 / maxChars);
       }
-      if (custLen > 30) {
-        fontScale = Math.min(fontScale, Math.max(0.48, 30 / custLen + 0.05));
+      if (custLen > 28) {
+        fontScale = Math.min(fontScale, Math.max(0.45, 28 / custLen + 0.05));
       }
-      fontScale = Math.max(0.48, fontScale);
+      fontScale = Math.max(0.45, fontScale);
 
       // Base font sizes dependent on physical usable tag height
-      const baseDataPt = usableH <= 10.5 ? 3.0 : Math.max(3.2, Math.min(5.5, (usableH / 14) * 4.6));
-      const baseTitlePt = usableH <= 10.5 ? 3.8 : Math.max(4.0, Math.min(6.8, (usableH / 14) * 5.6));
+      const baseDataPt = usableH <= 10.5 ? 2.9 : Math.max(3.1, Math.min(5.5, (usableH / 14) * 4.5));
+      const baseTitlePt = usableH <= 10.5 ? 3.7 : Math.max(3.9, Math.min(6.8, (usableH / 14) * 5.5));
 
       const dataPt = (baseDataPt * fontScale).toFixed(2);
       const titlePt = (baseTitlePt * fontScale).toFixed(2);
-      const dividerPt = (Math.max(3.0, baseDataPt * 1.05 * fontScale)).toFixed(2);
+      const dividerPt = (Math.max(2.9, baseDataPt * 1.05 * fontScale)).toFixed(2);
       const dividerMarginMm = usableH <= 10.5 ? '0.15mm' : '0.3mm';
       const boxLabel = (artBoxChars > 24 || wMm <= 52) ? 'BOX' : 'BOX NUMBER';
 
@@ -2667,10 +2671,10 @@
       const qrSvg = incQr ? generateQrCodeSvg(huidStr, qrPixelDim) : '';
 
       return `
-        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; page-break-after: always; page-break-inside: avoid; box-sizing: border-box; padding: ${padTopMm}mm ${padRightMm}mm ${padBotMm}mm ${padLeftMm}mm; font-family: 'Montserrat', Arial, Helvetica, sans-serif; background: #ffffff; color: #000000; overflow: hidden; line-height: 1.15;">
+        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: grid; grid-template-columns: 48% 50%; justify-content: space-between; align-items: stretch; page-break-after: always; page-break-inside: avoid; box-sizing: border-box; padding: ${padTopMm}mm ${padRightMm}mm ${padBotMm}mm ${padLeftMm}mm; font-family: 'Montserrat', Arial, Helvetica, sans-serif; background: #ffffff; color: #000000; overflow: hidden; line-height: 1.15;">
           
-          <!-- LEFT SIDE: Strictly 48% width, NEVER crosses 50% midpoint of the tag -->
-          <div style="width: 48%; max-width: 48%; display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; overflow: hidden; padding-right: 0.8mm;">
+          <!-- LEFT SIDE: Strictly 48% grid column, NEVER crosses 50% midpoint of the tag -->
+          <div style="width: 100%; max-width: 100%; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; overflow: hidden; padding-right: 0.8mm;">
             
             ${incCust ? `
               <!-- Customer Jeweller Header (Centered serif) -->
@@ -2729,9 +2733,9 @@
             </div>
           </div>
 
-          <!-- RIGHT SIDE: Strictly 50% width on the right half -->
+          <!-- RIGHT SIDE: Strictly 50% grid column on the right half -->
           ${incQr ? `
-            <div style="width: 50%; max-width: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; overflow: hidden;">
+            <div style="width: 100%; max-width: 100%; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; overflow: hidden;">
               <div style="font-family: 'Montserrat', sans-serif; font-size: ${qrHeaderPt}pt; font-weight: 900; letter-spacing: 0.6px; text-transform: uppercase; line-height: 1; margin-bottom: ${qrGapMm}mm; text-align: center;">
                 SCAN QR
               </div>
