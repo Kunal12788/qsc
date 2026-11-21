@@ -2419,6 +2419,7 @@
 
     miniPreview.style.width = targetW + 'px';
     miniPreview.style.height = targetH + 'px';
+    miniPreview.style.padding = '8px 10px 8px 16px';
     miniPreview.style.maxWidth = '100%';
     miniPreview.style.transition = 'width 0.22s cubic-bezier(0.4, 0, 0.2, 1), height 0.22s cubic-bezier(0.4, 0, 0.2, 1)';
 
@@ -2602,12 +2603,13 @@
     const hMm = unit === 'in' ? height * 25.4 : height;
     const wMm = unit === 'in' ? width * 25.4 : width;
 
-    // Safe decent margins from all 4 sides (prevents thermal cut/edge clipping)
+    // Safe decent margins from all 4 sides (generous left margin prevents thermal edge cut)
     const padTopMm = Math.max(1.0, Math.min(2.5, hMm * 0.10)).toFixed(2);
     const padBotMm = Math.max(1.0, Math.min(2.5, hMm * 0.10)).toFixed(2);
-    const padSideMm = Math.max(1.5, Math.min(3.5, wMm * 0.04)).toFixed(2);
+    const padLeftMm = Math.max(3.5, Math.min(6.0, wMm * 0.07)).toFixed(2);
+    const padRightMm = Math.max(2.2, Math.min(4.0, wMm * 0.045)).toFixed(2);
     const usableH = Math.max(7.5, hMm - (parseFloat(padTopMm) + parseFloat(padBotMm)));
-    const usableW = Math.max(18.0, wMm - (parseFloat(padSideMm) * 2));
+    const usableW = Math.max(18.0, wMm - (parseFloat(padLeftMm) + parseFloat(padRightMm)));
 
     // Right side QR section: sized strictly to fit within usableH with decent padding
     const qrHeaderPt = Math.max(3.0, Math.min(5.5, usableH * 0.38)).toFixed(1);
@@ -2665,10 +2667,10 @@
       const qrSvg = incQr ? generateQrCodeSvg(huidStr, qrPixelDim) : '';
 
       return `
-        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; page-break-after: always; page-break-inside: avoid; box-sizing: border-box; padding: ${padTopMm}mm ${padSideMm}mm ${padBotMm}mm ${padSideMm}mm; font-family: 'Montserrat', Arial, Helvetica, sans-serif; background: #ffffff; color: #000000; overflow: hidden; line-height: 1.15;">
+        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; page-break-after: always; page-break-inside: avoid; box-sizing: border-box; padding: ${padTopMm}mm ${padRightMm}mm ${padBotMm}mm ${padLeftMm}mm; font-family: 'Montserrat', Arial, Helvetica, sans-serif; background: #ffffff; color: #000000; overflow: hidden; line-height: 1.15;">
           
-          <!-- LEFT SIDE: Decent margin, bounded left section -->
-          <div style="width: 53%; max-width: 55%; display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; overflow: hidden; padding-right: 0.8mm;">
+          <!-- LEFT SIDE: Generous left clearance, flex-expanded so text never squeezes or cuts -->
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; overflow: hidden; padding-right: 2.0mm;">
             
             ${incCust ? `
               <!-- Customer Jeweller Header (Centered serif) -->
@@ -2729,7 +2731,7 @@
 
           <!-- RIGHT SIDE: Centered QR Code with SCAN QR and HUID with decent margins -->
           ${incQr ? `
-            <div style="width: 44%; max-width: 46%; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; overflow: hidden;">
+            <div style="width: auto; min-width: ${qrBoxDimMm}mm; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; overflow: hidden; flex-shrink: 0;">
               <div style="font-family: 'Montserrat', sans-serif; font-size: ${qrHeaderPt}pt; font-weight: 900; letter-spacing: 0.6px; text-transform: uppercase; line-height: 1; margin-bottom: ${qrGapMm}mm; text-align: center;">
                 SCAN QR
               </div>
