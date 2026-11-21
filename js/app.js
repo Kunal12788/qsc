@@ -1707,6 +1707,39 @@
     renderTagStatusQueue(filter);
   }
 
+
+  function syncTagPrintButtonState() {
+    const hasData = (activeTagRows && activeTagRows.length > 0) || (excelSheetData && excelSheetData.some(r => r && r.some(c => c !== undefined && c !== null && String(c).trim() !== '')));
+    const isDone = activeTagBatch && (activeTagBatch.tagStatus === 'DONE' || hasData);
+
+    const topBtn = document.getElementById('btn-print-tags');
+    const bottomBtn = document.getElementById('btn-print-tags-bottom');
+
+    [topBtn, bottomBtn].forEach(btn => {
+      if (!btn) return;
+      if (isDone) {
+        btn.disabled = false;
+        btn.removeAttribute('disabled');
+        btn.classList.remove('btn-print-disabled', 'opacity-50', 'cursor-not-allowed');
+        btn.classList.add('cursor-pointer', 'hover:bg-slate-800', 'active:scale-95');
+      } else {
+        btn.disabled = true;
+        btn.setAttribute('disabled', 'true');
+        btn.classList.add('btn-print-disabled');
+        btn.classList.remove('cursor-pointer', 'hover:bg-slate-800', 'active:scale-95');
+      }
+    });
+
+    const statusBadge = document.getElementById('tag-ready-status-badge');
+    if (statusBadge) {
+      if (isDone) {
+        statusBadge.innerHTML = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>READY TO PRINT (' + (activeTagRows ? activeTagRows.length : 0) + ' TAGS)</span>';
+      } else {
+        statusBadge.innerHTML = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>SAVE DATA TO ENABLE PRINT</span>';
+      }
+    }
+  }
+
   function selectTagBatch(docket) {
     if (!docket) return;
     const batch = state.intakeBatches.find(b => b.jobDocket === docket) || state.intakeBatches[0];
@@ -2524,18 +2557,32 @@
     }
 
     if (!activeTagRows || activeTagRows.length === 0) {
-      showToast('NO TAG DATA AVAILABLE TO PRINT. PLEASE PASTE & SAVE DATA FIRST.', 'warning');
-      return;
+      const converted = convertExcelSheetToRows(excelSheetData);
+      if (converted && converted.length > 0) {
+        activeTagRows = converted;
+        if (activeTagBatch) {
+          activeTagBatch.tagData = converted;
+          activeTagBatch.tagStatus = 'DONE';
+          syncTagPrintButtonState();
+          renderTagStatusQueue();
+        }
+      } else {
+        showToast('NO TAG DATA AVAILABLE TO PRINT. PLEASE PASTE OR ENTER DATA FIRST.', 'warning');
+        return;
+      }
     }
 
     let printFrame = document.getElementById('tag-print-frame');
-    if (!printFrame) {
-      printFrame = document.createElement('iframe');
-      printFrame.id = 'tag-print-frame';
-      printFrame.name = 'tag-print-frame';
-      printFrame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
-      document.body.appendChild(printFrame);
+    if (printFrame) {
+      try {
+        printFrame.remove();
+      } catch (e) {}
     }
+    printFrame = document.createElement('iframe');
+    printFrame.id = 'tag-print-frame';
+    printFrame.name = 'tag-print-frame';
+    printFrame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+    document.body.appendChild(printFrame);
 
     const width = parseFloat(document.getElementById('tag-cfg-width')?.value || 50);
     const height = parseFloat(document.getElementById('tag-cfg-height')?.value || 17);
@@ -2729,13 +2776,19 @@
     // Ensure fonts are fully rendered before print dialog opens
     const triggerPrint = () => {
       try {
-        if (printFrame.contentWindow) {
+        if (printFrame && printFrame.contentWindow) {
           printFrame.contentWindow.focus();
           printFrame.contentWindow.print();
+        } else {
+          window.print();
         }
       } catch (err) {
         console.error('Print tags error:', err);
-        showToast('Print dialog failed to open. Check printer settings.', 'error');
+        try {
+          window.print();
+        } catch (e2) {
+          showToast('Print dialog failed to open. Check printer settings.', 'error');
+        }
       }
     };
 
@@ -7894,6 +7947,7 @@
   window.updateTagMiniPreview = updateTagMiniPreview;
   window.saveTagData = saveTagData;
   window.printCustomTags = printCustomTags;
+  window.syncTagPrintButtonState = syncTagPrintButtonState;
   window.onTagBatchSelected = selectTagBatch;
   window.onTagFormatChanged = onTagFormatChanged;
   window.refreshTagGenerationPreview = refreshTagGenerationPreview;
