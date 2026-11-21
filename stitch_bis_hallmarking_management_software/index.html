@@ -2275,18 +2275,7 @@
                 </div>
               </div>
               
-              <!-- Filter Tabs: All, Not Printed, Printed -->
-              <div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-lg">
-                <button type="button" onclick="filterBillQueue('all')" id="btn-bill-filter-all" class="px-2.5 py-1 text-xs font-semibold rounded-md bg-surface-container-lowest shadow-xs text-on-surface transition-all cursor-pointer">All</button>
-                <button type="button" onclick="filterBillQueue('not-printed')" id="btn-bill-filter-not-printed" class="px-2.5 py-1 text-xs font-semibold rounded-md text-amber-700 hover:text-amber-900 transition-all flex items-center gap-1 cursor-pointer">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                  <span>Not Printed</span>
-                </button>
-                <button type="button" onclick="filterBillQueue('printed')" id="btn-bill-filter-printed" class="px-2.5 py-1 text-xs font-semibold rounded-md text-emerald-700 hover:text-emerald-900 transition-all flex items-center gap-1 cursor-pointer">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  <span>Printed</span>
-                </button>
-              </div>
+              
             </div>
 
             <!-- Horizontal Scrollable Queue Carousel / Cards -->
@@ -2308,19 +2297,16 @@
                   </div>
                 </div>
 
-                <!-- Action Buttons: Print, Mark Printed, Save -->
+                <!-- Action Buttons: Print, Save Changes -->
                 <div class="flex flex-wrap items-center gap-2">
-                  <button type="button" onclick="printTaxInvoice()" class="px-5 py-2 rounded-xl bg-primary-container hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-md cursor-pointer border border-[#c5a059]/50">
+                  <button type="button" id="btnPrintTaxInvoice" onclick="printTaxInvoice()" class="px-5 py-2 rounded-xl bg-primary-container hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-md cursor-pointer border border-[#c5a059]/50">
                     <span class="material-symbols-outlined text-[18px] text-amber-400">print</span>
                     <span>Print Tax Invoice</span>
                   </button>
 
-                  <button type="button" id="btnTogglePrintStatus" onclick="toggleActiveBillPrintStatus()" class="px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-on-surface transition-all flex items-center gap-1.5 cursor-pointer border border-surface-container">
-                    <span class="material-symbols-outlined text-[16px] text-amber-600">check_circle</span>
-                    <span id="btnTogglePrintStatusText">Mark as Printed</span>
-                  </button>
+                  
 
-                  <button type="button" onclick="saveActiveBillChanges()" class="px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-on-surface transition-all flex items-center gap-1.5 cursor-pointer border border-surface-container">
+                  <button type="button" id="btnSaveBillChanges" onclick="saveActiveBillChanges()" class="px-4 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-on-surface transition-all flex items-center gap-1.5 cursor-pointer border border-surface-container">
                     <span class="material-symbols-outlined text-[16px] text-secondary">save</span>
                     <span>Save Changes</span>
                   </button>

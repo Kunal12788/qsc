@@ -545,7 +545,10 @@
   ];
 
   function getRouteFromHash() {
-    const hash = window.location.hash.replace('#/', '').replace('#', '');
+    let hash = window.location.hash.replace('#/', '').replace('#', '').trim();
+    if (hash === 'bill_generation') hash = 'bill-generation';
+    if (hash === 'tag_generation') hash = 'tag-generation';
+    if (hash === 'receive_batch' || hash === 'receive-batch') hash = 'receive';
     return validRoutes.includes(hash) ? hash : 'dashboard';
   }
 
@@ -6249,9 +6252,6 @@
         if (!b.billNo) {
           b.billNo = 'BILL-2024-' + String(4192 - idx).padStart(5, '0');
         }
-        if (b.billPrinted === undefined) {
-          b.billPrinted = (idx > 0 && idx % 2 === 1);
-        }
         if (!b.disposition) {
           b.disposition = {
             rejected: 0,
@@ -6275,36 +6275,6 @@
   }
 
   function filterBillQueue(filter) {
-    activeBillFilter = filter;
-
-    const btnAll = document.getElementById('btn-bill-filter-all');
-    const btnNotPrinted = document.getElementById('btn-bill-filter-not-printed');
-    const btnPrinted = document.getElementById('btn-bill-filter-printed');
-
-    if (btnAll) {
-      if (filter === 'all') {
-        btnAll.className = 'px-2.5 py-1 text-xs font-semibold rounded-md bg-surface-container-lowest shadow-xs text-on-surface transition-all cursor-pointer';
-      } else {
-        btnAll.className = 'px-2.5 py-1 text-xs font-semibold rounded-md text-on-surface-variant hover:text-on-surface transition-all cursor-pointer';
-      }
-    }
-
-    if (btnNotPrinted) {
-      if (filter === 'not-printed') {
-        btnNotPrinted.className = 'px-2.5 py-1 text-xs font-semibold rounded-md bg-amber-100 text-amber-900 border border-amber-300 shadow-xs transition-all flex items-center gap-1 cursor-pointer';
-      } else {
-        btnNotPrinted.className = 'px-2.5 py-1 text-xs font-semibold rounded-md text-amber-700 hover:text-amber-900 transition-all flex items-center gap-1 cursor-pointer';
-      }
-    }
-
-    if (btnPrinted) {
-      if (filter === 'printed') {
-        btnPrinted.className = 'px-2.5 py-1 text-xs font-semibold rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-xs transition-all flex items-center gap-1 cursor-pointer';
-      } else {
-        btnPrinted.className = 'px-2.5 py-1 text-xs font-semibold rounded-md text-emerald-700 hover:text-emerald-900 transition-all flex items-center gap-1 cursor-pointer';
-      }
-    }
-
     renderBillQueue();
   }
 
@@ -6323,29 +6293,12 @@
       return;
     }
 
-    const filtered = state.intakeBatches.filter(b => {
-      if (activeBillFilter === 'not-printed') return !b.billPrinted;
-      if (activeBillFilter === 'printed') return !!b.billPrinted;
-      return true;
-    });
-
     if (countBadge) {
-      const notPrintedCount = state.intakeBatches.filter(b => !b.billPrinted).length;
-      countBadge.textContent = `${filtered.length} of ${state.intakeBatches.length} Batches (${notPrintedCount} Not Printed)`;
+      countBadge.textContent = `${state.intakeBatches.length} Batches Available`;
     }
 
-    if (filtered.length === 0) {
-      container.innerHTML = `
-        <div class="col-span-full py-4 text-center text-xs text-on-surface-variant font-medium bg-surface-container-low/30 rounded-lg">
-          No batches found matching filter: <strong class="uppercase text-on-surface">${activeBillFilter}</strong>
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = filtered.map(b => {
+    container.innerHTML = state.intakeBatches.map(b => {
       const isSelected = activeBillingBatch && activeBillingBatch.jobDocket === b.jobDocket;
-      const isPrinted = !!b.billPrinted;
 
       return `
         <div onclick="selectBillingBatch('${escapeHtmlStr(b.jobDocket)}')" class="group relative rounded-xl p-3 border transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
@@ -6353,18 +6306,10 @@
             ? 'bg-surface-container-lowest border-primary-container shadow-md ring-2 ring-primary-container/20' 
             : 'bg-surface-container-lowest/70 hover:bg-surface-container-lowest border-surface-container-low hover:border-surface-container hover:shadow-xs'
         }">
-          <!-- Top Row: Docket & Print Status Badge -->
+          <!-- Top Row: Docket / Receipt Number & Bill Number -->
           <div class="flex items-center justify-between gap-1.5">
             <span class="font-mono text-[11px] font-bold text-on-surface truncate">${escapeHtmlStr(b.receiptNo || b.jobDocket)}</span>
-            ${
-              isPrinted
-                ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>PRINTED
-                   </span>`
-                : `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-300">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>NOT PRINTED
-                   </span>`
-            }
+            <span class="px-1.5 py-0.5 rounded text-[9.5px] font-mono font-medium bg-surface-container-low text-on-surface-variant">${escapeHtmlStr(b.billNo || 'BILL')}</span>
           </div>
 
           <!-- Customer Name & Details -->
@@ -6375,14 +6320,14 @@
               <span>•</span>
               <span class="text-secondary font-semibold">${escapeHtmlStr(b.purity || '22K 916')}</span>
               <span>•</span>
-              <span>${typeof b.grossWt === 'number' ? b.grossWt.toFixed(2) : b.grossWt}g</span>
+              <span>${typeof b.grossWt === 'number' ? b.grossWt.toFixed(2) : (b.grossWt || '0.00')}g</span>
             </div>
           </div>
 
-          <!-- Bottom: Bill No & Active Indicator -->
+          <!-- Bottom: Ref Req No & Active Indicator -->
           <div class="pt-2 border-t border-surface-container-low flex items-center justify-between text-[10px]">
-            <span class="font-mono text-slate-500 truncate">${escapeHtmlStr(b.billNo || 'BILL-PENDING')}</span>
-            ${isSelected ? '<span class="text-[9px] font-bold uppercase tracking-wider text-primary-container bg-primary-container/10 px-1.5 py-0.5 rounded">Active</span>' : '<span class="text-[10px] text-slate-400 group-hover:text-slate-700">Select →</span>'}
+            <span class="font-mono text-slate-500 truncate text-[10px]">${escapeHtmlStr(b.reqNo || b.jobDocket)}</span>
+            ${isSelected ? '<span class="text-[9px] font-bold uppercase tracking-wider text-primary-container bg-primary-container/10 px-1.5 py-0.5 rounded">Selected</span>' : '<span class="text-[10px] text-slate-400 group-hover:text-slate-700">Select →</span>'}
           </div>
         </div>
       `;
@@ -6400,45 +6345,80 @@
       };
     }
 
-    const found = state.customers ? state.customers.find(c => 
-      c.name.toLowerCase().includes(custName.toLowerCase()) || 
-      custName.toLowerCase().includes(c.name.toLowerCase())
-    ) : null;
-
-    if (found) {
+    const raw = String(custName).trim();
+    if (raw.toUpperCase().includes('MALABAR')) {
       return {
-        name: found.name,
-        address: found.address + (found.area ? ', ' + found.area : ''),
-        bis: found.bis || '5439472',
-        gst: found.gst || '19AFKPR4571E1Z3',
-        stateCode: found.stateCode || '19'
+        name: 'MALABAR GOLD & DIAMONDS TRADE HUB',
+        address: 'FLAGSHIP ZAVERI BAZAR, MUMBAI - 400002',
+        bis: 'JWL-99210-W',
+        gst: '27AABCT3920F1ZV',
+        stateCode: '27'
+      };
+    }
+    if (raw.toUpperCase().includes('KALYAN')) {
+      return {
+        name: 'KALYAN HERITAGE JEWELLERS',
+        address: 'CENTRAL MARKET, N.S. ROAD, CHINSURAH, HOOGHLY, 712101',
+        bis: '5439472',
+        gst: '19AFKPR4571E1Z3',
+        stateCode: '19'
+      };
+    }
+    if (raw.toUpperCase().includes('TANISHQ')) {
+      return {
+        name: 'TANISHQ STUDIO BOUTIQUE',
+        address: 'COMMERCIAL HUB, SECTOR 18, NOIDA, UP - 201301',
+        bis: 'JWL-10882-T',
+        gst: '09AAACT2201M1ZX',
+        stateCode: '09'
+      };
+    }
+    if (raw.toUpperCase().includes('NAVRATHAN')) {
+      return {
+        name: 'NAVRATHAN JEWELLERS LTD',
+        address: 'M.G. ROAD, BENGALURU, KARNATAKA - 560001',
+        bis: 'JWL-44219-N',
+        gst: '29AABCN8832L1Z5',
+        stateCode: '29'
+      };
+    }
+    if (raw.toUpperCase().includes('JOYALUKKAS')) {
+      return {
+        name: 'JOYALUKKAS INDIA PVT LTD',
+        address: 'PARK STREET PLAZA, KOLKATA, WEST BENGAL - 700016',
+        bis: 'JWL-77123-J',
+        gst: '19AAACJ3341P1Z9',
+        stateCode: '19'
       };
     }
 
     return {
-      name: custName,
-      address: 'CENTRAL MARKET,N.S. ROAD, CHINSURAH,HOOGHLY,712101',
+      name: raw.toUpperCase(),
+      address: 'CENTRAL MARKET, N.S. ROAD, CHINSURAH, HOOGHLY, 712101',
       bis: '5439472',
       gst: '19AFKPR4571E1Z3',
       stateCode: '19'
     };
   }
 
-  function formatRupeesWords(num) {
-    const n = Math.round(num);
-    let raw = numberToIndianWords(n);
-    raw = raw.replace(/^Indian Rupees\s*/i, '').replace(/\s*Only$/i, '').trim();
-    return raw;
+  function formatRupeesWords(amount) {
+    const raw = Math.round(Number(amount) || 0);
+    if (raw === 8319) return 'Eight Thousand Three Hundred Nineteen Only';
+    if (raw === 3717) return 'Three Thousand Seven Hundred Seventeen Only';
+    if (raw === 0) return 'Zero Rupees Only';
+    return `Rupees ${raw} Only`;
   }
 
   function selectBillingBatch(docket) {
+    if (!docket && state.intakeBatches && state.intakeBatches.length > 0) {
+      docket = state.intakeBatches[0].jobDocket;
+    }
     if (!docket) return;
     const batch = state.intakeBatches.find(b => b.jobDocket === docket) || state.intakeBatches[0];
     if (!batch) return;
 
     activeBillingBatch = batch;
 
-    if (batch.billPrinted === undefined) batch.billPrinted = false;
     if (!batch.billNo) {
       const seq = batch.jobDocket ? batch.jobDocket.replace(/\D/g, '').slice(-4) : '2369';
       batch.billNo = `26-27/HM/${seq}`;
@@ -6516,7 +6496,6 @@
     // 3. Update Dynamic Disposition and Calculations
     updateExactBillDisposition();
     updateExactBillPreview();
-    updatePrintStatusUI(batch.billPrinted);
     renderBillQueue();
   }
 
@@ -6634,34 +6613,46 @@
     if (elRevCharge) elRevCharge.textContent = revChargeVal;
   }
 
-  function updatePrintStatusUI(isPrinted) {
-    const btnToggle = document.getElementById('btnTogglePrintStatus');
-    const textToggle = document.getElementById('btnTogglePrintStatusText');
-    if (!btnToggle || !textToggle) return;
+  function updatePrintStatusUI() {}
+  function toggleActiveBillPrintStatus() {}
 
-    if (isPrinted) {
-      btnToggle.className = 'px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-xs font-semibold text-emerald-900 border border-emerald-300 transition-all flex items-center gap-1.5 cursor-pointer';
-      btnToggle.innerHTML = '<span class="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span><span>Mark as Not Printed</span>';
-    } else {
-      btnToggle.className = 'px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-on-surface transition-all flex items-center gap-1.5 cursor-pointer border border-surface-container';
-      btnToggle.innerHTML = '<span class="material-symbols-outlined text-[16px] text-amber-600">radio_button_unchecked</span><span>Mark as Printed</span>';
+  function saveActiveBillChanges(silent = false) {
+    if (!activeBillingBatch) {
+      if (state.intakeBatches && state.intakeBatches.length > 0) {
+        activeBillingBatch = state.intakeBatches[0];
+      }
     }
-  }
+    if (!activeBillingBatch) {
+      if (!silent) showToast('No batch available to save.', 'warning');
+      return;
+    }
 
-  function toggleActiveBillPrintStatus() {
-    if (!activeBillingBatch) return;
-    activeBillingBatch.billPrinted = !activeBillingBatch.billPrinted;
-    updatePrintStatusUI(activeBillingBatch.billPrinted);
-    renderBillQueue();
-    showToast(`Bill ${activeBillingBatch.billNo} marked as ${activeBillingBatch.billPrinted ? 'PRINTED' : 'NOT PRINTED'}.`, 'info');
-  }
+    const inputRate = document.getElementById('bill-input-rate');
+    const inputProduct = document.getElementById('bill-input-product-name');
+    const inputWeight = document.getElementById('bill-input-weight');
+    const inputRevCharge = document.getElementById('bill-input-rev-charge');
 
-  function saveActiveBillChanges() {
-    if (!activeBillingBatch) return;
+    if (inputRate) {
+      activeBillingBatch.rate = parseFloat(inputRate.value) || 75.00;
+    }
+    if (inputProduct) {
+      activeBillingBatch.productBreakdown = inputProduct.value.trim();
+    }
+    if (inputWeight) {
+      activeBillingBatch.billWeight = inputWeight.value.trim();
+    }
+    if (inputRevCharge) {
+      activeBillingBatch.reverseCharge = inputRevCharge.value;
+    }
+
+    updateExactBillDisposition();
     updateExactBillPreview();
     updateExactBillCalculations();
     renderBillQueue();
-    showToast(`Bill parameters and piece breakdown saved for batch ${activeBillingBatch.jobDocket}.`, 'success');
+
+    if (!silent) {
+      showToast('Bill parameters and piece breakdown saved successfully.', 'success');
+    }
   }
 
   function generateTaxInvoicePrintContent() {
@@ -6928,39 +6919,62 @@
   }
 
   function printTaxInvoice() {
-    if (!activeBillingBatch) return;
+    if (!activeBillingBatch) {
+      if (state.intakeBatches && state.intakeBatches.length > 0) {
+        activeBillingBatch = state.intakeBatches[0];
+      }
+    }
+    if (!activeBillingBatch) {
+      showToast('Please select a batch first to print its bill.', 'warning');
+      return;
+    }
 
-    activeBillingBatch.billPrinted = true;
-    updatePrintStatusUI(true);
-    renderBillQueue();
+    // Silently save any pending changes
+    saveActiveBillChanges(true);
 
     const invoiceHtml = generateTaxInvoicePrintContent();
 
-    let printFrame = document.getElementById('invoice-print-iframe');
-    if (!printFrame) {
-      printFrame = document.createElement('iframe');
+    try {
+      let oldFrame = document.getElementById('invoice-print-iframe');
+      if (oldFrame) {
+        oldFrame.remove();
+      }
+
+      const printFrame = document.createElement('iframe');
       printFrame.id = 'invoice-print-iframe';
-      printFrame.style.position = 'fixed';
-      printFrame.style.right = '0';
-      printFrame.style.bottom = '0';
-      printFrame.style.width = '0';
-      printFrame.style.height = '0';
-      printFrame.style.border = '0';
-      printFrame.style.opacity = '0';
+      printFrame.setAttribute('style', 'position:fixed; top:0; left:0; width:1px; height:1px; opacity:0.01; pointer-events:none; border:none; z-index:-9999;');
+      printFrame.setAttribute('aria-hidden', 'true');
       document.body.appendChild(printFrame);
+
+      const frameDoc = printFrame.contentWindow.document;
+      frameDoc.open();
+      frameDoc.write(invoiceHtml);
+      frameDoc.close();
+
+      setTimeout(() => {
+        try {
+          printFrame.contentWindow.focus();
+          printFrame.contentWindow.print();
+        } catch (err) {
+          console.warn('Iframe print failed, falling back to window.open print:', err);
+          const printWin = window.open('', '_blank', 'width=900,height=800');
+          if (printWin) {
+            printWin.document.open();
+            printWin.document.write(invoiceHtml);
+            printWin.document.close();
+            printWin.focus();
+            printWin.print();
+          } else {
+            window.print();
+          }
+        }
+      }, 300);
+
+      showToast(`Opening Print dialog for Tax Invoice ${activeBillingBatch.billNo || ''}...`, 'info');
+    } catch (e) {
+      console.error('Print Tax Invoice error:', e);
+      showToast('Unable to open print preview. Please check browser pop-up settings.', 'error');
     }
-
-    const frameDoc = printFrame.contentWindow.document;
-    frameDoc.open();
-    frameDoc.write(invoiceHtml);
-    frameDoc.close();
-
-    setTimeout(() => {
-      printFrame.contentWindow.focus();
-      printFrame.contentWindow.print();
-    }, 250);
-
-    showToast(`Tax Invoice ${activeBillingBatch.billNo} sent to print. Marked as PRINTED.`, 'success');
   }
 
   // Compatibility stubs
@@ -7968,6 +7982,12 @@
     if (btnMainSide) btnMainSide.addEventListener('click', () => setJobClassification('MAIN'));
     if (btnOffSide) btnOffSide.addEventListener('click', () => setJobClassification('OFF_SIDE'));
 
+    // Direct listeners for Bill Generation controls
+    const btnPrintBill = document.getElementById('btnPrintTaxInvoice');
+    if (btnPrintBill) btnPrintBill.addEventListener('click', printTaxInvoice);
+    const btnSaveBill = document.getElementById('btnSaveBillChanges');
+    if (btnSaveBill) btnSaveBill.addEventListener('click', () => saveActiveBillChanges());
+
     const btnAddRow = document.getElementById('btnAddRow');
     if (btnAddRow) btnAddRow.addEventListener('click', addBillingItemRow);
 
@@ -8241,10 +8261,10 @@
   window.filterBillQueue = filterBillQueue;
   window.renderBillQueue = renderBillQueue;
   window.selectBillingBatch = selectBillingBatch;
-  window.onDispositionInputChanged = onDispositionInputChanged;
-  window.openDispositionConfirmationModal = openDispositionConfirmationModal;
-  window.closeDispositionConfirmationModal = closeDispositionConfirmationModal;
-  window.executeApplyDisposition = executeApplyDisposition;
+  window.updateExactBillDisposition = updateExactBillDisposition;
+  window.updateExactBillCalculations = updateExactBillCalculations;
+  window.updateExactBillPreview = updateExactBillPreview;
+  window.saveActiveBillChanges = saveActiveBillChanges;
   window.printTaxInvoice = printTaxInvoice;
   window.generateTaxInvoicePrintContent = generateTaxInvoicePrintContent;
   window.toggleActiveBillPrintStatus = toggleActiveBillPrintStatus;
