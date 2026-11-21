@@ -6696,11 +6696,21 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>TAX INVOICE - ${escapeHtmlStr(billNo)}</title>
+  <title></title>
   <style>
     @page {
       size: A4 portrait;
-      margin: 10mm 12mm 10mm 12mm;
+      margin: 0 !important;
+    }
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 0 !important;
+      }
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
     }
     * {
       box-sizing: border-box;
@@ -6719,9 +6729,9 @@
     }
     .bill-wrapper {
       width: 100%;
-      max-width: 195mm;
+      max-width: 210mm;
       margin: 0 auto;
-      padding: 4mm 0;
+      padding: 10mm 12mm 10mm 12mm;
       background: #ffffff;
     }
     .flex-row {
