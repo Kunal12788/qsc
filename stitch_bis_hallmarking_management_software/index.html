@@ -1889,51 +1889,74 @@
 
                   <!-- Scaled Tag Sample -->
                   <div class="w-full h-36 flex items-center justify-center p-2 bg-slate-200/50 rounded-lg overflow-hidden">
-                    <div id="tag-mini-preview" class="tag-miniature-box shadow-sm flex flex-col justify-between overflow-hidden p-1.5 bg-white text-black" style="font-family: 'Montserrat', sans-serif; border: 1.5px solid #000; outline: 0.75px solid #000; outline-offset: -3px; box-sizing: border-box;">
-                      <!-- LINE 1: FULL WIDTH DEDICATED EXCLUSIVELY TO CUSTOMER NAME -->
-                      <div id="mini-row-cust" class="w-full border-b border-black pb-0.5 mb-0.5">
-                        <span id="mini-tag-cust" style="font-family: 'Cinzel', Georgia, serif; font-size: 8.5px; font-weight: 800; letter-spacing: 0.3px; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;" class="text-black uppercase block w-full">KALYAN HERITAGE JEWELLERS</span>
-                      </div>
-
-                      <!-- LOWER SECTION: SPLIT INTO LEFT METADATA & RIGHT BIG QR CODE -->
-                      <div class="flex-1 w-full flex flex-row items-stretch justify-between gap-1.5 overflow-hidden">
+                    <div id="tag-mini-preview" class="tag-miniature-box shadow-sm flex flex-row items-stretch justify-between overflow-hidden p-1.5 bg-white text-black" style="font-family: 'Montserrat', Arial, sans-serif; box-sizing: border-box; border: 1px solid #d1d5db;">
+                      
+                      <!-- LEFT SIDE: Strictly 48% width, NEVER crosses the middle of the tag -->
+                      <div id="mini-left-zone" style="width: 48%; max-width: 48%; display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; overflow: hidden; padding-right: 2px;">
                         
-                        <!-- LEFT SIDE: Full Structured Assay Data (No Shortcuts) -->
-                        <div class="flex-1 min-w-0 flex flex-col justify-between py-0.5 overflow-hidden leading-tight">
-                          <!-- Row 1: Full ARTICLE & Inverted Purity Badge -->
-                          <div id="mini-row-ornament" class="flex items-center justify-between text-[7px]" style="font-family: 'Montserrat', sans-serif;">
-                            <span class="text-black font-semibold truncate"><b style="font-size: 6px; font-weight: 900; letter-spacing: 0.3px;">ARTICLE:</b> <span id="mini-tag-article" class="uppercase">GOLD</span></span>
-                            <span id="mini-tag-purity" style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 900; letter-spacing: 0.5px; background: #000; color: #fff; padding: 0.5px 3.5px; border-radius: 1px;" class="shrink-0">22K 916</span>
+                        <!-- Customer Jeweller Header (Centered serif) -->
+                        <div id="mini-row-cust" class="w-full text-center">
+                          <div id="mini-tag-cust" style="font-family: 'Cinzel', Georgia, serif; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.12; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-align: center;">
+                            KALYAN HERITAGE JEWELLERS
                           </div>
 
-                          <!-- Row 2: Full ORNAMENT -->
-                          <div class="text-[7px]" style="font-family: 'Montserrat', sans-serif;">
-                            <span class="text-black font-extrabold truncate block"><b style="font-size: 6px; font-weight: 900; letter-spacing: 0.3px;">ORNAMENT:</b> <span id="mini-tag-ornament" class="uppercase">HANDWEAR</span></span>
-                          </div>
-
-                          <!-- Row 3: Full WEIGHT & Full BOX NUMBER (Dashed Technical Strip) -->
-                          <div id="mini-row-metric" class="flex items-center justify-between text-[7px] border-y border-dashed border-black py-0.5 px-0.5 bg-neutral-50/90" style="font-family: 'JetBrains Mono', monospace;">
-                            <span class="text-black font-bold"><b style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 900; letter-spacing: 0.3px;">WEIGHT:</b> <span id="mini-tag-weight">1.674g</span></span>
-                            <span class="text-black font-bold text-right"><b style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 900; letter-spacing: 0.3px;">BOX NUMBER:</b> <span id="mini-tag-box">BOX-TR-09</span></span>
-                          </div>
-
-                          <!-- Row 4: Full HUID NUMBER & BIS Certification Seal -->
-                          <div id="mini-row-huid" class="flex items-center justify-between text-[7px] pt-0.5">
-                            <span style="font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 900; letter-spacing: 0.6px;" class="text-black truncate"><b style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 900; letter-spacing: 0.3px;">HUID NUMBER:</b> <span id="mini-tag-huid">Y6P2F5</span></span>
-                            <span style="font-family: 'Cinzel', serif; font-size: 6px; font-weight: 900; letter-spacing: 0.5px;" class="text-black uppercase shrink-0">✦ BIS ASSAY ✦</span>
+                          <!-- Diamond Divider -->
+                          <div style="display: flex; align-items: center; justify-content: center; width: 100%; margin: 2px 0;">
+                            <div style="flex: 1; height: 0.6px; background: #000;"></div>
+                            <div id="mini-divider-diamond" style="margin: 0 4px; font-size: 6px; line-height: 1; color: #000;">◆</div>
+                            <div style="flex: 1; height: 0.6px; background: #000;"></div>
                           </div>
                         </div>
 
-                        <!-- RIGHT SIDE: BIG QR SCAN TARGET BOX (BELOW LINE 1) -->
-                        <div id="mini-row-qr" class="w-16 h-full shrink-0 flex flex-col items-center justify-between p-0.5 bg-white border-l border-black">
-                          <span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 900; letter-spacing: 0.8px;" class="text-black uppercase leading-none">[ SCAN QR ]</span>
-                          <div id="mini-tag-qr" class="w-full flex-1 flex items-center justify-center overflow-hidden py-0.5">
-                            <!-- Dynamically rendered via generateQrCodeSvg() -->
+                        <!-- Structured Metadata (Left-aligned, bold, auto-adjust font size) -->
+                        <div id="mini-data-zone" style="display: flex; flex-direction: column; justify-content: space-between; flex: 1; font-size: 6.5px; font-weight: 800; line-height: 1.2; overflow: hidden;">
+                          <!-- DATE -->
+                          <div id="mini-row-date" class="truncate">
+                            DATE: <span id="mini-tag-date">21-11-2026</span>
                           </div>
-                          <span id="mini-tag-qr-label" style="font-family: 'JetBrains Mono', monospace; font-size: 6px; font-weight: 900; letter-spacing: 0.5px;" class="text-black leading-none">Y6P2F5</span>
+
+                          <!-- ARTICLE & BOX NUMBER (Same line) -->
+                          <div id="mini-row-art-box" style="display: flex; justify-content: space-between; align-items: baseline; overflow: hidden; white-space: nowrap;">
+                            <span class="truncate pr-1">ARTICLE: <span id="mini-tag-article">GOLD</span></span>
+                            <span class="truncate text-right">BOX NUMBER: <span id="mini-tag-box">BOX-TR-09</span></span>
+                          </div>
+
+                          <!-- ORNAMENT -->
+                          <div id="mini-row-ornament" class="truncate">
+                            ORNAMENT: <span id="mini-tag-ornament">MIX ITEM</span>
+                          </div>
+
+                          <!-- GROSS WEIGHT -->
+                          <div id="mini-row-gross" class="truncate">
+                            GROSS WEIGHT: <span id="mini-tag-gross">2.760g</span>
+                          </div>
+
+                          <!-- NET WEIGHT -->
+                          <div id="mini-row-net" class="truncate">
+                            NET WEIGHT: <span id="mini-tag-net">2.760g</span>
+                          </div>
+
+                          <!-- HUID NUMBER -->
+                          <div id="mini-row-huid" class="truncate">
+                            HUID NUMBER: <span id="mini-tag-huid">SGG9RZ</span>
+                          </div>
                         </div>
 
                       </div>
+
+                      <!-- RIGHT SIDE: Centered SCAN QR, QR Code, and HUID (Strictly Right Half) -->
+                      <div id="mini-row-qr" style="width: 50%; max-width: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; overflow: hidden;">
+                        <span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 900; letter-spacing: 0.8px; text-transform: uppercase; line-height: 1; margin-bottom: 2px; text-align: center;">
+                          SCAN QR
+                        </span>
+                        <div id="mini-tag-qr" style="display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                          <!-- Dynamically rendered via generateQrCodeSvg() -->
+                        </div>
+                        <span id="mini-tag-qr-label" style="font-family: 'Montserrat', sans-serif; font-size: 7.5px; font-weight: 900; letter-spacing: 0.8px; line-height: 1; margin-top: 2px; text-align: center;">
+                          SGG9RZ
+                        </span>
+                      </div>
+
                     </div>
                   </div>
                 </div>

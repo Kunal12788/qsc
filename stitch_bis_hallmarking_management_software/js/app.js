@@ -2333,101 +2333,160 @@
     updateTagMiniPreview();
   }
 
+  function formatTagDateStr(d) {
+    if (!d) {
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      return dd + '-' + mm + '-' + yyyy;
+    }
+    if (typeof d === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(d.trim())) return d.trim();
+    const parsed = new Date(d);
+    if (!isNaN(parsed.getTime())) {
+      const dd = String(parsed.getDate()).padStart(2, '0');
+      const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+      const yyyy = parsed.getFullYear();
+      return dd + '-' + mm + '-' + yyyy;
+    }
+    return String(d);
+  }
+
   function updateTagMiniPreview() {
-    const width = parseFloat(document.getElementById('tag-print-width') ? document.getElementById('tag-print-width').value : 50) || 50;
-    const height = parseFloat(document.getElementById('tag-print-height') ? document.getElementById('tag-print-height').value : 12) || 12;
-    const unit = document.getElementById('tag-print-unit') ? document.getElementById('tag-print-unit').value : 'mm';
-
-    const dimsLabel = document.getElementById('tag-preview-dims-label');
-    if (dimsLabel) dimsLabel.textContent = width + ' × ' + height + ' ' + unit;
-
     const miniPreview = document.getElementById('tag-mini-preview');
-    if (miniPreview) {
-      // Dynamic live dimension scaling inside preview box (container is h-36, available box ~ 240px x 116px)
-      const maxBoxW = 240;
-      const maxBoxH = 116;
-      const minBoxW = 80;
-      const minBoxH = 40;
+    const widthInput = document.getElementById('tag-cfg-width');
+    const heightInput = document.getElementById('tag-cfg-height');
+    const unitInput = document.getElementById('tag-cfg-unit');
+    const dimsLabel = document.getElementById('tag-preview-dims-label');
 
-      // Effective aspect ratio in mm
-      const effW = unit === 'in' ? width * 25.4 : width;
-      const effH = unit === 'in' ? height * 25.4 : height;
-      const ratio = Math.max(0.05, effW) / Math.max(0.05, effH);
+    if (!miniPreview || !widthInput || !heightInput) return;
 
-      let targetW, targetH;
-      if (ratio >= (maxBoxW / maxBoxH)) {
-        targetW = maxBoxW;
-        targetH = Math.max(minBoxH, Math.min(maxBoxH, Math.round(maxBoxW / ratio)));
-      } else {
-        targetH = maxBoxH;
-        targetW = Math.max(minBoxW, Math.min(maxBoxW, Math.round(maxBoxH * ratio)));
-      }
+    const width = parseFloat(widthInput.value) || 50;
+    const height = parseFloat(heightInput.value) || 17;
+    const unit = unitInput ? unitInput.value : 'mm';
 
-      miniPreview.style.width = targetW + 'px';
-      miniPreview.style.height = targetH + 'px';
-      miniPreview.style.maxWidth = '100%';
-      miniPreview.style.transition = 'width 0.22s cubic-bezier(0.4, 0, 0.2, 1), height 0.22s cubic-bezier(0.4, 0, 0.2, 1)';
+    if (dimsLabel) {
+      dimsLabel.textContent = width + ' × ' + height + ' ' + unit;
+    }
 
-      // Checkbox visibility toggles
-      const optCust = document.getElementById('tag-opt-cust') ? document.getElementById('tag-opt-cust').checked : true;
-      const optOrnament = document.getElementById('tag-opt-ornament') ? document.getElementById('tag-opt-ornament').checked : true;
-      const optHuid = document.getElementById('tag-opt-huid') ? document.getElementById('tag-opt-huid').checked : true;
-      const optQr = document.getElementById('tag-opt-qr') ? document.getElementById('tag-opt-qr').checked : true;
+    const ratio = width / height;
+    const maxBoxW = 270;
+    const maxBoxH = 120;
+    const minBoxW = 120;
+    const minBoxH = 50;
 
-      const elRowCust = document.getElementById('mini-row-cust');
-      const elRowOrnament = document.getElementById('mini-row-ornament');
-      const elRowMetric = document.getElementById('mini-row-metric');
-      const elRowHuid = document.getElementById('mini-row-huid');
-      const elRowQr = document.getElementById('mini-row-qr');
+    let targetW, targetH;
+    if (ratio >= maxBoxW / maxBoxH) {
+      targetW = maxBoxW;
+      targetH = Math.max(minBoxH, Math.min(maxBoxH, Math.round(maxBoxW / ratio)));
+    } else {
+      targetH = maxBoxH;
+      targetW = Math.max(minBoxW, Math.min(maxBoxW, Math.round(maxBoxH * ratio)));
+    }
 
-      if (elRowCust) elRowCust.style.display = optCust ? 'flex' : 'none';
-      if (elRowOrnament) elRowOrnament.style.display = optOrnament ? 'flex' : 'none';
-      if (elRowMetric) elRowMetric.style.display = optOrnament ? 'flex' : 'none';
-      if (elRowHuid) elRowHuid.style.display = optHuid ? 'flex' : 'none';
-      if (elRowQr) elRowQr.style.display = optQr ? 'flex' : 'none';
+    miniPreview.style.width = targetW + 'px';
+    miniPreview.style.height = targetH + 'px';
+    miniPreview.style.maxWidth = '100%';
+    miniPreview.style.transition = 'width 0.22s cubic-bezier(0.4, 0, 0.2, 1), height 0.22s cubic-bezier(0.4, 0, 0.2, 1)';
 
-      // Pick top sample row from activeTagRows, or fallback to activeTagBatch defaults
-      const sampleRow = (activeTagRows && activeTagRows[0]) ? activeTagRows[0] : null;
+    // Checkbox visibility toggles
+    const optCust = document.getElementById('tag-opt-cust') ? document.getElementById('tag-opt-cust').checked : true;
+    const optOrnament = document.getElementById('tag-opt-ornament') ? document.getElementById('tag-opt-ornament').checked : true;
+    const optHuid = document.getElementById('tag-opt-huid') ? document.getElementById('tag-opt-huid').checked : true;
+    const optQr = document.getElementById('tag-opt-qr') ? document.getElementById('tag-opt-qr').checked : true;
 
-      const custName = sampleRow ? (sampleRow.customer || (activeTagBatch ? activeTagBatch.customer : 'CUSTOMER')) : (activeTagBatch ? activeTagBatch.customer : 'KALYAN HERITAGE');
-      const purityVal = sampleRow ? (sampleRow.purity || (activeTagBatch ? activeTagBatch.purity : '22K 916')) : (activeTagBatch ? activeTagBatch.purity : '22K 916');
-      const articleVal = sampleRow ? (sampleRow.articleType || (activeTagBatch ? activeTagBatch.metal : 'GOLD')) : (activeTagBatch ? activeTagBatch.metal : 'GOLD');
-      const ornamentVal = sampleRow ? (sampleRow.ornamentsType || sampleRow.itemDesc || 'HANDWEAR') : 'HANDWEAR';
-      const weightVal = sampleRow ? (sampleRow.weight ? (sampleRow.weight + 'g') : (sampleRow.grossWt + 'g')) : '1.674g';
-      const huidVal = sampleRow ? (sampleRow.huid || 'Y6P2F5') : 'Y6P2F5';
-      const boxVal = sampleRow ? (sampleRow.boxNo || (activeTagBatch ? (activeTagBatch.tray || activeTagBatch.boxNo) : 'BOX-TR-09')) : (activeTagBatch ? (activeTagBatch.tray || activeTagBatch.boxNo || 'BOX-TR-09') : 'BOX-TR-09');
+    const elRowCust = document.getElementById('mini-row-cust');
+    const elRowDate = document.getElementById('mini-row-date');
+    const elRowArtBox = document.getElementById('mini-row-art-box');
+    const elRowOrnament = document.getElementById('mini-row-ornament');
+    const elRowGross = document.getElementById('mini-row-gross');
+    const elRowNet = document.getElementById('mini-row-net');
+    const elRowHuid = document.getElementById('mini-row-huid');
+    const elRowQr = document.getElementById('mini-row-qr');
 
-      const elCust = document.getElementById('mini-tag-cust');
-      const elPurity = document.getElementById('mini-tag-purity');
-      const elArticle = document.getElementById('mini-tag-article');
-      const elOrnament = document.getElementById('mini-tag-ornament');
-      const elWeight = document.getElementById('mini-tag-weight');
-      const elBox = document.getElementById('mini-tag-box');
-      const elHuid = document.getElementById('mini-tag-huid');
-      const elQr = document.getElementById('mini-tag-qr');
-      const elQrLabel = document.getElementById('mini-tag-qr-label');
+    if (elRowCust) elRowCust.style.display = optCust ? 'block' : 'none';
+    if (elRowDate) elRowDate.style.display = optCust ? 'block' : 'none';
+    if (elRowArtBox) elRowArtBox.style.display = optOrnament ? 'flex' : 'none';
+    if (elRowOrnament) elRowOrnament.style.display = optOrnament ? 'block' : 'none';
+    if (elRowGross) elRowGross.style.display = optOrnament ? 'block' : 'none';
+    if (elRowNet) elRowNet.style.display = optOrnament ? 'block' : 'none';
+    if (elRowHuid) elRowHuid.style.display = optHuid ? 'block' : 'none';
+    if (elRowQr) elRowQr.style.display = optQr ? 'flex' : 'none';
 
-      if (elCust) elCust.textContent = custName; // Full customer name, wraps up to 2 lines
-      if (elPurity) elPurity.textContent = purityVal;
-      if (elArticle) elArticle.textContent = articleVal.replace(purityVal, '').trim() || 'GOLD';
-      if (elOrnament) elOrnament.textContent = ornamentVal; // Full ornament name without truncation
-      if (elWeight) elWeight.textContent = weightVal;
-      if (elBox) elBox.textContent = boxVal;
-      if (elHuid) elHuid.textContent = huidVal;
-      if (elQrLabel) elQrLabel.textContent = huidVal;
+    // Pick top sample row from activeTagRows, or fallback to activeTagBatch defaults
+    const sampleRow = (activeTagRows && activeTagRows[0]) ? activeTagRows[0] : null;
 
-      if (elRowQr) {
-        const qrBoxW = Math.max(34, Math.min(targetH, Math.round(targetW * 0.30)));
-        elRowQr.style.width = qrBoxW + 'px';
-      }
-      if (elQr && optQr) {
-        const qrSize = Math.max(22, Math.min(targetH - 24, 75));
-        elQr.innerHTML = generateQrCodeSvg(huidVal, qrSize);
-      }
+    const custName = sampleRow ? (sampleRow.customer || (activeTagBatch ? activeTagBatch.customer : 'CUSTOMER')) : (activeTagBatch ? activeTagBatch.customer : 'KALYAN HERITAGE JEWELLERS');
+    const dateStr = sampleRow ? (sampleRow.date || formatTagDateStr(activeTagBatch ? activeTagBatch.receivedDate : null)) : '21-11-2026';
+    const purityVal = sampleRow ? (sampleRow.purity || (activeTagBatch ? activeTagBatch.purity : '22K 916')) : (activeTagBatch ? activeTagBatch.purity : '22K 916');
+    const articleVal = sampleRow ? (sampleRow.articleType || (activeTagBatch ? activeTagBatch.metal : 'GOLD')) : (activeTagBatch ? activeTagBatch.metal : 'GOLD');
+    const ornamentVal = sampleRow ? (sampleRow.ornamentsType || sampleRow.itemDesc || 'MIX ITEM') : 'MIX ITEM';
+    const grossVal = sampleRow ? (sampleRow.grossWt ? (sampleRow.grossWt + (String(sampleRow.grossWt).includes('g') ? '' : 'g')) : (sampleRow.weight ? (sampleRow.weight + 'g') : '2.760g')) : '2.760g';
+    const netVal = sampleRow ? (sampleRow.netWt ? (sampleRow.netWt + (String(sampleRow.netWt).includes('g') ? '' : 'g')) : (sampleRow.weight ? (sampleRow.weight + 'g') : '2.760g')) : '2.760g';
+    const huidVal = sampleRow ? (sampleRow.huid || 'SGG9RZ') : 'SGG9RZ';
+    const boxVal = sampleRow ? (sampleRow.boxNo || (activeTagBatch ? (activeTagBatch.tray || activeTagBatch.boxNo) : 'BOX-TR-09')) : (activeTagBatch ? (activeTagBatch.tray || activeTagBatch.boxNo || 'BOX-TR-09') : 'BOX-TR-09');
+
+    // Auto font-size adjustment based on letter count
+    const custLen = custName.length;
+    const custEffectiveChars = custLen > 18 ? Math.ceil(custLen / 2) : custLen;
+    const artBoxChars = ('ARTICLE: ' + articleVal + '  BOX NUMBER: ' + boxVal).length;
+    const ornChars = ('ORNAMENT: ' + ornamentVal).length;
+    const grossChars = ('GROSS WEIGHT: ' + grossVal).length;
+    const netChars = ('NET WEIGHT: ' + netVal).length;
+    const huidChars = ('HUID NUMBER: ' + huidVal).length;
+
+    const maxChars = Math.max(custEffectiveChars, artBoxChars, ornChars, grossChars, netChars, huidChars);
+
+    let fontScale = 1.0;
+    if (maxChars > 26) {
+      fontScale = Math.min(1.0, 26 / maxChars);
+    }
+    if (custLen > 36) {
+      fontScale = Math.min(fontScale, Math.max(0.55, 36 / custLen + 0.1));
+    }
+    fontScale = Math.max(0.55, fontScale);
+
+    // Apply auto-adjusted font sizes to preview elements
+    const baseTitlePx = Math.max(6.5, Math.min(10.5, targetH * 0.08));
+    const baseDataPx = Math.max(5.5, Math.min(8.5, targetH * 0.065));
+
+    const titlePx = (baseTitlePx * fontScale).toFixed(1);
+    const dataPx = (baseDataPx * fontScale).toFixed(1);
+
+    const elCust = document.getElementById('mini-tag-cust');
+    const elDate = document.getElementById('mini-tag-date');
+    const elArticle = document.getElementById('mini-tag-article');
+    const elOrnament = document.getElementById('mini-tag-ornament');
+    const elGross = document.getElementById('mini-tag-gross');
+    const elNet = document.getElementById('mini-tag-net');
+    const elBox = document.getElementById('mini-tag-box');
+    const elHuid = document.getElementById('mini-tag-huid');
+    const elQr = document.getElementById('mini-tag-qr');
+    const elQrLabel = document.getElementById('mini-tag-qr-label');
+    const elDataZone = document.getElementById('mini-data-zone');
+
+    if (elCust) {
+      elCust.textContent = custName;
+      elCust.style.fontSize = titlePx + 'px';
+    }
+    if (elDate) elDate.textContent = dateStr;
+    if (elArticle) elArticle.textContent = articleVal.replace(purityVal, '').trim() || 'GOLD';
+    if (elOrnament) elOrnament.textContent = ornamentVal;
+    if (elGross) elGross.textContent = grossVal;
+    if (elNet) elNet.textContent = netVal;
+    if (elBox) elBox.textContent = boxVal;
+    if (elHuid) elHuid.textContent = huidVal;
+    if (elQrLabel) elQrLabel.textContent = huidVal;
+    if (elDataZone) elDataZone.style.fontSize = dataPx + 'px';
+
+    // QR size is fixed strictly by preview height, NEVER changed by font scaling!
+    const qrSize = Math.max(26, Math.min(targetH - 30, Math.round(targetW * 0.42), 85));
+    if (elQr && optQr) {
+      elQr.innerHTML = generateQrCodeSvg(huidVal, qrSize);
     }
   }
 
-    // --- GATED SAVE & PRINT ACTIONS ---
+  // --- GATED SAVE & PRINT ACTIONS ---
   function saveTagData() {
     if (!activeTagBatch) {
       showToast('NO ACTIVE BATCH SELECTED TO SAVE.', 'warning');
@@ -2446,46 +2505,16 @@
       return;
     }
 
-    activeTagBatch.excelData = JSON.parse(JSON.stringify(excelSheetData));
-    activeTagBatch.tagData = JSON.parse(JSON.stringify(rows));
     activeTagRows = rows;
+    activeTagBatch.tagData = rows;
+    activeTagBatch.excelData = excelSheetData;
     activeTagBatch.tagStatus = 'DONE';
 
     syncTagPrintButtonState();
     renderTagStatusQueue();
-    updateExcelGridStats();
     updateTagMiniPreview();
 
-    showToast('TAG DATA FOR ' + activeTagBatch.jobDocket + ' SUBMITTED & VALIDATED (' + rows.length + ' ROWS). PRINT UNLOCKED.', 'success');
-  }
-
-  function syncTagPrintButtonState() {
-    const btnTop = document.getElementById('btn-print-tags');
-    const btnBottom = document.getElementById('btn-print-tags-bottom');
-    const note = document.getElementById('tag-print-status-note');
-
-    const isDone = activeTagBatch && activeTagBatch.tagStatus === 'DONE' && activeTagRows.length > 0;
-
-    [btnTop, btnBottom].forEach(btn => {
-      if (!btn) return;
-      if (isDone) {
-        btn.removeAttribute('disabled');
-        btn.classList.remove('btn-print-disabled');
-        btn.classList.add('cursor-pointer');
-      } else {
-        btn.setAttribute('disabled', 'true');
-        btn.classList.add('btn-print-disabled');
-        btn.classList.remove('cursor-pointer');
-      }
-    });
-
-    if (note) {
-      if (isDone) {
-        note.innerHTML = `<span class="text-emerald-700 font-bold flex items-center gap-1"><span class="material-symbols-outlined text-[15px]">check_circle</span>READY TO PRINT (${activeTagRows.length} TAGS SUBMITTED)</span>`;
-      } else {
-        note.innerHTML = '<span class="text-slate-500 font-semibold">SUBMIT DATA TO ENABLE PRINT</span>';
-      }
-    }
+    showToast('SUCCESS: ' + rows.length + ' TAGS SUBMITTED & READY TO PRINT.', 'success');
   }
 
   function printCustomTags() {
@@ -2517,110 +2546,141 @@
     const incHuid = document.getElementById('tag-opt-huid')?.checked !== false;
     const incQr = document.getElementById('tag-opt-qr')?.checked !== false;
 
-    const defaultCustomer = activeTagBatch.customer || 'SSR BULLION CLIENT';
+    const defaultCustomer = activeTagBatch.customer || 'KALYAN HERITAGE JEWELLERS';
     const defaultMetal = activeTagBatch.metal || 'GOLD';
     const defaultPurity = activeTagBatch.purity || '22K 916';
-    const defaultBox = activeTagBatch.tray || activeTagBatch.boxNo || 'BOX-TR-01';
+    const defaultBox = activeTagBatch.tray || activeTagBatch.boxNo || 'BOX-TR-09';
+    const batchDateStr = formatTagDateStr(activeTagBatch.receivedDate || activeTagBatch.date);
 
     const hMm = unit === 'in' ? height * 25.4 : height;
     const wMm = unit === 'in' ? width * 25.4 : width;
 
-    // Full Details Typography Scaling
-    const titlePt = Math.max(5.2, Math.min(8.5, hMm * 0.38));
-    const subPt = Math.max(4.4, Math.min(6.6, hMm * 0.28));
-    const metaPt = Math.max(3.6, Math.min(5.2, hMm * 0.22));
-    const badgePt = Math.max(4.0, Math.min(6.0, hMm * 0.25));
+    // QR size is fixed strictly by physical dimensions, NEVER changed by font scaling!
+    const qrBoxDimMm = Math.max(8.0, Math.min(hMm - 4.5, wMm * 0.40));
+    const qrPixelDim = Math.max(26, Math.round(qrBoxDimMm * 3.78));
 
-    // Big QR dimension in the lower section (starts below Line 1)
-    const lowerSectionHMm = Math.max(6.0, hMm - 5.5);
-    const qrBoxDimMm = Math.max(8.5, Math.min(lowerSectionHMm, wMm * 0.34));
+    const qrHeaderPt = Math.max(4.0, Math.min(6.5, (hMm / 17) * 5.2)).toFixed(2);
+    const qrFooterPt = Math.max(4.2, Math.min(7.0, (hMm / 17) * 5.6)).toFixed(2);
 
     const tagsHtml = activeTagRows.map((row, idx) => {
       const customerName = row.customer || defaultCustomer;
+      const dateStr = row.date || batchDateStr;
       const purityVal = row.purity || defaultPurity;
-      const articleType = (row.articleType || defaultMetal).replace(purityVal, '').trim() || defaultMetal;
-      const ornamentsType = row.ornamentsType || row.itemDesc || 'Jewellery Article';
-      const weightStr = (row.weight || row.grossWt || '0.000') + 'g';
-      const huidStr = row.huid || `HUID-${idx + 1}`;
+      const articleVal = (row.articleType || defaultMetal).replace(purityVal, '').trim() || defaultMetal;
+      const ornamentsType = row.ornamentsType || row.itemDesc || 'MIX ITEM';
+      const grossVal = (row.grossWt || row.weight || '2.760') + (String(row.grossWt || '').includes('g') ? '' : 'g');
+      const netVal = (row.netWt || row.weight || row.grossWt || '2.760') + (String(row.netWt || '').includes('g') ? '' : 'g');
+      const huidStr = row.huid || ('SGG9RZ' + (idx > 0 ? (idx + 1) : ''));
       const boxNoStr = row.boxNo || defaultBox;
 
-      // High-precision vector QR code for large lower right quadrant
-      const qrPixelDim = Math.max(28, Math.round(qrBoxDimMm * 3.78) - 8);
+      // Auto font-size adjustment based on letter count
+      const custLen = customerName.length;
+      const custEffectiveChars = custLen > 18 ? Math.ceil(custLen / 2) : custLen;
+      const artBoxChars = ('ARTICLE: ' + articleVal + '  BOX NUMBER: ' + boxNoStr).length;
+      const ornChars = ('ORNAMENT: ' + ornamentsType).length;
+      const grossChars = ('GROSS WEIGHT: ' + grossVal).length;
+      const netChars = ('NET WEIGHT: ' + netVal).length;
+      const huidChars = ('HUID NUMBER: ' + huidStr).length;
+
+      const maxChars = Math.max(custEffectiveChars, artBoxChars, ornChars, grossChars, netChars, huidChars);
+
+      let fontScale = 1.0;
+      if (maxChars > 26) {
+        fontScale = Math.min(1.0, 26 / maxChars);
+      }
+      if (custLen > 36) {
+        fontScale = Math.min(fontScale, Math.max(0.55, 36 / custLen + 0.1));
+      }
+      fontScale = Math.max(0.55, fontScale);
+
+      // Base font sizes dependent on physical tag height
+      const baseDataPt = Math.max(3.2, Math.min(5.5, (hMm / 17) * 4.8));
+      const baseTitlePt = Math.max(4.0, Math.min(6.8, (hMm / 17) * 5.8));
+
+      const dataPt = (baseDataPt * fontScale).toFixed(2);
+      const titlePt = (baseTitlePt * fontScale).toFixed(2);
+      const dividerPt = (Math.max(4.0, baseDataPt * 1.1 * fontScale)).toFixed(2);
+
+      // Vector QR code SVG
       const qrSvg = incQr ? generateQrCodeSvg(huidStr, qrPixelDim) : '';
 
       return `
-        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; box-sizing: border-box; padding: 0.8mm 1mm; font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #ffffff; border: 0.8px solid #000000; outline: 0.35px solid #000000; outline-offset: -0.7mm; color: #000000; overflow: hidden; line-height: 1.15;">
+        <div class="print-tag" style="width: ${width}${unit}; height: ${height}${unit}; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; page-break-after: always; box-sizing: border-box; padding: 0.6mm 0.8mm; font-family: 'Montserrat', Arial, Helvetica, sans-serif; background: #ffffff; color: #000000; overflow: hidden; line-height: 1.15;">
           
-          ${incCust ? `
-            <!-- LINE 1: FULL WIDTH DEDICATED EXCLUSIVELY TO CUSTOMER NAME -->
-            <div style="width: 100%; border-bottom: 0.5px solid #000000; padding-bottom: 0.25mm; margin-bottom: 0.2mm;">
-              <span style="font-family: 'Cinzel', Georgia, 'Times New Roman', serif; font-size: ${titlePt}pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.15; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-align: left;">
-                ${escapeHtmlStr(customerName)}
-              </span>
-            </div>
-          ` : ''}
-
-          <!-- LOWER SECTION: SPLIT INTO LEFT METADATA & RIGHT BIG QR CODE -->
-          <div style="flex: 1; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; gap: 1mm; overflow: hidden;">
+          <!-- LEFT SIDE: Exactly 48% width, NEVER crosses the middle of the tag -->
+          <div style="width: 48%; max-width: 48%; display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; overflow: hidden; padding-right: 0.5mm;">
             
-            <!-- LEFT SIDE: Full Structured Assay Data (No Shortcuts) -->
-            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding-right: 0.8mm; overflow: hidden;">
+            ${incCust ? `
+              <!-- Customer Jeweller Header (Centered serif) -->
+              <div style="width: 100%; text-align: center;">
+                <div style="font-family: 'Cinzel', 'Playfair Display', Georgia, serif; font-size: ${titlePt}pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.12; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-align: center;">
+                  ${escapeHtmlStr(customerName)}
+                </div>
+
+                <!-- Diamond Divider -->
+                <div style="display: flex; align-items: center; justify-content: center; width: 100%; margin: 0.3mm 0 0.5mm 0;">
+                  <div style="flex: 1; height: 0.6px; background: #000000;"></div>
+                  <div style="margin: 0 1mm; font-size: ${dividerPt}pt; line-height: 1; color: #000000;">◆</div>
+                  <div style="flex: 1; height: 0.6px; background: #000000;"></div>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Structured Metadata Rows (Left-aligned, bold, auto-scaled font) -->
+            <div style="display: flex; flex-direction: column; justify-content: space-between; flex: 1; font-size: ${dataPt}pt; font-weight: 800; line-height: 1.18; overflow: hidden;">
               
+              <!-- DATE -->
+              <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                DATE: ${escapeHtmlStr(dateStr)}
+              </div>
+
               ${incOrnament ? `
-                <!-- Row 1: Full ARTICLE & Purity Badge -->
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; padding: 0.1mm 0;">
-                  <span style="font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    <span style="font-size: ${metaPt}pt; font-weight: 900; color: #000000; letter-spacing: 0.3px;">ARTICLE:</span> ${escapeHtmlStr(articleType)}
-                  </span>
-                  <span style="font-family: 'Montserrat', sans-serif; font-size: ${badgePt}pt; font-weight: 900; letter-spacing: 0.5px; padding: 0.1mm 0.6mm; border-radius: 1px; white-space: nowrap; background: #000000; color: #ffffff;">
-                    ${escapeHtmlStr(purityVal)}
-                  </span>
+                <!-- ARTICLE & BOX NUMBER (Same row) -->
+                <div style="display: flex; justify-content: space-between; align-items: baseline; white-space: nowrap; overflow: hidden;">
+                  <span style="overflow: hidden; text-overflow: ellipsis; padding-right: 1mm;">ARTICLE: ${escapeHtmlStr(articleVal)}</span>
+                  <span style="overflow: hidden; text-overflow: ellipsis; text-align: right;">BOX NUMBER: ${escapeHtmlStr(boxNoStr)}</span>
                 </div>
 
-                <!-- Row 2: Full ORNAMENT -->
-                <div style="font-size: ${subPt}pt; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0.1mm 0;">
-                  <span style="font-size: ${metaPt}pt; font-weight: 900; color: #000000; letter-spacing: 0.3px;">ORNAMENT:</span> ${escapeHtmlStr(ornamentsType)}
+                <!-- ORNAMENT -->
+                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  ORNAMENT: ${escapeHtmlStr(ornamentsType)}
                 </div>
 
-                <!-- Row 3: Full WEIGHT & Full BOX NUMBER (Technical Dashed Strip) -->
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; border-top: 0.35px dashed #000000; border-bottom: 0.35px dashed #000000; padding: 0.15mm 0; background: #fafafa;">
-                  <span style="font-weight: 800; font-family: 'JetBrains Mono', 'Courier New', monospace; white-space: nowrap;">
-                    <span style="font-size: ${metaPt}pt; font-family: 'Montserrat', sans-serif; font-weight: 900; color: #000000; letter-spacing: 0.3px;">WEIGHT:</span> ${escapeHtmlStr(weightStr)}
-                  </span>
-                  <span style="font-weight: 700; font-family: 'JetBrains Mono', 'Courier New', monospace; white-space: nowrap; text-align: right;">
-                    <span style="font-size: ${metaPt}pt; font-family: 'Montserrat', sans-serif; font-weight: 900; color: #000000; letter-spacing: 0.3px;">BOX NUMBER:</span> ${escapeHtmlStr(boxNoStr)}
-                  </span>
+                <!-- GROSS WEIGHT -->
+                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  GROSS WEIGHT: ${escapeHtmlStr(grossVal)}
+                </div>
+
+                <!-- NET WEIGHT -->
+                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  NET WEIGHT: ${escapeHtmlStr(netVal)}
                 </div>
               ` : ''}
 
               ${incHuid ? `
-                <!-- Row 4: Full HUID NUMBER & BIS Certification Seal -->
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: ${subPt}pt; padding-top: 0.15mm;">
-                  <span style="font-size: ${titlePt}pt; font-weight: 900; font-family: 'JetBrains Mono', 'Courier New', monospace; letter-spacing: 0.8px; white-space: nowrap;">
-                    <span style="font-size: ${metaPt}pt; font-family: 'Montserrat', sans-serif; font-weight: 900; letter-spacing: 0.3px;">HUID NUMBER:</span> ${escapeHtmlStr(huidStr)}
-                  </span>
-                  <span style="font-family: 'Cinzel', serif; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; color: #000000;">
-                    ✦ BIS ASSAY ✦
-                  </span>
+                <!-- HUID NUMBER -->
+                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  HUID NUMBER: ${escapeHtmlStr(huidStr)}
                 </div>
               ` : ''}
-            </div>
 
-            <!-- RIGHT SIDE: BIG QR SCAN TARGET BOX (STARTS JUST BELOW LINE 1) -->
-            ${incQr ? `
-              <div style="width: ${qrBoxDimMm}mm; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; flex-shrink: 0; background: #ffffff; padding: 0.2mm; border-left: 0.6px solid #000000; box-sizing: border-box;">
-                <span style="font-family: 'Montserrat', sans-serif; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.8px; text-transform: uppercase; line-height: 1; text-align: center;">
-                  [ SCAN QR ]
-                </span>
-                <div style="display: flex; align-items: center; justify-content: center; width: 100%; flex: 1; overflow: hidden; padding: 0.15mm 0;">
-                  ${qrSvg}
-                </div>
-                <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: ${metaPt}pt; font-weight: 900; letter-spacing: 0.5px; line-height: 1; text-align: center;">
-                  ${escapeHtmlStr(huidStr)}
-                </span>
-              </div>
-            ` : ''}
+            </div>
           </div>
+
+          <!-- RIGHT SIDE: Centered QR Code with SCAN QR and HUID (Strictly Right Half) -->
+          ${incQr ? `
+            <div style="width: 50%; max-width: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; overflow: hidden;">
+              <div style="font-family: 'Montserrat', sans-serif; font-size: ${qrHeaderPt}pt; font-weight: 900; letter-spacing: 0.8px; text-transform: uppercase; line-height: 1; margin-bottom: 0.4mm; text-align: center;">
+                SCAN QR
+              </div>
+              <div style="display: flex; align-items: center; justify-content: center; width: ${qrBoxDimMm}mm; height: ${qrBoxDimMm}mm;">
+                ${qrSvg}
+              </div>
+              <div style="font-family: 'Montserrat', 'JetBrains Mono', monospace; font-size: ${qrFooterPt}pt; font-weight: 900; letter-spacing: 0.8px; line-height: 1; margin-top: 0.4mm; text-align: center;">
+                ${escapeHtmlStr(huidStr)}
+              </div>
+            </div>
+          ` : ''}
 
         </div>
       `;
@@ -2636,7 +2696,7 @@
           <title>TAGS - ${escapeHtmlStr(activeTagBatch.jobDocket)}</title>
           <link rel="preconnect" href="https://fonts.googleapis.com">
           <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-          <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Montserrat:wght@600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+          <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
           <style>
             @page {
               size: ${width}${unit} ${height}${unit};
@@ -2652,7 +2712,7 @@
               padding: 0;
               background: #ffffff;
               color: #000000;
-              font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              font-family: 'Montserrat', Arial, sans-serif;
             }
             .print-tag {
               page-break-inside: avoid;
