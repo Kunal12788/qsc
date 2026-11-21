@@ -236,6 +236,7 @@
         bis: 'BIS-MH-10294-G',
         reqNo: 'REQ-8831-A',
         metal: 'GOLD',
+        articleType: 'MIX ORNAMENTS',
         pcs: 85,
         purity: '22K 916',
         stream: 'Main Branch',
@@ -261,6 +262,7 @@
         bis: 'BIS-KA-99210',
         reqNo: 'REQ-8830-K',
         metal: 'GOLD',
+        articleType: 'MIX ITEM',
         pcs: 45,
         purity: '22K 916',
         stream: 'Main Branch',
@@ -286,6 +288,7 @@
         bis: 'BIS-KA-10492',
         reqNo: 'REQ-8828-M',
         metal: 'GOLD',
+        articleType: 'PUTHI HAR',
         pcs: 112,
         purity: '22K 916',
         stream: 'Main Branch',
@@ -311,6 +314,7 @@
         bis: 'BIS-KA-88301',
         reqNo: 'REQ-8825-T',
         metal: 'GOLD',
+        articleType: 'NECKLACE',
         pcs: 18,
         purity: '18K 750',
         stream: 'OFFSIDE',
@@ -1217,7 +1221,8 @@
           setMetalType('SILVER');
         } else if (e.key === 'Enter') {
           e.preventDefault();
-          focusAndHighlightField(document.getElementById('purity-dropdown-btn'));
+          const target = document.getElementById('article-type-input') || document.getElementById('purity-dropdown-btn');
+          focusAndHighlightField(target);
         }
       });
     }
@@ -1278,7 +1283,8 @@
         if (e.shiftKey && e.key === 'Enter') {
           e.preventDefault();
           togglePurityMenu(false);
-          focusAndHighlightField(document.getElementById('metal-button-group'));
+          const target = document.getElementById('article-type-input') || document.getElementById('metal-button-group');
+          focusAndHighlightField(target);
           return;
         }
       });
@@ -2155,7 +2161,7 @@
       let slNo = rowIdx;
       let customer = defaultCustomer;
       let articleType = defaultMetal + ' ' + defaultPurity;
-      let ornamentsType = 'Jewellery Article';
+      let ornamentsType = (activeTagBatch && activeTagBatch.articleType) ? activeTagBatch.articleType : 'Jewellery Article';
       let pcs = 1;
       let weight = '0.000';
       let grossWt = '0.000';
@@ -3990,11 +3996,16 @@
       addError(customerInput || customerSelect, 'CUSTOMER NAME (TYPE OR SELECT JEWELLER)', 'SECTION A');
     }
 
-    // LINE 3: Total Pieces Count, Declared Gold Purity
+    // LINE 3: Total Pieces Count, Article Type, Declared Gold Purity
     const piecesInput = document.getElementById('pieces-count');
     const rawPcs = piecesInput && piecesInput.value.trim() !== '' ? parseInt(piecesInput.value, 10) : 0;
     if (!piecesInput || isNaN(rawPcs) || rawPcs <= 0) {
       addError(piecesInput, 'TOTAL PIECES COUNT (MUST BE AT LEAST 1 UNIT)', 'SECTION A');
+    }
+
+    const articleTypeInput = document.getElementById('article-type-input');
+    if (!articleTypeInput || !articleTypeInput.value.trim()) {
+      addError(articleTypeInput, 'TYPE OF ARTICLES (TYPE OR SELECT ARTICLE TYPE)', 'SECTION A');
     }
 
     const puritySelect = document.getElementById('purity-select');
@@ -4161,6 +4172,8 @@
 
     const finalReqNo = reqNumberInput.value.trim();
     const metal = metalTypeInput && metalTypeInput.value === 'SILVER' ? 'SILVER' : 'GOLD';
+    const articleTypeInput = document.getElementById('article-type-input');
+    const articleType = (articleTypeInput && articleTypeInput.value.trim().toUpperCase()) || 'MIX ITEM';
     const purity = puritySelect.value;
     const allocatedBoxes = getAllocatedBoxesList();
     const tray = trayInput && trayInput.value && !trayInput.value.includes('No Trays') 
@@ -4192,6 +4205,7 @@
       customer: customerText,
       bis: bisText,
       metal: metal,
+      articleType: articleType,
       reqNo: finalReqNo,
       pcs: pcs,
       purity: purity,
@@ -4290,6 +4304,10 @@
             <div class="flex justify-between items-center">
               <span class="text-slate-500 font-medium">ARTICLE METAL:</span>
               <span class="font-bold text-slate-800">${escapeHtmlStr(batch.metal)}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500 font-medium">TYPE OF ARTICLES:</span>
+              <span class="font-bold text-primary-container font-mono">${escapeHtmlStr(batch.articleType || 'MIX ITEM')}</span>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-slate-500 font-medium">DECLARED PURITY:</span>
@@ -4503,6 +4521,11 @@
             <div style="font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.15; margin-top: 2px;">
               ${escapeHtmlStr(batch.metal)} • ${escapeHtmlStr(batch.purity)}
             </div>
+            ${batch.articleType ? `
+            <div style="margin-top: 5px; font-size: 8.5px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">TYPE OF ARTICLES</div>
+            <div style="font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.15; margin-top: 1px;">
+              ${escapeHtmlStr(batch.articleType)}
+            </div>` : ''}
           </div>
 
           <!-- FOOTER -->
@@ -4614,6 +4637,12 @@
     clearCustomerAutocomplete();
     resetWeightInputs();
     setMetalType('GOLD');
+    const articleTypeInput = document.getElementById('article-type-input');
+    if (articleTypeInput) {
+      articleTypeInput.value = '';
+      articleTypeInput.classList.remove('field-error-highlight');
+    }
+    closeArticleTypeDropdown();
     const puritySelect = document.getElementById('purity-select');
     const purityDisplay = document.getElementById('purity-display-text');
     if (puritySelect) puritySelect.value = '22K 916';
@@ -7558,6 +7587,225 @@
   }
 
   // ========================================================
+  // TYPE OF ARTICLES AUTOCOMPLETE & CUSTOM INPUT
+  // ========================================================
+  const ARTICLE_TYPE_OPTIONS = [
+    'RING',
+    'CHAIN',
+    'NECKLACE',
+    'BANGLES',
+    'BRACELET',
+    'EARRINGS',
+    'JHUMKA',
+    'PENDANT',
+    'MANGALSUTRA',
+    'ANKLET (PAYAL)',
+    'NOSE PIN (NATH)',
+    'KADA',
+    'HANDWEAR',
+    'MIX ITEM',
+    'MIX ORNAMENTS',
+    'COIN / BAR',
+    'WAIST BELT (KAMARBANDH)',
+    'CHOKER',
+    'HAAR / LONG NECKLACE',
+    'TANMANIYA',
+    'BROOCH / PIN',
+    'TIKLI / MAANG TIKKA',
+    'TOE RING (BICHHIYA)',
+    'ARMLET (BAJUBAND)',
+    'PUTHI HAR',
+    'POOJA ARTICLES / MURTI',
+    'UTENSILS / VESSEL'
+  ];
+
+  let activeArticleTypeIndex = -1;
+  let currentArticleTypeMatches = [];
+
+  function renderArticleTypeSuggestions(query = '') {
+    const dropdown = document.getElementById('article-type-suggestions');
+    const chevron = document.getElementById('article-type-chevron');
+    if (!dropdown) return;
+
+    const q = (query || '').trim().toUpperCase();
+    currentArticleTypeMatches = q
+      ? ARTICLE_TYPE_OPTIONS.filter(item => item.includes(q))
+      : ARTICLE_TYPE_OPTIONS;
+
+    activeArticleTypeIndex = currentArticleTypeMatches.length > 0 ? 0 : -1;
+
+    let html = '';
+    if (currentArticleTypeMatches.length === 0) {
+      if (q) {
+        html = `
+          <div class="px-3.5 py-2.5 text-xs text-on-surface-variant flex items-center justify-between hover:bg-surface-container cursor-pointer font-semibold transition-colors" onclick="selectArticleType('${escapeHtmlStr(q)}')">
+            <span>+ Use Custom: <strong class="text-on-surface font-bold">"${escapeHtmlStr(q)}"</strong></span>
+            <span class="text-[10px] text-outline uppercase font-mono">Custom</span>
+          </div>
+        `;
+      } else {
+        html = '<div class="px-3.5 py-2.5 text-xs text-outline italic">No suggestions</div>';
+      }
+    } else {
+      html = currentArticleTypeMatches.map((item, idx) => {
+        let highlighted = escapeHtmlStr(item);
+        if (q) {
+          const matchIndex = item.indexOf(q);
+          if (matchIndex >= 0) {
+            highlighted = escapeHtmlStr(item.slice(0, matchIndex)) + 
+              '<mark class="bg-amber-300 text-slate-900 font-extrabold px-0.5 rounded">' + 
+              escapeHtmlStr(item.slice(matchIndex, matchIndex + q.length)) + 
+              '</mark>' + 
+              escapeHtmlStr(item.slice(matchIndex + q.length));
+          }
+        }
+        const isActive = idx === activeArticleTypeIndex;
+        return `
+          <div 
+            class="article-type-item px-3.5 py-2.5 text-xs font-semibold text-on-surface flex items-center justify-between cursor-pointer transition-colors ${isActive ? 'bg-primary-container/30 text-primary font-bold' : 'hover:bg-surface-container'}"
+            data-index="${idx}"
+            onclick="selectArticleTypeByIndex(${idx})"
+            onmouseenter="setArticleTypeActiveIndex(${idx})"
+          >
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[15px] text-outline">diamond</span>
+              <span>${highlighted}</span>
+            </div>
+            <span class="text-[10px] text-outline font-mono">SELECT</span>
+          </div>
+        `;
+      }).join('');
+
+      if (q && !ARTICLE_TYPE_OPTIONS.includes(q)) {
+        html += `
+          <div class="px-3.5 py-2 border-t border-surface-container text-xs hover:bg-surface-container cursor-pointer font-semibold flex items-center justify-between" onclick="selectArticleType('${escapeHtmlStr(q)}')">
+            <span>+ Use Custom: <strong class="text-on-surface font-bold">"${escapeHtmlStr(q)}"</strong></span>
+            <span class="text-[10px] text-outline uppercase font-mono">Custom</span>
+          </div>
+        `;
+      }
+    }
+
+    dropdown.innerHTML = html;
+    dropdown.classList.remove('hidden');
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+  }
+
+  function setArticleTypeActiveIndex(idx) {
+    activeArticleTypeIndex = idx;
+    document.querySelectorAll('.article-type-item').forEach((el, i) => {
+      if (i === idx) {
+        el.classList.add('bg-primary-container/30', 'text-primary', 'font-bold');
+      } else {
+        el.classList.remove('bg-primary-container/30', 'text-primary', 'font-bold');
+      }
+    });
+  }
+
+  function selectArticleType(val) {
+    const input = document.getElementById('article-type-input');
+    const dropdown = document.getElementById('article-type-suggestions');
+    const chevron = document.getElementById('article-type-chevron');
+
+    if (input) {
+      input.value = (val || '').trim().toUpperCase();
+      input.classList.remove('field-error-highlight');
+    }
+    if (dropdown) dropdown.classList.add('hidden');
+    if (chevron) chevron.style.transform = '';
+
+    setTimeout(() => {
+      const purityBtn = document.getElementById('purity-dropdown-btn');
+      if (purityBtn) focusAndHighlightField(purityBtn);
+    }, 50);
+  }
+
+  function selectArticleTypeByIndex(idx) {
+    if (currentArticleTypeMatches && currentArticleTypeMatches[idx]) {
+      selectArticleType(currentArticleTypeMatches[idx]);
+    }
+  }
+
+  function toggleArticleTypeDropdown() {
+    const dropdown = document.getElementById('article-type-suggestions');
+    const input = document.getElementById('article-type-input');
+    if (!dropdown) return;
+
+    if (dropdown.classList.contains('hidden')) {
+      const q = input ? input.value : '';
+      renderArticleTypeSuggestions(q);
+      if (input) input.focus();
+    } else {
+      closeArticleTypeDropdown();
+    }
+  }
+
+  function closeArticleTypeDropdown() {
+    const dropdown = document.getElementById('article-type-suggestions');
+    const chevron = document.getElementById('article-type-chevron');
+    if (dropdown) dropdown.classList.add('hidden');
+    if (chevron) chevron.style.transform = '';
+  }
+
+  function initArticleTypeAutocomplete() {
+    const input = document.getElementById('article-type-input');
+    const dropdown = document.getElementById('article-type-suggestions');
+    if (!input) return;
+
+    input.addEventListener('focus', () => {
+      renderArticleTypeSuggestions(input.value);
+    });
+
+    input.addEventListener('input', () => {
+      renderArticleTypeSuggestions(input.value);
+    });
+
+    input.addEventListener('keydown', e => {
+      const isDropdownOpen = dropdown && !dropdown.classList.contains('hidden');
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!isDropdownOpen) {
+          renderArticleTypeSuggestions(input.value);
+        } else if (currentArticleTypeMatches.length > 0) {
+          activeArticleTypeIndex = (activeArticleTypeIndex + 1) % currentArticleTypeMatches.length;
+          setArticleTypeActiveIndex(activeArticleTypeIndex);
+          const activeEl = dropdown.querySelectorAll('.article-type-item')[activeArticleTypeIndex];
+          if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (isDropdownOpen && currentArticleTypeMatches.length > 0) {
+          activeArticleTypeIndex = (activeArticleTypeIndex - 1 + currentArticleTypeMatches.length) % currentArticleTypeMatches.length;
+          setArticleTypeActiveIndex(activeArticleTypeIndex);
+          const activeEl = dropdown.querySelectorAll('.article-type-item')[activeArticleTypeIndex];
+          if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (isDropdownOpen && activeArticleTypeIndex >= 0 && currentArticleTypeMatches[activeArticleTypeIndex]) {
+          selectArticleType(currentArticleTypeMatches[activeArticleTypeIndex]);
+        } else {
+          closeArticleTypeDropdown();
+          setTimeout(() => {
+            const purityBtn = document.getElementById('purity-dropdown-btn');
+            if (purityBtn) focusAndHighlightField(purityBtn);
+          }, 50);
+        }
+      } else if (e.key === 'Escape') {
+        closeArticleTypeDropdown();
+      }
+    });
+
+    document.addEventListener('click', e => {
+      const wrapper = document.getElementById('article-type-wrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        closeArticleTypeDropdown();
+      }
+    });
+  }
+
+  // ========================================================
   // LINE-BY-LINE ENTER KEY WORKFLOW NAVIGATION
   // ========================================================
   function focusAndHighlightField(el) {
@@ -7604,9 +7852,10 @@
     // LINE 2: Customer Name
     pushIfVisible('customer-name-input');
 
-    // LINE 3: Total Pieces Count -> Article Metal -> Declared Gold Purity
+    // LINE 3: Total Pieces Count -> Article Metal -> Type of Articles -> Declared Gold Purity
     pushIfVisible('pieces-count');
     pushIfVisible('metal-button-group');
+    pushIfVisible('article-type-input');
     pushIfVisible('purity-dropdown-btn');
 
     // LINE 4: Request Number -> Job Number (and extra jobs) -> Vault Tray Assigned
@@ -7659,6 +7908,12 @@
           target.id === 'depositor-dropdown-btn' ||
           target.id === 'receiver-dropdown-btn') {
         return;
+      }
+
+      // If on article-type-input with an active suggestions dropdown, let article autocomplete handle it
+      if (target.id === 'article-type-input') {
+        const dropdown = document.getElementById('article-type-suggestions');
+        if (dropdown && !dropdown.classList.contains('hidden')) return;
       }
 
       // If on customer-name-input with an active suggestions dropdown, let customer autocomplete handle it
@@ -7751,6 +8006,7 @@
 
     // 6. Smart Customer Autocomplete, Interactive Purity & Enter Navigation in Receive
     initCustomerAutocomplete();
+    initArticleTypeAutocomplete();
     initInteractiveControls();
     initEnterKeyNavigation();
 
@@ -8061,5 +8317,12 @@
   window.toggleActiveBillPrintStatus = toggleActiveBillPrintStatus;
   window.finalizeCurrentBill = finalizeCurrentBill;
   window.initInteractiveControls = initInteractiveControls;
+  window.renderArticleTypeSuggestions = renderArticleTypeSuggestions;
+  window.selectArticleType = selectArticleType;
+  window.selectArticleTypeByIndex = selectArticleTypeByIndex;
+  window.toggleArticleTypeDropdown = toggleArticleTypeDropdown;
+  window.closeArticleTypeDropdown = closeArticleTypeDropdown;
+  window.setArticleTypeActiveIndex = setArticleTypeActiveIndex;
+  window.initArticleTypeAutocomplete = initArticleTypeAutocomplete;
 })();
 

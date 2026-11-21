@@ -1100,8 +1100,8 @@
                       </div>
                     </div>
 
-                    <!-- LINE 3, ITEM 1: TOTAL PIECES COUNT (Span 4 columns) -->
-                    <div class="flex flex-col gap-1.5 md:col-span-1 lg:col-span-4">
+                    <!-- LINE 3, ITEM 1: TOTAL PIECES COUNT (Span 3 columns) -->
+                    <div class="flex flex-col gap-1.5 md:col-span-1 lg:col-span-3">
                       <label class="text-label-md font-label-md font-semibold text-on-surface" for="pieces-count">TOTAL PIECES COUNT <span class="text-error">*</span></label>
                       <div class="relative flex items-center">
                         <input id="pieces-count" class="w-full h-10 px-3 bg-surface-container-low text-on-surface font-data-mono text-data-mono rounded-lg focus:outline-none pr-16" min="1" type="number" value="" required/>
@@ -1109,8 +1109,8 @@
                       </div>
                     </div>
 
-                    <!-- LINE 3, ITEM 2: ARTICLE METAL (Span 4 columns) -->
-                    <div class="flex flex-col gap-1.5 md:col-span-1 lg:col-span-4">
+                    <!-- LINE 3, ITEM 2: ARTICLE METAL (Span 3 columns) -->
+                    <div class="flex flex-col gap-1.5 md:col-span-1 lg:col-span-3">
                       <div class="flex items-center justify-between">
                         <label class="text-label-md font-label-md font-semibold text-on-surface">ARTICLE METAL <span class="text-error">*</span></label>
                         <span class="text-[10px] text-outline font-medium">← GOLD | SILVER →</span>
@@ -1128,8 +1128,46 @@
                       <input type="hidden" id="metal-type" value="GOLD"/>
                     </div>
 
-                    <!-- LINE 3, ITEM 3: DECLARED GOLD PURITY (Span 4 columns) -->
-                    <div class="flex flex-col gap-1.5 md:col-span-2 lg:col-span-4 relative" id="purity-wrapper">
+                    <!-- LINE 3, ITEM 3: TYPE OF ARTICLES (Span 3 columns) -->
+                    <div class="flex flex-col gap-1.5 md:col-span-1 lg:col-span-3 relative" id="article-type-wrapper">
+                      <div class="flex items-center justify-between">
+                        <label class="text-label-md font-label-md font-semibold text-on-surface" for="article-type-input">
+                          TYPE OF ARTICLES <span class="text-error">*</span>
+                        </label>
+                        <span class="text-[10px] text-outline font-medium">TYPE OR SELECT</span>
+                      </div>
+                      <div class="relative flex items-center" id="article-type-autocomplete-container">
+                        <input
+                          id="article-type-input"
+                          type="text"
+                          autocomplete="off"
+                          placeholder="e.g. Ring, Chain, Mix..."
+                          class="w-full h-10 px-3 pr-9 bg-surface-container-low text-on-surface font-semibold text-body-md rounded-lg focus:outline-none border border-outline-variant/30 uppercase tracking-wide transition-all"
+                          required
+                        />
+                        <button
+                          type="button"
+                          id="btn-toggle-article-type"
+                          onclick="toggleArticleTypeDropdown()"
+                          class="absolute right-1 w-8 h-8 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container transition-all cursor-pointer"
+                          title="Click to view all article types"
+                          tabindex="-1"
+                        >
+                          <span class="material-symbols-outlined text-[20px] transition-transform duration-200" id="article-type-chevron">expand_more</span>
+                        </button>
+                        <!-- Floating Article Type Suggestions Dropdown -->
+                        <div
+                          id="article-type-suggestions"
+                          class="hidden absolute left-0 right-0 top-full mt-1.5 z-50 bg-surface-container-lowest rounded-xl shadow-2xl border border-surface-container overflow-hidden max-h-60 overflow-y-auto"
+                          style="box-shadow: 0 16px 36px -8px rgba(14, 28, 47, 0.25);"
+                        >
+                          <!-- Dynamic suggestion items populated via JS -->
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- LINE 3, ITEM 4: DECLARED GOLD PURITY (Span 3 columns) -->
+                    <div class="flex flex-col gap-1.5 md:col-span-1 lg:col-span-3 relative" id="purity-wrapper">
                       <div class="flex items-center justify-between">
                         <label id="purity-label" class="text-label-md font-label-md font-semibold text-on-surface" for="purity-dropdown-btn">
                           DECLARED GOLD PURITY <span class="text-error">*</span>
