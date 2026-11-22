@@ -4,84 +4,117 @@ const fs = require('fs');
 
 console.log('--- RUNNING JEWELLERY OPTICAL DISCRIMINATOR TESTS ---');
 
-// Extract isSkinPixel from js/app.js
+// Extract isSkinPixel from js/app.js dynamically
 const appJs = fs.readFileSync('js/app.js', 'utf-8');
-
-// We can evaluate isSkinPixel in a sandbox
-const sandbox = {};
-const fnMatch = appJs.match(/function isSkinPixel\(r, g, b\) \{[\s\S]*?return \(cb >= 77 && cb <= 127 && cr >= 133 && cr <= 175\);\s*\}/);
+const fnMatch = appJs.match(/function isSkinPixel\(r, g, b\) \{[\s\S]*?return \(cb >= 75 && cb <= 128 && cr >= 130 && cr <= 180\);\s*\}/);
 assert(fnMatch, 'Could not find isSkinPixel in js/app.js');
 const isSkinPixel = (new Function(`${fnMatch[0]}; return isSkinPixel;`))();
 
 // ==========================================
-// TEST SUITE 1: Skin Chromaticity & Human Presence
+// TEST SUITE 1: Skin Chromaticity & Human Presence Across Tones & Lighting
 // ==========================================
 console.log('\n[Suite 1] Skin Chromaticity Verification:');
 
 // Test 1.1: Fair / Light Human Skin
-const fairSkin = [215, 170, 140];
-assert.strictEqual(isSkinPixel(fairSkin[0], fairSkin[1], fairSkin[2]), true, 'Fair skin should be detected as skin');
-console.log('✓ Fair/Light Human Skin recognized');
+const fairSkins = [
+  [215, 170, 140],
+  [235, 195, 170],
+  [220, 180, 150]
+];
+fairSkins.forEach(([r, g, b]) => {
+  assert.strictEqual(isSkinPixel(r, g, b), true, `Fair skin (${r}, ${g}, ${b}) should be detected`);
+});
+console.log('✓ Fair/Light Human Skin recognized across variations');
 
 // Test 1.2: Medium / South Asian / Olive Skin
-const mediumSkin1 = [175, 125, 95];
-assert.strictEqual(isSkinPixel(mediumSkin1[0], mediumSkin1[1], mediumSkin1[2]), true, 'Medium skin tone 1 recognized');
-const mediumSkin2 = [155, 110, 80];
-assert.strictEqual(isSkinPixel(mediumSkin2[0], mediumSkin2[1], mediumSkin2[2]), true, 'Medium skin tone 2 recognized');
-console.log('✓ Medium / South Asian Human Skin recognized');
+const mediumSkins = [
+  [175, 125, 95],
+  [155, 110, 80],
+  [186, 138, 102],
+  [160, 115, 80],
+  [140, 95, 65]
+];
+mediumSkins.forEach(([r, g, b]) => {
+  assert.strictEqual(isSkinPixel(r, g, b), true, `Medium skin (${r}, ${g}, ${b}) should be detected`);
+});
+console.log('✓ Medium / South Asian Human Skin recognized across variations');
 
-// Test 1.3: Deep / Dark Brown Human Skin
-const darkSkin = [110, 75, 55];
-assert.strictEqual(isSkinPixel(darkSkin[0], darkSkin[1], darkSkin[2]), true, 'Deep/Dusky skin recognized');
-console.log('✓ Deep/Dark Human Skin recognized');
+// Test 1.3: Warm Desk Lamp Illuminated Human Skin / Hands
+const warmLampSkins = [
+  [225, 130, 110],
+  [210, 125, 100],
+  [230, 135, 115]
+];
+warmLampSkins.forEach(([r, g, b]) => {
+  assert.strictEqual(isSkinPixel(r, g, b), true, `Warm illuminated skin (${r}, ${g}, ${b}) should be detected`);
+});
+console.log('✓ Warm Desk Lamp Illuminated Human Skin recognized');
+
+// Test 1.4: Deep / Dark Brown Human Skin (including shadows)
+const darkSkins = [
+  [110, 75, 55],
+  [102, 68, 48],
+  [95, 65, 45],
+  [75, 52, 40],
+  [60, 48, 38],
+  [55, 44, 34]
+];
+darkSkins.forEach(([r, g, b]) => {
+  assert.strictEqual(isSkinPixel(r, g, b), true, `Dark brown skin (${r}, ${g}, ${b}) should be detected`);
+});
+console.log('✓ Deep/Dark Human Skin recognized across shadow and low-luma variations');
 
 // ==========================================
 // TEST SUITE 2: Metallic & Gemstone Non-Skin Discrimination (Negative Controls)
 // ==========================================
 console.log('\n[Suite 2] Jewellery & Metallic Rejection of Skin Locus:');
 
-// Test 2.1: 24K / 22K Yellow Gold (High yellow saturation, low blue -> Cb < 75)
-const yellowGold24K = [255, 215, 0];
-assert.strictEqual(isSkinPixel(yellowGold24K[0], yellowGold24K[1], yellowGold24K[2]), false, 'Pure yellow gold must NOT trigger skin locus');
+// Test 2.1: Yellow Gold (24K, 22K, 18K, 14K)
+const yellowGolds = [
+  ['24K', 255, 215, 0],
+  ['22K', 238, 198, 45],
+  ['18K', 212, 175, 55],
+  ['14K', 200, 165, 70]
+];
+yellowGolds.forEach(([karat, r, g, b]) => {
+  assert.strictEqual(isSkinPixel(r, g, b), false, `${karat} yellow gold (${r}, ${g}, ${b}) must NOT trigger skin locus`);
+});
+console.log('✓ Yellow Gold (24K, 22K, 18K, 14K) correctly discriminated as NOT skin');
 
-const yellowGold22K = [230, 190, 50];
-assert.strictEqual(isSkinPixel(yellowGold22K[0], yellowGold22K[1], yellowGold22K[2]), false, '22K yellow gold must NOT trigger skin locus');
-
-const yellowGold18K = [210, 175, 65];
-assert.strictEqual(isSkinPixel(yellowGold18K[0], yellowGold18K[1], yellowGold18K[2]), false, '18K yellow gold must NOT trigger skin locus');
-console.log('✓ Yellow Gold (24K, 22K, 18K) correctly discriminated as NOT skin');
-
-// Test 2.2: Silver / Platinum / White Gold (Achromatic, R ~ G ~ B)
-const silver925 = [220, 220, 225];
-assert.strictEqual(isSkinPixel(silver925[0], silver925[1], silver925[2]), false, 'Silver 925 must NOT trigger skin locus');
-
-const whiteGold = [210, 210, 205];
-assert.strictEqual(isSkinPixel(whiteGold[0], whiteGold[1], whiteGold[2]), false, 'White gold must NOT trigger skin locus');
+// Test 2.2: Silver / Platinum / White Gold
+const whiteMetals = [
+  ['Silver 925', 215, 215, 220],
+  ['White Gold', 235, 235, 235],
+  ['Polished Platinum', 225, 225, 230]
+];
+whiteMetals.forEach(([name, r, g, b]) => {
+  assert.strictEqual(isSkinPixel(r, g, b), false, `${name} must NOT trigger skin locus`);
+});
 console.log('✓ Silver and White Gold correctly discriminated as NOT skin');
 
-// Test 2.3: Gemstones (Ruby, Emerald, Sapphire, Diamond)
-const emerald = [30, 180, 70];
-assert.strictEqual(isSkinPixel(emerald[0], emerald[1], emerald[2]), false, 'Emerald must NOT trigger skin');
-
-const sapphire = [25, 45, 190];
-assert.strictEqual(isSkinPixel(sapphire[0], sapphire[1], sapphire[2]), false, 'Sapphire must NOT trigger skin');
-
-const ruby = [190, 20, 45];
-assert.strictEqual(isSkinPixel(ruby[0], ruby[1], ruby[2]), false, 'Ruby must NOT trigger skin');
-
-const diamondHighlight = [255, 255, 255];
-assert.strictEqual(isSkinPixel(diamondHighlight[0], diamondHighlight[1], diamondHighlight[2]), false, 'Blown out highlight / diamond must NOT trigger skin');
+// Test 2.3: Gemstones
+const gemstones = [
+  ['Emerald', 0, 168, 107],
+  ['Sapphire', 15, 82, 186],
+  ['Ruby', 224, 17, 95],
+  ['Diamond Highlight', 255, 255, 255]
+];
+gemstones.forEach(([name, r, g, b]) => {
+  assert.strictEqual(isSkinPixel(r, g, b), false, `${name} must NOT trigger skin locus`);
+});
 console.log('✓ Gemstones (Emerald, Sapphire, Ruby, Diamond) correctly rejected as NOT skin');
 
-// Test 2.4: Common Staging Pad & Background Materials (Black velvet, dark grey rubber, navy tray, white pad)
-const blackVelvet = [25, 25, 28];
-assert.strictEqual(isSkinPixel(blackVelvet[0], blackVelvet[1], blackVelvet[2]), false, 'Dark velvet pad is not skin');
-
-const darkGrey = [60, 60, 62];
-assert.strictEqual(isSkinPixel(darkGrey[0], darkGrey[1], darkGrey[2]), false, 'Grey pad is not skin');
-
-const navyPad = [20, 30, 65];
-assert.strictEqual(isSkinPixel(navyPad[0], navyPad[1], navyPad[2]), false, 'Navy pad is not skin');
+// Test 2.4: Common Staging Pad & Tray Materials
+const trayMaterials = [
+  ['Black Velvet', 20, 20, 22],
+  ['Dark Grey Pad', 60, 60, 62],
+  ['Navy Blue Staging Pad', 30, 45, 95],
+  ['Green Tray Mat', 25, 75, 40],
+  ['White Paper Tray Sheet', 240, 240, 242]
+];
+trayMaterials.forEach(([name, r, g, b]) => {
+  assert.strictEqual(isSkinPixel(r, g, b), false, `${name} must NOT trigger skin locus`);
+});
 console.log('✓ Tray staging pad materials rejected as NOT skin');
 
 // ==========================================
@@ -178,12 +211,13 @@ function simulateDiscriminatorFrame(frameData, baselineLuma) {
   const lumaContrast = Math.max(padContrast, internalContrast);
   const specularRatio = changedPixelCount > 0 ? (specularHighlightCount / changedPixelCount) : 0;
 
-  const isSkinPresent = (skinCountInReticle >= 90) || (changedPixelCount >= minChangedPixels && skinRatioInChanged >= 0.18 && skinCountInChanged >= 35);
+  // Sensitive hand presence: checks reticle skin count (single finger >= 16 px) and changed area ratio
+  const isSkinPresent = (skinCountInReticle >= 16) || (changedPixelCount >= 35 && skinCountInChanged >= 8 && skinRatioInChanged >= 0.08);
   const isFullBodyObstruction = (occupancy > 0.68);
 
   let conf = 45;
-  if (occupancy >= 0.025 && occupancy <= 0.45) conf += 20;
-  else if (occupancy <= 0.60) conf += 10;
+  if (occupancy >= 0.025 && occupancy <= 0.50) conf += 20;
+  else if ((occupancy >= 0.015 && occupancy < 0.025) || (occupancy > 0.50 && occupancy <= 0.65)) conf += 10;
 
   if (edgeRatio >= 0.28) conf += 20;
   else if (edgeRatio >= 0.16) conf += 12;
@@ -205,6 +239,7 @@ function simulateDiscriminatorFrame(frameData, baselineLuma) {
     isJewellery,
     confidence: conf,
     changedPixelCount,
+    skinCountInReticle,
     occupancy,
     edgeRatio,
     avgEdgeMag,
@@ -216,26 +251,38 @@ function simulateDiscriminatorFrame(frameData, baselineLuma) {
 // Create Baseline: Dark grey staging pad (Luma = 40)
 const baseline = new Uint8Array(NUM_SAMPLE_PIXELS).fill(40);
 
-// Scenario A: Hand is placing jewellery (hand in tray)
-// Fill a block of 400 pixels with skin color (R=180, G=130, B=100)
-const handFrame = new Uint8ClampedArray(NUM_SAMPLE_PIXELS * 4);
+// Scenario A: Hand / Fingers in tray holding jewellery (dark Indian skin tone, 30 skin pixels)
+const fingerFrame = new Uint8ClampedArray(NUM_SAMPLE_PIXELS * 4);
 for (let j = 0; j < NUM_SAMPLE_PIXELS; j++) {
-  // background
-  handFrame[j*4] = 40; handFrame[j*4+1] = 40; handFrame[j*4+2] = 40; handFrame[j*4+3] = 255;
+  fingerFrame[j*4] = 40; fingerFrame[j*4+1] = 40; fingerFrame[j*4+2] = 40; fingerFrame[j*4+3] = 255;
 }
-// Hand area
-for (let y = 10; y < 35; y++) {
-  for (let x = 10; x < 28; x++) {
+// Small finger patch entering from side (30 pixels of dark Indian skin [60, 48, 38])
+for (let y = 10; y < 16; y++) {
+  for (let x = 10; x < 15; x++) {
     const idx = (y * SAMPLE_W + x) * 4;
-    handFrame[idx] = 180; handFrame[idx+1] = 130; handFrame[idx+2] = 100; handFrame[idx+3] = 255;
+    fingerFrame[idx] = 60; fingerFrame[idx+1] = 48; fingerFrame[idx+2] = 38; fingerFrame[idx+3] = 255;
   }
 }
-const handResult = simulateDiscriminatorFrame(handFrame, baseline);
-assert.strictEqual(handResult.isSkinPresent, true, 'Hand must be flagged as skin present');
-console.log('✓ Scenario A: Hand in tray correctly detected (isSkinPresent = true, photo capture withheld)');
+const fingerResult = simulateDiscriminatorFrame(fingerFrame, baseline);
+assert.strictEqual(fingerResult.isSkinPresent, true, 'Dark skin finger (30 pixels) must be detected as skin present');
+console.log('✓ Scenario A: Hand / Finger in tray correctly detected (isSkinPresent = true, photo capture withheld)');
 
-// Scenario B: Hand withdrawn, Gold Ring remaining on staging pad
-// Circular ring with outer diameter 14, inner diameter 10, high specular highlight and sharp edges
+// Scenario B: Warm desk lamp illuminated hand in tray (150 pixels of [225, 130, 110])
+const warmHandFrame = new Uint8ClampedArray(NUM_SAMPLE_PIXELS * 4);
+for (let j = 0; j < NUM_SAMPLE_PIXELS; j++) {
+  warmHandFrame[j*4] = 40; warmHandFrame[j*4+1] = 40; warmHandFrame[j*4+2] = 40; warmHandFrame[j*4+3] = 255;
+}
+for (let y = 12; y < 27; y++) {
+  for (let x = 15; x < 25; x++) {
+    const idx = (y * SAMPLE_W + x) * 4;
+    warmHandFrame[idx] = 225; warmHandFrame[idx+1] = 130; warmHandFrame[idx+2] = 110; warmHandFrame[idx+3] = 255;
+  }
+}
+const warmHandResult = simulateDiscriminatorFrame(warmHandFrame, baseline);
+assert.strictEqual(warmHandResult.isSkinPresent, true, 'Warm desk lamp illuminated hand must be detected');
+console.log('✓ Scenario B: Warm desk lamp illuminated hand correctly detected (isSkinPresent = true)');
+
+// Scenario C: Hand withdrawn, Gold Ring remaining on staging pad
 const ringFrame = new Uint8ClampedArray(NUM_SAMPLE_PIXELS * 4);
 for (let j = 0; j < NUM_SAMPLE_PIXELS; j++) {
   ringFrame[j*4] = 40; ringFrame[j*4+1] = 40; ringFrame[j*4+2] = 40; ringFrame[j*4+3] = 255;
@@ -246,7 +293,6 @@ for (let y = 14; y < 34; y++) {
     const d2 = (x - cx)*(x - cx) + (y - cy)*(y - cy);
     if (d2 >= 25 && d2 <= 64) {
       const idx = (y * SAMPLE_W + x) * 4;
-      // Gold reflection with specular highlight
       ringFrame[idx] = 230; ringFrame[idx+1] = 190; ringFrame[idx+2] = 50; ringFrame[idx+3] = 255;
     }
   }
@@ -255,12 +301,29 @@ const ringResult = simulateDiscriminatorFrame(ringFrame, baseline);
 assert.strictEqual(ringResult.isSkinPresent, false, 'No skin should be detected on ring alone');
 assert.strictEqual(ringResult.isJewellery, true, 'Gold ring must be validated as jewellery');
 assert(ringResult.confidence >= 80, `Expected high confidence for jewellery piece, got ${ringResult.confidence}%`);
-console.log(`✓ Scenario B: Gold ring on tray correctly validated as Jewellery (Confidence: ${ringResult.confidence}%, isSkin: false)`);
+console.log(`✓ Scenario C: Gold ring on tray correctly validated as Jewellery (Confidence: ${ringResult.confidence}%, isSkin: false)`);
 
-// Scenario C: Human figure / full blockage (> 68% occupancy)
+// Scenario D: Intricate Gold Chain & Pouch
+const chainFrame = new Uint8ClampedArray(NUM_SAMPLE_PIXELS * 4);
+for (let j = 0; j < NUM_SAMPLE_PIXELS; j++) {
+  chainFrame[j*4] = 40; chainFrame[j*4+1] = 40; chainFrame[j*4+2] = 40; chainFrame[j*4+3] = 255;
+}
+for (let y = 18; y < 30; y++) {
+  for (let x = 16; x < 48; x++) {
+    if ((x + y) % 3 === 0) {
+      const idx = (y * SAMPLE_W + x) * 4;
+      chainFrame[idx] = 212; chainFrame[idx+1] = 175; chainFrame[idx+2] = 55; chainFrame[idx+3] = 255;
+    }
+  }
+}
+const chainResult = simulateDiscriminatorFrame(chainFrame, baseline);
+assert.strictEqual(chainResult.isSkinPresent, false);
+assert.strictEqual(chainResult.isJewellery, true);
+console.log(`✓ Scenario D: Intricate Gold Chain validated as Jewellery (Confidence: ${chainResult.confidence}%)`);
+
+// Scenario E: Large human body / obstruction (> 68% occupancy)
 const blockedFrame = new Uint8ClampedArray(NUM_SAMPLE_PIXELS * 4);
 for (let j = 0; j < NUM_SAMPLE_PIXELS; j++) {
-  // 80% of pixels changed from baseline (person standing in front)
   if (j < NUM_SAMPLE_PIXELS * 0.8) {
     blockedFrame[j*4] = 120; blockedFrame[j*4+1] = 110; blockedFrame[j*4+2] = 130; blockedFrame[j*4+3] = 255;
   } else {
@@ -269,14 +332,13 @@ for (let j = 0; j < NUM_SAMPLE_PIXELS; j++) {
 }
 const blockedResult = simulateDiscriminatorFrame(blockedFrame, baseline);
 assert.strictEqual(blockedResult.isFullBodyObstruction, true, 'Full blockage must be detected');
-console.log('✓ Scenario C: Large obstruction / human body coverage detected (> 68% occupancy)');
+console.log('✓ Scenario E: Large obstruction / human body coverage detected (> 68% occupancy)');
 
-// Scenario D: Flat smooth non-jewellery object (plain piece of paper/cloth sleeve without skin)
+// Scenario F: Flat smooth non-jewellery object (plain piece of paper/cloth sleeve without skin)
 const paperFrame = new Uint8ClampedArray(NUM_SAMPLE_PIXELS * 4);
 for (let j = 0; j < NUM_SAMPLE_PIXELS; j++) {
   paperFrame[j*4] = 40; paperFrame[j*4+1] = 40; paperFrame[j*4+2] = 40; paperFrame[j*4+3] = 255;
 }
-// Flat smooth rectangle with low contrast and minimal internal edges
 for (let y = 15; y < 33; y++) {
   for (let x = 20; x < 44; x++) {
     const idx = (y * SAMPLE_W + x) * 4;
@@ -286,7 +348,7 @@ for (let y = 15; y < 33; y++) {
 const paperResult = simulateDiscriminatorFrame(paperFrame, baseline);
 assert.strictEqual(paperResult.isSkinPresent, false);
 assert.strictEqual(paperResult.isJewellery, false, 'Flat paper/cloth should NOT be classified as jewellery');
-console.log(`✓ Scenario D: Flat smooth object rejected as non-jewellery (Confidence: ${paperResult.confidence}%, isJewellery: false)`);
+console.log(`✓ Scenario F: Flat smooth object rejected as non-jewellery (Confidence: ${paperResult.confidence}%, isJewellery: false)`);
 
 console.log('\n--- ALL OPTICAL DISCRIMINATOR UNIT TESTS PASSED SUCCESSFULLY! ---');
 
@@ -295,10 +357,8 @@ console.log('\n--- ALL OPTICAL DISCRIMINATOR UNIT TESTS PASSED SUCCESSFULLY! ---
 // ==========================================
 console.log('\n[Suite 4] Complete Operator Hand Placement & Withdrawal Lifecycle:');
 
-// Step 1: Empty tray
 let simState = 'idle';
 let simHasCapture = false;
-let simCaptureFired = false;
 let simCooldown = false;
 
 function stepSimulation(frameData, isStill) {
@@ -334,7 +394,6 @@ function stepSimulation(frameData, isStill) {
     simState = 'cooldown';
     simCooldown = true;
     simHasCapture = true;
-    simCaptureFired = true;
     return { state: 'snapped', result, snap: true };
   } else {
     simState = 'motion';
@@ -343,13 +402,13 @@ function stepSimulation(frameData, isStill) {
 }
 
 // Lifecycle Step 1: Hand enters tray with ring
-let res = stepSimulation(handFrame, false);
+let res = stepSimulation(fingerFrame, false);
 assert.strictEqual(res.state, 'hand');
 assert.strictEqual(res.snap, false, 'Should NOT snap while hand is in tray');
 console.log('✓ Step 1: Hand enters tray with jewellery -> State: HAND, Snap: FALSE');
 
 // Lifecycle Step 2: Hand still in tray, but operator pauses motion
-res = stepSimulation(handFrame, true);
+res = stepSimulation(fingerFrame, true);
 assert.strictEqual(res.state, 'hand');
 assert.strictEqual(res.snap, false, 'Should NOT snap even if hand holds still');
 console.log('✓ Step 2: Hand holds still in tray -> Still blocked by Skin Filter, Snap: FALSE');
@@ -362,9 +421,8 @@ console.log('✓ Step 3: Hand withdrawn, jewellery stable on pad -> State: SNAPP
 
 // Lifecycle Step 4: After snap, jewellery rests on pad
 simCooldown = false;
-simCaptureFired = false;
 // Operator reaches in with hand to remove the ring
-res = stepSimulation(handFrame, false);
+res = stepSimulation(fingerFrame, false);
 assert.strictEqual(res.state, 'hand');
 assert.strictEqual(res.snap, false, 'Hand entering to pick up ring must NOT trigger second snap');
 console.log('✓ Step 4: Operator reaches in to collect item -> Hand detected, phantom snap prevented');

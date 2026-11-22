@@ -3045,23 +3045,24 @@
   };
 
   // Fast pixel-level skin locus check in YCbCr & Normalized RGB space
-  // Discriminates against yellow gold (which has Cb < 75 due to high yellow saturation) and silver/white gold
+  // Accurately recognizes fair, medium / South Asian, and dark brown skin tones across diverse lighting (including warm desk lamps)
+  // while strictly discriminating against yellow gold (Cb < 74), white gold, silver, gemstones, and staging pads
   function isSkinPixel(r, g, b) {
-    if (r < 45 || r > 250 || g < 28 || b < 18) return false;
+    if (r < 40 || r > 255 || g < 22 || b < 15) return false;
     if (r <= g || r <= b) return false;
     const rgDiff = r - g;
-    if (rgDiff < 12 || rgDiff > 90) return false;
+    if (rgDiff < 6) return false;
 
     const sum = r + g + b;
     const nr = r / sum;
     const ng = g / sum;
-    if (nr < 0.33 || nr > 0.62 || ng < 0.24 || ng > 0.38) return false;
+    if (nr < 0.33 || nr > 0.65 || ng < 0.22 || ng > 0.40) return false;
 
-    // YCbCr chrominance locus check
+    // YCbCr BT.601 chrominance locus check
     const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
     const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
 
-    return (cb >= 77 && cb <= 127 && cr >= 133 && cr <= 175);
+    return (cb >= 75 && cb <= 128 && cr >= 130 && cr <= 180);
   }
 
   // Lightbox State for Multi-Photo Browsing
@@ -3709,8 +3710,16 @@
       if (handAlert) handAlert.classList.add('hidden');
       if (countdownBadge) countdownBadge.classList.add('hidden');
       const rem = extra || '1.0';
-      if (statusText) statusText.textContent = `COOLDOWN (${rem}s)`;
+      if (statusText) statusText.textContent = `AUTO-SNAPPED • COOLDOWN (${rem}s)`;
       if (indicator) indicator.className = 'w-1.5 h-1.5 rounded-full bg-purple-400';
+      if (centerIcon) {
+        centerIcon.textContent = 'verified';
+        centerIcon.className = 'material-symbols-outlined text-emerald-400 text-[26px]';
+      }
+      if (centerLabel) {
+        centerLabel.textContent = `AUTO-SNAPPED • PAUSING (${rem}s)`;
+        centerLabel.className = 'text-[9.5px] font-mono font-bold text-emerald-300 uppercase tracking-wider mt-0.5';
+      }
     } else if (stateName === 'holding') {
       if (targetBox) targetBox.classList.add('state-jewellery');
       if (handAlert) handAlert.classList.add('hidden');
@@ -3980,38 +3989,37 @@
     const specularRatio = changedPixelCount > 0 ? (specularHighlightCount / changedPixelCount) : 0;
 
     // Hand & Intruder Presence Discriminator
-    // 1. Noticeable skin presence in reticle (> 3% of reticle, ~90 pixels)
-    // 2. OR skin makes up significant part of changed object (> 18% of changed area, min 35 skin pixels)
-    // 3. OR full body / arm obstruction (> 68% occupancy)
-    const isSkinPresent = (skinCountInReticle >= 90) || (changedPixelCount >= minChangedPixels && skinRatioInChanged >= 0.18 && skinCountInChanged >= 35);
+    // 1. Noticeable skin presence in reticle (>= 16 pixels out of 3072, i.e. ~0.5% of reticle, detecting fingers entering zone)
+    // 2. OR skin detected in changed area (>= 8 skin pixels and >= 8% of changed area)
+    const isSkinPresent = (skinCountInReticle >= 16) || (changedPixelCount >= 35 && skinCountInChanged >= 8 && skinRatioInChanged >= 0.08);
     const isFullBodyObstruction = (occupancy > 0.68);
 
-    // Calculate Jewellery Confidence Score
+    // Calculate Jewellery Confidence Score based on physical attributes
     let conf = 45;
-    if (occupancy >= 0.025 && occupancy <= 0.45) {
-      conf += 20;
-    } else if (occupancy <= 0.60) {
-      conf += 10;
+    if (occupancy >= 0.025 && occupancy <= 0.50) {
+      conf += 20; // Well-sized localized piece (rings, bangles, chains, necklaces, pendants)
+    } else if ((occupancy >= 0.015 && occupancy < 0.025) || (occupancy > 0.50 && occupancy <= 0.65)) {
+      conf += 10; // Tiny pieces (studs, nose pins) or pouches/large articles
     }
 
     if (edgeRatio >= 0.28) {
-      conf += 20;
+      conf += 20; // High intricacy (links, stones, engravings)
     } else if (edgeRatio >= 0.16) {
-      conf += 12;
+      conf += 12; // Moderate structure (smooth bangles, plain bands)
     } else if (edgeRatio < 0.08 || avgEdgeMag < 28) {
-      conf -= 25; // Flat smooth non-jewellery penalty
+      conf -= 25; // Flat smooth non-jewellery penalty (paper, fabric, shadow)
     }
 
     if (lumaContrast >= 85) {
-      conf += 15;
+      conf += 15; // High metallic reflection against pad
     } else if (lumaContrast >= 50) {
       conf += 8;
     } else if (lumaContrast < 40) {
-      conf -= 25; // Low contrast / dull matte penalty
+      conf -= 25; // Dull low-contrast penalty
     }
 
     if (specularRatio >= 0.03) {
-      conf += 10;
+      conf += 10; // Specular highlights characteristic of polished metal/gems
     } else if (specularRatio === 0 && lumaContrast < 60) {
       conf -= 15; // Non-reflective dull surface penalty
     }
@@ -4085,13 +4093,14 @@
     // Non-jewellery object (smooth cloth, flat paper, etc.)
     if (!lastDiscriminatorResult.isJewellery) {
       showCountdownBadge(false);
+      autoDetectState = 'unrecognized';
       updateReticleUI('unrecognized', lastDiscriminatorResult);
       deliveryAnimationId = requestAnimationFrame(analyzeMotionFrame);
       return;
     }
 
     // VALID JEWELLERY CONFIRMED IN ZONE (Operator hand has withdrawn!)
-    if (autoDetectState === 'idle' || autoDetectState === 'hand' || autoDetectState === 'blocked') {
+    if (autoDetectState === 'idle' || autoDetectState === 'hand' || autoDetectState === 'blocked' || autoDetectState === 'unrecognized') {
       if (avgMotionDiff > motionThreshold) {
         autoDetectState = 'motion';
         updateReticleUI('motion', lastDiscriminatorResult);
