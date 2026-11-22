@@ -2933,8 +2933,8 @@
                       <span class="material-symbols-outlined text-[18px]">photo_camera</span>
                     </div>
                     <div>
-                      <span class="font-bold text-sm text-slate-800 uppercase tracking-wide">2. JEWELLERY IMAGE CAPTURE & AUTO-DETECTION</span>
-                      <div class="text-[10px] text-slate-500 font-medium uppercase">SMART OPTICAL SENSOR • AUTO-SNAPS ON PLACEMENT OR UPLOAD</div>
+                      <span class="font-bold text-sm text-slate-800 uppercase tracking-wide">2. JEWELLERY 5-SECOND AUTO-CAPTURE & VERIFICATION</span>
+                      <div class="text-[10px] text-slate-500 font-medium uppercase">AUTOMATIC 5s INTERVAL CAPTURE • LIVE CAMERA FEED & MULTI-PHOTO SYSTEM</div>
                     </div>
                   </div>
                   <div class="flex items-center gap-2 flex-wrap">
@@ -2943,11 +2943,11 @@
                       id="deliv-auto-toggle-btn"
                       type="button"
                       onclick="toggleDeliveryAutoCapture()"
-                      class="px-2.5 py-1 rounded-lg font-bold text-[10.5px] uppercase flex items-center gap-1.5 transition-all bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs cursor-pointer"
-                      title="Toggle intelligent automatic photo snap when jewellery is kept under the camera"
+                      class="px-2.5 py-1 rounded-lg font-bold text-[10.5px] uppercase flex items-center gap-1.5 transition-all bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs cursor-pointer hover:bg-emerald-100"
+                      title="Start or pause 5-second interval automatic photo capture"
                     >
-                      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="deliv-auto-dot"></span>
-                      <span id="deliv-auto-toggle-text">AUTO-SNAP: ACTIVE</span>
+                      <span class="w-2 h-2 rounded-full bg-slate-400" id="deliv-auto-dot"></span>
+                      <span id="deliv-auto-toggle-text">START 5s AUTO-CAPTURE</span>
                     </button>
                     <!-- Audio Chime Toggle -->
                     <button
@@ -2972,7 +2972,7 @@
                   </div>
                 </div>
 
-                <!-- Live Camera Viewport with Optical Sensor Overlay -->
+                <!-- Live Camera Viewport with 5-Second Interval Countdown HUD -->
                 <div class="relative w-full rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[260px] sm:min-h-[290px]">
                   <!-- Live Video Element -->
                   <video
@@ -2983,27 +2983,24 @@
                     class="w-full h-[260px] sm:h-[290px] object-cover bg-black"
                   ></video>
 
-                  <!-- Hidden Low-Res Sampling Canvas for 60fps Zero-Lag Motion Analysis -->
-                  <canvas id="delivery-motion-canvas" width="64" height="48" class="hidden"></canvas>
-
                   <!-- Flash Effect Overlay -->
                   <div id="delivery-cam-flash" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-150 z-30"></div>
 
                   <!-- Camera Inactive / Standby Placeholder (Shown when camera stopped or denied) -->
                   <div id="delivery-cam-standby" class="absolute inset-0 bg-slate-950/90 z-20 flex flex-col items-center justify-center p-4 text-center">
                     <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-3">
-                      <span class="material-symbols-outlined text-[32px]">photo_camera_front</span>
+                      <span class="material-symbols-outlined text-[32px]">timer</span>
                     </div>
-                    <div class="font-bold text-sm text-white uppercase tracking-wide">JEWELLERY OPTICAL SCANNER STANDBY</div>
-                    <div class="text-xs text-slate-400 max-w-xs mt-1 mb-3">Activate camera to auto-snap jewellery as soon as it is placed on the staging tray, or upload image files directly.</div>
+                    <div class="font-bold text-sm text-white uppercase tracking-wide">5-SECOND INTERVAL AUTO-CAPTURE CAMERA</div>
+                    <div class="text-xs text-slate-400 max-w-xs mt-1 mb-3">Activate camera to automatically take photos every 5 seconds for dispatch records, or upload files directly.</div>
                     <div class="flex items-center gap-2">
                       <button
                         type="button"
-                        onclick="startDeliveryCamera()"
-                        class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+                        onclick="startDeliveryAutoCapture()"
+                        class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-98"
                       >
-                        <span class="material-symbols-outlined text-[18px]">videocam</span>
-                        <span>START SCANNER CAMERA</span>
+                        <span class="material-symbols-outlined text-[18px]">play_circle</span>
+                        <span>START 5s AUTO-CAPTURE</span>
                       </button>
                       <button
                         type="button"
@@ -3017,24 +3014,15 @@
                     <div id="delivery-cam-error" class="hidden mt-2 text-[11px] text-rose-400 font-mono"></div>
                   </div>
 
-                  <!-- Optical Sensor Target Zone Reticle (Active when camera is running) -->
+                  <!-- Staging Reticle & Visual Countdown HUD (Active when camera is running) -->
                   <div id="delivery-cam-reticle" class="hidden absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center">
-                    <!-- Scanner Laser Sweep Line -->
-                    <div id="delivery-scanline" class="scanner-sweep-active absolute w-full h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-75"></div>
-
-                    <!-- Target Bounding Box with Smart Optical Discriminator Feedback -->
-                    <div id="delivery-target-box" class="delivery-target-box relative w-48 sm:w-64 h-36 sm:h-44 border-2 border-dashed border-amber-400/60 rounded-xl flex items-center justify-center bg-amber-400/5 transition-all duration-200">
+                    <!-- Clean Staging Framing Box -->
+                    <div id="delivery-target-box" class="delivery-target-box relative w-52 sm:w-64 h-36 sm:h-44 border-2 border-dashed border-amber-400/50 rounded-xl flex items-center justify-center bg-amber-400/5 transition-all duration-200">
                       <!-- Corner Target Brackets -->
                       <span class="delivery-bracket absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-amber-400 transition-colors duration-200"></span>
                       <span class="delivery-bracket absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-amber-400 transition-colors duration-200"></span>
                       <span class="delivery-bracket absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-amber-400 transition-colors duration-200"></span>
                       <span class="delivery-bracket absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-amber-400 transition-colors duration-200"></span>
-
-                      <!-- Hand / Human Detected Warning Badge (Active when hand is inside target zone) -->
-                      <div id="delivery-hand-alert" class="hidden absolute -top-3.5 bg-rose-600 text-white font-black text-[10px] px-3 py-0.5 rounded-full shadow-lg uppercase font-mono tracking-wider flex items-center gap-1.5 animate-pulse z-20 whitespace-nowrap">
-                        <span class="material-symbols-outlined text-[14px]">front_hand</span>
-                        <span>HAND IN TRAY • WITHDRAW HAND TO CAPTURE</span>
-                      </div>
 
                       <!-- Center Reticle Icon & Text -->
                       <div id="delivery-reticle-center-info" class="text-center p-2">
@@ -3042,12 +3030,17 @@
                         <div id="delivery-reticle-label" class="text-[9.5px] font-mono font-bold text-amber-300 uppercase tracking-wider mt-0.5">JEWELLERY PLACEMENT ZONE</div>
                       </div>
 
-                      <!-- Countdown Ring / Progress for Auto-Snap Stabilization -->
-                      <div id="delivery-countdown-badge" class="hidden absolute -bottom-3.5 bg-amber-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-md uppercase font-mono tracking-wider flex items-center gap-1 z-20 whitespace-nowrap transition-colors">
-                        <span class="material-symbols-outlined text-[13px]" id="delivery-countdown-icon">timer</span>
-                        <span id="delivery-countdown-text">HOLD STILL • AUTO-SNAPPING...</span>
+                      <!-- Real-Time Countdown Badge for 5-Second Interval -->
+                      <div id="delivery-countdown-badge" class="hidden absolute -bottom-3.5 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-[10.5px] px-3.5 py-1 rounded-full shadow-lg uppercase font-mono tracking-wider flex items-center gap-1.5 z-20 whitespace-nowrap transition-all">
+                        <span class="material-symbols-outlined text-[15px] animate-spin" id="delivery-countdown-icon">timer</span>
+                        <span id="delivery-countdown-text">NEXT SNAP IN: 5s</span>
                       </div>
                     </div>
+                  </div>
+
+                  <!-- Real-Time 5-Second Progress Bar at Bottom of Video -->
+                  <div id="delivery-progress-bar-container" class="hidden absolute bottom-0 left-0 right-0 h-1.5 bg-slate-900/80 z-20 overflow-hidden">
+                    <div id="delivery-progress-bar" class="h-full bg-gradient-to-r from-amber-400 via-amber-300 to-emerald-400 transition-all duration-75" style="width: 0%"></div>
                   </div>
 
                   <!-- Top Live Status & Camera Info Bar -->
@@ -3058,17 +3051,6 @@
                     </div>
 
                     <div class="inline-flex items-center gap-1.5 pointer-events-auto">
-                      <!-- Tare / Calibrate Tray Baseline Button -->
-                      <button
-                        id="delivery-cam-tare-btn"
-                        type="button"
-                        onclick="calibrateDeliveryTrayBaseline()"
-                        class="h-7 px-2 bg-slate-900/90 hover:bg-slate-800 text-amber-400 hover:text-amber-300 text-[10px] font-mono rounded border border-slate-700/80 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-                        title="Tare / Calibrate empty staging tray baseline"
-                      >
-                        <span class="material-symbols-outlined text-[13px]">crop_free</span>
-                        <span>TARE TRAY</span>
-                      </button>
                       <!-- Device Select Dropdown -->
                       <select
                         id="delivery-cam-select"
@@ -3095,31 +3077,30 @@
 
                 <!-- Camera Controls & Action Bar -->
                 <div class="mt-3 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-                  <!-- Instant Manual Snap Button -->
+                  <!-- Primary 5-Second Auto-Capture Start/Stop Button -->
                   <div class="sm:col-span-5">
+                    <button
+                      type="button"
+                      id="deliv-main-auto-btn"
+                      onclick="toggleDeliveryAutoCapture()"
+                      class="w-full h-9 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs rounded-lg uppercase tracking-wider shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer hover:shadow active:scale-98"
+                    >
+                      <span class="material-symbols-outlined text-[17px]" id="deliv-main-auto-icon">play_circle</span>
+                      <span id="deliv-main-auto-text">START AUTO-CAPTURE (5s)</span>
+                    </button>
+                  </div>
+
+                  <!-- Instant Manual Snap Button -->
+                  <div class="sm:col-span-4">
                     <button
                       type="button"
                       id="deliv-manual-snap-btn"
                       onclick="triggerDeliveryManualCapture()"
-                      class="w-full h-9 bg-slate-900 hover:bg-slate-800 text-amber-400 font-extrabold text-xs rounded-lg uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 border border-amber-500/40 transition-all cursor-pointer hover:shadow-md active:scale-98"
+                      class="w-full h-9 bg-slate-900 hover:bg-slate-800 text-amber-400 font-extrabold text-xs rounded-lg uppercase tracking-wider shadow-sm flex items-center justify-center gap-1.5 border border-amber-500/40 transition-all cursor-pointer hover:shadow-md active:scale-98"
                     >
-                      <span class="material-symbols-outlined text-[18px]">photo_camera</span>
+                      <span class="material-symbols-outlined text-[17px]">photo_camera</span>
                       <span>SNAP PHOTO NOW</span>
                     </button>
-                  </div>
-
-                  <!-- Sensitivity Selector -->
-                  <div class="sm:col-span-4 flex items-center gap-1.5 bg-surface-container-low px-2 py-1.5 rounded-lg border border-surface-container text-xs">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase">SENSE:</span>
-                    <select
-                      id="deliv-motion-sensitivity"
-                      onchange="setDeliveryMotionSensitivity(this.value)"
-                      class="bg-transparent text-slate-800 font-bold text-[10.5px] uppercase focus:outline-none cursor-pointer flex-1"
-                    >
-                      <option value="high">HIGH (FINE RINGS)</option>
-                      <option value="medium" selected>MEDIUM (BALANCED)</option>
-                      <option value="low">LOW (LARGE PIECES)</option>
-                    </select>
                   </div>
 
                   <!-- Multi-File Upload Trigger Button -->
@@ -3188,9 +3169,9 @@
               <div class="mt-4 pt-3 border-t border-surface-container flex items-center justify-between text-[11px] text-slate-500 font-medium">
                 <span class="flex items-center gap-1">
                   <span class="material-symbols-outlined text-[14px] text-emerald-600">verified</span>
-                  <span>OPTICAL VERIFICATION ATTACHED TO GATE PASS & BIS AUDIT DOCKET</span>
+                  <span>5-SECOND AUTO-CAPTURE ATTACHED TO GATE PASS & BIS AUDIT DOCKET</span>
                 </span>
-                <span class="font-bold text-slate-700 font-mono text-[10px]">LIMS OPTIC v2.4</span>
+                <span class="font-bold text-slate-700 font-mono text-[10px]">AUTO-SNAP v3.0</span>
               </div>
             </div>
           </div>
