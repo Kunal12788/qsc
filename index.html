@@ -3022,23 +3022,29 @@
                     <!-- Scanner Laser Sweep Line -->
                     <div id="delivery-scanline" class="scanner-sweep-active absolute w-full h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-75"></div>
 
-                    <!-- Target Bounding Box -->
-                    <div class="relative w-48 sm:w-64 h-36 sm:h-44 border-2 border-dashed border-amber-400/60 rounded-xl flex items-center justify-center bg-amber-400/5">
+                    <!-- Target Bounding Box with Smart Optical Discriminator Feedback -->
+                    <div id="delivery-target-box" class="delivery-target-box relative w-48 sm:w-64 h-36 sm:h-44 border-2 border-dashed border-amber-400/60 rounded-xl flex items-center justify-center bg-amber-400/5 transition-all duration-200">
                       <!-- Corner Target Brackets -->
-                      <span class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-amber-400"></span>
-                      <span class="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-amber-400"></span>
-                      <span class="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-amber-400"></span>
-                      <span class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-amber-400"></span>
+                      <span class="delivery-bracket absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-amber-400 transition-colors duration-200"></span>
+                      <span class="delivery-bracket absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-amber-400 transition-colors duration-200"></span>
+                      <span class="delivery-bracket absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-amber-400 transition-colors duration-200"></span>
+                      <span class="delivery-bracket absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-amber-400 transition-colors duration-200"></span>
+
+                      <!-- Hand / Human Detected Warning Badge (Active when hand is inside target zone) -->
+                      <div id="delivery-hand-alert" class="hidden absolute -top-3.5 bg-rose-600 text-white font-black text-[10px] px-3 py-0.5 rounded-full shadow-lg uppercase font-mono tracking-wider flex items-center gap-1.5 animate-pulse z-20 whitespace-nowrap">
+                        <span class="material-symbols-outlined text-[14px]">front_hand</span>
+                        <span>HAND IN TRAY • WITHDRAW HAND TO CAPTURE</span>
+                      </div>
 
                       <!-- Center Reticle Icon & Text -->
-                      <div class="text-center p-2">
-                        <span class="material-symbols-outlined text-amber-400/70 text-[26px]">filter_center_focus</span>
-                        <div class="text-[9.5px] font-mono font-bold text-amber-300 uppercase tracking-wider mt-0.5">JEWELLERY PLACEMENT ZONE</div>
+                      <div id="delivery-reticle-center-info" class="text-center p-2">
+                        <span id="delivery-reticle-icon" class="material-symbols-outlined text-amber-400/70 text-[26px] transition-colors">filter_center_focus</span>
+                        <div id="delivery-reticle-label" class="text-[9.5px] font-mono font-bold text-amber-300 uppercase tracking-wider mt-0.5">JEWELLERY PLACEMENT ZONE</div>
                       </div>
 
                       <!-- Countdown Ring / Progress for Auto-Snap Stabilization -->
-                      <div id="delivery-countdown-badge" class="hidden absolute -bottom-3.5 bg-amber-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-md uppercase font-mono tracking-wider flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[13px]">timer</span>
+                      <div id="delivery-countdown-badge" class="hidden absolute -bottom-3.5 bg-amber-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-md uppercase font-mono tracking-wider flex items-center gap-1 z-20 whitespace-nowrap transition-colors">
+                        <span class="material-symbols-outlined text-[13px]" id="delivery-countdown-icon">timer</span>
                         <span id="delivery-countdown-text">HOLD STILL • AUTO-SNAPPING...</span>
                       </div>
                     </div>
