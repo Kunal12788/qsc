@@ -3001,11 +3001,13 @@
   // Camera & 5-Second Interval Auto-Capture State
   let deliveryCameraStream = null;
   let deliveryAutoCaptureActive = false;
+  let deliveryAutoCaptureStarting = false;
   let deliveryIntervalDuration = 5000; // 5000 ms = 5 seconds
   let deliveryIntervalTargetTime = 0;
   let deliveryIntervalAnimationId = null;
   let deliveryIntervalTimeoutId = null;
   let deliveryAudioEnabled = true;
+  let deliverySharedAudioCtx = null;
   let deliveryCamDevices = [];
   let deliverySelectedDeviceId = '';
 
@@ -3374,6 +3376,11 @@
 
         populateCameraDevicesList();
         showToast('CAMERA STREAM ACTIVE.', 'success');
+
+        if (deliveryAutoCaptureActive) {
+          scheduleNextAutoSnap();
+        }
+
         resolve(stream);
       } catch (err) {
         console.warn('Camera access error:', err);
@@ -3454,28 +3461,47 @@
     } catch (e) {}
   }
 
-  function switchDeliveryCameraDevice(deviceId) {
+  async function switchDeliveryCameraDevice(deviceId) {
     deliverySelectedDeviceId = deviceId || '';
     if (deliveryCameraStream) {
-      startDeliveryCamera().catch(() => {});
+      try {
+        await startDeliveryCamera();
+        if (deliveryAutoCaptureActive) {
+          scheduleNextAutoSnap();
+        }
+      } catch (err) {}
     }
   }
 
   async function startDeliveryAutoCapture() {
+    if (deliveryAutoCaptureActive || deliveryAutoCaptureStarting) return;
+    deliveryAutoCaptureStarting = true;
+    updateAutoCaptureUI(true);
+
     if (!deliveryCameraStream) {
       try {
         await startDeliveryCamera();
       } catch (err) {
+        deliveryAutoCaptureStarting = false;
+        deliveryAutoCaptureActive = false;
+        updateAutoCaptureUI(false);
         return;
       }
     }
 
+    if (!deliveryAutoCaptureStarting) {
+      // User cancelled or stopped while camera stream was starting
+      return;
+    }
+
+    deliveryAutoCaptureStarting = false;
     deliveryAutoCaptureActive = true;
     updateAutoCaptureUI(true);
     scheduleNextAutoSnap();
   }
 
   function stopDeliveryAutoCapture() {
+    deliveryAutoCaptureStarting = false;
     deliveryAutoCaptureActive = false;
     if (deliveryIntervalTimeoutId) {
       clearTimeout(deliveryIntervalTimeoutId);
@@ -3495,7 +3521,7 @@
   }
 
   function toggleDeliveryAutoCapture() {
-    if (deliveryAutoCaptureActive) {
+    if (deliveryAutoCaptureActive || deliveryAutoCaptureStarting) {
       stopDeliveryAutoCapture();
       showToast('5s AUTO-CAPTURE STOPPED.', 'info');
     } else {
@@ -3505,7 +3531,7 @@
   }
 
   function scheduleNextAutoSnap() {
-    if (!deliveryAutoCaptureActive || !deliveryCameraStream) return;
+    if (!deliveryAutoCaptureActive) return;
 
     if (deliveryIntervalTimeoutId) {
       clearTimeout(deliveryIntervalTimeoutId);
@@ -3520,8 +3546,14 @@
     showCountdownUI(true);
 
     function step() {
-      if (!deliveryAutoCaptureActive || !deliveryCameraStream) {
+      if (!deliveryAutoCaptureActive) {
         hideCountdownUI();
+        return;
+      }
+
+      if (!deliveryCameraStream) {
+        // Stream temporarily switching devices or waiting for stream attachment
+        deliveryIntervalAnimationId = requestAnimationFrame(step);
         return;
       }
 
@@ -3673,7 +3705,13 @@
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
-      const ctx = new AudioCtx();
+      if (!deliverySharedAudioCtx || deliverySharedAudioCtx.state === 'closed') {
+        deliverySharedAudioCtx = new AudioCtx();
+      }
+      if (deliverySharedAudioCtx.state === 'suspended') {
+        deliverySharedAudioCtx.resume().catch(() => {});
+      }
+      const ctx = deliverySharedAudioCtx;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -3758,13 +3796,15 @@
     const dataUrl = snapCanvas.toDataURL('image/jpeg', 0.88);
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const cleanTime = timeStr.replace(/[^0-9a-zA-Z]/g, '');
+    const cleanSource = source.replace(/[^a-zA-Z0-9]/g, '_');
 
     const photoObj = {
       id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
       src: dataUrl,
       timestamp: timeStr,
       source: source,
-      name: `${source.replace(/[^a-zA-Z0-9]/g, '_')}_${timeStr.replace(/:/g, '')}.jpg`
+      name: `${cleanSource}_${cleanTime || Date.now()}.jpg`
     };
 
     addPhotoToActiveDeliveryBatch(photoObj);
@@ -3912,7 +3952,7 @@
         <div class="col-span-full py-5 px-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 text-center flex flex-col items-center justify-center">
           <span class="material-symbols-outlined text-slate-300 text-[26px]">photo_library</span>
           <div class="text-[11px] font-bold text-slate-500 uppercase mt-1">NO PHOTOS ATTACHED FOR THIS BATCH</div>
-          <div class="text-[9.5px] text-slate-400 mt-0.5">Place jewellery under optical scanner camera or drop image files to attach</div>
+          <div class="text-[9.5px] text-slate-400 mt-0.5">Start 5s auto-capture camera, snap photo, or drop image files to attach</div>
         </div>
       `;
       return;
