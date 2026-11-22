@@ -4882,7 +4882,7 @@
       tabCompleted.classList.remove('text-slate-600');
     }
 
-    renderDeliveryAssayQueue();
+    renderDeliveryAssayQueue(true);
   }
 
   function handleDeliveryAssaySearch(query) {
@@ -4891,7 +4891,7 @@
     if (clearBtn) {
       clearBtn.classList.toggle('hidden', !deliveryAssaySearch);
     }
-    renderDeliveryAssayQueue();
+    renderDeliveryAssayQueue(true);
   }
 
   function clearDeliveryAssaySearch() {
@@ -4900,10 +4900,10 @@
     deliveryAssaySearch = '';
     const clearBtn = document.getElementById('deliv-assay-search-clear-btn');
     if (clearBtn) clearBtn.classList.add('hidden');
-    renderDeliveryAssayQueue();
+    renderDeliveryAssayQueue(true);
   }
 
-  function renderDeliveryAssayQueue() {
+  function renderDeliveryAssayQueue(autoSelectIfMissing = false) {
     const container = document.getElementById('deliv-assay-queue-container');
     if (!container || !state.intakeBatches) return;
 
@@ -4927,6 +4927,14 @@
         (b.purity || '').toUpperCase().includes(q) ||
         (b.bis || '').toUpperCase().includes(q)
       );
+    }
+
+    if (autoSelectIfMissing && list.length > 0) {
+      const isCurrentInList = activeDeliveryAssayBatch && list.some(b => b.jobDocket === activeDeliveryAssayBatch.jobDocket);
+      if (!isCurrentInList) {
+        selectDeliveryAssayBatch(list[0].jobDocket);
+        return;
+      }
     }
 
     if (!list.length) {
@@ -5060,6 +5068,35 @@
     const icon = document.getElementById('deliv-assay-scan-icon');
     const msg = document.getElementById('deliv-assay-scan-msg');
     const disp = document.getElementById('deliv-assay-scanned-code-display');
+    const banner = document.getElementById('deliv-assay-photo-piece-banner');
+    const label = document.getElementById('deliv-assay-active-piece-label');
+    const tagEl = document.getElementById('deliv-assay-active-piece-tag');
+    const snapBtn = document.getElementById('deliv-assay-snap-btn');
+
+    const isAlreadyDone = activeDeliveryAssayBatch && activeDeliveryAssayBatch.deliveryAssayStatus === 'COMPLETED';
+
+    if (isAlreadyDone) {
+      if (alertBox) alertBox.className = 'p-3 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 flex items-center gap-2.5 transition-all shadow-xs';
+      if (icon) {
+        icon.className = 'material-symbols-outlined text-[20px] text-emerald-600 shrink-0';
+        icon.textContent = 'verified';
+      }
+      if (msg) msg.textContent = 'DELIVERY COMPLETED FOR THIS BATCH';
+      if (disp) disp.textContent = `ALL ${activeDeliveryAssayBatch.pcs} PIECES VERIFIED, PHOTOGRAPHED & ARCHIVED`;
+
+      if (banner) banner.className = 'p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center justify-between';
+      if (label) label.textContent = 'DELIVERY COMPLETE • ALL PIECES VERIFIED';
+      if (tagEl) tagEl.textContent = 'STATUS: HANDED OVER';
+
+      if (snapBtn) {
+        snapBtn.disabled = true;
+        snapBtn.setAttribute('disabled', 'true');
+        snapBtn.className = 'flex-1 py-2.5 rounded-xl bg-slate-300 text-slate-500 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-not-allowed shadow-sm';
+        const snapText = document.getElementById('deliv-assay-snap-btn-text');
+        if (snapText) snapText.textContent = 'ALL PIECES PHOTOGRAPHED';
+      }
+      return;
+    }
 
     if (alertBox) alertBox.className = 'p-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 flex items-center gap-2.5 transition-all';
     if (icon) {
@@ -5069,16 +5106,13 @@
     if (msg) msg.textContent = 'WAITING FOR TAG SCAN';
     if (disp) disp.textContent = 'ALIGN QR CODE OR BARCODE WITHIN RETICLE';
 
-    const banner = document.getElementById('deliv-assay-photo-piece-banner');
-    const label = document.getElementById('deliv-assay-active-piece-label');
-    const tagEl = document.getElementById('deliv-assay-active-piece-tag');
     if (banner) banner.className = 'p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center justify-between';
     if (label) label.textContent = 'WAITING FOR MATCHED TAG SCAN...';
     if (tagEl) tagEl.textContent = 'TAG: PENDING';
 
-    const snapBtn = document.getElementById('deliv-assay-snap-btn');
     if (snapBtn) {
       snapBtn.disabled = true;
+      snapBtn.setAttribute('disabled', 'true');
       snapBtn.className = 'flex-1 py-2.5 rounded-xl bg-slate-300 text-slate-500 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-not-allowed shadow-sm';
       const snapText = document.getElementById('deliv-assay-snap-btn-text');
       if (snapText) snapText.textContent = 'CAPTURE PIECE PHOTO';
@@ -5135,9 +5169,12 @@
 
     // STRICT COMPLETION GATE CHECK
     const isComplete = (verified === total && total > 0);
+    const isAlreadyDelivered = (batch.deliveryAssayStatus === 'COMPLETED');
 
     if (gateStatus) {
-      if (isComplete) {
+      if (isAlreadyDelivered) {
+        gateStatus.innerHTML = `<span class="text-emerald-700 font-bold">✓ BATCH DELIVERY COMPLETED: All ${total} pieces verified, photographed, and released under BIS Sovereign custody protocol.</span>`;
+      } else if (isComplete) {
         gateStatus.innerHTML = `<span class="text-emerald-700 font-bold">✓ 100% VERIFICATION COMPLETE (${total} of ${total} pieces scanned & photographed). All security criteria satisfied for handover release.</span>`;
       } else {
         gateStatus.textContent = `DELIVERY SUBMISSION IS LOCKED UNTIL ALL ${total} PIECES ARE VERIFIED VIA TAG SCAN AND PHOTOGRAPHED (${remaining} REMAINING).`;
@@ -5145,7 +5182,13 @@
     }
 
     if (submitBtn) {
-      if (isComplete) {
+      if (isAlreadyDelivered) {
+        submitBtn.disabled = false;
+        submitBtn.removeAttribute('disabled');
+        submitBtn.className = 'px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-md cursor-pointer transition-all border border-amber-400/30';
+        if (submitText) submitText.textContent = 'DELIVERY COMPLETED • VIEW DOSSIER';
+        if (submitIcon) submitIcon.textContent = 'description';
+      } else if (isComplete) {
         submitBtn.disabled = false;
         submitBtn.removeAttribute('disabled');
         submitBtn.className = 'px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg cursor-pointer transition-all animate-pulse';
@@ -5380,17 +5423,29 @@
 
   // --- MULTI-PASS ADAPTIVE SCAN ENGINE ---
   function normalizeContrast(src, w, h) {
-    let min = 255, max = 0;
+    const hist = new Uint32Array(256);
+    const totalPixels = w * h;
     for (let i = 0; i < src.length; i += 4) {
-      const lum = 0.299 * src[i] + 0.587 * src[i + 1] + 0.114 * src[i + 2];
-      if (lum < min) min = lum;
-      if (lum > max) max = lum;
+      const lum = Math.round(0.299 * src[i] + 0.587 * src[i + 1] + 0.114 * src[i + 2]);
+      hist[lum]++;
     }
+    // Find 1st percentile and 99th percentile for robust contrast stretch
+    let cdf = 0;
+    let min = 0, max = 255;
+    const lowBound = totalPixels * 0.01;
+    const highBound = totalPixels * 0.99;
+    for (let k = 0; k < 256; k++) {
+      cdf += hist[k];
+      if (cdf >= lowBound && min === 0) min = k;
+      if (cdf >= highBound) { max = k; break; }
+    }
+    if (min >= max) { min = 0; max = 255; }
     const dest = new Uint8ClampedArray(src.length);
     const range = (max - min) || 1;
     for (let i = 0; i < src.length; i += 4) {
       const lum = 0.299 * src[i] + 0.587 * src[i + 1] + 0.114 * src[i + 2];
-      const stretched = Math.round(((lum - min) / range) * 255);
+      const clamped = Math.max(min, Math.min(max, lum));
+      const stretched = Math.round(((clamped - min) / range) * 255);
       dest[i] = stretched;
       dest[i + 1] = stretched;
       dest[i + 2] = stretched;
@@ -5399,23 +5454,61 @@
     return dest;
   }
 
-  function adaptiveBinarize(src, w, h) {
-    // Quick average luminance threshold
-    let sum = 0;
-    for (let i = 0; i < src.length; i += 4) {
-      sum += (src[i] + src[i + 1] + src[i + 2]) / 3;
+  // Bradley-Roth Local Adaptive Thresholding using Integral Image
+  function bradleyAdaptiveThreshold(src, w, h) {
+    const lum = new Uint8Array(w * h);
+    for (let i = 0, j = 0; i < src.length; i += 4, j++) {
+      lum[j] = Math.round((src[i] * 299 + src[i + 1] * 587 + src[i + 2] * 114) / 1000);
     }
-    const avg = sum / (src.length / 4);
+
+    const intImg = new Int32Array(w * h);
+    for (let y = 0; y < h; y++) {
+      let rowSum = 0;
+      const yOffset = y * w;
+      const prevYOffset = (y - 1) * w;
+      for (let x = 0; x < w; x++) {
+        rowSum += lum[yOffset + x];
+        if (y === 0) {
+          intImg[yOffset + x] = rowSum;
+        } else {
+          intImg[yOffset + x] = intImg[prevYOffset + x] + rowSum;
+        }
+      }
+    }
+
     const dest = new Uint8ClampedArray(src.length);
-    for (let i = 0; i < src.length; i += 4) {
-      const lum = (src[i] + src[i + 1] + src[i + 2]) / 3;
-      const val = lum < avg ? 0 : 255;
-      dest[i] = val;
-      dest[i + 1] = val;
-      dest[i + 2] = val;
-      dest[i + 3] = 255;
+    const s = Math.max(4, Math.floor(w / 8));
+    const s2 = Math.floor(s / 2);
+    const tRatio = 0.85;
+
+    for (let y = 0; y < h; y++) {
+      const y1 = Math.max(0, y - s2);
+      const y2 = Math.min(h - 1, y + s2);
+      const yOffset = y * w;
+      for (let x = 0; x < w; x++) {
+        const x1 = Math.max(0, x - s2);
+        const x2 = Math.min(w - 1, x + s2);
+        const count = (x2 - x1 + 1) * (y2 - y1 + 1);
+
+        const sum = intImg[y2 * w + x2]
+          - (x1 > 0 ? intImg[y2 * w + (x1 - 1)] : 0)
+          - (y1 > 0 ? intImg[(y1 - 1) * w + x2] : 0)
+          + (x1 > 0 && y1 > 0 ? intImg[(y1 - 1) * w + (x1 - 1)] : 0);
+
+        const px = (yOffset + x) * 4;
+        const isDark = (lum[yOffset + x] * count) < (sum * tRatio);
+        const val = isDark ? 0 : 255;
+        dest[px] = val;
+        dest[px + 1] = val;
+        dest[px + 2] = val;
+        dest[px + 3] = 255;
+      }
     }
     return dest;
+  }
+
+  function adaptiveBinarize(src, w, h) {
+    return bradleyAdaptiveThreshold(src, w, h);
   }
 
   function invertLuminance(src, w, h) {
@@ -5467,14 +5560,14 @@
       if (code && code.data) return code.data;
     }
 
-    // Pass 4: Adaptive Binarization (ideal for uneven cast shadows on jewellery)
+    // Pass 4: Bradley-Roth Local Adaptive Binarization (ideal for uneven cast shadows & metallic reflections)
     if (deliveryAssayLightMode === 'AUTO' || deliveryAssayLightMode === 'LOW_LIGHT') {
-      const bin = adaptiveBinarize(imgData.data, w, h);
+      const bin = bradleyAdaptiveThreshold(imgData.data, w, h);
       code = jsQR(bin, w, h, { inversionAttempts: 'attemptBoth' });
       if (code && code.data) return code.data;
     }
 
-    // Pass 5: Invert Luminance
+    // Pass 5: Invert Luminance (ideal for laser-inscribed white-on-dark or dark oxide tags)
     if (deliveryAssayLightMode === 'AUTO' || deliveryAssayLightMode === 'INVERT') {
       const inv = invertLuminance(imgData.data, w, h);
       code = jsQR(inv, w, h, { inversionAttempts: 'attemptBoth' });
@@ -5518,6 +5611,14 @@
       return { success: false, type: 'MISMATCH', message: 'EMPTY TAG CODE SCANNED' };
     }
 
+    if (batch.deliveryAssayStatus === 'COMPLETED') {
+      return {
+        success: false,
+        type: 'DUPLICATE',
+        message: `BATCH ALREADY COMPLETED: All ${batch.pcs} pieces for customer ${batch.customer} have already been verified and delivered.`
+      };
+    }
+
     const code = String(rawCode).trim().toUpperCase();
 
     // 1. Check if tag belongs to a DIFFERENT batch in state.intakeBatches
@@ -5526,7 +5627,13 @@
       const otherDocket = (b.jobDocket || '').toUpperCase();
       const otherReq = (b.reqNo || '').toUpperCase();
       const otherName = (b.customer || '').toUpperCase().split(' ')[0];
+      const inOtherTagData = (b.tagData && b.tagData.length > 0) && b.tagData.some(t => {
+        const huid = (t.huid || '').toUpperCase();
+        const bar = (t.barcode || '').toUpperCase();
+        return (huid && code.includes(huid)) || (bar && code.includes(bar));
+      });
       return (
+        inOtherTagData ||
         (otherDocket && code.includes(otherDocket)) ||
         (otherReq && code.includes(otherReq)) ||
         (otherName && otherName.length > 3 && code.includes(otherName))
@@ -5583,16 +5690,18 @@
 
     let targetPieceIndex = -1;
 
-    // Check if tag mentions piece index directly (e.g., "-P03" or "P3" or "PIECE 3")
-    const pieceNumMatch = code.match(/-P0*([1-9]\d*)|PIECE\s*#?0*([1-9]\d*)/i);
+    // Check if tag mentions piece index directly (e.g., "-P03", "P3", "PIECE 3", "ITEM #3", "-03")
+    const pieceNumMatch = code.match(/(?:-P0*|-0*|PIECE\s*#?0*|SL(?:\.?\s*NO\.?)?\s*#?0*|ITEM\s*#?0*|TAG\s*#?0*|#0*)([1-9]\d*)(?:[^\d]|$)|(?:^|[A-Z_-])0*([1-9]\d*)$/i);
     if (pieceNumMatch) {
       const parsedNum = parseInt(pieceNumMatch[1] || pieceNumMatch[2], 10);
       if (parsedNum >= 1 && parsedNum <= total) {
         targetPieceIndex = parsedNum;
       }
-    } else if (matchedTagItemIndex >= 0) {
+    }
+    if (targetPieceIndex === -1 && matchedTagItemIndex >= 0) {
       targetPieceIndex = matchedTagItemIndex + 1;
-    } else {
+    }
+    if (targetPieceIndex === -1) {
       // Find lowest unverified piece index
       for (let i = 1; i <= total; i++) {
         if (!verifiedIndices.has(i)) {
@@ -5798,7 +5907,11 @@
   }
 
   function handleDeliveryAssayTagFileUpload(file) {
-    if (!file || !file.type.startsWith('image/')) return;
+    const fileInput = document.getElementById('deliv-assay-tag-file-input');
+    if (!file || !file.type.startsWith('image/')) {
+      if (fileInput) fileInput.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = async (e) => {
       const img = new Image();
@@ -5814,6 +5927,7 @@
         } else {
           showToast('NO QR CODE OR BARCODE FOUND IN UPLOADED IMAGE.', 'warning');
         }
+        if (fileInput) fileInput.value = '';
       };
       img.src = e.target.result;
     };
@@ -5821,9 +5935,14 @@
   }
 
   function handleDeliveryAssayPhotoFileUpload(file) {
-    if (!file || !file.type.startsWith('image/')) return;
+    const fileInput = document.getElementById('deliv-assay-photo-file-input');
+    if (!file || !file.type.startsWith('image/')) {
+      if (fileInput) fileInput.value = '';
+      return;
+    }
     if (!deliveryAssayPendingTag) {
       showToast('PLEASE SCAN A MATCHING PIECE TAG FIRST.', 'warning');
+      if (fileInput) fileInput.value = '';
       return;
     }
     const reader = new FileReader();
@@ -5840,12 +5959,31 @@
         verifier: 'Sarah Jenkins (Assay Custodian)'
       });
 
+      // Update Last Captured Thumbnail
+      const previewBox = document.getElementById('deliv-assay-thumb-preview-box');
+      const info = document.getElementById('deliv-assay-thumb-info');
+      const time = document.getElementById('deliv-assay-thumb-time');
+      if (previewBox) previewBox.innerHTML = `<img src="${photoUrl}" alt="Piece #${pieceIndex}" class="w-full h-full object-cover"/>`;
+      if (info) info.textContent = `Piece #${pieceIndex} • ${tagCode}`;
+      if (time) time.textContent = timeStr;
+
+      playAssaySound('photo');
+
       deliveryAssayPendingTag = null;
       resetDeliveryAssayScanFeedback();
       renderDeliveryAssayPiecesGrid(activeDeliveryAssayBatch);
       updateDeliveryAssayProgress(activeDeliveryAssayBatch);
       renderDeliveryAssayQueue();
-      showToast(`PIECE #${pieceIndex} PHOTO ATTACHED FROM FILE.`, 'success');
+
+      const isAllDone = activeDeliveryAssayBatch.assayVerifiedPieces.length === activeDeliveryAssayBatch.pcs;
+      if (isAllDone) {
+        playAssaySound('complete');
+        showToast(`ALL ${activeDeliveryAssayBatch.pcs} PIECES VERIFIED & PHOTOGRAPHED! SUBMISSION UNLOCKED.`, 'success');
+      } else {
+        showToast(`PIECE #${pieceIndex} PHOTO ATTACHED FROM FILE. SCAN NEXT PIECE TAG.`, 'success');
+      }
+
+      if (fileInput) fileInput.value = '';
     };
     reader.readAsDataURL(file);
   }
@@ -5914,6 +6052,12 @@
     const total = batch.pcs || 0;
     const verified = (batch.assayVerifiedPieces && batch.assayVerifiedPieces.length) || 0;
 
+    // If already completed, opening modal allows viewing / reprinting handover certificate
+    if (batch.deliveryAssayStatus === 'COMPLETED') {
+      openDeliveryAssayDossierModal();
+      return;
+    }
+
     // STRICT COMPLETION GATE CHECK
     if (verified < total || total === 0) {
       showToast(`DELIVERY LOCKED: ONLY ${verified} OF ${total} PIECES VERIFIED. ALL PIECES MUST BE SCANNED & PHOTOGRAPHED.`, 'warning');
@@ -5924,11 +6068,20 @@
     // Mark as COMPLETED
     batch.deliveryAssayStatus = 'COMPLETED';
     batch.deliveryStatus = 'DELIVERED';
+    batch.status = 'Dispatched';
     batch.deliveryCompletedAt = new Date().toLocaleString();
+
+    // Update details card status badge
+    const elStatus = document.getElementById('deliv-assay-detail-status');
+    if (elStatus) {
+      elStatus.className = 'text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      elStatus.textContent = 'DELIVERY COMPLETED';
+    }
 
     updateDeliveryAssayStats();
     updateDeliveryAssayProgress(batch);
     renderDeliveryAssayQueue();
+    resetDeliveryAssayScanFeedback();
 
     // Open official Handover Dossier Modal
     openDeliveryAssayDossierModal();
@@ -10923,6 +11076,8 @@
   window.closeDeliveryAssayDossierModal = closeDeliveryAssayDossierModal;
   window.printAssayDeliveryDossier = printAssayDeliveryDossier;
   window.scanCanvasMultiCondition = scanCanvasMultiCondition;
+  window.normalizeContrast = normalizeContrast;
+  window.bradleyAdaptiveThreshold = bradleyAdaptiveThreshold;
   window.initInteractiveControls = initInteractiveControls;
   window.renderArticleTypeSuggestions = renderArticleTypeSuggestions;
   window.selectArticleType = selectArticleType;
