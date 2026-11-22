@@ -3051,7 +3051,18 @@
                       <span id="delivery-cam-status-text">CAMERA OFF</span>
                     </div>
 
-                    <div class="inline-flex items-center gap-1 pointer-events-auto">
+                    <div class="inline-flex items-center gap-1.5 pointer-events-auto">
+                      <!-- Tare / Calibrate Tray Baseline Button -->
+                      <button
+                        id="delivery-cam-tare-btn"
+                        type="button"
+                        onclick="calibrateDeliveryTrayBaseline()"
+                        class="h-7 px-2 bg-slate-900/90 hover:bg-slate-800 text-amber-400 hover:text-amber-300 text-[10px] font-mono rounded border border-slate-700/80 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                        title="Tare / Calibrate empty staging tray baseline"
+                      >
+                        <span class="material-symbols-outlined text-[13px]">crop_free</span>
+                        <span>TARE TRAY</span>
+                      </button>
                       <!-- Device Select Dropdown -->
                       <select
                         id="delivery-cam-select"
@@ -3226,9 +3237,28 @@
                   <span class="font-bold text-sm text-slate-800 uppercase" id="lightbox-title">ARTICLE VERIFICATION PHOTO</span>
                   <span id="lightbox-counter" class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">1 OF 1</span>
                 </div>
-                <button type="button" onclick="closePhotoLightbox()" class="text-slate-400 hover:text-slate-700 cursor-pointer">
-                  <span class="material-symbols-outlined text-[22px]">close</span>
-                </button>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onclick="downloadCurrentLightboxPhoto()"
+                    class="p-1 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+                    title="Download Photo"
+                  >
+                    <span class="material-symbols-outlined text-[18px]">download</span>
+                  </button>
+                  <button
+                    id="lightbox-delete-btn"
+                    type="button"
+                    onclick="deleteCurrentLightboxPhoto()"
+                    class="p-1 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
+                    title="Remove Photo from Batch"
+                  >
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                  </button>
+                  <button type="button" onclick="closePhotoLightbox()" class="text-slate-400 hover:text-slate-700 cursor-pointer">
+                    <span class="material-symbols-outlined text-[22px]">close</span>
+                  </button>
+                </div>
               </div>
 
               <div class="relative py-4 flex items-center justify-center bg-slate-950 rounded-xl mt-3 flex-1 overflow-hidden min-h-[300px]">

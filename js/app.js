@@ -3007,23 +3007,34 @@
   let deliveryCamDevices = [];
   let deliverySelectedDeviceId = '';
 
-  // High-performance motion differencing state machine
-  // States: 'idle' | 'motion' | 'stabilizing' | 'cooldown'
+  // Boosted optical differencing engine with immutable empty-tray baseline
+  // States: 'idle' (waiting for item) | 'motion' (hand/item placing) | 'stabilizing' (stillness countdown) | 'cooldown' (post-snap) | 'holding' (resting item)
+  const SAMPLE_W = 64;
+  const SAMPLE_H = 48;
+  const NUM_SAMPLE_PIXELS = SAMPLE_W * SAMPLE_H; // 3072 pixels
+  const currSampleBuffer = new Uint8Array(NUM_SAMPLE_PIXELS);
+  const prevSampleBuffer = new Uint8Array(NUM_SAMPLE_PIXELS);
+  const baselineBuffer = new Uint8Array(NUM_SAMPLE_PIXELS);
+  const lastCapturedBuffer = new Uint8Array(NUM_SAMPLE_PIXELS);
+
+  let hasBaseline = false;
+  let hasLastCapture = false;
   let autoDetectState = 'idle';
-  let prevSampleData = null;
-  let backgroundSampleData = null;
-  let motionThreshold = 17;
-  let presenceThreshold = 13;
+
+  let motionThreshold = 14;
+  let presenceThreshold = 12;
+  let minChangedPixels = 75;
   let stabilizationStartTime = 0;
-  const STABILIZATION_DURATION = 650; // ms stillness before triggering auto-snap
+  const STABILIZATION_DURATION = 600; // ms stillness before auto-snap
   let cooldownEndTime = 0;
-  const COOLDOWN_DURATION = 2000; // ms cooldown after snap
+  const COOLDOWN_DURATION = 1500; // ms cooldown after snap
   let lastAnalysisTime = 0;
-  const ANALYSIS_INTERVAL = 70; // analyze ~14 fps to ensure 0% UI thread lag
+  const ANALYSIS_INTERVAL = 65; // ~15 fps analysis = < 0.5% CPU overhead
 
   // Lightbox State for Multi-Photo Browsing
   let currentLightboxPhotos = [];
   let currentLightboxIndex = 0;
+  let currentLightboxTarget = '';
 
   const initialDeliveryRecords = [
     {
@@ -3339,72 +3350,76 @@
   // ========================================================
   // LIVE CAMERA FEED & BOOSTED AUTO-DETECTION SYSTEM
   // ========================================================
-  async function startDeliveryCamera() {
-    const video = document.getElementById('delivery-cam-video');
-    const standby = document.getElementById('delivery-cam-standby');
-    const reticle = document.getElementById('delivery-cam-reticle');
-    const errEl = document.getElementById('delivery-cam-error');
-    const streamBtnText = document.getElementById('delivery-cam-stream-btn-text');
-
-    if (errEl) {
-      errEl.classList.add('hidden');
-      errEl.textContent = '';
-    }
-
-    try {
-      if (deliveryCameraStream) {
-        stopDeliveryCameraStream();
-      }
-
-      const constraints = {
-        video: deliverySelectedDeviceId
-          ? { deviceId: { exact: deliverySelectedDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-          : { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false
-      };
-
-      let stream = null;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
-      } catch (e1) {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      }
-
-      deliveryCameraStream = stream;
-      if (video) {
-        video.srcObject = stream;
-        await video.play();
-      }
-
-      if (standby) standby.classList.add('hidden');
-      if (reticle) reticle.classList.remove('hidden');
-      if (streamBtnText) streamBtnText.textContent = 'STOP';
-
-      updateCamStatusUI('READY - MONITORING TRAY', 'ready');
-
-      autoDetectState = 'idle';
-      prevSampleData = null;
-      backgroundSampleData = null;
-      lastAnalysisTime = performance.now();
-
-      if (deliveryAnimationId) cancelAnimationFrame(deliveryAnimationId);
-      deliveryAnimationId = requestAnimationFrame(analyzeMotionFrame);
-
-      populateCameraDevicesList();
-      showToast('OPTICAL SCANNER CAMERA ACTIVE.', 'success');
-    } catch (err) {
-      console.warn('Camera access error:', err);
-      if (standby) standby.classList.remove('hidden');
-      if (reticle) reticle.classList.add('hidden');
-      if (streamBtnText) streamBtnText.textContent = 'START';
-      updateCamStatusUI('CAMERA UNAVAILABLE', 'error');
+  function startDeliveryCamera() {
+    return new Promise(async (resolve, reject) => {
+      const video = document.getElementById('delivery-cam-video');
+      const standby = document.getElementById('delivery-cam-standby');
+      const reticle = document.getElementById('delivery-cam-reticle');
+      const errEl = document.getElementById('delivery-cam-error');
+      const streamBtnText = document.getElementById('delivery-cam-stream-btn-text');
 
       if (errEl) {
-        errEl.classList.remove('hidden');
-        errEl.textContent = 'CAMERA ACCESS BLOCKED OR NOT DETECTED: ' + (err.message || 'PLEASE PERMIT CAMERA ACCESS');
+        errEl.classList.add('hidden');
+        errEl.textContent = '';
       }
-      showToast('COULD NOT ACCESS CAMERA. YOU CAN STILL UPLOAD IMAGES MANUALLY.', 'warning');
-    }
+
+      try {
+        if (deliveryCameraStream) {
+          stopDeliveryCameraStream();
+        }
+
+        const constraints = {
+          video: deliverySelectedDeviceId
+            ? { deviceId: { exact: deliverySelectedDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+            : { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+          audio: false
+        };
+
+        let stream = null;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (e1) {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
+
+        deliveryCameraStream = stream;
+        if (video) {
+          video.srcObject = stream;
+          await video.play();
+        }
+
+        if (standby) standby.classList.add('hidden');
+        if (reticle) reticle.classList.remove('hidden');
+        if (streamBtnText) streamBtnText.textContent = 'STOP';
+
+        updateCamStatusUI('READY - MONITORING TRAY', 'ready');
+
+        autoDetectState = 'idle';
+        hasBaseline = false;
+        hasLastCapture = false;
+        lastAnalysisTime = performance.now();
+
+        if (deliveryAnimationId) cancelAnimationFrame(deliveryAnimationId);
+        deliveryAnimationId = requestAnimationFrame(analyzeMotionFrame);
+
+        populateCameraDevicesList();
+        showToast('OPTICAL SCANNER CAMERA ACTIVE.', 'success');
+        resolve(stream);
+      } catch (err) {
+        console.warn('Camera access error:', err);
+        if (standby) standby.classList.remove('hidden');
+        if (reticle) reticle.classList.add('hidden');
+        if (streamBtnText) streamBtnText.textContent = 'START';
+        updateCamStatusUI('CAMERA UNAVAILABLE', 'error');
+
+        if (errEl) {
+          errEl.classList.remove('hidden');
+          errEl.textContent = 'CAMERA ACCESS BLOCKED OR NOT DETECTED: ' + (err.message || 'PLEASE PERMIT CAMERA ACCESS');
+        }
+        showToast('COULD NOT ACCESS CAMERA. YOU CAN STILL UPLOAD IMAGES MANUALLY.', 'warning');
+        reject(err);
+      }
+    });
   }
 
   function stopDeliveryCameraStream() {
@@ -3436,8 +3451,8 @@
     if (streamBtnText) streamBtnText.textContent = 'START';
 
     autoDetectState = 'idle';
-    prevSampleData = null;
-    backgroundSampleData = null;
+    hasBaseline = false;
+    hasLastCapture = false;
 
     updateCamStatusUI('CAMERA OFF', 'off');
   }
@@ -3447,7 +3462,7 @@
       stopDeliveryCameraStream();
       showToast('CAMERA STREAM STOPPED.', 'info');
     } else {
-      startDeliveryCamera();
+      startDeliveryCamera().catch(() => {});
     }
   }
 
@@ -3464,19 +3479,59 @@
         return;
       }
 
-      select.innerHTML = deliveryCamDevices.map((d, idx) => `
-        <option value="${escapeHtmlStr(d.deviceId)}" ${d.deviceId === deliverySelectedDeviceId ? 'selected' : ''}>
-          ${escapeHtmlStr(d.label || `CAMERA ${idx + 1}`)}
-        </option>
-      `).join('');
+      select.innerHTML = `
+        <option value="" ${!deliverySelectedDeviceId ? 'selected' : ''}>DEFAULT CAMERA</option>
+        ${deliveryCamDevices.map((d, idx) => `
+          <option value="${escapeHtmlStr(d.deviceId)}" ${d.deviceId === deliverySelectedDeviceId ? 'selected' : ''}>
+            ${escapeHtmlStr(d.label || `CAMERA ${idx + 1}`)}
+          </option>
+        `).join('')}
+      `;
     } catch (e) {}
   }
 
   function switchDeliveryCameraDevice(deviceId) {
     deliverySelectedDeviceId = deviceId || '';
     if (deliveryCameraStream) {
-      startDeliveryCamera();
+      startDeliveryCamera().catch(() => {});
     }
+  }
+
+  function calibrateDeliveryTrayBaseline() {
+    if (!deliveryCameraStream) {
+      showToast('START CAMERA FIRST TO CALIBRATE TRAY BASELINE.', 'info');
+      return;
+    }
+    const video = document.getElementById('delivery-cam-video');
+    const canvas = document.getElementById('delivery-motion-canvas');
+    if (!video || !canvas || video.readyState < 2) {
+      showToast('CAMERA WARMING UP, PLEASE RETRY IN A MOMENT.', 'info');
+      return;
+    }
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const vw = video.videoWidth || 640;
+    const vh = video.videoHeight || 480;
+    const cropX = vw * 0.2;
+    const cropY = vh * 0.2;
+    const cropW = vw * 0.6;
+    const cropH = vh * 0.6;
+
+    ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, SAMPLE_W, SAMPLE_H);
+    const imgData = ctx.getImageData(0, 0, SAMPLE_W, SAMPLE_H);
+    const data = imgData.data;
+
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+      const luma = (data[i] * 299 + data[i+1] * 587 + data[i+2] * 114) / 1000;
+      baselineBuffer[j] = luma;
+      prevSampleBuffer[j] = luma;
+    }
+    hasBaseline = true;
+    hasLastCapture = false;
+    autoDetectState = 'idle';
+
+    updateCamStatusUI('TRAY BASELINE CALIBRATED (TARED)', 'ready');
+    showToast('TRAY BASELINE TARED. PLACE JEWELLERY IN ZONE TO AUTO-CAPTURE.', 'success');
   }
 
   function updateCamStatusUI(text, state) {
@@ -3495,6 +3550,8 @@
       indicator.classList.add('bg-cyan-400', 'animate-ping');
     } else if (state === 'cooldown') {
       indicator.classList.add('bg-purple-400');
+    } else if (state === 'holding') {
+      indicator.classList.add('bg-blue-400');
     } else if (state === 'error') {
       indicator.classList.add('bg-rose-500');
     } else {
@@ -3529,7 +3586,7 @@
       if (btn) btn.className = 'px-2.5 py-1 rounded-lg font-bold text-[10.5px] uppercase flex items-center gap-1.5 transition-all bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs cursor-pointer';
       if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
       if (txt) txt.textContent = 'AUTO-SNAP: ACTIVE';
-      showToast('AUTO-CAPTURE ENABLED: WILL AUTO-SNAP WHEN JEWELLERY IS PLACED.', 'success');
+      showToast('AUTO-CAPTURE ENABLED: WILL AUTO-SNAP WHEN JEWELLERY IS KEPT UNDER CAMERA.', 'success');
     } else {
       if (btn) btn.className = 'px-2.5 py-1 rounded-lg font-bold text-[10.5px] uppercase flex items-center gap-1.5 transition-all bg-slate-100 text-slate-700 border border-slate-300 shadow-2xs cursor-pointer';
       if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-400';
@@ -3550,15 +3607,18 @@
   function setDeliveryMotionSensitivity(level) {
     deliveryMotionSensitivity = level;
     if (level === 'high') {
-      motionThreshold = 11;
-      presenceThreshold = 9;
+      motionThreshold = 9;
+      presenceThreshold = 8;
+      minChangedPixels = 40;
     } else if (level === 'low') {
-      motionThreshold = 26;
-      presenceThreshold = 20;
+      motionThreshold = 22;
+      presenceThreshold = 18;
+      minChangedPixels = 130;
     } else {
       // medium
-      motionThreshold = 17;
-      presenceThreshold = 13;
+      motionThreshold = 14;
+      presenceThreshold = 12;
+      minChangedPixels = 75;
     }
   }
 
@@ -3582,7 +3642,7 @@
     } catch (err) {}
   }
 
-  // --- 60FPS ZERO-LAG MOTION ANALYSIS LOOP ---
+  // --- BOOSTED 60FPS ZERO-LAG MOTION ANALYSIS LOOP ---
   function analyzeMotionFrame(timestamp) {
     if (!deliveryCameraStream) return;
 
@@ -3607,46 +3667,62 @@
     const cropW = vw * 0.6;
     const cropH = vh * 0.6;
 
-    ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, 64, 48);
-    const imgData = ctx.getImageData(0, 0, 64, 48);
+    ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, SAMPLE_W, SAMPLE_H);
+    const imgData = ctx.getImageData(0, 0, SAMPLE_W, SAMPLE_H);
     const data = imgData.data;
-    const numPixels = 64 * 48;
 
-    if (!prevSampleData) {
-      prevSampleData = new Uint8Array(numPixels);
+    // First frame initialization of baseline and previous frame
+    if (!hasBaseline) {
       for (let i = 0, j = 0; i < data.length; i += 4, j++) {
-        prevSampleData[j] = (data[i] * 299 + data[i+1] * 587 + data[i+2] * 114) / 1000;
+        const luma = (data[i] * 299 + data[i+1] * 587 + data[i+2] * 114) / 1000;
+        currSampleBuffer[j] = luma;
+        prevSampleBuffer[j] = luma;
+        baselineBuffer[j] = luma;
       }
-      backgroundSampleData = new Uint8Array(prevSampleData);
+      hasBaseline = true;
       deliveryAnimationId = requestAnimationFrame(analyzeMotionFrame);
       return;
     }
 
-    let totalDiff = 0;
-    let bgDiff = 0;
-    const currentLuma = new Uint8Array(numPixels);
+    let motionDiffSum = 0;
+    let baselineDiffSum = 0;
+    let lastSnapDiffSum = 0;
+    let changedPixelCount = 0;
 
     for (let i = 0, j = 0; i < data.length; i += 4, j++) {
       const luma = (data[i] * 299 + data[i+1] * 587 + data[i+2] * 114) / 1000;
-      currentLuma[j] = luma;
-      totalDiff += Math.abs(luma - prevSampleData[j]);
-      if (backgroundSampleData) {
-        bgDiff += Math.abs(luma - backgroundSampleData[j]);
+      currSampleBuffer[j] = luma;
+
+      const mDiff = Math.abs(luma - prevSampleBuffer[j]);
+      motionDiffSum += mDiff;
+
+      const bDiff = Math.abs(luma - baselineBuffer[j]);
+      baselineDiffSum += bDiff;
+      if (bDiff > 18) {
+        changedPixelCount++;
+      }
+
+      if (hasLastCapture) {
+        lastSnapDiffSum += Math.abs(luma - lastCapturedBuffer[j]);
       }
     }
 
-    const avgMotionDiff = totalDiff / numPixels;
-    const avgBgDiff = backgroundSampleData ? (bgDiff / numPixels) : 0;
-    prevSampleData = currentLuma;
+    const avgMotionDiff = motionDiffSum / NUM_SAMPLE_PIXELS;
+    const avgBaselineDiff = baselineDiffSum / NUM_SAMPLE_PIXELS;
+    const avgLastSnapDiff = hasLastCapture ? (lastSnapDiffSum / NUM_SAMPLE_PIXELS) : 999;
+
+    // Copy current sample to prevSampleBuffer for next frame without memory allocation
+    prevSampleBuffer.set(currSampleBuffer);
 
     const now = Date.now();
+    const isObjectPresent = (avgBaselineDiff >= presenceThreshold) && (changedPixelCount >= minChangedPixels);
+    const isDifferentFromLastSnap = !hasLastCapture || (avgLastSnapDiff >= (presenceThreshold * 0.75));
 
-    // Cooldown state
+    // Handle Cooldown State
     if (autoDetectState === 'cooldown') {
       if (now >= cooldownEndTime) {
-        autoDetectState = 'idle';
-        backgroundSampleData = new Uint8Array(currentLuma);
-        updateCamStatusUI('READY - MONITORING TRAY', 'ready');
+        autoDetectState = isObjectPresent ? 'holding' : 'idle';
+        updateCamStatusUI(isObjectPresent ? 'JEWELLERY CAPTURED • READY FOR NEXT' : 'READY - MONITORING TRAY', 'ready');
       } else {
         const remaining = ((cooldownEndTime - now) / 1000).toFixed(1);
         updateCamStatusUI(`COOLDOWN (${remaining}s)`, 'cooldown');
@@ -3661,30 +3737,49 @@
       return;
     }
 
-    // State Machine
+    // IF OBJECT REMOVED: Tray is empty (matches baseline) -> clear last snap cache and return to idle
+    if (!isObjectPresent) {
+      if (hasLastCapture) {
+        hasLastCapture = false; // Reset so placing next piece will trigger snap
+      }
+      showCountdownBadge(false);
+      if (autoDetectState !== 'idle') {
+        autoDetectState = 'idle';
+      }
+      updateCamStatusUI('READY - PLACE JEWELLERY IN ZONE', 'ready');
+      deliveryAnimationId = requestAnimationFrame(analyzeMotionFrame);
+      return;
+    }
+
+    // OBJECT IS PRESENT ON TRAY:
     if (autoDetectState === 'idle') {
       if (avgMotionDiff > motionThreshold) {
         autoDetectState = 'motion';
         updateCamStatusUI('JEWELLERY DETECTED - PLACING...', 'motion');
+      } else if (isDifferentFromLastSnap) {
+        autoDetectState = 'stabilizing';
+        stabilizationStartTime = now;
+        showCountdownBadge(true);
+        updateCamStatusUI('STABILIZING • HOLD STILL...', 'stabilizing');
       } else {
-        updateCamStatusUI('READY - PLACE JEWELLERY IN ZONE', 'ready');
+        updateCamStatusUI('JEWELLERY CAPTURED • READY FOR NEXT', 'ready');
       }
     } else if (autoDetectState === 'motion') {
       if (avgMotionDiff < motionThreshold) {
-        if (avgBgDiff > presenceThreshold) {
+        if (isDifferentFromLastSnap) {
           autoDetectState = 'stabilizing';
           stabilizationStartTime = now;
           showCountdownBadge(true);
           updateCamStatusUI('STABILIZING • HOLD STILL...', 'stabilizing');
         } else {
-          autoDetectState = 'idle';
-          showCountdownBadge(false);
+          autoDetectState = 'holding';
+          updateCamStatusUI('JEWELLERY ON TRAY', 'ready');
         }
       } else {
         updateCamStatusUI('JEWELLERY IN MOTION...', 'motion');
       }
     } else if (autoDetectState === 'stabilizing') {
-      if (avgMotionDiff > motionThreshold * 1.3) {
+      if (avgMotionDiff > motionThreshold * 1.35) {
         autoDetectState = 'motion';
         showCountdownBadge(false);
         updateCamStatusUI('MOTION DETECTED - RESETTING', 'motion');
@@ -3697,8 +3792,17 @@
           showCountdownBadge(false);
           autoDetectState = 'cooldown';
           cooldownEndTime = now + COOLDOWN_DURATION;
+          lastCapturedBuffer.set(currSampleBuffer);
+          hasLastCapture = true;
           executeSnapshot('AUTO');
         }
+      }
+    } else if (autoDetectState === 'holding') {
+      if (avgMotionDiff > motionThreshold) {
+        autoDetectState = 'motion';
+        updateCamStatusUI('MOTION DETECTED...', 'motion');
+      } else {
+        updateCamStatusUI('JEWELLERY CAPTURED • READY FOR NEXT', 'ready');
       }
     }
 
@@ -3707,9 +3811,11 @@
 
   function triggerDeliveryManualCapture() {
     if (!deliveryCameraStream) {
-      startDeliveryCamera().then(() => {
-        setTimeout(() => executeSnapshot('MANUAL'), 400);
-      });
+      startDeliveryCamera()
+        .then(() => {
+          setTimeout(() => executeSnapshot('MANUAL'), 300);
+        })
+        .catch(() => {});
       return;
     }
     executeSnapshot('MANUAL');
@@ -3734,20 +3840,33 @@
       playDeliveryCaptureChime();
     }
 
-    const vw = video.videoWidth || 1280;
-    const vh = video.videoHeight || 720;
+    const maxSnapDim = 1280;
+    let vw = video.videoWidth || 1280;
+    let vh = video.videoHeight || 720;
+    let sw = vw;
+    let sh = vh;
+    if (sw > maxSnapDim || sh > maxSnapDim) {
+      if (sw > sh) {
+        sh = Math.round((sh * maxSnapDim) / sw);
+        sw = maxSnapDim;
+      } else {
+        sw = Math.round((sw * maxSnapDim) / sh);
+        sh = maxSnapDim;
+      }
+    }
+
     const snapCanvas = document.createElement('canvas');
-    snapCanvas.width = vw;
-    snapCanvas.height = vh;
+    snapCanvas.width = sw;
+    snapCanvas.height = sh;
     const snapCtx = snapCanvas.getContext('2d');
-    snapCtx.drawImage(video, 0, 0, vw, vh);
+    snapCtx.drawImage(video, 0, 0, sw, sh);
 
     const dataUrl = snapCanvas.toDataURL('image/jpeg', 0.88);
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     const photoObj = {
-      id: 'photo_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
       src: dataUrl,
       timestamp: timeStr,
       source: source,
@@ -3766,6 +3885,17 @@
     const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (!validFiles.length) {
       showToast('PLEASE SELECT VALID IMAGE FILES (JPEG, PNG, WEBP).', 'warning');
+      return;
+    }
+
+    // Auto-select batch if none is currently active
+    if (!activeDeliveryBatch && state.intakeBatches && state.intakeBatches.length > 0) {
+      const readyBatch = state.intakeBatches.find(b => b.status !== 'Delivered') || state.intakeBatches[0];
+      selectDeliveryBatch(readyBatch.jobDocket);
+    }
+
+    if (!activeDeliveryBatch) {
+      showToast('PLEASE SELECT A BATCH FROM THE QUEUE FIRST.', 'warning');
       return;
     }
 
@@ -3798,7 +3928,7 @@
           const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
           const photoObj = {
-            id: 'photo_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             src: dataUrl,
             timestamp: timeStr,
             source: 'UPLOAD',
@@ -3815,6 +3945,12 @@
       };
       reader.readAsDataURL(file);
     });
+
+    // Reset file input values so selecting the same file again works
+    const multiInput = document.getElementById('deliv-multi-upload-input');
+    if (multiInput) multiInput.value = '';
+    const singleInput = document.getElementById('deliv-photo-input');
+    if (singleInput) singleInput.value = '';
   }
 
   function handleArticlePhotoUpload(files) {
@@ -3822,6 +3958,12 @@
   }
 
   function addPhotoToActiveDeliveryBatch(photoObj) {
+    if (!activeDeliveryBatch) {
+      if (state.intakeBatches && state.intakeBatches.length > 0) {
+        const readyBatch = state.intakeBatches.find(b => b.status !== 'Delivered') || state.intakeBatches[0];
+        selectDeliveryBatch(readyBatch.jobDocket);
+      }
+    }
     if (!activeDeliveryBatch) {
       showToast('PLEASE SELECT A BATCH FROM THE QUEUE FIRST.', 'warning');
       return;
@@ -4387,6 +4529,7 @@
     let titleStr = 'ARTICLE VERIFICATION PHOTO';
     let docketStr = '';
     let sealStr = '';
+    currentLightboxTarget = target;
 
     if (target === 'active') {
       if (activeDeliveryBatch && activeDeliveryBatch.articlePhotos && activeDeliveryBatch.articlePhotos.length > 0) {
@@ -4423,10 +4566,19 @@
     const title = document.getElementById('lightbox-title');
     const docket = document.getElementById('lightbox-docket');
     const seal = document.getElementById('lightbox-seal');
+    const deleteBtn = document.getElementById('lightbox-delete-btn');
 
     if (title) title.textContent = titleStr;
     if (docket) docket.textContent = docketStr;
     if (seal) seal.textContent = sealStr;
+
+    if (deleteBtn) {
+      if (target === 'active') {
+        deleteBtn.classList.remove('hidden');
+      } else {
+        deleteBtn.classList.add('hidden');
+      }
+    }
 
     updateLightboxCurrentPhoto();
 
@@ -4495,6 +4647,35 @@
     updateLightboxCurrentPhoto();
   }
 
+  function downloadCurrentLightboxPhoto() {
+    if (!currentLightboxPhotos.length) return;
+    const current = currentLightboxPhotos[currentLightboxIndex];
+    if (!current || !current.src) return;
+    const a = document.createElement('a');
+    a.href = current.src;
+    a.download = current.name || `JEWELLERY_PHOTO_${Date.now()}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('PHOTO DOWNLOAD STARTED.', 'info');
+  }
+
+  function deleteCurrentLightboxPhoto() {
+    if (currentLightboxTarget !== 'active' || !activeDeliveryBatch || !currentLightboxPhotos.length) return;
+    const current = currentLightboxPhotos[currentLightboxIndex];
+    if (!current || !current.id) return;
+    if (!confirm('Remove this photo from the active batch?')) return;
+
+    removePhotoFromBatch(current.id);
+    currentLightboxPhotos = activeDeliveryBatch.articlePhotos || [];
+    if (!currentLightboxPhotos.length) {
+      closePhotoLightbox();
+    } else {
+      currentLightboxIndex = Math.min(currentLightboxIndex, currentLightboxPhotos.length - 1);
+      updateLightboxCurrentPhoto();
+    }
+  }
+
   function closePhotoLightbox() {
     const modal = document.getElementById('deliv-photo-lightbox');
     if (modal) modal.classList.add('hidden');
@@ -4508,6 +4689,7 @@
         if (e.key === 'Escape') closePhotoLightbox();
         else if (e.key === 'ArrowLeft') prevLightboxPhoto();
         else if (e.key === 'ArrowRight') nextLightboxPhoto();
+        else if (e.key === 'Delete' && currentLightboxTarget === 'active') deleteCurrentLightboxPhoto();
       }
     });
 
@@ -9288,6 +9470,7 @@
   window.toggleDeliveryCaptureSound = toggleDeliveryCaptureSound;
   window.triggerDeliveryManualCapture = triggerDeliveryManualCapture;
   window.setDeliveryMotionSensitivity = setDeliveryMotionSensitivity;
+  window.calibrateDeliveryTrayBaseline = calibrateDeliveryTrayBaseline;
   window.handleMultipleDeliveryPhotos = handleMultipleDeliveryPhotos;
   window.handleMultiPhotoDragOver = handleMultiPhotoDragOver;
   window.handleMultiPhotoDragLeave = handleMultiPhotoDragLeave;
@@ -9297,6 +9480,8 @@
   window.setLightboxIndex = setLightboxIndex;
   window.prevLightboxPhoto = prevLightboxPhoto;
   window.nextLightboxPhoto = nextLightboxPhoto;
+  window.downloadCurrentLightboxPhoto = downloadCurrentLightboxPhoto;
+  window.deleteCurrentLightboxPhoto = deleteCurrentLightboxPhoto;
   window.renderDeliveryQueue = renderDeliveryQueue;
   window.filterDeliveryQueue = filterDeliveryQueue;
   window.handleDeliverySearch = handleDeliverySearch;

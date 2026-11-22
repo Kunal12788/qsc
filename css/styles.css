@@ -1150,6 +1150,7 @@ button[type="submit"]#btn-save-receive-entry.final-step-glow {
 
 .scanner-sweep-active {
   animation: opticalScannerSweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: top, opacity;
 }
 
 .gallery-photo-card {
