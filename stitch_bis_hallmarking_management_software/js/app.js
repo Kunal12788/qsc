@@ -540,6 +540,7 @@
     'customer-information',
     'bill-generation',
     'delivery',
+    'delivery-assay',
     'records-history',
     'settings'
   ];
@@ -549,6 +550,7 @@
     if (hash === 'bill_generation') hash = 'bill-generation';
     if (hash === 'tag_generation') hash = 'tag-generation';
     if (hash === 'receive_batch' || hash === 'receive-batch') hash = 'receive';
+    if (hash === 'delivery-assay' || hash === 'delivery_assay') hash = 'delivery-assay';
     return validRoutes.includes(hash) ? hash : 'dashboard';
   }
 
@@ -650,8 +652,16 @@
         stopDeliveryCameraStream();
       }
     }
+    if (route !== 'delivery-assay') {
+      if (typeof stopDeliveryAssayScanner === 'function') {
+        stopDeliveryAssayScanner();
+      }
+    }
     if (route === 'delivery') {
       initDeliveryView();
+    }
+    if (route === 'delivery-assay') {
+      initDeliveryAssayView();
     }
     if (route === 'bill-generation') {
       initBillGenerationView();
@@ -761,6 +771,8 @@
       { type: 'Nav', title: 'Receive New Batch & Intake', icon: 'move_to_inbox', action: () => navigateTo('receive') },
       { type: 'Nav', title: 'Customer Information Directory', icon: 'storefront', action: () => navigateTo('customer-information') },
       { type: 'Nav', title: 'Bill Generation & Tax Invoice', icon: 'receipt_long', action: () => navigateTo('bill-generation') },
+      { type: 'Nav', title: 'Delivery (Outward Gate Pass)', icon: 'local_shipping', action: () => navigateTo('delivery') },
+      { type: 'Nav', title: 'Delivery (Assay Center)', icon: 'verified_user', action: () => navigateTo('delivery-assay') },
       { type: 'Nav', title: 'Audit Ledger & Historical Records', icon: 'history_edu', action: () => navigateTo('records-history') },
       { type: 'Nav', title: 'Laboratory Control & Settings', icon: 'settings', action: () => navigateTo('settings') },
       ...state.customers.map(c => ({
@@ -4637,8 +4649,1432 @@
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         stopDeliveryCameraStream();
+        if (typeof stopDeliveryAssayScanner === 'function') {
+          stopDeliveryAssayScanner();
+        }
       }
     });
+  }
+
+  // =========================================================================
+  // VIEW: DELIVERY (ASSAY CENTER) ENGINE
+  // =========================================================================
+
+  let deliveryAssayFilter = 'ALL';
+  let deliveryAssaySearch = '';
+  let activeDeliveryAssayBatch = null;
+  let deliveryAssayScannerStream = null;
+  let deliveryAssayPhotoStream = null;
+  let deliveryAssayScannerActive = false;
+  let deliveryAssayScannerStarting = false;
+  let deliveryAssayScanAnimFrame = null;
+  let deliveryAssayLightMode = 'AUTO';
+  let deliveryAssayTorchActive = false;
+  let deliveryAssaySoundEnabled = true;
+  let deliveryAssayPendingTag = null;
+  let deliveryAssaySelectedDeviceId = '';
+  let deliveryAssayScanCooldown = false;
+  let assaySharedAudioCtx = null;
+  let assayBarcodeDetector = null;
+
+  if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+    try {
+      assayBarcodeDetector = new BarcodeDetector({
+        formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e']
+      });
+    } catch (e) {
+      try {
+        assayBarcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+      } catch (e2) {}
+    }
+  }
+
+  function playAssaySound(type) {
+    if (!deliveryAssaySoundEnabled) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!assaySharedAudioCtx || assaySharedAudioCtx.state === 'closed') {
+        assaySharedAudioCtx = new AudioCtx();
+      }
+      if (assaySharedAudioCtx.state === 'suspended') {
+        assaySharedAudioCtx.resume().catch(() => {});
+      }
+      const ctx = assaySharedAudioCtx;
+      const now = ctx.currentTime;
+      if (type === 'match') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.setValueAtTime(1320, now + 0.08);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      } else if (type === 'photo') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.09);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      } else if (type === 'mismatch') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.setValueAtTime(140, now + 0.1);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        osc.start(now);
+        osc.stop(now + 0.28);
+      } else if (type === 'duplicate') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(440, now + 0.08);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } else if (type === 'complete') {
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + i * 0.09);
+          gain.gain.setValueAtTime(0.2, now + i * 0.09);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.22);
+          osc.start(now + i * 0.09);
+          osc.stop(now + i * 0.09 + 0.22);
+        });
+      }
+    } catch (e) {}
+  }
+
+  function generateSyntheticArticlePhotoUrl(customer, pieceIdx, metal, purity) {
+    const cName = String(customer || 'JEWELLERY ARTICLE').slice(0, 24);
+    const mStr = String(metal || 'GOLD').toUpperCase();
+    const pStr = String(purity || '22K 916').toUpperCase();
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480">
+      <defs>
+        <radialGradient id="jewelGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fffbeb"/>
+          <stop offset="45%" stop-color="#fbbf24"/>
+          <stop offset="85%" stop-color="#b45309"/>
+          <stop offset="100%" stop-color="#78350f"/>
+        </radialGradient>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0f172a"/>
+          <stop offset="100%" stop-color="#1e293b"/>
+        </linearGradient>
+      </defs>
+      <rect width="640" height="480" fill="url(#bgGrad)"/>
+      <circle cx="320" cy="220" r="130" fill="none" stroke="url(#jewelGrad)" stroke-width="24" stroke-dasharray="14 4"/>
+      <circle cx="320" cy="220" r="105" fill="none" stroke="#fef08a" stroke-width="4"/>
+      <polygon points="320,135 345,175 320,215 295,175" fill="#fde047" stroke="#ca8a04" stroke-width="2"/>
+      <rect x="20" y="380" width="600" height="80" rx="10" fill="#020617" fill-opacity="0.85" stroke="#334155" stroke-width="1.5"/>
+      <text x="40" y="412" font-family="monospace" font-size="16" font-weight="bold" fill="#38bdf8">PIECE #${pieceIdx} • ${mStr} ${pStr}</text>
+      <text x="40" y="442" font-family="sans-serif" font-size="14" font-weight="bold" fill="#f8fafc">${cName} • ${time}</text>
+      <text x="590" y="425" text-anchor="end" font-family="monospace" font-size="13" font-weight="bold" fill="#a3e635">BIS VERIFIED</text>
+    </svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
+  function initDeliveryAssayView() {
+    if (!state.intakeBatches || !state.intakeBatches.length) return;
+
+    // Initialize deliveryAssayStatus and assayVerifiedPieces across all batches
+    state.intakeBatches.forEach(b => {
+      if (!b.deliveryAssayStatus) {
+        b.deliveryAssayStatus = (b.deliveryStatus === 'DELIVERED') ? 'COMPLETED' : 'PENDING';
+      }
+      if (!Array.isArray(b.assayVerifiedPieces)) {
+        b.assayVerifiedPieces = [];
+      }
+      // Populate completed sample pieces for batch 6 (JOB-2024-8838) to illustrate complete record
+      if (b.jobDocket === 'JOB-2024-8838' && b.assayVerifiedPieces.length === 0) {
+        b.deliveryAssayStatus = 'COMPLETED';
+        const total = b.pcs || 6;
+        for (let i = 1; i <= total; i++) {
+          b.assayVerifiedPieces.push({
+            pieceIndex: i,
+            tagCode: `${b.jobDocket}-P0${i}`,
+            photoUrl: generateSyntheticArticlePhotoUrl(b.customer, i, b.metal, b.purity),
+            timestamp: '08:52 AM Today',
+            verifier: 'Sarah Jenkins (Assay Custodian)'
+          });
+        }
+      }
+    });
+
+    if (!activeDeliveryAssayBatch) {
+      activeDeliveryAssayBatch = state.intakeBatches.find(b => b.deliveryAssayStatus === 'PENDING') || state.intakeBatches[0];
+    }
+
+    updateDeliveryAssayStats();
+    renderDeliveryAssayQueue();
+    if (activeDeliveryAssayBatch) {
+      selectDeliveryAssayBatch(activeDeliveryAssayBatch.jobDocket);
+    }
+    populateDeliveryAssayCameraDevices();
+  }
+
+  function updateDeliveryAssayStats() {
+    if (!state.intakeBatches) return;
+    const total = state.intakeBatches.length;
+    const pending = state.intakeBatches.filter(b => b.deliveryAssayStatus !== 'COMPLETED').length;
+    const completed = state.intakeBatches.filter(b => b.deliveryAssayStatus === 'COMPLETED').length;
+
+    const elTotal = document.getElementById('deliv-assay-stat-total');
+    const elPending = document.getElementById('deliv-assay-stat-pending');
+    const elCompleted = document.getElementById('deliv-assay-stat-completed');
+    const badgeAll = document.getElementById('deliv-assay-badge-all');
+    const badgePending = document.getElementById('deliv-assay-badge-pending');
+    const badgeCompleted = document.getElementById('deliv-assay-badge-completed');
+
+    if (elTotal) elTotal.textContent = `${total} BATCHES`;
+    if (elPending) elPending.textContent = `${pending} BATCHES`;
+    if (elCompleted) elCompleted.textContent = `${completed} BATCH${completed === 1 ? '' : 'ES'}`;
+
+    if (badgeAll) badgeAll.textContent = total;
+    if (badgePending) badgePending.textContent = pending;
+    if (badgeCompleted) badgeCompleted.textContent = completed;
+  }
+
+  function filterDeliveryAssayQueue(filter) {
+    deliveryAssayFilter = filter || 'ALL';
+
+    const tabAll = document.getElementById('deliv-assay-tab-all');
+    const tabPending = document.getElementById('deliv-assay-tab-pending');
+    const tabCompleted = document.getElementById('deliv-assay-tab-completed');
+
+    [tabAll, tabPending, tabCompleted].forEach(tab => {
+      if (!tab) return;
+      tab.classList.remove('bg-white', 'text-slate-900', 'shadow-xs');
+      tab.classList.add('text-slate-600', 'hover:text-slate-900');
+    });
+
+    if (deliveryAssayFilter === 'ALL' && tabAll) {
+      tabAll.classList.add('bg-white', 'text-slate-900', 'shadow-xs');
+      tabAll.classList.remove('text-slate-600');
+    } else if (deliveryAssayFilter === 'PENDING' && tabPending) {
+      tabPending.classList.add('bg-white', 'text-slate-900', 'shadow-xs');
+      tabPending.classList.remove('text-slate-600');
+    } else if (deliveryAssayFilter === 'COMPLETED' && tabCompleted) {
+      tabCompleted.classList.add('bg-white', 'text-slate-900', 'shadow-xs');
+      tabCompleted.classList.remove('text-slate-600');
+    }
+
+    renderDeliveryAssayQueue();
+  }
+
+  function handleDeliveryAssaySearch(query) {
+    deliveryAssaySearch = (query || '').trim();
+    const clearBtn = document.getElementById('deliv-assay-search-clear-btn');
+    if (clearBtn) {
+      clearBtn.classList.toggle('hidden', !deliveryAssaySearch);
+    }
+    renderDeliveryAssayQueue();
+  }
+
+  function clearDeliveryAssaySearch() {
+    const input = document.getElementById('deliv-assay-batch-search');
+    if (input) input.value = '';
+    deliveryAssaySearch = '';
+    const clearBtn = document.getElementById('deliv-assay-search-clear-btn');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    renderDeliveryAssayQueue();
+  }
+
+  function renderDeliveryAssayQueue() {
+    const container = document.getElementById('deliv-assay-queue-container');
+    if (!container || !state.intakeBatches) return;
+
+    let list = [...state.intakeBatches];
+
+    // Filter by tab: ALL, PENDING, COMPLETED
+    if (deliveryAssayFilter === 'PENDING') {
+      list = list.filter(b => b.deliveryAssayStatus !== 'COMPLETED');
+    } else if (deliveryAssayFilter === 'COMPLETED') {
+      list = list.filter(b => b.deliveryAssayStatus === 'COMPLETED');
+    }
+
+    // Filter by search query
+    if (deliveryAssaySearch) {
+      const q = deliveryAssaySearch.toUpperCase();
+      list = list.filter(b =>
+        (b.customer || '').toUpperCase().includes(q) ||
+        (b.jobDocket || '').toUpperCase().includes(q) ||
+        (b.reqNo || '').toUpperCase().includes(q) ||
+        (b.metal || '').toUpperCase().includes(q) ||
+        (b.purity || '').toUpperCase().includes(q) ||
+        (b.bis || '').toUpperCase().includes(q)
+      );
+    }
+
+    if (!list.length) {
+      container.innerHTML = `
+        <div class="col-span-full py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+          <span class="material-symbols-outlined text-[36px] text-slate-400">inbox</span>
+          <p class="text-xs font-bold text-slate-600 uppercase mt-1">NO DELIVERIES MATCH THE SELECTED CRITERIA</p>
+          <span class="text-[11px] text-slate-400">Switch tabs or clear search to view other batches.</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map(b => {
+      const isSelected = activeDeliveryAssayBatch && activeDeliveryAssayBatch.jobDocket === b.jobDocket;
+      const isCompleted = b.deliveryAssayStatus === 'COMPLETED';
+      const verifiedCount = (b.assayVerifiedPieces && b.assayVerifiedPieces.length) || 0;
+      const totalPieces = b.pcs || 0;
+      const pct = totalPieces > 0 ? Math.round((verifiedCount / totalPieces) * 100) : 0;
+
+      return `
+        <div
+          onclick="selectDeliveryAssayBatch('${escapeHtmlStr(b.jobDocket)}')"
+          class="p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+            isSelected
+              ? 'bg-amber-50/60 border-amber-500 shadow-sm ring-1 ring-amber-400'
+              : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+          }"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span class="font-mono text-[10px] font-bold text-amber-700 bg-amber-100/70 px-1.5 py-0.5 rounded">${escapeHtmlStr(b.jobDocket)}</span>
+              <h4 class="text-xs font-black text-slate-900 mt-1 uppercase line-clamp-1">${escapeHtmlStr(b.customer)}</h4>
+              <span class="text-[10px] text-slate-500 font-mono">REQ: ${escapeHtmlStr(b.reqNo || '--')}</span>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[9.5px] font-black uppercase shrink-0 ${
+              isCompleted
+                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                : 'bg-amber-100 text-amber-800 border border-amber-200'
+            }">
+              ${isCompleted ? 'COMPLETED' : 'PENDING'}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-[10.5px] font-mono border-t border-slate-100 pt-2 text-slate-600">
+            <div>
+              <span class="text-[9px] uppercase font-bold text-slate-400 block">PIECES / PURITY</span>
+              <span class="font-bold text-slate-900">${b.pcs} Pcs • ${escapeHtmlStr(b.purity || '916')}</span>
+            </div>
+            <div>
+              <span class="text-[9px] uppercase font-bold text-slate-400 block">WEIGHT (G / N)</span>
+              <span class="font-bold text-slate-900">${parseFloat(b.grossWt || 0).toFixed(2)}g / ${parseFloat(b.netWt || 0).toFixed(2)}g</span>
+            </div>
+          </div>
+
+          <!-- Piece Verification mini bar -->
+          <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div class="h-full ${isCompleted ? 'bg-emerald-500' : 'bg-amber-500'}" style="width: ${pct}%;"></div>
+          </div>
+          <div class="flex items-center justify-between text-[9.5px] text-slate-500 font-mono">
+            <span>${verifiedCount} of ${totalPieces} Verified</span>
+            <span>${pct}%</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function selectDeliveryAssayBatch(docket) {
+    if (!docket || !state.intakeBatches) return;
+    const batch = state.intakeBatches.find(b => b.jobDocket === docket) || state.intakeBatches[0];
+    if (!batch) return;
+
+    activeDeliveryAssayBatch = batch;
+    if (!Array.isArray(batch.assayVerifiedPieces)) {
+      batch.assayVerifiedPieces = [];
+    }
+
+    deliveryAssayPendingTag = null;
+
+    // Update Customer & Batch Details Card
+    const elCust = document.getElementById('deliv-assay-detail-customer');
+    const elAddr = document.getElementById('deliv-assay-detail-address');
+    const elJob = document.getElementById('deliv-assay-detail-job');
+    const elReq = document.getElementById('deliv-assay-detail-req');
+    const elTray = document.getElementById('deliv-assay-detail-tray');
+    const elGross = document.getElementById('deliv-assay-detail-gross');
+    const elNet = document.getElementById('deliv-assay-detail-net');
+    const elPcs = document.getElementById('deliv-assay-detail-pcs');
+    const elMetalPurity = document.getElementById('deliv-assay-detail-metal-purity');
+    const elStatus = document.getElementById('deliv-assay-detail-status');
+
+    if (elCust) elCust.textContent = batch.customer;
+    if (elAddr) elAddr.textContent = `${batch.customerAddress || 'CENTRAL MARKET, N.S. ROAD'} • BIS: ${batch.bis || '5439472'}`;
+    if (elJob) elJob.textContent = batch.jobDocket;
+    if (elReq) elReq.textContent = batch.reqNo || '--';
+    if (elTray) elTray.textContent = batch.tray || 'BOX-TR-01';
+    if (elGross) elGross.textContent = `${parseFloat(batch.grossWt || 0).toFixed(3)} g`;
+    if (elNet) elNet.textContent = `${parseFloat(batch.netWt || 0).toFixed(3)} g`;
+    if (elPcs) elPcs.textContent = `${batch.pcs} Pieces`;
+    if (elMetalPurity) elMetalPurity.textContent = `${batch.metal || 'Gold'} ${batch.purity || '22K 916'}`;
+
+    if (elStatus) {
+      if (batch.deliveryAssayStatus === 'COMPLETED') {
+        elStatus.className = 'text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        elStatus.textContent = 'DELIVERY COMPLETED';
+      } else {
+        elStatus.className = 'text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30';
+        elStatus.textContent = 'AWAITING VERIFICATION';
+      }
+    }
+
+    // Reset scan feedback banner
+    resetDeliveryAssayScanFeedback();
+
+    // Reset last photo preview
+    resetDeliveryAssayLastPhotoThumb();
+
+    // Update Progress Ribbon
+    updateDeliveryAssayProgress(batch);
+
+    // Render piece verification checklist grid
+    renderDeliveryAssayPiecesGrid(batch);
+
+    // Refresh queue highlighting
+    renderDeliveryAssayQueue();
+  }
+
+  function resetDeliveryAssayScanFeedback() {
+    const alertBox = document.getElementById('deliv-assay-scan-alert');
+    const icon = document.getElementById('deliv-assay-scan-icon');
+    const msg = document.getElementById('deliv-assay-scan-msg');
+    const disp = document.getElementById('deliv-assay-scanned-code-display');
+
+    if (alertBox) alertBox.className = 'p-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 flex items-center gap-2.5 transition-all';
+    if (icon) {
+      icon.className = 'material-symbols-outlined text-[20px] text-blue-600 shrink-0';
+      icon.textContent = 'info';
+    }
+    if (msg) msg.textContent = 'WAITING FOR TAG SCAN';
+    if (disp) disp.textContent = 'ALIGN QR CODE OR BARCODE WITHIN RETICLE';
+
+    const banner = document.getElementById('deliv-assay-photo-piece-banner');
+    const label = document.getElementById('deliv-assay-active-piece-label');
+    const tagEl = document.getElementById('deliv-assay-active-piece-tag');
+    if (banner) banner.className = 'p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center justify-between';
+    if (label) label.textContent = 'WAITING FOR MATCHED TAG SCAN...';
+    if (tagEl) tagEl.textContent = 'TAG: PENDING';
+
+    const snapBtn = document.getElementById('deliv-assay-snap-btn');
+    if (snapBtn) {
+      snapBtn.disabled = true;
+      snapBtn.className = 'flex-1 py-2.5 rounded-xl bg-slate-300 text-slate-500 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-not-allowed shadow-sm';
+      const snapText = document.getElementById('deliv-assay-snap-btn-text');
+      if (snapText) snapText.textContent = 'CAPTURE PIECE PHOTO';
+    }
+  }
+
+  function resetDeliveryAssayLastPhotoThumb() {
+    if (!activeDeliveryAssayBatch) return;
+    const verified = activeDeliveryAssayBatch.assayVerifiedPieces || [];
+    const previewBox = document.getElementById('deliv-assay-thumb-preview-box');
+    const info = document.getElementById('deliv-assay-thumb-info');
+    const time = document.getElementById('deliv-assay-thumb-time');
+
+    if (verified.length > 0) {
+      const last = verified[verified.length - 1];
+      if (previewBox) previewBox.innerHTML = `<img src="${last.photoUrl}" alt="Piece" class="w-full h-full object-cover"/>`;
+      if (info) info.textContent = `Piece #${last.pieceIndex} • ${last.tagCode}`;
+      if (time) time.textContent = last.timestamp || '--:--:--';
+    } else {
+      if (previewBox) previewBox.innerHTML = '<span class="material-symbols-outlined text-[18px]">image</span>';
+      if (info) info.textContent = 'NO PIECE PHOTOGRAPHED YET';
+      if (time) time.textContent = '--:--:--';
+    }
+  }
+
+  function updateDeliveryAssayProgress(batch) {
+    if (!batch) return;
+    const verified = (batch.assayVerifiedPieces && batch.assayVerifiedPieces.length) || 0;
+    const total = batch.pcs || 0;
+    const remaining = Math.max(0, total - verified);
+    const pct = total > 0 ? Math.min(100, Math.round((verified / total) * 100)) : 0;
+
+    const elTitle = document.getElementById('deliv-assay-progress-title');
+    const elFill = document.getElementById('deliv-assay-progress-fill');
+    const elPct = document.getElementById('deliv-assay-progress-pct');
+    const elCounter = document.getElementById('deliv-assay-checklist-counter');
+    const gateStatus = document.getElementById('deliv-assay-gate-status-text');
+    const submitBtn = document.getElementById('deliv-assay-submit-btn');
+    const submitText = document.getElementById('deliv-assay-submit-text');
+    const submitIcon = document.getElementById('deliv-assay-submit-icon');
+
+    if (elTitle) {
+      elTitle.textContent = `VERIFIED ${verified} OF ${total} PIECES (${remaining} REMAINING)`;
+    }
+    if (elFill) {
+      elFill.style.width = `${pct}%`;
+    }
+    if (elPct) {
+      elPct.textContent = `${pct}%`;
+    }
+    if (elCounter) {
+      elCounter.textContent = `${verified} / ${total} VERIFIED`;
+    }
+
+    // STRICT COMPLETION GATE CHECK
+    const isComplete = (verified === total && total > 0);
+
+    if (gateStatus) {
+      if (isComplete) {
+        gateStatus.innerHTML = `<span class="text-emerald-700 font-bold">✓ 100% VERIFICATION COMPLETE (${total} of ${total} pieces scanned & photographed). All security criteria satisfied for handover release.</span>`;
+      } else {
+        gateStatus.textContent = `DELIVERY SUBMISSION IS LOCKED UNTIL ALL ${total} PIECES ARE VERIFIED VIA TAG SCAN AND PHOTOGRAPHED (${remaining} REMAINING).`;
+      }
+    }
+
+    if (submitBtn) {
+      if (isComplete) {
+        submitBtn.disabled = false;
+        submitBtn.removeAttribute('disabled');
+        submitBtn.className = 'px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg cursor-pointer transition-all animate-pulse';
+        if (submitText) submitText.textContent = 'COMPLETE ASSAY CENTER DELIVERY (READY)';
+        if (submitIcon) submitIcon.textContent = 'verified_user';
+      } else {
+        submitBtn.disabled = true;
+        submitBtn.setAttribute('disabled', 'true');
+        submitBtn.className = 'px-6 py-3 rounded-xl bg-slate-300 text-slate-500 font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm cursor-not-allowed transition-all';
+        if (submitText) submitText.textContent = `COMPLETE ASSAY CENTER DELIVERY (LOCKED - ${remaining} REMAINING)`;
+        if (submitIcon) submitIcon.textContent = 'lock';
+      }
+    }
+  }
+
+  function renderDeliveryAssayPiecesGrid(batch) {
+    const grid = document.getElementById('deliv-assay-pieces-grid');
+    if (!grid || !batch) return;
+
+    const total = batch.pcs || 0;
+    const verified = batch.assayVerifiedPieces || [];
+    const verifiedMap = new Map();
+    verified.forEach(p => verifiedMap.set(p.pieceIndex, p));
+
+    const html = [];
+    for (let i = 1; i <= total; i++) {
+      const v = verifiedMap.get(i);
+      const isVerified = Boolean(v);
+      const expectedTag = (batch.tagData && batch.tagData[i - 1] && (batch.tagData[i - 1].huid || batch.tagData[i - 1].barcode))
+        || `${batch.jobDocket}-P${String(i).padStart(2, '0')}`;
+
+      html.push(`
+        <div class="p-2.5 rounded-xl border flex flex-col justify-between gap-1.5 transition-all ${
+          isVerified
+            ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950'
+            : 'bg-white border-dashed border-slate-200 text-slate-500'
+        }">
+          <div class="flex items-center justify-between text-[10px] font-bold">
+            <span class="font-mono text-slate-900">#${i}</span>
+            ${
+              isVerified
+                ? '<span class="text-[9px] font-black uppercase text-emerald-700 bg-emerald-100 px-1 rounded">VERIFIED</span>'
+                : '<span class="text-[9px] font-bold uppercase text-slate-400">PENDING</span>'
+            }
+          </div>
+
+          <!-- Photo thumbnail or placeholder -->
+          <div class="w-full aspect-square rounded-lg bg-slate-100 overflow-hidden border border-slate-200 flex items-center justify-center relative">
+            ${
+              isVerified && v.photoUrl
+                ? `<img src="${v.photoUrl}" alt="Piece #${i}" class="w-full h-full object-cover cursor-pointer" onclick="openPhotoLightboxDirect('${escapeHtmlStr(v.photoUrl)}', 'Piece #${i} • ${escapeHtmlStr(v.tagCode)}')"/>`
+                : '<span class="material-symbols-outlined text-[20px] text-slate-300">image_not_supported</span>'
+            }
+          </div>
+
+          <div class="text-[9.5px] font-mono truncate text-slate-700" title="${isVerified ? v.tagCode : expectedTag}">
+            ${isVerified ? v.tagCode : expectedTag}
+          </div>
+        </div>
+      `);
+    }
+
+    grid.innerHTML = html.join('');
+  }
+
+  // Fallback direct image lightbox preview
+  function openPhotoLightboxDirect(src, caption) {
+    if (typeof openPhotoLightbox === 'function') {
+      currentLightboxPhotos = [{ src: src, name: caption }];
+      currentLightboxIndex = 0;
+      const modal = document.getElementById('deliv-photo-lightbox');
+      if (modal) {
+        modal.classList.remove('hidden');
+        updateLightboxCurrentPhoto();
+      }
+    }
+  }
+
+  // --- CAMERA & MULTI-CONDITION SCANNER ---
+  async function populateDeliveryAssayCameraDevices() {
+    const select = document.getElementById('deliv-assay-cam-device-select');
+    if (!select || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+      if (videoDevices.length > 0) {
+        select.innerHTML = videoDevices.map((d, idx) => `
+          <option value="${d.deviceId}">CAMERA: ${d.label || `DEVICE ${idx + 1}`}</option>
+        `).join('');
+        if (!deliveryAssaySelectedDeviceId) {
+          deliveryAssaySelectedDeviceId = videoDevices[0].deviceId;
+        }
+      }
+    } catch (e) {}
+  }
+
+  async function switchDeliveryAssayScannerDevice(deviceId) {
+    deliveryAssaySelectedDeviceId = deviceId || '';
+    if (deliveryAssayScannerActive) {
+      stopDeliveryAssayScanner();
+      await startDeliveryAssayScanner();
+    }
+  }
+
+  function setDeliveryAssayLightMode(mode) {
+    deliveryAssayLightMode = mode || 'AUTO';
+    showToast(`SCANNER LIGHT ENGINE: ${deliveryAssayLightMode}`, 'info');
+  }
+
+  function toggleDeliveryAssaySound() {
+    deliveryAssaySoundEnabled = !deliveryAssaySoundEnabled;
+    const icon = document.getElementById('deliv-assay-sound-icon');
+    if (icon) {
+      icon.textContent = deliveryAssaySoundEnabled ? 'volume_up' : 'volume_off';
+    }
+    showToast(deliveryAssaySoundEnabled ? 'SCANNER SOUND EFFECTS ON.' : 'SCANNER SOUND MUTED.', 'info');
+  }
+
+  async function toggleDeliveryAssayTorch() {
+    deliveryAssayTorchActive = !deliveryAssayTorchActive;
+    if (deliveryAssayScannerStream) {
+      const track = deliveryAssayScannerStream.getVideoTracks()[0];
+      if (track && track.applyConstraints) {
+        try {
+          await track.applyConstraints({
+            advanced: [{ torch: deliveryAssayTorchActive }]
+          });
+        } catch (e) {}
+      }
+    }
+    const btn = document.getElementById('deliv-assay-torch-btn');
+    if (btn) {
+      btn.classList.toggle('bg-amber-400', deliveryAssayTorchActive);
+      btn.classList.toggle('text-slate-950', deliveryAssayTorchActive);
+    }
+    showToast(deliveryAssayTorchActive ? 'TORCH / LIGHT BOOST ACTIVE.' : 'TORCH TURNED OFF.', 'info');
+  }
+
+  async function startDeliveryAssayScanner() {
+    if (deliveryAssayScannerActive || deliveryAssayScannerStarting) return;
+    deliveryAssayScannerStarting = true;
+
+    const videoScanner = document.getElementById('deliv-assay-scanner-video');
+    const videoPhoto = document.getElementById('deliv-assay-photo-video');
+    const placeholderScanner = document.getElementById('deliv-assay-scanner-placeholder');
+    const placeholderPhoto = document.getElementById('deliv-assay-photo-placeholder');
+    const toggleBtn = document.getElementById('deliv-assay-cam-toggle-btn');
+    const toggleText = document.getElementById('deliv-assay-cam-toggle-text');
+
+    try {
+      const constraints = {
+        video: {
+          deviceId: deliveryAssaySelectedDeviceId ? { exact: deliveryAssaySelectedDeviceId } : undefined,
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      deliveryAssayScannerStream = stream;
+      deliveryAssayScannerActive = true;
+      deliveryAssayScannerStarting = false;
+
+      if (videoScanner) {
+        videoScanner.srcObject = stream;
+        videoScanner.play().catch(() => {});
+      }
+      if (videoPhoto) {
+        videoPhoto.srcObject = stream;
+        videoPhoto.play().catch(() => {});
+      }
+
+      if (placeholderScanner) placeholderScanner.classList.add('hidden');
+      if (placeholderPhoto) placeholderPhoto.classList.add('hidden');
+
+      if (toggleBtn) {
+        toggleBtn.classList.remove('bg-slate-800');
+        toggleBtn.classList.add('bg-rose-600', 'hover:bg-rose-700');
+      }
+      if (toggleText) toggleText.textContent = 'STOP SCANNER';
+
+      // Start processing frames
+      runDeliveryAssayScannerLoop();
+      showToast('TAG SCANNER & ARTICLE CAMERA ACTIVE.', 'success');
+    } catch (err) {
+      deliveryAssayScannerStarting = false;
+      deliveryAssayScannerActive = false;
+      console.warn('Camera stream could not start:', err);
+      showToast('CAMERA NOT DETECTED. HARDWARE BARCODE WEDGE & MANUAL INPUT READY.', 'info');
+    }
+  }
+
+  function stopDeliveryAssayScanner() {
+    deliveryAssayScannerStarting = false;
+    deliveryAssayScannerActive = false;
+    if (deliveryAssayScanAnimFrame) {
+      cancelAnimationFrame(deliveryAssayScanAnimFrame);
+      deliveryAssayScanAnimFrame = null;
+    }
+
+    if (deliveryAssayScannerStream) {
+      deliveryAssayScannerStream.getTracks().forEach(track => track.stop());
+      deliveryAssayScannerStream = null;
+    }
+
+    const videoScanner = document.getElementById('deliv-assay-scanner-video');
+    const videoPhoto = document.getElementById('deliv-assay-photo-video');
+    const placeholderScanner = document.getElementById('deliv-assay-scanner-placeholder');
+    const placeholderPhoto = document.getElementById('deliv-assay-photo-placeholder');
+    const toggleBtn = document.getElementById('deliv-assay-cam-toggle-btn');
+    const toggleText = document.getElementById('deliv-assay-cam-toggle-text');
+
+    if (videoScanner) videoScanner.srcObject = null;
+    if (videoPhoto) videoPhoto.srcObject = null;
+    if (placeholderScanner) placeholderScanner.classList.remove('hidden');
+    if (placeholderPhoto) placeholderPhoto.classList.remove('hidden');
+
+    if (toggleBtn) {
+      toggleBtn.classList.remove('bg-rose-600', 'hover:bg-rose-700');
+      toggleBtn.classList.add('bg-slate-800');
+    }
+    if (toggleText) toggleText.textContent = 'START SCANNER';
+  }
+
+  function toggleDeliveryAssayScanner() {
+    if (deliveryAssayScannerActive || deliveryAssayScannerStarting) {
+      stopDeliveryAssayScanner();
+    } else {
+      startDeliveryAssayScanner();
+    }
+  }
+
+  // --- MULTI-PASS ADAPTIVE SCAN ENGINE ---
+  function normalizeContrast(src, w, h) {
+    let min = 255, max = 0;
+    for (let i = 0; i < src.length; i += 4) {
+      const lum = 0.299 * src[i] + 0.587 * src[i + 1] + 0.114 * src[i + 2];
+      if (lum < min) min = lum;
+      if (lum > max) max = lum;
+    }
+    const dest = new Uint8ClampedArray(src.length);
+    const range = (max - min) || 1;
+    for (let i = 0; i < src.length; i += 4) {
+      const lum = 0.299 * src[i] + 0.587 * src[i + 1] + 0.114 * src[i + 2];
+      const stretched = Math.round(((lum - min) / range) * 255);
+      dest[i] = stretched;
+      dest[i + 1] = stretched;
+      dest[i + 2] = stretched;
+      dest[i + 3] = 255;
+    }
+    return dest;
+  }
+
+  function adaptiveBinarize(src, w, h) {
+    // Quick average luminance threshold
+    let sum = 0;
+    for (let i = 0; i < src.length; i += 4) {
+      sum += (src[i] + src[i + 1] + src[i + 2]) / 3;
+    }
+    const avg = sum / (src.length / 4);
+    const dest = new Uint8ClampedArray(src.length);
+    for (let i = 0; i < src.length; i += 4) {
+      const lum = (src[i] + src[i + 1] + src[i + 2]) / 3;
+      const val = lum < avg ? 0 : 255;
+      dest[i] = val;
+      dest[i + 1] = val;
+      dest[i + 2] = val;
+      dest[i + 3] = 255;
+    }
+    return dest;
+  }
+
+  function invertLuminance(src, w, h) {
+    const dest = new Uint8ClampedArray(src.length);
+    for (let i = 0; i < src.length; i += 4) {
+      dest[i] = 255 - src[i];
+      dest[i + 1] = 255 - src[i + 1];
+      dest[i + 2] = 255 - src[i + 2];
+      dest[i + 3] = 255;
+    }
+    return dest;
+  }
+
+  async function scanCanvasMultiCondition(canvas) {
+    if (!canvas) return null;
+    const w = canvas.width;
+    const h = canvas.height;
+    if (w <= 0 || h <= 0) return null;
+
+    // Pass 1: Native BarcodeDetector (Hardware-accelerated)
+    if (assayBarcodeDetector) {
+      try {
+        const detected = await assayBarcodeDetector.detect(canvas);
+        if (detected && detected.length > 0 && detected[0].rawValue) {
+          return detected[0].rawValue;
+        }
+      } catch (e) {}
+    }
+
+    // Pass 2: jsQR with raw image data
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx || typeof jsQR !== 'function') return null;
+
+    let imgData = null;
+    try {
+      imgData = ctx.getImageData(0, 0, w, h);
+    } catch (e) {
+      return null;
+    }
+    if (!imgData) return null;
+
+    let code = jsQR(imgData.data, w, h, { inversionAttempts: 'attemptBoth' });
+    if (code && code.data) return code.data;
+
+    // Pass 3: Contrast Normalization (ideal for dim light & glaring sunlight)
+    if (deliveryAssayLightMode === 'AUTO' || deliveryAssayLightMode === 'LOW_LIGHT' || deliveryAssayLightMode === 'BRIGHT_GLARE') {
+      const norm = normalizeContrast(imgData.data, w, h);
+      code = jsQR(norm, w, h, { inversionAttempts: 'attemptBoth' });
+      if (code && code.data) return code.data;
+    }
+
+    // Pass 4: Adaptive Binarization (ideal for uneven cast shadows on jewellery)
+    if (deliveryAssayLightMode === 'AUTO' || deliveryAssayLightMode === 'LOW_LIGHT') {
+      const bin = adaptiveBinarize(imgData.data, w, h);
+      code = jsQR(bin, w, h, { inversionAttempts: 'attemptBoth' });
+      if (code && code.data) return code.data;
+    }
+
+    // Pass 5: Invert Luminance
+    if (deliveryAssayLightMode === 'AUTO' || deliveryAssayLightMode === 'INVERT') {
+      const inv = invertLuminance(imgData.data, w, h);
+      code = jsQR(inv, w, h, { inversionAttempts: 'attemptBoth' });
+      if (code && code.data) return code.data;
+    }
+
+    return null;
+  }
+
+  async function runDeliveryAssayScannerLoop() {
+    if (!deliveryAssayScannerActive) return;
+
+    const video = document.getElementById('deliv-assay-scanner-video');
+    const canvas = document.getElementById('deliv-assay-scan-canvas');
+
+    if (video && canvas && video.readyState === 4) {
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const scannedText = await scanCanvasMultiCondition(canvas);
+        if (scannedText && !deliveryAssayScanCooldown) {
+          deliveryAssayScanCooldown = true;
+          handleScannedTag(scannedText);
+          setTimeout(() => {
+            deliveryAssayScanCooldown = false;
+          }, 1400);
+        }
+      }
+    }
+
+    if (deliveryAssayScannerActive) {
+      deliveryAssayScanAnimFrame = requestAnimationFrame(runDeliveryAssayScannerLoop);
+    }
+  }
+
+  // --- TAG VALIDATION & CUSTOMER MATCHING ENGINE ---
+  function validateAssayTag(rawCode, batch) {
+    if (!rawCode || !batch) {
+      return { success: false, type: 'MISMATCH', message: 'EMPTY TAG CODE SCANNED' };
+    }
+
+    const code = String(rawCode).trim().toUpperCase();
+
+    // 1. Check if tag belongs to a DIFFERENT batch in state.intakeBatches
+    const otherBatch = (state.intakeBatches || []).find(b => {
+      if (b.jobDocket === batch.jobDocket) return false;
+      const otherDocket = (b.jobDocket || '').toUpperCase();
+      const otherReq = (b.reqNo || '').toUpperCase();
+      const otherName = (b.customer || '').toUpperCase().split(' ')[0];
+      return (
+        (otherDocket && code.includes(otherDocket)) ||
+        (otherReq && code.includes(otherReq)) ||
+        (otherName && otherName.length > 3 && code.includes(otherName))
+      );
+    });
+
+    if (otherBatch) {
+      return {
+        success: false,
+        type: 'MISMATCH',
+        message: `MISMATCH: Article tag belongs to ${otherBatch.customer} (${otherBatch.jobDocket}), NOT active customer ${batch.customer}!`
+      };
+    }
+
+    // 2. Check if tag matches active customer batch
+    const custClean = (batch.customer || '').toUpperCase();
+    const custWords = custClean.split(/[\s,()]+/).filter(w => w.length >= 3);
+    const docketClean = (batch.jobDocket || '').toUpperCase();
+    const reqClean = (batch.reqNo || '').toUpperCase();
+
+    const matchesCustomer = custWords.some(w => code.includes(w)) || code.includes(custClean);
+    const matchesDocket = docketClean && code.includes(docketClean);
+    const matchesReq = reqClean && code.includes(reqClean);
+
+    // Check against batch tagData items
+    let matchedTagItemIndex = -1;
+    if (batch.tagData && batch.tagData.length > 0) {
+      matchedTagItemIndex = batch.tagData.findIndex(t => {
+        const huid = (t.huid || '').toUpperCase();
+        const bar = (t.barcode || '').toUpperCase();
+        return (huid && code.includes(huid)) || (bar && code.includes(bar));
+      });
+    }
+
+    // Check composite QR tag format (which contains "CUSTOMER: ..." and "HUID NUMBER: ...")
+    const isCompositeTag = code.includes('CUSTOMER:') || code.includes('HUID NUMBER:');
+    const compositeMatches = isCompositeTag && (matchesCustomer || matchesDocket || matchesReq);
+
+    const isMatch = matchesDocket || matchesReq || matchesCustomer || matchedTagItemIndex >= 0 || compositeMatches;
+
+    if (!isMatch) {
+      return {
+        success: false,
+        type: 'MISMATCH',
+        message: `MISMATCH: Scanned tag "${code.slice(0, 32)}" does not belong to customer ${batch.customer} (${batch.jobDocket})!`
+      };
+    }
+
+    // 3. Determine piece index
+    const total = batch.pcs || 1;
+    const verified = batch.assayVerifiedPieces || [];
+    const verifiedIndices = new Set(verified.map(p => p.pieceIndex));
+    const verifiedCodes = new Set(verified.map(p => (p.tagCode || '').toUpperCase()));
+
+    let targetPieceIndex = -1;
+
+    // Check if tag mentions piece index directly (e.g., "-P03" or "P3" or "PIECE 3")
+    const pieceNumMatch = code.match(/-P0*([1-9]\d*)|PIECE\s*#?0*([1-9]\d*)/i);
+    if (pieceNumMatch) {
+      const parsedNum = parseInt(pieceNumMatch[1] || pieceNumMatch[2], 10);
+      if (parsedNum >= 1 && parsedNum <= total) {
+        targetPieceIndex = parsedNum;
+      }
+    } else if (matchedTagItemIndex >= 0) {
+      targetPieceIndex = matchedTagItemIndex + 1;
+    } else {
+      // Find lowest unverified piece index
+      for (let i = 1; i <= total; i++) {
+        if (!verifiedIndices.has(i)) {
+          targetPieceIndex = i;
+          break;
+        }
+      }
+      if (targetPieceIndex === -1) targetPieceIndex = total;
+    }
+
+    const cleanTagCode = (code.length > 40 ? code.slice(0, 38) + '...' : code);
+
+    // 4. Check Duplicate
+    if (verifiedIndices.has(targetPieceIndex) || verifiedCodes.has(cleanTagCode.toUpperCase())) {
+      return {
+        success: false,
+        type: 'DUPLICATE',
+        pieceIndex: targetPieceIndex,
+        tagCode: cleanTagCode,
+        message: `DUPLICATE: Piece #${targetPieceIndex} (Tag: ${cleanTagCode}) was already verified in this batch!`
+      };
+    }
+
+    return {
+      success: true,
+      type: 'MATCH',
+      pieceIndex: targetPieceIndex,
+      tagCode: cleanTagCode,
+      message: `✓ TAG MATCHED: Valid piece for ${batch.customer}. Proceed to capture article photo.`
+    };
+  }
+
+  function handleScannedTag(rawCode) {
+    if (!activeDeliveryAssayBatch) {
+      showToast('NO ACTIVE DELIVERY BATCH SELECTED.', 'warning');
+      return;
+    }
+
+    const result = validateAssayTag(rawCode, activeDeliveryAssayBatch);
+
+    const alertBox = document.getElementById('deliv-assay-scan-alert');
+    const icon = document.getElementById('deliv-assay-scan-icon');
+    const msg = document.getElementById('deliv-assay-scan-msg');
+    const disp = document.getElementById('deliv-assay-scanned-code-display');
+
+    if (disp) {
+      disp.textContent = `SCANNED PAYLOAD: ${String(rawCode).trim().slice(0, 60)}`;
+    }
+
+    if (result.type === 'MISMATCH') {
+      playAssaySound('mismatch');
+      if (alertBox) alertBox.className = 'p-3 rounded-xl border border-rose-300 bg-rose-50 text-rose-900 flex items-center gap-2.5 transition-all shadow-sm';
+      if (icon) {
+        icon.className = 'material-symbols-outlined text-[20px] text-rose-600 shrink-0';
+        icon.textContent = 'cancel';
+      }
+      if (msg) msg.textContent = result.message;
+      deliveryAssayPendingTag = null;
+
+      const snapBtn = document.getElementById('deliv-assay-snap-btn');
+      if (snapBtn) {
+        snapBtn.disabled = true;
+        snapBtn.className = 'flex-1 py-2.5 rounded-xl bg-slate-300 text-slate-500 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-not-allowed shadow-sm';
+      }
+      return;
+    }
+
+    if (result.type === 'DUPLICATE') {
+      playAssaySound('duplicate');
+      if (alertBox) alertBox.className = 'p-3 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 flex items-center gap-2.5 transition-all shadow-sm';
+      if (icon) {
+        icon.className = 'material-symbols-outlined text-[20px] text-amber-600 shrink-0';
+        icon.textContent = 'warning';
+      }
+      if (msg) msg.textContent = result.message;
+      return;
+    }
+
+    // MATCH CONFIRMED!
+    playAssaySound('match');
+    if (alertBox) alertBox.className = 'p-3 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 flex items-center gap-2.5 transition-all shadow-sm';
+    if (icon) {
+      icon.className = 'material-symbols-outlined text-[20px] text-emerald-600 shrink-0';
+      icon.textContent = 'check_circle';
+    }
+    if (msg) msg.textContent = result.message;
+
+    deliveryAssayPendingTag = {
+      pieceIndex: result.pieceIndex,
+      tagCode: result.tagCode
+    };
+
+    // Update Step 2 Banner & Unlock Shutter Button
+    const banner = document.getElementById('deliv-assay-photo-piece-banner');
+    const label = document.getElementById('deliv-assay-active-piece-label');
+    const tagEl = document.getElementById('deliv-assay-active-piece-tag');
+    if (banner) banner.className = 'p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center justify-between';
+    if (label) label.textContent = `READY FOR PHOTO: PIECE #${result.pieceIndex}`;
+    if (tagEl) tagEl.textContent = `TAG: ${result.tagCode}`;
+
+    const snapBtn = document.getElementById('deliv-assay-snap-btn');
+    if (snapBtn) {
+      snapBtn.disabled = false;
+      snapBtn.removeAttribute('disabled');
+      snapBtn.className = 'flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-98';
+      const snapText = document.getElementById('deliv-assay-snap-btn-text');
+      if (snapText) snapText.textContent = `SNAP PHOTO (PIECE #${result.pieceIndex})`;
+    }
+  }
+
+  // --- ARTICLE PHOTO CAPTURE & DOSSIER SAVING ---
+  function captureDeliveryAssayPiecePhoto() {
+    if (!activeDeliveryAssayBatch) return;
+    if (!deliveryAssayPendingTag) {
+      showToast('PLEASE SCAN A MATCHING PIECE TAG FIRST.', 'warning');
+      return;
+    }
+
+    const { pieceIndex, tagCode } = deliveryAssayPendingTag;
+
+    // Trigger flash animation
+    const flash = document.getElementById('deliv-assay-flash-overlay');
+    if (flash) {
+      flash.style.opacity = '0.9';
+      setTimeout(() => {
+        flash.style.opacity = '0';
+      }, 120);
+    }
+
+    playAssaySound('photo');
+
+    // Capture photo from video stream or generate synthetic high-res piece photo
+    let photoUrl = '';
+    const video = document.getElementById('deliv-assay-photo-video');
+    if (video && video.readyState === 4 && video.videoWidth > 0) {
+      const snapCanvas = document.createElement('canvas');
+      snapCanvas.width = video.videoWidth;
+      snapCanvas.height = video.videoHeight;
+      const sCtx = snapCanvas.getContext('2d');
+      sCtx.drawImage(video, 0, 0);
+
+      // Add BIS security watermark ribbon
+      sCtx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+      sCtx.fillRect(0, snapCanvas.height - 48, snapCanvas.width, 48);
+      sCtx.fillStyle = '#fbbf24';
+      sCtx.font = 'bold 16px monospace';
+      sCtx.fillText(`BIS ASSAY VERIFIED • PIECE #${pieceIndex} • ${tagCode}`, 20, snapCanvas.height - 20);
+      sCtx.fillStyle = '#ffffff';
+      sCtx.font = '14px sans-serif';
+      sCtx.textAlign = 'right';
+      sCtx.fillText(new Date().toLocaleTimeString(), snapCanvas.width - 20, snapCanvas.height - 20);
+
+      photoUrl = snapCanvas.toDataURL('image/jpeg', 0.92);
+    } else {
+      photoUrl = generateSyntheticArticlePhotoUrl(activeDeliveryAssayBatch.customer, pieceIndex, activeDeliveryAssayBatch.metal, activeDeliveryAssayBatch.purity);
+    }
+
+    // Save piece record
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const pieceRecord = {
+      pieceIndex: pieceIndex,
+      tagCode: tagCode,
+      photoUrl: photoUrl,
+      timestamp: timeStr,
+      verifier: 'Sarah Jenkins (Assay Custodian)'
+    };
+
+    activeDeliveryAssayBatch.assayVerifiedPieces.push(pieceRecord);
+
+    // Update Last Captured Thumbnail
+    const previewBox = document.getElementById('deliv-assay-thumb-preview-box');
+    const info = document.getElementById('deliv-assay-thumb-info');
+    const time = document.getElementById('deliv-assay-thumb-time');
+    if (previewBox) previewBox.innerHTML = `<img src="${photoUrl}" alt="Piece #${pieceIndex}" class="w-full h-full object-cover"/>`;
+    if (info) info.textContent = `Piece #${pieceIndex} • ${tagCode}`;
+    if (time) time.textContent = timeStr;
+
+    // Disarm shutter until next tag scan
+    deliveryAssayPendingTag = null;
+    resetDeliveryAssayScanFeedback();
+
+    // Re-render checklist grid and update progress
+    renderDeliveryAssayPiecesGrid(activeDeliveryAssayBatch);
+    updateDeliveryAssayProgress(activeDeliveryAssayBatch);
+    renderDeliveryAssayQueue();
+
+    const isAllDone = activeDeliveryAssayBatch.assayVerifiedPieces.length === activeDeliveryAssayBatch.pcs;
+    if (isAllDone) {
+      playAssaySound('complete');
+      showToast(`ALL ${activeDeliveryAssayBatch.pcs} PIECES VERIFIED & PHOTOGRAPHED! SUBMISSION UNLOCKED.`, 'success');
+    } else {
+      showToast(`PIECE #${pieceIndex} VERIFIED & SAVED. SCAN NEXT PIECE TAG.`, 'success');
+    }
+  }
+
+  // --- FALLBACK INPUTS & DEMO SIMULATION ---
+  function handleDeliveryAssayManualTag() {
+    const input = document.getElementById('deliv-assay-manual-tag-input');
+    if (!input || !input.value.trim()) return;
+    const val = input.value.trim();
+    input.value = '';
+    handleScannedTag(val);
+  }
+
+  function handleDeliveryAssayTagFileUpload(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const img = new Image();
+      img.onload = async () => {
+        const c = document.createElement('canvas');
+        c.width = img.width;
+        c.height = img.height;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const code = await scanCanvasMultiCondition(c);
+        if (code) {
+          handleScannedTag(code);
+        } else {
+          showToast('NO QR CODE OR BARCODE FOUND IN UPLOADED IMAGE.', 'warning');
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleDeliveryAssayPhotoFileUpload(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    if (!deliveryAssayPendingTag) {
+      showToast('PLEASE SCAN A MATCHING PIECE TAG FIRST.', 'warning');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const photoUrl = e.target.result;
+      const { pieceIndex, tagCode } = deliveryAssayPendingTag;
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      activeDeliveryAssayBatch.assayVerifiedPieces.push({
+        pieceIndex: pieceIndex,
+        tagCode: tagCode,
+        photoUrl: photoUrl,
+        timestamp: timeStr,
+        verifier: 'Sarah Jenkins (Assay Custodian)'
+      });
+
+      deliveryAssayPendingTag = null;
+      resetDeliveryAssayScanFeedback();
+      renderDeliveryAssayPiecesGrid(activeDeliveryAssayBatch);
+      updateDeliveryAssayProgress(activeDeliveryAssayBatch);
+      renderDeliveryAssayQueue();
+      showToast(`PIECE #${pieceIndex} PHOTO ATTACHED FROM FILE.`, 'success');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function simulateValidTagScan() {
+    if (!activeDeliveryAssayBatch) return;
+    const batch = activeDeliveryAssayBatch;
+    const total = batch.pcs || 1;
+    const verifiedIndices = new Set((batch.assayVerifiedPieces || []).map(p => p.pieceIndex));
+
+    let nextIdx = 1;
+    for (let i = 1; i <= total; i++) {
+      if (!verifiedIndices.has(i)) {
+        nextIdx = i;
+        break;
+      }
+    }
+
+    const tag = `${batch.jobDocket}-P${String(nextIdx).padStart(2, '0')}`;
+    handleScannedTag(tag);
+  }
+
+  function simulateMismatchTagScan() {
+    // Scan a tag belonging to another customer to show mismatch rejection
+    const invalidTag = 'JOB-2099-9999-TANISHQ-XYZ-P01';
+    handleScannedTag(invalidTag);
+  }
+
+  function simulateVerifyAllDemo() {
+    if (!activeDeliveryAssayBatch) return;
+    const batch = activeDeliveryAssayBatch;
+    const total = batch.pcs || 1;
+    const verifiedMap = new Map();
+    (batch.assayVerifiedPieces || []).forEach(p => verifiedMap.set(p.pieceIndex, p));
+
+    for (let i = 1; i <= total; i++) {
+      if (!verifiedMap.has(i)) {
+        const expectedTag = (batch.tagData && batch.tagData[i - 1] && (batch.tagData[i - 1].huid || batch.tagData[i - 1].barcode))
+          || `${batch.jobDocket}-P${String(i).padStart(2, '0')}`;
+        const photo = generateSyntheticArticlePhotoUrl(batch.customer, i, batch.metal, batch.purity);
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        batch.assayVerifiedPieces.push({
+          pieceIndex: i,
+          tagCode: expectedTag,
+          photoUrl: photo,
+          timestamp: time,
+          verifier: 'Sarah Jenkins (Assay Custodian)'
+        });
+      }
+    }
+
+    deliveryAssayPendingTag = null;
+    resetDeliveryAssayScanFeedback();
+    renderDeliveryAssayPiecesGrid(batch);
+    updateDeliveryAssayProgress(batch);
+    renderDeliveryAssayQueue();
+
+    playAssaySound('complete');
+    showToast(`DEMO: ALL ${total} PIECES VERIFIED & PHOTOGRAPHED! SUBMIT BUTTON READY.`, 'success');
+  }
+
+  // --- FINAL HANDOVER SUBMISSION & PRINTABLE DOSSIER ---
+  function completeDeliveryAssaySubmission() {
+    if (!activeDeliveryAssayBatch) return;
+    const batch = activeDeliveryAssayBatch;
+    const total = batch.pcs || 0;
+    const verified = (batch.assayVerifiedPieces && batch.assayVerifiedPieces.length) || 0;
+
+    // STRICT COMPLETION GATE CHECK
+    if (verified < total || total === 0) {
+      showToast(`DELIVERY LOCKED: ONLY ${verified} OF ${total} PIECES VERIFIED. ALL PIECES MUST BE SCANNED & PHOTOGRAPHED.`, 'warning');
+      playAssaySound('mismatch');
+      return;
+    }
+
+    // Mark as COMPLETED
+    batch.deliveryAssayStatus = 'COMPLETED';
+    batch.deliveryStatus = 'DELIVERED';
+    batch.deliveryCompletedAt = new Date().toLocaleString();
+
+    updateDeliveryAssayStats();
+    updateDeliveryAssayProgress(batch);
+    renderDeliveryAssayQueue();
+
+    // Open official Handover Dossier Modal
+    openDeliveryAssayDossierModal();
+    playAssaySound('complete');
+    showToast('ASSAY CENTER DELIVERY COMPLETED SUCCESSFULLY!', 'success');
+  }
+
+  function openDeliveryAssayDossierModal() {
+    const modal = document.getElementById('deliv-assay-dossier-modal');
+    const container = document.getElementById('deliv-assay-printable-dossier');
+    if (!modal || !container || !activeDeliveryAssayBatch) return;
+
+    const b = activeDeliveryAssayBatch;
+    const verified = b.assayVerifiedPieces || [];
+    const nowStr = new Date().toLocaleString();
+
+    container.innerHTML = `
+      <div class="flex flex-col gap-5 border border-slate-300 rounded-xl p-6 bg-white shadow-xs">
+        <!-- Official BIS Header -->
+        <div class="flex items-center justify-between border-b-2 border-slate-900 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center font-serif text-xl font-black">
+              BIS
+            </div>
+            <div>
+              <h2 class="text-base font-black uppercase text-slate-900">SOVEREIGN ASSAY & HALLMARKING CENTRE</h2>
+              <p class="text-[11px] text-slate-600 font-mono">BUREAU OF INDIAN STANDARDS • RECOGNIZED TESTING LABORATORY</p>
+            </div>
+          </div>
+          <div class="text-right text-[11px] font-mono">
+            <span class="font-bold text-slate-900 block">HANDOVER DOSSIER</span>
+            <span class="text-slate-500">REF: ${b.jobDocket}-DOSSIER</span>
+          </div>
+        </div>
+
+        <!-- Customer & Batch Meta Details -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400 block">CUSTOMER JEWELLER</span>
+            <span class="font-black text-slate-900 block uppercase">${escapeHtmlStr(b.customer)}</span>
+            <span class="text-[10px] text-slate-500 font-mono">BIS: ${escapeHtmlStr(b.bis || '--')}</span>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400 block">DOCKET & REQUEST</span>
+            <span class="font-black font-mono text-amber-700 block">${escapeHtmlStr(b.jobDocket)}</span>
+            <span class="text-[10px] text-slate-500 font-mono">REQ: ${escapeHtmlStr(b.reqNo || '--')}</span>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400 block">TOTAL PIECES & METAL</span>
+            <span class="font-black text-slate-900 block">${b.pcs} PIECES • ${escapeHtmlStr(b.metal || 'GOLD')}</span>
+            <span class="text-[10px] text-emerald-700 font-bold font-mono">PURITY: ${escapeHtmlStr(b.purity || '916')}</span>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400 block">TOTAL WEIGHT</span>
+            <span class="font-black font-mono text-slate-900 block">GROSS: ${parseFloat(b.grossWt || 0).toFixed(3)} g</span>
+            <span class="font-black font-mono text-emerald-700 block">NET: ${parseFloat(b.netWt || 0).toFixed(3)} g</span>
+          </div>
+        </div>
+
+        <!-- Piece Photo Verification Catalogue -->
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-1">
+            <h3 class="text-xs font-black uppercase text-slate-900">VERIFIED PIECE PHOTO DOSSIER (${verified.length} of ${b.pcs} COMPLETE)</h3>
+            <span class="text-[11px] font-mono text-emerald-700 font-bold">100% CUSTODY AUDITED</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 max-h-[360px] overflow-y-auto p-1">
+            ${verified.map(p => `
+              <div class="p-2 rounded-lg border border-slate-200 bg-slate-50 flex flex-col gap-1 text-[10px]">
+                <div class="w-full aspect-square rounded overflow-hidden bg-slate-200 border border-slate-300">
+                  <img src="${p.photoUrl}" alt="Piece #${p.pieceIndex}" class="w-full h-full object-cover"/>
+                </div>
+                <div class="flex items-center justify-between font-mono font-bold text-slate-900">
+                  <span>#${p.pieceIndex}</span>
+                  <span class="text-[9px] text-emerald-700">OK</span>
+                </div>
+                <span class="text-[9px] font-mono text-slate-500 truncate" title="${p.tagCode}">${p.tagCode}</span>
+                <span class="text-[8.5px] font-mono text-slate-400">${p.timestamp || '--:--'}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- BIS Custody Release Declaration & Signatures -->
+        <div class="border-t border-slate-200 pt-4 grid grid-cols-2 gap-6 text-xs">
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400 block">LABORATORY ASSAY CUSTODIAN</span>
+            <p class="text-[11px] text-slate-700 mt-1">
+              "Certified that all ${b.pcs} pieces were individually verified against customer tag specifications, photographed, and released under BIS Sovereign custody protocol."
+            </p>
+            <div class="mt-4 pt-2 border-t border-slate-300 font-mono text-[11px] font-bold text-slate-900">
+              SARAH JENKINS • CHIEF ASSAY OFFICER
+            </div>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400 block">CUSTOMER RECEIVER / DEPOSITOR</span>
+            <p class="text-[11px] text-slate-700 mt-1">
+              "Received full delivery of ${b.pcs} pieces (${parseFloat(b.grossWt || 0).toFixed(3)}g gross wt) in intact, authenticated condition with verified BIS hallmarking tags."
+            </p>
+            <div class="mt-4 pt-2 border-t border-slate-300 font-mono text-[11px] font-bold text-slate-900">
+              ${escapeHtmlStr(b.depositor || 'AUTHORIZED REPRESENTATIVE')} • ${nowStr}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    modal.classList.remove('hidden');
+  }
+
+  function closeDeliveryAssayDossierModal() {
+    const modal = document.getElementById('deliv-assay-dossier-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function printAssayDeliveryDossier() {
+    const printable = document.getElementById('deliv-assay-printable-dossier');
+    if (!printable) return;
+    const printWin = window.open('', '_blank', 'width=900,height=700');
+    if (!printWin) {
+      window.print();
+      return;
+    }
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>BIS Assay Center Delivery Handover Dossier</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+          @media print {
+            body { padding: 0; margin: 0; }
+            @page { margin: 10mm; size: A4 portrait; }
+          }
+        </style>
+      </head>
+      <body class="p-6 bg-white text-slate-900">
+        ${printable.innerHTML}
+        <script>
+          window.onload = function() {
+            setTimeout(function() { window.print(); }, 250);
+          };
+        </script>
+      </body>
+      </html>
+    `);
+    printWin.document.close();
   }
 
 
@@ -9457,6 +10893,36 @@
   window.generateTaxInvoicePrintContent = generateTaxInvoicePrintContent;
   window.toggleActiveBillPrintStatus = toggleActiveBillPrintStatus;
   window.finalizeCurrentBill = finalizeCurrentBill;
+  window.initDeliveryAssayView = initDeliveryAssayView;
+  window.updateDeliveryAssayStats = updateDeliveryAssayStats;
+  window.filterDeliveryAssayQueue = filterDeliveryAssayQueue;
+  window.handleDeliveryAssaySearch = handleDeliveryAssaySearch;
+  window.clearDeliveryAssaySearch = clearDeliveryAssaySearch;
+  window.renderDeliveryAssayQueue = renderDeliveryAssayQueue;
+  window.selectDeliveryAssayBatch = selectDeliveryAssayBatch;
+  window.updateDeliveryAssayProgress = updateDeliveryAssayProgress;
+  window.renderDeliveryAssayPiecesGrid = renderDeliveryAssayPiecesGrid;
+  window.startDeliveryAssayScanner = startDeliveryAssayScanner;
+  window.stopDeliveryAssayScanner = stopDeliveryAssayScanner;
+  window.toggleDeliveryAssayScanner = toggleDeliveryAssayScanner;
+  window.switchDeliveryAssayScannerDevice = switchDeliveryAssayScannerDevice;
+  window.setDeliveryAssayLightMode = setDeliveryAssayLightMode;
+  window.toggleDeliveryAssayTorch = toggleDeliveryAssayTorch;
+  window.toggleDeliveryAssaySound = toggleDeliveryAssaySound;
+  window.validateAssayTag = validateAssayTag;
+  window.handleScannedTag = handleScannedTag;
+  window.captureDeliveryAssayPiecePhoto = captureDeliveryAssayPiecePhoto;
+  window.handleDeliveryAssayManualTag = handleDeliveryAssayManualTag;
+  window.handleDeliveryAssayTagFileUpload = handleDeliveryAssayTagFileUpload;
+  window.handleDeliveryAssayPhotoFileUpload = handleDeliveryAssayPhotoFileUpload;
+  window.simulateValidTagScan = simulateValidTagScan;
+  window.simulateMismatchTagScan = simulateMismatchTagScan;
+  window.simulateVerifyAllDemo = simulateVerifyAllDemo;
+  window.completeDeliveryAssaySubmission = completeDeliveryAssaySubmission;
+  window.openDeliveryAssayDossierModal = openDeliveryAssayDossierModal;
+  window.closeDeliveryAssayDossierModal = closeDeliveryAssayDossierModal;
+  window.printAssayDeliveryDossier = printAssayDeliveryDossier;
+  window.scanCanvasMultiCondition = scanCanvasMultiCondition;
   window.initInteractiveControls = initInteractiveControls;
   window.renderArticleTypeSuggestions = renderArticleTypeSuggestions;
   window.selectArticleType = selectArticleType;

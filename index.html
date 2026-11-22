@@ -219,6 +219,10 @@
           <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">local_shipping</span>
           <span class="font-label-md text-sm font-medium">Delivery</span>
         </a>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="delivery-assay" href="#/delivery-assay">
+          <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">verified_user</span>
+          <span class="font-label-md text-sm font-medium">Delivery (Assay Center)</span>
+        </a>
         <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="records-history" href="#/records-history">
           <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">history_edu</span>
           <span class="font-label-md text-sm font-medium">Records</span>
@@ -321,6 +325,10 @@
         <a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="delivery" href="#/delivery" title="Delivery">
           <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim shrink-0">local_shipping</span>
           <span class="font-label-md text-label-md sidebar-text">Delivery</span>
+        </a>
+        <a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="delivery-assay" href="#/delivery-assay" title="Delivery (Assay Center)">
+          <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim shrink-0">verified_user</span>
+          <span class="font-label-md text-label-md sidebar-text">Delivery (Assay Center)</span>
         </a>
         <a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="records-history" href="#/records-history" title="Records">
           <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim shrink-0">history_edu</span>
@@ -3285,6 +3293,591 @@
           </div>
         </section>
 
+        <!-- ========================================== -->
+        <!-- VIEW: DELIVERY (ASSAY CENTER)              -->
+        <!-- ========================================== -->
+        <section id="view-delivery-assay" class="page-view hidden flex flex-col w-full">
+          <!-- Top Context Ribbon & Breadcrumb Header -->
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md py-space-md">
+            <div class="flex flex-col">
+              <div class="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
+                <span>LABORATORY OPERATIONS</span>
+                <span class="text-outline">/</span>
+                <span class="text-primary font-bold">DELIVERY (ASSAY CENTER)</span>
+              </div>
+              <h1 class="font-headline-lg text-2xl lg:text-headline-lg font-bold text-on-surface tracking-tight mt-0.5">OUTWARD DELIVERY & ASSAY CENTER VERIFICATION</h1>
+              <span class="text-xs text-on-surface-variant">MULTI-CONDITION TAG SCANNING, ARTICLE PHOTOGRAPHY & SECURE BIS RELEASE VERIFICATION</span>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <button id="btn-print-assay-dossier" onclick="openDeliveryAssayDossierModal()" class="px-5 py-2.5 rounded-lg bg-primary-container text-secondary-fixed font-bold text-xs tracking-wider shadow-sm hover:shadow-md hover:bg-slate-800 border border-[#c5a059]/40 transition-all flex items-center gap-2 cursor-pointer" type="button">
+                <span class="material-symbols-outlined text-[18px] text-amber-400">description</span>
+                <span>PRINT VERIFICATION DOSSIER</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Top Metric Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs flex items-center justify-between">
+              <div>
+                <span class="text-[10.5px] font-bold uppercase text-slate-500 tracking-wider">TOTAL DELIVERIES</span>
+                <div class="text-2xl font-black text-slate-900 mt-1 font-mono" id="deliv-assay-stat-total">6 BATCHES</div>
+                <span class="text-[10px] text-slate-500 font-bold mt-0.5 block">ALL REGISTERED BATCHES</span>
+              </div>
+              <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200">
+                <span class="material-symbols-outlined text-[24px]">inventory_2</span>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs flex items-center justify-between">
+              <div>
+                <span class="text-[10.5px] font-bold uppercase text-slate-500 tracking-wider">PENDING VERIFICATION</span>
+                <div class="text-2xl font-black text-amber-600 mt-1 font-mono" id="deliv-assay-stat-pending">5 BATCHES</div>
+                <span class="text-[10px] text-amber-600 font-bold mt-0.5 block">AWAITING TAG & PHOTO CHECK</span>
+              </div>
+              <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200">
+                <span class="material-symbols-outlined text-[24px]">pending_actions</span>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs flex items-center justify-between">
+              <div>
+                <span class="text-[10.5px] font-bold uppercase text-slate-500 tracking-wider">COMPLETED DELIVERIES</span>
+                <div class="text-2xl font-black text-emerald-600 mt-1 font-mono" id="deliv-assay-stat-completed">1 BATCH</div>
+                <span class="text-[10px] text-emerald-600 font-bold mt-0.5 block">100% VERIFIED & HANDED OVER</span>
+              </div>
+              <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
+                <span class="material-symbols-outlined text-[24px]">verified</span>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs flex items-center justify-between">
+              <div>
+                <span class="text-[10.5px] font-bold uppercase text-slate-500 tracking-wider">ASSAY OFFICER</span>
+                <div class="text-sm font-black text-slate-900 mt-1 uppercase truncate max-w-[150px]" id="deliv-assay-stat-custodian">SARAH JENKINS</div>
+                <span class="text-[10px] text-emerald-600 font-bold mt-0.5 block">BIS ASSAY CENTER STATION 01</span>
+              </div>
+              <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200">
+                <span class="material-symbols-outlined text-[24px]">badge</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 1: DELIVERIES QUEUE & FILTER TABS -->
+          <div class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-xs mb-6 flex flex-col gap-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-[22px]">list_alt</span>
+                <div>
+                  <h2 class="text-sm font-black text-slate-900 uppercase tracking-wide">DELIVERIES QUEUE & STATUS FILTER</h2>
+                  <p class="text-[11px] text-slate-500">SELECT A CUSTOMER BATCH TO COMMENCE PIECE-BY-PIECE VERIFICATION & PHOTO DOSSIER</p>
+                </div>
+              </div>
+
+              <!-- Filter Tabs: ALL, PENDING, COMPLETED -->
+              <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 self-start md:self-auto">
+                <button id="deliv-assay-tab-all" onclick="filterDeliveryAssayQueue('ALL')" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-slate-900 shadow-xs cursor-pointer">
+                  <span>ALL</span>
+                  <span id="deliv-assay-badge-all" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-200 text-slate-800">6</span>
+                </button>
+                <button id="deliv-assay-tab-pending" onclick="filterDeliveryAssayQueue('PENDING')" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 hover:bg-white/60 cursor-pointer">
+                  <span>PENDING</span>
+                  <span id="deliv-assay-badge-pending" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">5</span>
+                </button>
+                <button id="deliv-assay-tab-completed" onclick="filterDeliveryAssayQueue('COMPLETED')" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 hover:bg-white/60 cursor-pointer">
+                  <span>COMPLETED</span>
+                  <span id="deliv-assay-badge-completed" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">1</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="flex items-center gap-3">
+              <div class="relative flex-1">
+                <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+                <input
+                  type="text"
+                  id="deliv-assay-batch-search"
+                  oninput="handleDeliveryAssaySearch(this.value)"
+                  placeholder="Quick search by customer name, job docket (JOB-XXXX), request no, or metal..."
+                  class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-all shadow-inner"
+                />
+                <button
+                  type="button"
+                  id="deliv-assay-search-clear-btn"
+                  onclick="clearDeliveryAssaySearch()"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 hidden"
+                >
+                  <span class="material-symbols-outlined text-[16px]">close</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Batches Queue Grid -->
+            <div id="deliv-assay-queue-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[340px] overflow-y-auto pr-1">
+              <!-- Dynamically rendered batch cards -->
+            </div>
+          </div>
+
+          <!-- SECTION 2: SELECTED CUSTOMER & BATCH DETAILS CARD -->
+          <div id="deliv-assay-batch-details-card" class="bg-gradient-to-r from-slate-900 via-primary-container to-slate-900 text-white rounded-2xl p-6 shadow-md mb-6 border border-[#c5a059]/40 relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
+              <span class="material-symbols-outlined text-[180px]">verified_user</span>
+            </div>
+
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-5">
+              <div class="flex items-start gap-3">
+                <div class="w-12 h-12 rounded-xl bg-amber-400/20 border border-amber-400/40 text-amber-300 flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-[28px]">storefront</span>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">SELECTED CUSTOMER</span>
+                    <span id="deliv-assay-detail-status" class="text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">AWAITING VERIFICATION</span>
+                  </div>
+                  <h2 id="deliv-assay-detail-customer" class="text-xl sm:text-2xl font-black tracking-tight text-white mt-1">ROYCO JEWELLERS (CHINSURAH)</h2>
+                  <p id="deliv-assay-detail-address" class="text-xs text-slate-300 mt-0.5">CENTRAL MARKET, N.S. ROAD, CHINSURAH, HOOGHLY • BIS: 5439472</p>
+                </div>
+              </div>
+
+              <!-- Quick Docket Badges -->
+              <div class="flex items-center gap-3 flex-wrap">
+                <div class="bg-white/10 px-3.5 py-2 rounded-xl border border-white/10">
+                  <span class="text-[10px] uppercase font-bold text-slate-300 block">JOB NUMBER</span>
+                  <span id="deliv-assay-detail-job" class="font-mono text-sm font-black text-amber-300">JOB-2026-2369</span>
+                </div>
+                <div class="bg-white/10 px-3.5 py-2 rounded-xl border border-white/10">
+                  <span class="text-[10px] uppercase font-bold text-slate-300 block">REQUEST NO</span>
+                  <span id="deliv-assay-detail-req" class="font-mono text-sm font-black text-white">119813505</span>
+                </div>
+                <div class="bg-white/10 px-3.5 py-2 rounded-xl border border-white/10">
+                  <span class="text-[10px] uppercase font-bold text-slate-300 block">VAULT TRAY</span>
+                  <span id="deliv-assay-detail-tray" class="font-mono text-sm font-black text-white">BOX-TR-05</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Key Batch Metrics: Gross Weight, Net Weight, Total Pieces, Metal & Purity -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5">
+              <div class="p-3.5 rounded-xl bg-white/5 border border-white/10">
+                <div class="flex items-center gap-1.5 text-slate-300 text-[11px] font-bold uppercase">
+                  <span class="material-symbols-outlined text-[16px] text-amber-400">scale</span>
+                  <span>GROSS WEIGHT</span>
+                </div>
+                <div id="deliv-assay-detail-gross" class="text-xl sm:text-2xl font-black font-mono text-white mt-1">375.000 g</div>
+                <span class="text-[10px] text-slate-400">LAB SCALE VERIFIED</span>
+              </div>
+
+              <div class="p-3.5 rounded-xl bg-white/5 border border-white/10">
+                <div class="flex items-center gap-1.5 text-slate-300 text-[11px] font-bold uppercase">
+                  <span class="material-symbols-outlined text-[16px] text-emerald-400">fitness_center</span>
+                  <span>NET WEIGHT</span>
+                </div>
+                <div id="deliv-assay-detail-net" class="text-xl sm:text-2xl font-black font-mono text-emerald-300 mt-1">375.000 g</div>
+                <span class="text-[10px] text-slate-400">PURE METAL WEIGHT</span>
+              </div>
+
+              <div class="p-3.5 rounded-xl bg-white/5 border border-white/10">
+                <div class="flex items-center gap-1.5 text-slate-300 text-[11px] font-bold uppercase">
+                  <span class="material-symbols-outlined text-[16px] text-cyan-400">category</span>
+                  <span>TOTAL PIECES</span>
+                </div>
+                <div id="deliv-assay-detail-pcs" class="text-xl sm:text-2xl font-black font-mono text-cyan-300 mt-1">94 Pieces</div>
+                <span class="text-[10px] text-slate-400">100% AUDITED COUNT</span>
+              </div>
+
+              <div class="p-3.5 rounded-xl bg-white/5 border border-white/10">
+                <div class="flex items-center gap-1.5 text-slate-300 text-[11px] font-bold uppercase">
+                  <span class="material-symbols-outlined text-[16px] text-amber-300">workspace_premium</span>
+                  <span>METAL & PURITY</span>
+                </div>
+                <div id="deliv-assay-detail-metal-purity" class="text-xl sm:text-2xl font-black text-amber-300 mt-1">Gold 22K 916</div>
+                <span class="text-[10px] text-slate-400">BIS HALLMARKED ALLOY</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 3: PIECE-BY-PIECE VERIFICATION & PHOTO WORKSPACE -->
+          <div class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-xs mb-6 flex flex-col gap-5">
+            <!-- Progress Ribbon -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                  <span id="deliv-assay-progress-title" class="text-sm font-black text-slate-900 uppercase tracking-wide">VERIFIED 0 OF 94 PIECES (94 REMAINING)</span>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-0.5">SCAN EACH PIECE TAG TO VALIDATE CUSTOMER IDENTITY, THEN SNAP HIGH-RESOLUTION ARTICLE PHOTO</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-48 sm:w-64 bg-slate-200 rounded-full h-3.5 overflow-hidden border border-slate-300 shadow-inner">
+                  <div id="deliv-assay-progress-fill" class="h-full bg-gradient-to-r from-amber-500 to-emerald-500 rounded-full transition-all duration-300" style="width: 0%;"></div>
+                </div>
+                <span id="deliv-assay-progress-pct" class="text-xs font-mono font-black text-slate-800">0%</span>
+              </div>
+            </div>
+
+            <!-- Two-Column Workstation: Left = Tag Scanner, Right = Article Photo Capture -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <!-- Left Station: Multi-Condition Tag Scanner -->
+              <div class="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white shadow-xs">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-500 text-[20px]">qr_code_scanner</span>
+                    <div>
+                      <h3 class="text-xs font-black text-slate-900 uppercase">STEP 1: SCAN ARTICLE TAG / HUID</h3>
+                      <p class="text-[10.5px] text-slate-500">MULTI-CONDITION SCANNER (ADAPTIVE DIM & GLARE)</p>
+                    </div>
+                  </div>
+                  <!-- Camera controls -->
+                  <div class="flex items-center gap-1.5">
+                    <button
+                      id="deliv-assay-cam-toggle-btn"
+                      type="button"
+                      onclick="toggleDeliveryAssayScanner()"
+                      class="px-2.5 py-1 rounded-lg bg-slate-800 text-white hover:bg-slate-700 text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+                      title="Toggle Camera Stream"
+                    >
+                      <span class="material-symbols-outlined text-[14px]">videocam</span>
+                      <span id="deliv-assay-cam-toggle-text">START SCANNER</span>
+                    </button>
+                    <button
+                      id="deliv-assay-torch-btn"
+                      type="button"
+                      onclick="toggleDeliveryAssayTorch()"
+                      class="p-1 rounded-lg bg-slate-100 text-slate-700 hover:bg-amber-100 hover:text-amber-700 text-[11px] font-bold transition-all cursor-pointer"
+                      title="Toggle Torch / Flashlight for Dim Light"
+                    >
+                      <span class="material-symbols-outlined text-[16px]">flashlight_on</span>
+                    </button>
+                    <button
+                      id="deliv-assay-sound-btn"
+                      type="button"
+                      onclick="toggleDeliveryAssaySound()"
+                      class="p-1 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-[11px] font-bold transition-all cursor-pointer"
+                      title="Toggle Sound Effects"
+                    >
+                      <span class="material-symbols-outlined text-[16px]" id="deliv-assay-sound-icon">volume_up</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Camera Device & Light Filter Ribbon -->
+                <div class="flex items-center gap-2">
+                  <select
+                    id="deliv-assay-cam-device-select"
+                    onchange="switchDeliveryAssayScannerDevice(this.value)"
+                    class="flex-1 py-1 px-2 text-[11px] font-medium bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none"
+                  >
+                    <option value="">CAMERA: DEFAULT WEBCAM / SCANNER</option>
+                  </select>
+                  <select
+                    id="deliv-assay-light-mode-select"
+                    onchange="setDeliveryAssayLightMode(this.value)"
+                    class="py-1 px-2 text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200 rounded-lg focus:outline-none"
+                    title="Adaptive Lighting Engine Mode"
+                  >
+                    <option value="AUTO">AUTO ADAPTIVE (MULTI-PASS)</option>
+                    <option value="LOW_LIGHT">LOW LIGHT BOOST (DIM)</option>
+                    <option value="BRIGHT_GLARE">BRIGHT GLARE BOOST</option>
+                    <option value="INVERT">INVERTED B&W TAG</option>
+                  </select>
+                </div>
+
+                <!-- Scanner Viewport Container -->
+                <div class="relative w-full aspect-video bg-slate-950 rounded-xl overflow-hidden border-2 border-slate-800 flex items-center justify-center">
+                  <!-- Video stream -->
+                  <video id="deliv-assay-scanner-video" class="w-full h-full object-cover" playsinline muted autoplay></video>
+                  <!-- Hidden scan canvas for adaptive binarization -->
+                  <canvas id="deliv-assay-scan-canvas" class="hidden"></canvas>
+
+                  <!-- Scanner Targeting Reticle & Laser Scanline -->
+                  <div id="deliv-assay-scanner-reticle" class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <!-- Targeting frame -->
+                    <div class="relative w-48 h-48 border-2 border-amber-400/80 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)]">
+                      <!-- 4 Corner Brackets -->
+                      <span class="absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 border-amber-400"></span>
+                      <span class="absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 border-amber-400"></span>
+                      <span class="absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 border-amber-400"></span>
+                      <span class="absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 border-amber-400"></span>
+                      <!-- Animated laser scanning beam -->
+                      <div class="absolute inset-x-2 top-0 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_#fbbf24] animate-pulse"></div>
+                      <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white/30 text-[40px]">center_focus_weak</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Standby placeholder if camera off -->
+                  <div id="deliv-assay-scanner-placeholder" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center text-center p-4">
+                    <span class="material-symbols-outlined text-amber-400 text-[36px] mb-2">qr_code_2</span>
+                    <span class="text-xs font-bold text-white uppercase">TAG SCANNER STANDBY</span>
+                    <span class="text-[10px] text-slate-400 mt-1 max-w-xs">CLICK 'START SCANNER' OR USE HARDWARE BARCODE WEDGE SCANNER BELOW</span>
+                  </div>
+                </div>
+
+                <!-- Live Scan Feedback Banner -->
+                <div id="deliv-assay-scan-alert" class="p-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 flex items-center gap-2.5 transition-all">
+                  <span id="deliv-assay-scan-icon" class="material-symbols-outlined text-[20px] text-blue-600 shrink-0">info</span>
+                  <div class="flex-1">
+                    <div id="deliv-assay-scan-msg" class="text-xs font-black uppercase tracking-wide">WAITING FOR TAG SCAN</div>
+                    <div id="deliv-assay-scanned-code-display" class="text-[10px] font-mono text-slate-600 mt-0.5">ALIGN QR CODE OR BARCODE WITHIN RETICLE</div>
+                  </div>
+                </div>
+
+                <!-- Fallback Inputs: Wedge Barcode Input & File Upload -->
+                <div class="flex flex-col gap-2 pt-1 border-t border-slate-100">
+                  <span class="text-[10px] font-black uppercase text-slate-500 tracking-wider">HARDWARE WEDGE & MANUAL SCAN FALLBACK:</span>
+                  <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                      <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">barcode_reader</span>
+                      <input
+                        type="text"
+                        id="deliv-assay-manual-tag-input"
+                        placeholder="Scan or type Tag ID / HUID / Barcode..."
+                        onkeydown="if(event.key==='Enter') handleDeliveryAssayManualTag()"
+                        class="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-mono text-slate-900 focus:outline-none focus:border-primary focus:bg-white"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      id="deliv-assay-manual-tag-btn"
+                      onclick="handleDeliveryAssayManualTag()"
+                      class="px-3 py-1.5 rounded-lg bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+                    >
+                      VERIFY
+                    </button>
+                    <!-- Upload Tag Image -->
+                    <input
+                      type="file"
+                      id="deliv-assay-tag-file-input"
+                      accept="image/*"
+                      class="hidden"
+                      onchange="handleDeliveryAssayTagFileUpload(this.files[0])"
+                    />
+                    <button
+                      type="button"
+                      id="deliv-assay-upload-tag-btn"
+                      onclick="document.getElementById('deliv-assay-tag-file-input').click()"
+                      class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+                      title="Upload Tag Image / QR"
+                    >
+                      <span class="material-symbols-outlined text-[15px]">upload_file</span>
+                      <span>IMAGE</span>
+                    </button>
+                  </div>
+
+                  <!-- Quick Testing Buttons -->
+                  <div class="flex items-center gap-1.5 pt-1 flex-wrap">
+                    <span class="text-[9.5px] font-bold text-slate-400 uppercase">TEST HELPERS:</span>
+                    <button
+                      type="button"
+                      id="deliv-assay-sim-valid-btn"
+                      onclick="simulateValidTagScan()"
+                      class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold hover:bg-emerald-100 cursor-pointer"
+                      title="Simulate scanning a valid tag for this batch"
+                    >
+                      + SCAN VALID TAG
+                    </button>
+                    <button
+                      type="button"
+                      id="deliv-assay-sim-invalid-btn"
+                      onclick="simulateMismatchTagScan()"
+                      class="px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold hover:bg-rose-100 cursor-pointer"
+                      title="Simulate scanning an invalid tag belonging to another customer"
+                    >
+                      ✕ TEST MISMATCH
+                    </button>
+                    <button
+                      type="button"
+                      id="deliv-assay-verify-all-demo-btn"
+                      onclick="simulateVerifyAllDemo()"
+                      class="px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold hover:bg-purple-100 cursor-pointer"
+                      title="Quickly verify all pieces for testing final gate submission"
+                    >
+                      ★ VERIFY ALL (DEMO)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Station: Article Photo Capture -->
+              <div class="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white shadow-xs">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-emerald-600 text-[20px]">photo_camera</span>
+                    <div>
+                      <h3 class="text-xs font-black text-slate-900 uppercase">STEP 2: CAPTURE ARTICLE PHOTO</h3>
+                      <p class="text-[10.5px] text-slate-500">SNAP CRISP DOSSIER PHOTO FOR MATCHED PIECE</p>
+                    </div>
+                  </div>
+                  <!-- Flash indicator -->
+                  <div class="flex items-center gap-1.5">
+                    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-mono font-bold">HIGH RESOLUTION</span>
+                  </div>
+                </div>
+
+                <!-- Active Piece Banner -->
+                <div id="deliv-assay-photo-piece-banner" class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-600 text-[18px]">lock</span>
+                    <span id="deliv-assay-active-piece-label">WAITING FOR MATCHED TAG SCAN...</span>
+                  </div>
+                  <span id="deliv-assay-active-piece-tag" class="font-mono text-[10.5px] text-amber-700">TAG: PENDING</span>
+                </div>
+
+                <!-- Photo Viewport Container -->
+                <div class="relative w-full aspect-video bg-slate-950 rounded-xl overflow-hidden border-2 border-slate-800 flex items-center justify-center">
+                  <!-- Video stream -->
+                  <video id="deliv-assay-photo-video" class="w-full h-full object-cover" playsinline muted autoplay></video>
+                  <!-- Shutter Flash Overlay -->
+                  <div id="deliv-assay-flash-overlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-150"></div>
+                  <!-- Reticle for article positioning -->
+                  <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <div class="w-40 h-40 border border-white/20 rounded-full flex items-center justify-center">
+                      <div class="w-2 h-2 rounded-full bg-emerald-400/60"></div>
+                    </div>
+                  </div>
+                  <!-- Placeholder if camera off -->
+                  <div id="deliv-assay-photo-placeholder" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center text-center p-4">
+                    <span class="material-symbols-outlined text-emerald-400 text-[36px] mb-2">camera</span>
+                    <span class="text-xs font-bold text-white uppercase">ARTICLE CAMERA VIEWPORT</span>
+                    <span class="text-[10px] text-slate-400 mt-1 max-w-xs">ONCE TAG IS MATCHED, CLICK SHUTTER TO CAPTURE ARTICLE PHOTO</span>
+                  </div>
+                </div>
+
+                <!-- Shutter & Photo Controls -->
+                <div class="flex items-center gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    id="deliv-assay-snap-btn"
+                    onclick="captureDeliveryAssayPiecePhoto()"
+                    disabled
+                    class="flex-1 py-2.5 rounded-xl bg-slate-300 text-slate-500 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-not-allowed shadow-sm"
+                  >
+                    <span class="material-symbols-outlined text-[18px]">photo_camera</span>
+                    <span id="deliv-assay-snap-btn-text">CAPTURE PIECE PHOTO</span>
+                  </button>
+
+                  <!-- Upload Photo Fallback -->
+                  <input
+                    type="file"
+                    id="deliv-assay-photo-file-input"
+                    accept="image/*"
+                    class="hidden"
+                    onchange="handleDeliveryAssayPhotoFileUpload(this.files[0])"
+                  />
+                  <button
+                    type="button"
+                    id="deliv-assay-upload-photo-btn"
+                    onclick="document.getElementById('deliv-assay-photo-file-input').click()"
+                    class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
+                    title="Upload Article Photo File"
+                  >
+                    <span class="material-symbols-outlined text-[16px]">file_upload</span>
+                    <span>UPLOAD</span>
+                  </button>
+                </div>
+
+                <!-- Last Captured Thumbnail Card -->
+                <div id="deliv-assay-last-photo-thumb" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <div id="deliv-assay-thumb-preview-box" class="w-10 h-10 rounded-lg bg-slate-200 overflow-hidden border border-slate-300 flex items-center justify-center text-slate-400 shrink-0">
+                      <span class="material-symbols-outlined text-[18px]">image</span>
+                    </div>
+                    <div>
+                      <span class="text-[10px] font-black uppercase text-slate-500 block">LAST SNAP PREVIEW</span>
+                      <span id="deliv-assay-thumb-info" class="text-xs font-bold text-slate-800">NO PIECE PHOTOGRAPHED YET</span>
+                    </div>
+                  </div>
+                  <span id="deliv-assay-thumb-time" class="text-[10.5px] font-mono text-slate-500">--:--:--</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Piece Verification Checklist Grid -->
+            <div class="flex flex-col gap-3 pt-3 border-t border-slate-100">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary text-[18px]">checklist</span>
+                  <h3 class="text-xs font-black text-slate-900 uppercase">PIECE VERIFICATION DOSSIER CHECKLIST</h3>
+                </div>
+                <span id="deliv-assay-checklist-counter" class="text-[11px] font-bold text-slate-600 font-mono">0 / 94 VERIFIED</span>
+              </div>
+
+              <!-- Grid of piece cards -->
+              <div id="deliv-assay-pieces-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+                <!-- Dynamically populated piece cards -->
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 4: STRICT COMPLETION GATE & FINAL HANDOVER SUBMISSION -->
+          <div class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-xs mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200 shrink-0">
+                <span class="material-symbols-outlined text-[24px]">gavel</span>
+              </div>
+              <div>
+                <h3 class="text-xs font-black text-slate-900 uppercase tracking-wide">STRICT BIS ASSAY CENTER COMPLETION GATE</h3>
+                <p id="deliv-assay-gate-status-text" class="text-xs text-slate-500 mt-0.5">
+                  DELIVERY SUBMISSION IS LOCKED UNTIL ALL 94 PIECES ARE VERIFIED VIA TAG SCAN AND PHOTOGRAPHED.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 self-end md:self-auto">
+              <button
+                type="button"
+                id="deliv-assay-submit-btn"
+                onclick="completeDeliveryAssaySubmission()"
+                disabled
+                class="px-6 py-3 rounded-xl bg-slate-300 text-slate-500 font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm cursor-not-allowed transition-all"
+              >
+                <span class="material-symbols-outlined text-[18px]" id="deliv-assay-submit-icon">lock</span>
+                <span id="deliv-assay-submit-text">COMPLETE ASSAY CENTER DELIVERY (LOCKED)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- MODAL: HANDOVER VERIFICATION DOSSIER (PRINTABLE) -->
+          <div id="deliv-assay-dossier-modal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+              <!-- Modal Header -->
+              <div class="flex items-center justify-between px-6 py-4 bg-slate-900 text-white">
+                <div class="flex items-center gap-2.5">
+                  <span class="material-symbols-outlined text-amber-400 text-[24px]">verified</span>
+                  <div>
+                    <h2 class="text-sm font-black uppercase tracking-wide">BIS ASSAY CENTER HANDOVER DOSSIER</h2>
+                    <span class="text-[11px] text-slate-300">OFFICIAL VERIFICATION CERTIFICATE & RELEASE RECEIPT</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onclick="printAssayDeliveryDossier()"
+                    class="px-3.5 py-1.5 rounded-lg bg-amber-400 text-slate-950 font-bold text-xs hover:bg-amber-300 flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  >
+                    <span class="material-symbols-outlined text-[16px]">print</span>
+                    <span>PRINT DOSSIER</span>
+                  </button>
+                  <button
+                    type="button"
+                    onclick="closeDeliveryAssayDossierModal()"
+                    class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer"
+                  >
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Printable Dossier Body -->
+              <div id="deliv-assay-printable-dossier" class="p-6 overflow-y-auto flex flex-col gap-5 text-slate-900">
+                <!-- Populated dynamically by renderDeliveryAssayDossierModal() -->
+              </div>
+            </div>
+          </div>
+        </section>
+
 
         <!-- ========================================== -->
         <!-- VIEW 5: RECORDS / HISTORY                  -->
@@ -4232,6 +4825,7 @@
   <script src="js/logo-data.js"></script>
   <!-- Application Engine Script -->
   <script src="js/qrcode.min.js"></script>
+  <script src="js/jsQR.js"></script>
   <script src="js/app.js?v=2.2"></script>
 </body>
 </html>
