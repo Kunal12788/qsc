@@ -645,6 +645,11 @@
     if (route === 'tag-generation') {
       initTagGenerationView();
     }
+    if (route !== 'delivery') {
+      if (typeof stopDeliveryCameraStream === 'function') {
+        stopDeliveryCameraStream();
+      }
+    }
     if (route === 'delivery') {
       initDeliveryView();
     }
@@ -2985,12 +2990,40 @@
   function printSingleTag(idx) { printCustomTags(); }
 
   // ========================================================
-  // OUTWARD DELIVERY & DISPATCH MODULE (REVAMPED)
+  // ========================================================
+  // OUTWARD DELIVERY & DISPATCH MODULE (BOOSTED AUTO-CAPTURE)
   // ========================================================
   let activeDeliveryBatch = null;
   let activeDeliveryPhoto = null;
   let deliveryQueueFilter = 'ALL';
   let deliverySearchQuery = '';
+
+  // Camera & Auto-Capture Optical Sensor State
+  let deliveryCameraStream = null;
+  let deliveryAnimationId = null;
+  let deliveryAudioEnabled = true;
+  let deliveryAutoCaptureEnabled = true;
+  let deliveryMotionSensitivity = 'medium'; // 'high' | 'medium' | 'low'
+  let deliveryCamDevices = [];
+  let deliverySelectedDeviceId = '';
+
+  // High-performance motion differencing state machine
+  // States: 'idle' | 'motion' | 'stabilizing' | 'cooldown'
+  let autoDetectState = 'idle';
+  let prevSampleData = null;
+  let backgroundSampleData = null;
+  let motionThreshold = 17;
+  let presenceThreshold = 13;
+  let stabilizationStartTime = 0;
+  const STABILIZATION_DURATION = 650; // ms stillness before triggering auto-snap
+  let cooldownEndTime = 0;
+  const COOLDOWN_DURATION = 2000; // ms cooldown after snap
+  let lastAnalysisTime = 0;
+  const ANALYSIS_INTERVAL = 70; // analyze ~14 fps to ensure 0% UI thread lag
+
+  // Lightbox State for Multi-Photo Browsing
+  let currentLightboxPhotos = [];
+  let currentLightboxIndex = 0;
 
   const initialDeliveryRecords = [
     {
@@ -3009,7 +3042,8 @@
       sealNo: 'SEAL-SSR-8891',
       dispatchTime: '2024-10-24 14:15 IST',
       status: 'DELIVERED',
-      articlePhoto: null
+      articlePhoto: null,
+      articlePhotos: []
     },
     {
       gatePassNo: 'GP-8847',
@@ -3027,7 +3061,8 @@
       sealNo: 'SEAL-SSR-8889',
       dispatchTime: '2024-10-24 13:40 IST',
       status: 'OUT FOR TRANSIT',
-      articlePhoto: null
+      articlePhoto: null,
+      articlePhotos: []
     },
     {
       gatePassNo: 'GP-8846',
@@ -3045,7 +3080,8 @@
       sealNo: 'SEAL-SSR-8880',
       dispatchTime: '2024-10-24 11:30 IST',
       status: 'DELIVERED',
-      articlePhoto: null
+      articlePhoto: null,
+      articlePhotos: []
     }
   ];
 
@@ -3064,6 +3100,7 @@
     }
 
     renderDeliveryLedgerTable();
+    populateCameraDevicesList();
   }
 
   function updateDeliveryStats() {
@@ -3088,7 +3125,6 @@
     const filter = filterOverride || deliveryQueueFilter || 'ALL';
     deliveryQueueFilter = filter;
 
-    // Filter Buttons Styling
     ['all', 'gold', 'silver', 'delivered'].forEach(f => {
       const btn = document.getElementById(`deliv-filter-${f}`);
       if (btn) {
@@ -3104,13 +3140,11 @@
     const q = (deliverySearchQuery || '').trim().toUpperCase();
 
     const filtered = batches.filter(b => {
-      // Tab Filter
       if (filter === 'ALL' && b.status === 'Delivered') return false;
       if (filter === 'GOLD' && (b.status === 'Delivered' || !(b.metal === 'GOLD' || /916|750|999|GOLD/i.test(b.purity)))) return false;
       if (filter === 'SILVER' && (b.status === 'Delivered' || !(b.metal === 'SILVER' || /925|SILVER/i.test(b.purity)))) return false;
       if (filter === 'DELIVERED' && b.status !== 'Delivered') return false;
 
-      // Text Search Filter
       if (q) {
         const matchCustomer = (b.customer || '').toUpperCase().includes(q);
         const matchJob = (b.jobDocket || '').toUpperCase().includes(q);
@@ -3134,7 +3168,7 @@
       const isSelected = activeDeliveryBatch && activeDeliveryBatch.jobDocket === b.jobDocket;
       const isDelivered = b.status === 'Delivered';
       const grossG = typeof b.grossWt === 'number' ? b.grossWt.toFixed(3) : parseFloat(b.grossWt || 0).toFixed(3);
-      const netG = typeof b.netWt === 'number' ? b.netWt.toFixed(3) : parseFloat(b.netWt || 0).toFixed(3);
+      const photoCount = (b.articlePhotos && b.articlePhotos.length) ? b.articlePhotos.length : (b.articlePhoto ? 1 : 0);
 
       return `
         <div
@@ -3143,7 +3177,15 @@
         >
           <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100">
             <span class="font-mono font-bold text-xs text-primary-container">${escapeHtmlStr(b.jobDocket)}</span>
-            <span class="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">${escapeHtmlStr(b.reqNo || 'REQ')}</span>
+            <div class="flex items-center gap-1">
+              ${photoCount > 0 ? `
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-0.5">
+                  <span class="material-symbols-outlined text-[10px]">photo_camera</span>
+                  <span>${photoCount}</span>
+                </span>
+              ` : ''}
+              <span class="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">${escapeHtmlStr(b.reqNo || 'REQ')}</span>
+            </div>
           </div>
 
           <div class="font-extrabold text-slate-900 text-xs uppercase truncate mb-1" title="${escapeHtmlStr(b.customer)}">
@@ -3178,7 +3220,6 @@
     renderDeliveryQueue(filter);
   }
 
-  // --- MULTI-PARAMETER SEARCH & SELECTION FILTER ---
   function handleDeliverySearch(query) {
     deliverySearchQuery = (query || '').trim();
     const q = deliverySearchQuery.toUpperCase();
@@ -3259,9 +3300,21 @@
       select.value = batch.jobDocket;
     }
 
-    // Synchronize Article Photo for Session Persistence without cross-batch bleed
-    activeDeliveryPhoto = activeDeliveryBatch.articlePhoto || null;
-    updatePhotoPreviewDisplay();
+    // Initialize batch articlePhotos array if needed
+    if (!batch.articlePhotos) {
+      batch.articlePhotos = [];
+      if (batch.articlePhoto) {
+        batch.articlePhotos.push({
+          id: 'photo_prev_' + Date.now(),
+          src: batch.articlePhoto,
+          timestamp: 'SAVED',
+          source: 'SAVED',
+          name: 'ARTICLE_PHOTO.JPG'
+        });
+      }
+    }
+
+    activeDeliveryPhoto = batch.articlePhotos[0] ? batch.articlePhotos[0].src : (batch.articlePhoto || null);
 
     const custEl = document.getElementById('deliv-view-cust');
     const jobEl = document.getElementById('deliv-view-job');
@@ -3277,123 +3330,687 @@
     if (trayEl) trayEl.textContent = batch.tray || '-';
     if (gpBadge) gpBadge.textContent = batch.gatePassNo ? `GATE PASS #${batch.gatePassNo}` : 'GATE PASS #GP-8849';
 
+    renderDeliveryGallery();
+    updateAttachedPhotosSummary();
     renderDeliveryGatePassPreview();
     renderDeliveryQueue();
   }
 
-  // --- ARTICLE PHOTO UPLOAD & CANVAS DOWNSCALING ---
-  function handleArticlePhotoUpload(files) {
-    if (!files || !files[0]) return;
-    const file = files[0];
+  // ========================================================
+  // LIVE CAMERA FEED & BOOSTED AUTO-DETECTION SYSTEM
+  // ========================================================
+  async function startDeliveryCamera() {
+    const video = document.getElementById('delivery-cam-video');
+    const standby = document.getElementById('delivery-cam-standby');
+    const reticle = document.getElementById('delivery-cam-reticle');
+    const errEl = document.getElementById('delivery-cam-error');
+    const streamBtnText = document.getElementById('delivery-cam-stream-btn-text');
 
-    if (!file.type.startsWith('image/')) {
-      showToast('INVALID FILE: PLEASE UPLOAD A VALID IMAGE (JPEG/PNG/WEBP).', 'warning');
+    if (errEl) {
+      errEl.classList.add('hidden');
+      errEl.textContent = '';
+    }
+
+    try {
+      if (deliveryCameraStream) {
+        stopDeliveryCameraStream();
+      }
+
+      const constraints = {
+        video: deliverySelectedDeviceId
+          ? { deviceId: { exact: deliverySelectedDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+          : { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false
+      };
+
+      let stream = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (e1) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+
+      deliveryCameraStream = stream;
+      if (video) {
+        video.srcObject = stream;
+        await video.play();
+      }
+
+      if (standby) standby.classList.add('hidden');
+      if (reticle) reticle.classList.remove('hidden');
+      if (streamBtnText) streamBtnText.textContent = 'STOP';
+
+      updateCamStatusUI('READY - MONITORING TRAY', 'ready');
+
+      autoDetectState = 'idle';
+      prevSampleData = null;
+      backgroundSampleData = null;
+      lastAnalysisTime = performance.now();
+
+      if (deliveryAnimationId) cancelAnimationFrame(deliveryAnimationId);
+      deliveryAnimationId = requestAnimationFrame(analyzeMotionFrame);
+
+      populateCameraDevicesList();
+      showToast('OPTICAL SCANNER CAMERA ACTIVE.', 'success');
+    } catch (err) {
+      console.warn('Camera access error:', err);
+      if (standby) standby.classList.remove('hidden');
+      if (reticle) reticle.classList.add('hidden');
+      if (streamBtnText) streamBtnText.textContent = 'START';
+      updateCamStatusUI('CAMERA UNAVAILABLE', 'error');
+
+      if (errEl) {
+        errEl.classList.remove('hidden');
+        errEl.textContent = 'CAMERA ACCESS BLOCKED OR NOT DETECTED: ' + (err.message || 'PLEASE PERMIT CAMERA ACCESS');
+      }
+      showToast('COULD NOT ACCESS CAMERA. YOU CAN STILL UPLOAD IMAGES MANUALLY.', 'warning');
+    }
+  }
+
+  function stopDeliveryCameraStream() {
+    if (deliveryCameraStream) {
+      deliveryCameraStream.getTracks().forEach(track => {
+        try { track.stop(); } catch (e) {}
+      });
+      deliveryCameraStream = null;
+    }
+
+    if (deliveryAnimationId) {
+      cancelAnimationFrame(deliveryAnimationId);
+      deliveryAnimationId = null;
+    }
+
+    const video = document.getElementById('delivery-cam-video');
+    if (video) {
+      video.srcObject = null;
+    }
+
+    const standby = document.getElementById('delivery-cam-standby');
+    const reticle = document.getElementById('delivery-cam-reticle');
+    const streamBtnText = document.getElementById('delivery-cam-stream-btn-text');
+    const countdownBadge = document.getElementById('delivery-countdown-badge');
+
+    if (standby) standby.classList.remove('hidden');
+    if (reticle) reticle.classList.add('hidden');
+    if (countdownBadge) countdownBadge.classList.add('hidden');
+    if (streamBtnText) streamBtnText.textContent = 'START';
+
+    autoDetectState = 'idle';
+    prevSampleData = null;
+    backgroundSampleData = null;
+
+    updateCamStatusUI('CAMERA OFF', 'off');
+  }
+
+  function toggleDeliveryCameraStream() {
+    if (deliveryCameraStream) {
+      stopDeliveryCameraStream();
+      showToast('CAMERA STREAM STOPPED.', 'info');
+    } else {
+      startDeliveryCamera();
+    }
+  }
+
+  async function populateCameraDevicesList() {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      deliveryCamDevices = devices.filter(d => d.kind === 'videoinput');
+      const select = document.getElementById('delivery-cam-select');
+      if (!select) return;
+
+      if (!deliveryCamDevices.length) {
+        select.innerHTML = '<option value="">DEFAULT CAMERA</option>';
+        return;
+      }
+
+      select.innerHTML = deliveryCamDevices.map((d, idx) => `
+        <option value="${escapeHtmlStr(d.deviceId)}" ${d.deviceId === deliverySelectedDeviceId ? 'selected' : ''}>
+          ${escapeHtmlStr(d.label || `CAMERA ${idx + 1}`)}
+        </option>
+      `).join('');
+    } catch (e) {}
+  }
+
+  function switchDeliveryCameraDevice(deviceId) {
+    deliverySelectedDeviceId = deviceId || '';
+    if (deliveryCameraStream) {
+      startDeliveryCamera();
+    }
+  }
+
+  function updateCamStatusUI(text, state) {
+    const indicator = document.getElementById('delivery-status-indicator');
+    const textEl = document.getElementById('delivery-cam-status-text');
+
+    if (textEl) textEl.textContent = text;
+    if (!indicator) return;
+
+    indicator.className = 'w-1.5 h-1.5 rounded-full';
+    if (state === 'ready') {
+      indicator.classList.add('bg-emerald-400', 'animate-pulse');
+    } else if (state === 'motion') {
+      indicator.classList.add('bg-amber-400');
+    } else if (state === 'stabilizing') {
+      indicator.classList.add('bg-cyan-400', 'animate-ping');
+    } else if (state === 'cooldown') {
+      indicator.classList.add('bg-purple-400');
+    } else if (state === 'error') {
+      indicator.classList.add('bg-rose-500');
+    } else {
+      indicator.classList.add('bg-slate-400');
+    }
+  }
+
+  function showCountdownBadge(show) {
+    const badge = document.getElementById('delivery-countdown-badge');
+    if (!badge) return;
+    if (show) {
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  }
+
+  function updateCountdownProgress(pct) {
+    const textEl = document.getElementById('delivery-countdown-text');
+    if (textEl) {
+      textEl.textContent = `JEWELLERY DETECTED: AUTO-SNAPPING (${pct}%)...`;
+    }
+  }
+
+  function toggleDeliveryAutoCapture() {
+    deliveryAutoCaptureEnabled = !deliveryAutoCaptureEnabled;
+    const btn = document.getElementById('deliv-auto-toggle-btn');
+    const dot = document.getElementById('deliv-auto-dot');
+    const txt = document.getElementById('deliv-auto-toggle-text');
+
+    if (deliveryAutoCaptureEnabled) {
+      if (btn) btn.className = 'px-2.5 py-1 rounded-lg font-bold text-[10.5px] uppercase flex items-center gap-1.5 transition-all bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs cursor-pointer';
+      if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+      if (txt) txt.textContent = 'AUTO-SNAP: ACTIVE';
+      showToast('AUTO-CAPTURE ENABLED: WILL AUTO-SNAP WHEN JEWELLERY IS PLACED.', 'success');
+    } else {
+      if (btn) btn.className = 'px-2.5 py-1 rounded-lg font-bold text-[10.5px] uppercase flex items-center gap-1.5 transition-all bg-slate-100 text-slate-700 border border-slate-300 shadow-2xs cursor-pointer';
+      if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+      if (txt) txt.textContent = 'AUTO-SNAP: OFF';
+      showToast('AUTO-CAPTURE PAUSED: USE MANUAL SNAP BUTTON.', 'info');
+    }
+  }
+
+  function toggleDeliveryCaptureSound() {
+    deliveryAudioEnabled = !deliveryAudioEnabled;
+    const icon = document.getElementById('deliv-sound-icon');
+    if (icon) {
+      icon.textContent = deliveryAudioEnabled ? 'volume_up' : 'volume_off';
+    }
+    showToast(deliveryAudioEnabled ? 'CAPTURE AUDIO CHIME ON.' : 'CAPTURE AUDIO MUTED.', 'info');
+  }
+
+  function setDeliveryMotionSensitivity(level) {
+    deliveryMotionSensitivity = level;
+    if (level === 'high') {
+      motionThreshold = 11;
+      presenceThreshold = 9;
+    } else if (level === 'low') {
+      motionThreshold = 26;
+      presenceThreshold = 20;
+    } else {
+      // medium
+      motionThreshold = 17;
+      presenceThreshold = 13;
+    }
+  }
+
+  function playDeliveryCaptureChime() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      const now = ctx.currentTime;
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(1760, now + 0.08);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.start(now);
+      osc.stop(now + 0.22);
+    } catch (err) {}
+  }
+
+  // --- 60FPS ZERO-LAG MOTION ANALYSIS LOOP ---
+  function analyzeMotionFrame(timestamp) {
+    if (!deliveryCameraStream) return;
+
+    if (timestamp - lastAnalysisTime < ANALYSIS_INTERVAL) {
+      deliveryAnimationId = requestAnimationFrame(analyzeMotionFrame);
+      return;
+    }
+    lastAnalysisTime = timestamp;
+
+    const video = document.getElementById('delivery-cam-video');
+    const canvas = document.getElementById('delivery-motion-canvas');
+    if (!video || !canvas || video.readyState < 2) {
+      deliveryAnimationId = requestAnimationFrame(analyzeMotionFrame);
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const rawUri = event.target.result;
-      const img = new Image();
-      img.onload = function() {
-        // Downscale to max 1200x1200 via canvas for optimal memory & instant printing
-        const maxDim = 1200;
-        let w = img.width;
-        let h = img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) {
-            h = Math.round((h * maxDim) / w);
-            w = maxDim;
-          } else {
-            w = Math.round((w * maxDim) / h);
-            h = maxDim;
-          }
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const vw = video.videoWidth || 640;
+    const vh = video.videoHeight || 480;
+    const cropX = vw * 0.2;
+    const cropY = vh * 0.2;
+    const cropW = vw * 0.6;
+    const cropH = vh * 0.6;
+
+    ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, 64, 48);
+    const imgData = ctx.getImageData(0, 0, 64, 48);
+    const data = imgData.data;
+    const numPixels = 64 * 48;
+
+    if (!prevSampleData) {
+      prevSampleData = new Uint8Array(numPixels);
+      for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+        prevSampleData[j] = (data[i] * 299 + data[i+1] * 587 + data[i+2] * 114) / 1000;
+      }
+      backgroundSampleData = new Uint8Array(prevSampleData);
+      deliveryAnimationId = requestAnimationFrame(analyzeMotionFrame);
+      return;
+    }
+
+    let totalDiff = 0;
+    let bgDiff = 0;
+    const currentLuma = new Uint8Array(numPixels);
+
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+      const luma = (data[i] * 299 + data[i+1] * 587 + data[i+2] * 114) / 1000;
+      currentLuma[j] = luma;
+      totalDiff += Math.abs(luma - prevSampleData[j]);
+      if (backgroundSampleData) {
+        bgDiff += Math.abs(luma - backgroundSampleData[j]);
+      }
+    }
+
+    const avgMotionDiff = totalDiff / numPixels;
+    const avgBgDiff = backgroundSampleData ? (bgDiff / numPixels) : 0;
+    prevSampleData = currentLuma;
+
+    const now = Date.now();
+
+    // Cooldown state
+    if (autoDetectState === 'cooldown') {
+      if (now >= cooldownEndTime) {
+        autoDetectState = 'idle';
+        backgroundSampleData = new Uint8Array(currentLuma);
+        updateCamStatusUI('READY - MONITORING TRAY', 'ready');
+      } else {
+        const remaining = ((cooldownEndTime - now) / 1000).toFixed(1);
+        updateCamStatusUI(`COOLDOWN (${remaining}s)`, 'cooldown');
+      }
+      deliveryAnimationId = requestAnimationFrame(analyzeMotionFrame);
+      return;
+    }
+
+    if (!deliveryAutoCaptureEnabled) {
+      updateCamStatusUI('MANUAL SNAP MODE', 'manual');
+      deliveryAnimationId = requestAnimationFrame(analyzeMotionFrame);
+      return;
+    }
+
+    // State Machine
+    if (autoDetectState === 'idle') {
+      if (avgMotionDiff > motionThreshold) {
+        autoDetectState = 'motion';
+        updateCamStatusUI('JEWELLERY DETECTED - PLACING...', 'motion');
+      } else {
+        updateCamStatusUI('READY - PLACE JEWELLERY IN ZONE', 'ready');
+      }
+    } else if (autoDetectState === 'motion') {
+      if (avgMotionDiff < motionThreshold) {
+        if (avgBgDiff > presenceThreshold) {
+          autoDetectState = 'stabilizing';
+          stabilizationStartTime = now;
+          showCountdownBadge(true);
+          updateCamStatusUI('STABILIZING • HOLD STILL...', 'stabilizing');
+        } else {
+          autoDetectState = 'idle';
+          showCountdownBadge(false);
         }
+      } else {
+        updateCamStatusUI('JEWELLERY IN MOTION...', 'motion');
+      }
+    } else if (autoDetectState === 'stabilizing') {
+      if (avgMotionDiff > motionThreshold * 1.3) {
+        autoDetectState = 'motion';
+        showCountdownBadge(false);
+        updateCamStatusUI('MOTION DETECTED - RESETTING', 'motion');
+      } else {
+        const elapsed = now - stabilizationStartTime;
+        const progress = Math.min(100, Math.round((elapsed / STABILIZATION_DURATION) * 100));
+        updateCountdownProgress(progress);
 
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-
-        const optimizedBase64 = canvas.toDataURL('image/jpeg', 0.85);
-        activeDeliveryPhoto = optimizedBase64;
-
-        if (activeDeliveryBatch) {
-          activeDeliveryBatch.articlePhoto = optimizedBase64;
+        if (elapsed >= STABILIZATION_DURATION) {
+          showCountdownBadge(false);
+          autoDetectState = 'cooldown';
+          cooldownEndTime = now + COOLDOWN_DURATION;
+          executeSnapshot('AUTO');
         }
+      }
+    }
 
-        updatePhotoPreviewDisplay(file.name, Math.round(optimizedBase64.length * 0.75 / 1024) + ' KB');
-        renderDeliveryGatePassPreview();
-        showToast('ARTICLE VERIFICATION PHOTO ATTACHED & READY.', 'success');
-      };
-      img.src = rawUri;
-    };
-    reader.readAsDataURL(file);
+    deliveryAnimationId = requestAnimationFrame(analyzeMotionFrame);
   }
 
-  function updatePhotoPreviewDisplay(name, sizeStr) {
-    const dropzone = document.getElementById('deliv-photo-dropzone');
-    const previewContainer = document.getElementById('deliv-photo-preview-container');
-    const previewImg = document.getElementById('deliv-photo-preview-img');
-    const metaName = document.getElementById('deliv-photo-meta-name');
-    const metaSize = document.getElementById('deliv-photo-meta-size');
-
-    if (!dropzone || !previewContainer) return;
-
-    if (activeDeliveryPhoto) {
-      dropzone.classList.add('hidden');
-      previewContainer.classList.remove('hidden');
-      if (previewImg) previewImg.src = activeDeliveryPhoto;
-      if (metaName) metaName.textContent = name || 'ARTICLE_VERIFICATION_PHOTO.JPG';
-      if (metaSize) metaSize.textContent = sizeStr || 'READY';
-    } else {
-      dropzone.classList.remove('hidden');
-      previewContainer.classList.add('hidden');
-      if (previewImg) previewImg.src = '';
+  function triggerDeliveryManualCapture() {
+    if (!deliveryCameraStream) {
+      startDeliveryCamera().then(() => {
+        setTimeout(() => executeSnapshot('MANUAL'), 400);
+      });
+      return;
     }
+    executeSnapshot('MANUAL');
+  }
+
+  function executeSnapshot(source = 'MANUAL') {
+    const video = document.getElementById('delivery-cam-video');
+    if (!video || !deliveryCameraStream || video.readyState < 2) {
+      showToast('CAMERA NOT READY FOR CAPTURE.', 'warning');
+      return;
+    }
+
+    // Visual Flash Effect
+    const flashEl = document.getElementById('delivery-cam-flash');
+    if (flashEl) {
+      flashEl.style.opacity = '0.9';
+      setTimeout(() => { flashEl.style.opacity = '0'; }, 150);
+    }
+
+    // Audio Chime
+    if (deliveryAudioEnabled) {
+      playDeliveryCaptureChime();
+    }
+
+    const vw = video.videoWidth || 1280;
+    const vh = video.videoHeight || 720;
+    const snapCanvas = document.createElement('canvas');
+    snapCanvas.width = vw;
+    snapCanvas.height = vh;
+    const snapCtx = snapCanvas.getContext('2d');
+    snapCtx.drawImage(video, 0, 0, vw, vh);
+
+    const dataUrl = snapCanvas.toDataURL('image/jpeg', 0.88);
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    const photoObj = {
+      id: 'photo_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      src: dataUrl,
+      timestamp: timeStr,
+      source: source,
+      name: `${source}_${timeStr.replace(/:/g, '')}.jpg`
+    };
+
+    addPhotoToActiveDeliveryBatch(photoObj);
+    showToast(`JEWELLERY PHOTO CAPTURED (${source})!`, 'success');
+  }
+
+  // ========================================================
+  // MULTI-PHOTO UPLOAD & GALLERY MANAGEMENT
+  // ========================================================
+  function handleMultipleDeliveryPhotos(files) {
+    if (!files || !files.length) return;
+    const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (!validFiles.length) {
+      showToast('PLEASE SELECT VALID IMAGE FILES (JPEG, PNG, WEBP).', 'warning');
+      return;
+    }
+
+    let processedCount = 0;
+    Array.from(validFiles).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 1280;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+          const now = new Date();
+          const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+          const photoObj = {
+            id: 'photo_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            src: dataUrl,
+            timestamp: timeStr,
+            source: 'UPLOAD',
+            name: file.name
+          };
+
+          addPhotoToActiveDeliveryBatch(photoObj);
+          processedCount++;
+          if (processedCount === validFiles.length) {
+            showToast(`SUCCESSFULLY ATTACHED ${processedCount} PHOTO(S).`, 'success');
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function handleArticlePhotoUpload(files) {
+    handleMultipleDeliveryPhotos(files);
+  }
+
+  function addPhotoToActiveDeliveryBatch(photoObj) {
+    if (!activeDeliveryBatch) {
+      showToast('PLEASE SELECT A BATCH FROM THE QUEUE FIRST.', 'warning');
+      return;
+    }
+
+    if (!activeDeliveryBatch.articlePhotos) {
+      activeDeliveryBatch.articlePhotos = [];
+      if (activeDeliveryBatch.articlePhoto) {
+        activeDeliveryBatch.articlePhotos.push({
+          id: 'photo_init_' + Date.now(),
+          src: activeDeliveryBatch.articlePhoto,
+          timestamp: 'SAVED',
+          source: 'SAVED',
+          name: 'ARTICLE_PHOTO.JPG'
+        });
+      }
+    }
+
+    activeDeliveryBatch.articlePhotos.unshift(photoObj);
+    activeDeliveryBatch.articlePhoto = activeDeliveryBatch.articlePhotos[0].src;
+    activeDeliveryPhoto = activeDeliveryBatch.articlePhoto;
+
+    renderDeliveryGallery();
+    updateAttachedPhotosSummary();
+    renderDeliveryQueue();
+  }
+
+  function renderDeliveryGallery() {
+    const grid = document.getElementById('deliv-photos-gallery-grid');
+    const badge = document.getElementById('deliv-gallery-count-badge');
+    const clearBtn = document.getElementById('deliv-clear-all-photos-btn');
+    if (!grid) return;
+
+    const photos = (activeDeliveryBatch && activeDeliveryBatch.articlePhotos) ? activeDeliveryBatch.articlePhotos : [];
+
+    if (badge) {
+      badge.textContent = `${photos.length} PHOTOS`;
+      if (photos.length > 0) {
+        badge.className = 'ml-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
+      } else {
+        badge.className = 'ml-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-100 text-slate-600 border border-slate-200';
+      }
+    }
+
+    if (clearBtn) {
+      if (photos.length > 0) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
+    }
+
+    if (!photos.length) {
+      grid.innerHTML = `
+        <div class="col-span-full py-5 px-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 text-center flex flex-col items-center justify-center">
+          <span class="material-symbols-outlined text-slate-300 text-[26px]">photo_library</span>
+          <div class="text-[11px] font-bold text-slate-500 uppercase mt-1">NO PHOTOS ATTACHED FOR THIS BATCH</div>
+          <div class="text-[9.5px] text-slate-400 mt-0.5">Place jewellery under optical scanner camera or drop image files to attach</div>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = photos.map((p, idx) => {
+      const isPrimary = idx === 0;
+      return `
+        <div class="gallery-photo-card relative rounded-xl overflow-hidden border ${isPrimary ? 'border-amber-400 shadow-sm ring-1 ring-amber-400/40' : 'border-slate-200 bg-white'} group">
+          <div class="relative w-full aspect-video bg-slate-900 overflow-hidden cursor-pointer" onclick="openPhotoLightbox('active', ${idx})">
+            <img src="${p.src}" alt="${escapeHtmlStr(p.name || 'Jewellery Photo')}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"/>
+            <div class="photo-actions-overlay absolute inset-0 bg-black/50 flex items-center justify-center gap-1.5 transition-opacity">
+              <button
+                type="button"
+                onclick="event.stopPropagation(); openPhotoLightbox('active', ${idx})"
+                class="w-7 h-7 rounded-md bg-white/90 hover:bg-white text-slate-900 flex items-center justify-center cursor-pointer shadow"
+                title="View Large"
+              >
+                <span class="material-symbols-outlined text-[15px]">zoom_in</span>
+              </button>
+              <button
+                type="button"
+                onclick="event.stopPropagation(); removePhotoFromBatch('${p.id}')"
+                class="w-7 h-7 rounded-md bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center cursor-pointer shadow"
+                title="Remove Photo"
+              >
+                <span class="material-symbols-outlined text-[15px]">delete</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="p-1.5 bg-white border-t border-slate-100 flex items-center justify-between text-[9px] font-mono">
+            <span class="font-bold ${p.source === 'AUTO' ? 'text-emerald-700 bg-emerald-50 px-1 rounded' : p.source === 'UPLOAD' ? 'text-blue-700 bg-blue-50 px-1 rounded' : 'text-amber-800 bg-amber-50 px-1 rounded'}">
+              ${escapeHtmlStr(p.source || 'PHOTO')} #${photos.length - idx}
+            </span>
+            <span class="text-slate-400 truncate max-w-[65px]">${escapeHtmlStr(p.timestamp || '')}</span>
+          </div>
+
+          ${isPrimary ? `
+            <div class="absolute top-1 left-1 px-1.5 py-0.2 bg-amber-500 text-slate-950 font-black text-[8px] rounded uppercase font-mono shadow-xs tracking-wider">
+              PRIMARY
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function updateAttachedPhotosSummary() {
+    const summaryEl = document.getElementById('deliv-photos-count-summary');
+    const photos = (activeDeliveryBatch && activeDeliveryBatch.articlePhotos) ? activeDeliveryBatch.articlePhotos : [];
+    if (summaryEl) {
+      if (photos.length === 0) {
+        summaryEl.textContent = '0 PHOTOS CAPTURED / ATTACHED';
+        summaryEl.className = 'text-[10px] text-slate-500 font-mono';
+      } else if (photos.length === 1) {
+        summaryEl.textContent = '1 PHOTO ATTACHED • READY FOR GATE PASS';
+        summaryEl.className = 'text-[10px] text-emerald-600 font-bold font-mono';
+      } else {
+        summaryEl.textContent = `${photos.length} PHOTOS ATTACHED • READY FOR GATE PASS`;
+        summaryEl.className = 'text-[10px] text-emerald-600 font-bold font-mono';
+      }
+    }
+  }
+
+  function removePhotoFromBatch(photoId) {
+    if (!activeDeliveryBatch || !activeDeliveryBatch.articlePhotos) return;
+    activeDeliveryBatch.articlePhotos = activeDeliveryBatch.articlePhotos.filter(p => p.id !== photoId);
+    activeDeliveryBatch.articlePhoto = activeDeliveryBatch.articlePhotos[0] ? activeDeliveryBatch.articlePhotos[0].src : null;
+    activeDeliveryPhoto = activeDeliveryBatch.articlePhoto;
+
+    renderDeliveryGallery();
+    updateAttachedPhotosSummary();
+    renderDeliveryQueue();
+    showToast('PHOTO REMOVED.', 'info');
+  }
+
+  function clearAllDeliveryPhotos() {
+    if (!activeDeliveryBatch) return;
+    if (!activeDeliveryBatch.articlePhotos || !activeDeliveryBatch.articlePhotos.length) return;
+    if (!confirm('Are you sure you want to remove all attached photos for this batch?')) return;
+    activeDeliveryBatch.articlePhotos = [];
+    activeDeliveryBatch.articlePhoto = null;
+    activeDeliveryPhoto = null;
+
+    renderDeliveryGallery();
+    updateAttachedPhotosSummary();
+    renderDeliveryQueue();
+    showToast('ALL PHOTOS REMOVED.', 'info');
   }
 
   function removeArticlePhoto() {
-    activeDeliveryPhoto = null;
-    if (activeDeliveryBatch) {
-      activeDeliveryBatch.articlePhoto = null;
+    clearAllDeliveryPhotos();
+  }
+
+  // --- MULTI-PHOTO DRAG AND DROP ---
+  function handleMultiPhotoDragOver(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const dz = document.getElementById('deliv-multi-dropzone');
+    if (dz) {
+      dz.classList.add('bg-amber-100/70', 'border-amber-500');
     }
-    const input = document.getElementById('deliv-photo-input');
-    if (input) input.value = '';
-
-    updatePhotoPreviewDisplay();
-    renderDeliveryGatePassPreview();
-    showToast('ARTICLE PHOTO REMOVED.', 'info');
   }
 
-  function handlePhotoDragOver(e) {
+  function handleMultiPhotoDragLeave(e) {
     if (e && e.preventDefault) e.preventDefault();
-    const dropzone = document.getElementById('deliv-photo-dropzone');
-    if (dropzone) dropzone.classList.add('drag-active');
+    const dz = document.getElementById('deliv-multi-dropzone');
+    if (dz) {
+      dz.classList.remove('bg-amber-100/70', 'border-amber-500');
+    }
   }
 
-  function handlePhotoDragLeave(e) {
+  function handleMultiPhotoDrop(e) {
     if (e && e.preventDefault) e.preventDefault();
-    const dropzone = document.getElementById('deliv-photo-dropzone');
-    if (dropzone) dropzone.classList.remove('drag-active');
-  }
-
-  function handlePhotoDrop(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    const dropzone = document.getElementById('deliv-photo-dropzone');
-    if (dropzone) dropzone.classList.remove('drag-active');
+    const dz = document.getElementById('deliv-multi-dropzone');
+    if (dz) {
+      dz.classList.remove('bg-amber-100/70', 'border-amber-500');
+    }
     if (e.dataTransfer && e.dataTransfer.files) {
-      handleArticlePhotoUpload(e.dataTransfer.files);
+      handleMultipleDeliveryPhotos(e.dataTransfer.files);
     }
   }
+
+  function handlePhotoDragOver(e) { handleMultiPhotoDragOver(e); }
+  function handlePhotoDragLeave(e) { handleMultiPhotoDragLeave(e); }
+  function handlePhotoDrop(e) { handleMultiPhotoDrop(e); }
 
   // --- GATE PASS HTML GENERATOR WITH EMBEDDED PHOTO & REQ # ---
   function generateGatePassHtml(batch, collector, collectorId, releasedBy, sealNo, gatePassNo, dispatchTime) {
     const watermarkSrc = (window && window.SSR_LOGO_WATERMARK_SRC) ? window.SSR_LOGO_WATERMARK_SRC : 'assets/ssr-logo-bw.png';
     const grossG = typeof batch.grossWt === 'number' ? batch.grossWt.toFixed(3) : parseFloat(batch.grossWt || 0).toFixed(3);
     const netG = typeof batch.netWt === 'number' ? batch.netWt.toFixed(3) : parseFloat(batch.netWt || 0).toFixed(3);
-    const photoSrc = activeDeliveryPhoto || batch.articlePhoto || null;
+    const photoSrc = activeDeliveryPhoto || batch.articlePhoto || (batch.articlePhotos && batch.articlePhotos[0] ? batch.articlePhotos[0].src : null);
+    const extraPhotoCount = (batch.articlePhotos && batch.articlePhotos.length > 1) ? (batch.articlePhotos.length - 1) : 0;
 
     return `
       <div style="position: relative; width: 74mm; max-width: 100%; margin: 0 auto; padding: 2mm; color: #000; background: #fff; font-family: 'Courier New', Courier, monospace; box-sizing: border-box; overflow: hidden;">
@@ -3440,7 +4057,9 @@
           <!-- Article Verification Photo Embedded in Gate Pass -->
           ${photoSrc ? `
             <div style="margin: 4px 0; padding: 3px; border: 1.5px solid #000; text-align: center; background: #fff;">
-              <div style="font-size: 7.5px; font-weight: 900; text-transform: uppercase; margin-bottom: 2px;">CUSTODY ARTICLE VERIFICATION PHOTO</div>
+              <div style="font-size: 7.5px; font-weight: 900; text-transform: uppercase; margin-bottom: 2px;">
+                CUSTODY ARTICLE VERIFICATION PHOTO ${extraPhotoCount > 0 ? `(+ ${extraPhotoCount} MORE ATTACHED)` : ''}
+              </div>
               <img src="${photoSrc}" alt="Article Verification" class="gatepass-photo-img" style="max-height: 28mm; max-width: 100%; object-fit: contain; display: block; margin: 0 auto; -webkit-print-color-adjust: exact; print-color-adjust: exact;" />
             </div>
           ` : ''}
@@ -3516,28 +4135,26 @@
       collectorId: collectorId,
       releasedBy: releasedBy,
       sealNo: sealNo,
+      articlePhotos: activeDeliveryBatch.articlePhotos ? [...activeDeliveryBatch.articlePhotos] : [],
       articlePhoto: activeDeliveryPhoto || null,
       dispatchTime: nowStr,
       status: 'DELIVERED'
     };
 
-    // Update batch in intakeBatches state
     activeDeliveryBatch.status = 'Delivered';
     activeDeliveryBatch.gatePassNo = newGp;
     activeDeliveryBatch.deliveryTime = nowStr;
     activeDeliveryBatch.articlePhoto = activeDeliveryPhoto;
 
-    // Commit to delivery ledger
     state.deliveryLedger.unshift(newRecord);
 
     renderDeliveryLedgerTable();
     updateDeliveryStats();
     renderDeliveryQueue();
-    renderDeliveryGatePassPreview();
+    renderDeliveryGallery();
 
     showToast(`DELIVERY COMPLETED FOR ${activeDeliveryBatch.customer} (GATE PASS: ${newGp}).`, 'success');
 
-    // Automatically prompt print of the gate pass
     setTimeout(() => {
       printCurrentDeliveryGatePass(newGp);
     }, 300);
@@ -3546,8 +4163,13 @@
   function resetDeliveryForm() {
     const form = document.getElementById('delivery-handover-form');
     if (form) form.reset();
+    if (activeDeliveryBatch) {
+      activeDeliveryBatch.articlePhotos = [];
+      activeDeliveryBatch.articlePhoto = null;
+    }
     activeDeliveryPhoto = null;
-    updatePhotoPreviewDisplay();
+    renderDeliveryGallery();
+    updateAttachedPhotosSummary();
     if (activeDeliveryBatch) onDeliveryBatchSelected(activeDeliveryBatch.jobDocket);
   }
 
@@ -3622,7 +4244,8 @@
       grossWt: rec.grossWt,
       netWt: rec.grossWt * 0.95,
       tray: 'RELEASED',
-      articlePhoto: rec.articlePhoto || null
+      articlePhoto: rec.articlePhoto || (rec.articlePhotos && rec.articlePhotos[0] ? rec.articlePhotos[0].src : null),
+      articlePhotos: rec.articlePhotos || []
     };
 
     const slipHtml = generateGatePassHtml(mockBatch, rec.collector, rec.collectorId, rec.releasedBy, rec.sealNo || 'SEAL-SSR-9021', rec.gatePassNo, rec.dispatchTime);
@@ -3679,6 +4302,10 @@
 
     tbody.innerHTML = list.map(rec => {
       const grossG = typeof rec.grossWt === 'number' ? rec.grossWt.toFixed(3) : parseFloat(rec.grossWt || 0).toFixed(3);
+      const hasPhoto = (rec.articlePhotos && rec.articlePhotos.length > 0) || rec.articlePhoto;
+      const photoThumbSrc = (rec.articlePhotos && rec.articlePhotos[0]) ? rec.articlePhotos[0].src : rec.articlePhoto;
+      const photoCount = (rec.articlePhotos && rec.articlePhotos.length) ? rec.articlePhotos.length : (rec.articlePhoto ? 1 : 0);
+
       return `
         <tr class="hover:bg-slate-50 transition-colors">
           <td class="p-3 font-mono font-bold text-slate-900">${escapeHtmlStr(rec.gatePassNo)}</td>
@@ -3690,14 +4317,21 @@
             ${escapeHtmlStr(rec.customer)}
           </td>
           <td class="p-3 text-center">
-            ${rec.articlePhoto ? `
-              <img
-                src="${rec.articlePhoto}"
-                alt="Article"
-                onclick="openPhotoLightbox('${escapeHtmlStr(rec.gatePassNo)}')"
-                class="delivery-photo-thumb w-10 h-10 object-cover rounded-lg border border-slate-300 mx-auto cursor-pointer shadow-2xs hover:border-amber-500"
-                title="Click to view article photo"
-              />
+            ${hasPhoto ? `
+              <div class="relative inline-block">
+                <img
+                  src="${photoThumbSrc}"
+                  alt="Article"
+                  onclick="openPhotoLightbox('${escapeHtmlStr(rec.gatePassNo)}')"
+                  class="delivery-photo-thumb w-10 h-10 object-cover rounded-lg border border-slate-300 mx-auto cursor-pointer shadow-2xs hover:border-amber-500"
+                  title="Click to view article photos (${photoCount})"
+                />
+                ${photoCount > 1 ? `
+                  <span class="absolute -top-1 -right-1 px-1 bg-amber-500 text-slate-950 font-black text-[8px] rounded-full font-mono shadow-xs">
+                    +${photoCount - 1}
+                  </span>
+                ` : ''}
+              </div>
             ` : `
               <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300 mx-auto border border-dashed border-slate-200" title="No photo attached">
                 <span class="material-symbols-outlined text-[17px]">no_photography</span>
@@ -3745,30 +4379,150 @@
     renderDeliveryLedgerTable(filtered);
   }
 
-  // --- PHOTO LIGHTBOX MODAL ---
-  function openPhotoLightbox(gpNo) {
-    const rec = (state.deliveryLedger || []).find(d => d.gatePassNo === gpNo);
-    const photo = rec && rec.articlePhoto ? rec.articlePhoto : activeDeliveryPhoto;
-    if (!photo) return;
+  // ========================================================
+  // PHOTO LIGHTBOX MODAL WITH GALLERY NAVIGATION
+  // ========================================================
+  function openPhotoLightbox(target, index = 0) {
+    let photoList = [];
+    let titleStr = 'ARTICLE VERIFICATION PHOTO';
+    let docketStr = '';
+    let sealStr = '';
+
+    if (target === 'active') {
+      if (activeDeliveryBatch && activeDeliveryBatch.articlePhotos && activeDeliveryBatch.articlePhotos.length > 0) {
+        photoList = activeDeliveryBatch.articlePhotos;
+      } else if (activeDeliveryPhoto) {
+        photoList = [{ id: 'active_photo', src: activeDeliveryPhoto, name: 'ARTICLE_PHOTO.JPG', timestamp: 'TODAY', source: 'VERIFIED' }];
+      }
+      titleStr = activeDeliveryBatch ? `ARTICLE VERIFICATION • ${activeDeliveryBatch.customer}` : 'ARTICLE VERIFICATION';
+      docketStr = activeDeliveryBatch ? `${activeDeliveryBatch.jobDocket} (${activeDeliveryBatch.reqNo || 'REQ'})` : 'ACTIVE BATCH';
+      sealStr = document.getElementById('deliv-seal-no') ? `SEAL: ${document.getElementById('deliv-seal-no').value}` : 'SEAL VERIFIED';
+    } else {
+      const rec = (state.deliveryLedger || []).find(d => d.gatePassNo === target);
+      if (rec) {
+        if (rec.articlePhotos && rec.articlePhotos.length > 0) {
+          photoList = rec.articlePhotos;
+        } else if (rec.articlePhoto) {
+          photoList = [{ id: 'ledger_photo', src: rec.articlePhoto, name: 'ARTICLE.JPG', timestamp: rec.dispatchTime, source: 'DISPATCH' }];
+        }
+        titleStr = `GATE PASS ${rec.gatePassNo} • ${rec.customer}`;
+        docketStr = `${rec.jobDocket} (${rec.reqNo || 'REQ'})`;
+        sealStr = `SEAL: ${rec.sealNo || 'N/A'}`;
+      }
+    }
+
+    if (!photoList.length) {
+      showToast('NO PHOTOS TO DISPLAY IN LIGHTBOX.', 'warning');
+      return;
+    }
+
+    currentLightboxPhotos = photoList;
+    currentLightboxIndex = Math.max(0, Math.min(index, photoList.length - 1));
 
     const modal = document.getElementById('deliv-photo-lightbox');
-    const img = document.getElementById('lightbox-img');
     const title = document.getElementById('lightbox-title');
     const docket = document.getElementById('lightbox-docket');
     const seal = document.getElementById('lightbox-seal');
 
-    if (modal && img) {
-      img.src = photo;
-      if (title) title.textContent = `ARTICLE VERIFICATION PHOTO • GATE PASS ${gpNo}`;
-      if (docket) docket.textContent = rec ? `${rec.jobDocket} (${rec.customer})` : 'JOB ARTICLE';
-      if (seal) seal.textContent = rec && rec.sealNo ? `SEAL: ${rec.sealNo}` : 'SEAL VERIFIED';
+    if (title) title.textContent = titleStr;
+    if (docket) docket.textContent = docketStr;
+    if (seal) seal.textContent = sealStr;
+
+    updateLightboxCurrentPhoto();
+
+    if (modal) {
       modal.classList.remove('hidden');
     }
+  }
+
+  function updateLightboxCurrentPhoto() {
+    if (!currentLightboxPhotos.length) return;
+    const current = currentLightboxPhotos[currentLightboxIndex];
+    const img = document.getElementById('lightbox-img');
+    const counter = document.getElementById('lightbox-counter');
+    const thumbsContainer = document.getElementById('lightbox-thumbnails');
+    const prevBtn = document.getElementById('lightbox-prev-btn');
+    const nextBtn = document.getElementById('lightbox-next-btn');
+
+    if (img && current) {
+      img.src = current.src;
+    }
+
+    if (counter) {
+      counter.textContent = `${currentLightboxIndex + 1} OF ${currentLightboxPhotos.length}`;
+    }
+
+    if (prevBtn) {
+      prevBtn.style.display = currentLightboxPhotos.length > 1 ? 'flex' : 'none';
+    }
+    if (nextBtn) {
+      nextBtn.style.display = currentLightboxPhotos.length > 1 ? 'flex' : 'none';
+    }
+
+    if (thumbsContainer) {
+      if (currentLightboxPhotos.length > 1) {
+        thumbsContainer.classList.remove('hidden');
+        thumbsContainer.innerHTML = currentLightboxPhotos.map((p, idx) => `
+          <button
+            type="button"
+            onclick="setLightboxIndex(${idx})"
+            class="w-12 h-12 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 cursor-pointer ${idx === currentLightboxIndex ? 'border-amber-500 scale-105 shadow' : 'border-slate-300 opacity-60 hover:opacity-100'}"
+          >
+            <img src="${p.src}" alt="Thumb" class="w-full h-full object-cover"/>
+          </button>
+        `).join('');
+      } else {
+        thumbsContainer.classList.add('hidden');
+        thumbsContainer.innerHTML = '';
+      }
+    }
+  }
+
+  function setLightboxIndex(idx) {
+    currentLightboxIndex = idx;
+    updateLightboxCurrentPhoto();
+  }
+
+  function prevLightboxPhoto() {
+    if (!currentLightboxPhotos.length) return;
+    currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxPhotos.length) % currentLightboxPhotos.length;
+    updateLightboxCurrentPhoto();
+  }
+
+  function nextLightboxPhoto() {
+    if (!currentLightboxPhotos.length) return;
+    currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxPhotos.length;
+    updateLightboxCurrentPhoto();
   }
 
   function closePhotoLightbox() {
     const modal = document.getElementById('deliv-photo-lightbox');
     if (modal) modal.classList.add('hidden');
+  }
+
+  // Keyboard navigation for lightbox
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('deliv-photo-lightbox');
+      if (modal && !modal.classList.contains('hidden')) {
+        if (e.key === 'Escape') closePhotoLightbox();
+        else if (e.key === 'ArrowLeft') prevLightboxPhoto();
+        else if (e.key === 'ArrowRight') nextLightboxPhoto();
+      }
+    });
+
+    // Resource cleanup on tab / window unload
+    window.addEventListener('beforeunload', () => {
+      stopDeliveryCameraStream();
+    });
+  }
+
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        stopDeliveryCameraStream();
+      }
+    });
   }
 
 
@@ -8526,6 +9280,23 @@
   window.printSingleTag = printSingleTag;
   window.exportTagsCSV = exportTagsCSV;
   window.initDeliveryView = initDeliveryView;
+  window.startDeliveryCamera = startDeliveryCamera;
+  window.stopDeliveryCameraStream = stopDeliveryCameraStream;
+  window.toggleDeliveryCameraStream = toggleDeliveryCameraStream;
+  window.switchDeliveryCameraDevice = switchDeliveryCameraDevice;
+  window.toggleDeliveryAutoCapture = toggleDeliveryAutoCapture;
+  window.toggleDeliveryCaptureSound = toggleDeliveryCaptureSound;
+  window.triggerDeliveryManualCapture = triggerDeliveryManualCapture;
+  window.setDeliveryMotionSensitivity = setDeliveryMotionSensitivity;
+  window.handleMultipleDeliveryPhotos = handleMultipleDeliveryPhotos;
+  window.handleMultiPhotoDragOver = handleMultiPhotoDragOver;
+  window.handleMultiPhotoDragLeave = handleMultiPhotoDragLeave;
+  window.handleMultiPhotoDrop = handleMultiPhotoDrop;
+  window.clearAllDeliveryPhotos = clearAllDeliveryPhotos;
+  window.removePhotoFromBatch = removePhotoFromBatch;
+  window.setLightboxIndex = setLightboxIndex;
+  window.prevLightboxPhoto = prevLightboxPhoto;
+  window.nextLightboxPhoto = nextLightboxPhoto;
   window.renderDeliveryQueue = renderDeliveryQueue;
   window.filterDeliveryQueue = filterDeliveryQueue;
   window.handleDeliverySearch = handleDeliverySearch;

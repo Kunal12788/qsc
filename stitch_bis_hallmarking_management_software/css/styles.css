@@ -1130,3 +1130,44 @@ button[type="submit"]#btn-save-receive-entry.final-step-glow {
   }
 }
 
+/* ========================================================================= */
+/* JEWELLERY AUTO-CAPTURE OPTICAL SCANNER & GALLERY STYLES                   */
+/* ========================================================================= */
+@keyframes opticalScannerSweep {
+  0% {
+    top: 10%;
+    opacity: 0.2;
+  }
+  50% {
+    top: 85%;
+    opacity: 0.85;
+  }
+  100% {
+    top: 10%;
+    opacity: 0.2;
+  }
+}
+
+.scanner-sweep-active {
+  animation: opticalScannerSweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.gallery-photo-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.gallery-photo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.gallery-photo-card .photo-actions-overlay {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.gallery-photo-card:hover .photo-actions-overlay {
+  opacity: 1;
+}
+
+

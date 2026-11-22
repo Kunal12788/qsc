@@ -2853,69 +2853,35 @@
                     </div>
                   </div>
 
-                  <!-- Article Photo Upload Section with Live Preview & Session Persistence -->
+                  <!-- Article Verification Photos Status Widget -->
                   <div class="pt-3 border-t border-surface-container">
-                    <div class="flex items-center justify-between mb-2">
-                      <div class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-primary-container text-[18px]">photo_camera</span>
-                        <span class="text-xs font-bold text-slate-800 uppercase tracking-wide">ARTICLE VERIFICATION PHOTO</span>
-                      </div>
-                      <span class="text-[10px] text-slate-500 font-medium uppercase">JPEG / PNG / WEBP UP TO 10MB</span>
-                    </div>
-
-                    <!-- Dropzone (Shown when no photo selected) -->
-                    <div
-                      id="deliv-photo-dropzone"
-                      onclick="document.getElementById('deliv-photo-input').click()"
-                      ondragover="handlePhotoDragOver(event)"
-                      ondragleave="handlePhotoDragLeave(event)"
-                      ondrop="handlePhotoDrop(event)"
-                      class="delivery-photo-dropzone flex flex-col items-center justify-center gap-1.5 group"
-                    >
-                      <input
-                        type="file"
-                        id="deliv-photo-input"
-                        accept="image/*"
-                        capture="environment"
-                        onchange="handleArticlePhotoUpload(this.files)"
-                        class="hidden"
-                      />
-                      <div class="w-10 h-10 rounded-full bg-surface-container-low group-hover:bg-amber-100 flex items-center justify-center text-slate-500 group-hover:text-amber-700 transition-colors">
-                        <span class="material-symbols-outlined text-[22px]">add_a_photo</span>
-                      </div>
-                      <span class="text-xs font-bold text-slate-700 group-hover:text-amber-800 uppercase">
-                        CLICK TO CAPTURE OR DROP ARTICLE PHOTO
-                      </span>
-                      <span class="text-[10.5px] text-slate-400">Attach photo of finished hallmarked pieces / sealed tray before release</span>
-                    </div>
-
-                    <!-- Live Image Thumbnail Preview (Hidden until photo is uploaded) -->
-                    <div id="deliv-photo-preview-container" class="hidden relative rounded-xl border border-slate-300 bg-white p-2 shadow-xs">
-                      <div class="relative w-full max-h-48 overflow-hidden rounded-lg bg-slate-900/5 flex items-center justify-center">
-                        <img id="deliv-photo-preview-img" src="" alt="Article Verification Preview" class="max-h-48 w-auto object-contain rounded-md" />
-                        <div class="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            onclick="document.getElementById('deliv-photo-input').click()"
-                            class="px-3 py-1.5 rounded-lg bg-white/90 hover:bg-white text-slate-900 text-xs font-bold uppercase shadow-sm flex items-center gap-1 cursor-pointer"
-                          >
-                            <span class="material-symbols-outlined text-[15px]">edit</span>
-                            <span>RE-UPLOAD</span>
-                          </button>
-                          <button
-                            type="button"
-                            onclick="removeArticlePhoto()"
-                            class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold uppercase shadow-sm flex items-center gap-1 cursor-pointer"
-                          >
-                            <span class="material-symbols-outlined text-[15px]">delete</span>
-                            <span>REMOVE</span>
-                          </button>
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low/80 border border-surface-container">
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-700 flex items-center justify-center">
+                          <span class="material-symbols-outlined text-[20px]">collections</span>
+                        </div>
+                        <div>
+                          <div class="text-xs font-bold text-slate-800 uppercase tracking-wide">ARTICLE VERIFICATION PHOTOS</div>
+                          <div class="text-[10px] text-slate-500 font-mono" id="deliv-photos-count-summary">0 PHOTOS CAPTURED / ATTACHED</div>
                         </div>
                       </div>
-                      <div class="mt-2 flex items-center justify-between text-[10.5px] text-slate-500 font-mono px-1">
-                        <span id="deliv-photo-meta-name" class="truncate max-w-[150px]">IMG_HALLMARK.JPG</span>
-                        <span id="deliv-photo-meta-size">142 KB</span>
-                        <span class="text-emerald-600 font-bold">READY FOR GATE PASS</span>
+                      <div class="flex items-center gap-1.5">
+                        <input
+                          type="file"
+                          id="deliv-photo-input"
+                          multiple
+                          accept="image/*"
+                          onchange="handleMultipleDeliveryPhotos(this.files)"
+                          class="hidden"
+                        />
+                        <button
+                          type="button"
+                          onclick="document.getElementById('deliv-multi-upload-input').click()"
+                          class="px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg text-slate-700 font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                        >
+                          <span class="material-symbols-outlined text-[14px]">upload_file</span>
+                          <span>UPLOAD</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -2957,29 +2923,257 @@
               </div>
             </div>
 
-            <!-- Right: Live Delivery Gate Pass / Outward Receipt Preview -->
+            <!-- Right: 2. JEWELLERY AUTO-CAPTURE & IMAGE VERIFICATION SYSTEM -->
             <div class="lg:col-span-6 bg-surface-container-lowest rounded-2xl shadow-xs border border-surface-container p-5 flex flex-col justify-between">
               <div>
-                <div class="flex items-center justify-between pb-3 mb-4 border-b border-surface-container">
+                <!-- Section Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-4 border-b border-surface-container">
                   <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary-container text-[20px]">local_shipping</span>
-                    <span class="font-bold text-sm text-slate-800 uppercase tracking-wide">2. OUTWARD DELIVERY GATE PASS PREVIEW</span>
+                    <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-700 flex items-center justify-center">
+                      <span class="material-symbols-outlined text-[18px]">photo_camera</span>
+                    </div>
+                    <div>
+                      <span class="font-bold text-sm text-slate-800 uppercase tracking-wide">2. JEWELLERY IMAGE CAPTURE & AUTO-DETECTION</span>
+                      <div class="text-[10px] text-slate-500 font-medium uppercase">SMART OPTICAL SENSOR • AUTO-SNAPS ON PLACEMENT OR UPLOAD</div>
+                    </div>
                   </div>
-                  <button onclick="printCurrentDeliveryGatePass()" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] rounded flex items-center gap-1 cursor-pointer">
-                    <span class="material-symbols-outlined text-[14px]">print</span>
-                    <span>PRINT SLIP</span>
-                  </button>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <!-- Auto-Capture Toggle -->
+                    <button
+                      id="deliv-auto-toggle-btn"
+                      type="button"
+                      onclick="toggleDeliveryAutoCapture()"
+                      class="px-2.5 py-1 rounded-lg font-bold text-[10.5px] uppercase flex items-center gap-1.5 transition-all bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs cursor-pointer"
+                      title="Toggle intelligent automatic photo snap when jewellery is kept under the camera"
+                    >
+                      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="deliv-auto-dot"></span>
+                      <span id="deliv-auto-toggle-text">AUTO-SNAP: ACTIVE</span>
+                    </button>
+                    <!-- Audio Chime Toggle -->
+                    <button
+                      id="deliv-sound-toggle-btn"
+                      type="button"
+                      onclick="toggleDeliveryCaptureSound()"
+                      class="p-1 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+                      title="Toggle audio beep on photo capture"
+                    >
+                      <span class="material-symbols-outlined text-[18px]" id="deliv-sound-icon">volume_up</span>
+                    </button>
+                    <!-- Print Gate Pass Quick Button -->
+                    <button
+                      type="button"
+                      onclick="printCurrentDeliveryGatePass()"
+                      class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] rounded flex items-center gap-1 cursor-pointer"
+                      title="Print Gate Pass Slip"
+                    >
+                      <span class="material-symbols-outlined text-[14px]">print</span>
+                      <span>PRINT SLIP</span>
+                    </button>
+                  </div>
                 </div>
 
-                <!-- Printable Gate Pass Preview Container -->
-                <div id="delivery-gatepass-preview" class="p-4 bg-white rounded-xl border-2 border-slate-300 font-mono text-xs text-slate-900 shadow-2xs space-y-3">
-                  <!-- Populated dynamically via JS -->
+                <!-- Live Camera Viewport with Optical Sensor Overlay -->
+                <div class="relative w-full rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[260px] sm:min-h-[290px]">
+                  <!-- Live Video Element -->
+                  <video
+                    id="delivery-cam-video"
+                    autoplay
+                    playsinline
+                    muted
+                    class="w-full h-[260px] sm:h-[290px] object-cover bg-black"
+                  ></video>
+
+                  <!-- Hidden Low-Res Sampling Canvas for 60fps Zero-Lag Motion Analysis -->
+                  <canvas id="delivery-motion-canvas" width="64" height="48" class="hidden"></canvas>
+
+                  <!-- Flash Effect Overlay -->
+                  <div id="delivery-cam-flash" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-150 z-30"></div>
+
+                  <!-- Camera Inactive / Standby Placeholder (Shown when camera stopped or denied) -->
+                  <div id="delivery-cam-standby" class="absolute inset-0 bg-slate-950/90 z-20 flex flex-col items-center justify-center p-4 text-center">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-3">
+                      <span class="material-symbols-outlined text-[32px]">photo_camera_front</span>
+                    </div>
+                    <div class="font-bold text-sm text-white uppercase tracking-wide">JEWELLERY OPTICAL SCANNER STANDBY</div>
+                    <div class="text-xs text-slate-400 max-w-xs mt-1 mb-3">Activate camera to auto-snap jewellery as soon as it is placed on the staging tray, or upload image files directly.</div>
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onclick="startDeliveryCamera()"
+                        class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+                      >
+                        <span class="material-symbols-outlined text-[18px]">videocam</span>
+                        <span>START SCANNER CAMERA</span>
+                      </button>
+                      <button
+                        type="button"
+                        onclick="document.getElementById('deliv-multi-upload-input').click()"
+                        class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-lg uppercase flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
+                      >
+                        <span class="material-symbols-outlined text-[16px]">upload_file</span>
+                        <span>UPLOAD FILES</span>
+                      </button>
+                    </div>
+                    <div id="delivery-cam-error" class="hidden mt-2 text-[11px] text-rose-400 font-mono"></div>
+                  </div>
+
+                  <!-- Optical Sensor Target Zone Reticle (Active when camera is running) -->
+                  <div id="delivery-cam-reticle" class="hidden absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center">
+                    <!-- Scanner Laser Sweep Line -->
+                    <div id="delivery-scanline" class="scanner-sweep-active absolute w-full h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-75"></div>
+
+                    <!-- Target Bounding Box -->
+                    <div class="relative w-48 sm:w-64 h-36 sm:h-44 border-2 border-dashed border-amber-400/60 rounded-xl flex items-center justify-center bg-amber-400/5">
+                      <!-- Corner Target Brackets -->
+                      <span class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-amber-400"></span>
+                      <span class="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-amber-400"></span>
+                      <span class="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-amber-400"></span>
+                      <span class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-amber-400"></span>
+
+                      <!-- Center Reticle Icon & Text -->
+                      <div class="text-center p-2">
+                        <span class="material-symbols-outlined text-amber-400/70 text-[26px]">filter_center_focus</span>
+                        <div class="text-[9.5px] font-mono font-bold text-amber-300 uppercase tracking-wider mt-0.5">JEWELLERY PLACEMENT ZONE</div>
+                      </div>
+
+                      <!-- Countdown Ring / Progress for Auto-Snap Stabilization -->
+                      <div id="delivery-countdown-badge" class="hidden absolute -bottom-3.5 bg-amber-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-md uppercase font-mono tracking-wider flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[13px]">timer</span>
+                        <span id="delivery-countdown-text">HOLD STILL • AUTO-SNAPPING...</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Top Live Status & Camera Info Bar -->
+                  <div class="absolute top-2 left-2 right-2 flex items-center justify-between z-15 pointer-events-none">
+                    <div id="delivery-cam-status-pill" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900/80 backdrop-blur-xs text-[10px] font-mono font-bold text-slate-300 border border-slate-700/60">
+                      <span class="w-1.5 h-1.5 rounded-full bg-slate-400" id="delivery-status-indicator"></span>
+                      <span id="delivery-cam-status-text">CAMERA OFF</span>
+                    </div>
+
+                    <div class="inline-flex items-center gap-1 pointer-events-auto">
+                      <!-- Device Select Dropdown -->
+                      <select
+                        id="delivery-cam-select"
+                        onchange="switchDeliveryCameraDevice(this.value)"
+                        class="h-7 px-2 bg-slate-900/90 text-slate-200 text-[10px] font-mono rounded border border-slate-700/80 focus:outline-none cursor-pointer"
+                        title="Select Camera Input (Webcam / Overhead Cam)"
+                      >
+                        <option value="">DEFAULT CAMERA</option>
+                      </select>
+                      <!-- Stop/Restart Camera Button -->
+                      <button
+                        id="delivery-cam-toggle-stream-btn"
+                        type="button"
+                        onclick="toggleDeliveryCameraStream()"
+                        class="h-7 px-2 bg-slate-900/90 hover:bg-slate-800 text-slate-200 text-[10px] font-mono rounded border border-slate-700/80 flex items-center gap-1 cursor-pointer"
+                        title="Toggle Camera Stream"
+                      >
+                        <span class="material-symbols-outlined text-[13px]">power_settings_new</span>
+                        <span id="delivery-cam-stream-btn-text">START</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Camera Controls & Action Bar -->
+                <div class="mt-3 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                  <!-- Instant Manual Snap Button -->
+                  <div class="sm:col-span-5">
+                    <button
+                      type="button"
+                      id="deliv-manual-snap-btn"
+                      onclick="triggerDeliveryManualCapture()"
+                      class="w-full h-9 bg-slate-900 hover:bg-slate-800 text-amber-400 font-extrabold text-xs rounded-lg uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 border border-amber-500/40 transition-all cursor-pointer hover:shadow-md active:scale-98"
+                    >
+                      <span class="material-symbols-outlined text-[18px]">photo_camera</span>
+                      <span>SNAP PHOTO NOW</span>
+                    </button>
+                  </div>
+
+                  <!-- Sensitivity Selector -->
+                  <div class="sm:col-span-4 flex items-center gap-1.5 bg-surface-container-low px-2 py-1.5 rounded-lg border border-surface-container text-xs">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">SENSE:</span>
+                    <select
+                      id="deliv-motion-sensitivity"
+                      onchange="setDeliveryMotionSensitivity(this.value)"
+                      class="bg-transparent text-slate-800 font-bold text-[10.5px] uppercase focus:outline-none cursor-pointer flex-1"
+                    >
+                      <option value="high">HIGH (FINE RINGS)</option>
+                      <option value="medium" selected>MEDIUM (BALANCED)</option>
+                      <option value="low">LOW (LARGE PIECES)</option>
+                    </select>
+                  </div>
+
+                  <!-- Multi-File Upload Trigger Button -->
+                  <div class="sm:col-span-3">
+                    <input
+                      type="file"
+                      id="deliv-multi-upload-input"
+                      multiple
+                      accept="image/*"
+                      onchange="handleMultipleDeliveryPhotos(this.files)"
+                      class="hidden"
+                    />
+                    <button
+                      type="button"
+                      onclick="document.getElementById('deliv-multi-upload-input').click()"
+                      class="w-full h-9 bg-surface-container-low hover:bg-surface-container text-slate-800 font-bold text-[11px] rounded-lg uppercase border border-slate-300 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <span class="material-symbols-outlined text-[16px]">drive_folder_upload</span>
+                      <span>UPLOAD</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Drag-and-Drop Area (Compact Multi-File Zone) -->
+                <div
+                  id="deliv-multi-dropzone"
+                  ondragover="handleMultiPhotoDragOver(event)"
+                  ondragleave="handleMultiPhotoDragLeave(event)"
+                  ondrop="handleMultiPhotoDrop(event)"
+                  onclick="document.getElementById('deliv-multi-upload-input').click()"
+                  class="mt-2.5 p-2 rounded-xl border border-dashed border-slate-300 bg-surface-container-low/50 hover:bg-amber-50/50 hover:border-amber-400 text-center transition-all cursor-pointer flex items-center justify-center gap-2 group"
+                >
+                  <span class="material-symbols-outlined text-slate-400 group-hover:text-amber-600 text-[18px]">cloud_upload</span>
+                  <span class="text-[11px] font-bold text-slate-600 group-hover:text-amber-800 uppercase">
+                    DRAG & DROP MULTIPLE JEWELLERY PHOTOS HERE, OR CLICK TO BROWSE
+                  </span>
+                </div>
+
+                <!-- Attached Photos Gallery for Active Batch -->
+                <div class="mt-4 pt-3 border-t border-surface-container">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-primary-container text-[18px]">photo_library</span>
+                      <span class="text-xs font-bold text-slate-800 uppercase tracking-wide">ATTACHED VERIFICATION PHOTOS</span>
+                      <span id="deliv-gallery-count-badge" class="ml-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300">0 PHOTOS</span>
+                    </div>
+                    <button
+                      type="button"
+                      onclick="clearAllDeliveryPhotos()"
+                      id="deliv-clear-all-photos-btn"
+                      class="hidden text-[10.5px] font-bold text-rose-600 hover:text-rose-800 hover:underline cursor-pointer flex items-center gap-0.5"
+                    >
+                      <span class="material-symbols-outlined text-[13px]">delete_sweep</span>
+                      <span>CLEAR ALL</span>
+                    </button>
+                  </div>
+
+                  <!-- Gallery Cards Grid -->
+                  <div id="deliv-photos-gallery-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2.5 min-h-[90px]">
+                    <!-- Dynamically populated via renderDeliveryGallery() -->
+                  </div>
                 </div>
               </div>
 
+              <!-- Section Footer -->
               <div class="mt-4 pt-3 border-t border-surface-container flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                <span>GATE PASS REQUIRED FOR PHYSICAL VAULT & SECURITY GATE CLEARANCE</span>
-                <span class="font-bold text-emerald-700">BIS AUDIT TRACKED</span>
+                <span class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px] text-emerald-600">verified</span>
+                  <span>OPTICAL VERIFICATION ATTACHED TO GATE PASS & BIS AUDIT DOCKET</span>
+                </span>
+                <span class="font-bold text-slate-700 font-mono text-[10px]">LIMS OPTIC v2.4</span>
               </div>
             </div>
           </div>
@@ -3023,22 +3217,50 @@
             </div>
           </div>
 
-          <!-- Article Photo Lightbox Modal -->
-          <div id="deliv-photo-lightbox" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs" onclick="closePhotoLightbox()">
-            <div class="relative max-w-2xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl p-4" onclick="event.stopPropagation()">
+          <!-- Article Photo Lightbox Modal with Multi-Photo Gallery Navigation -->
+          <div id="deliv-photo-lightbox" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs" onclick="closePhotoLightbox()">
+            <div class="relative max-w-3xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl p-4 flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
               <div class="flex items-center justify-between pb-3 border-b border-slate-200">
                 <div class="flex items-center gap-2">
                   <span class="material-symbols-outlined text-amber-600 text-[20px]">photo_library</span>
                   <span class="font-bold text-sm text-slate-800 uppercase" id="lightbox-title">ARTICLE VERIFICATION PHOTO</span>
+                  <span id="lightbox-counter" class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">1 OF 1</span>
                 </div>
                 <button type="button" onclick="closePhotoLightbox()" class="text-slate-400 hover:text-slate-700 cursor-pointer">
                   <span class="material-symbols-outlined text-[22px]">close</span>
                 </button>
               </div>
-              <div class="py-4 flex items-center justify-center bg-slate-900/5 rounded-xl mt-3 max-h-[70vh] overflow-hidden">
-                <img id="lightbox-img" src="" alt="Article photo enlarged" class="max-h-[65vh] w-auto object-contain rounded-lg"/>
+
+              <div class="relative py-4 flex items-center justify-center bg-slate-950 rounded-xl mt-3 flex-1 overflow-hidden min-h-[300px]">
+                <img id="lightbox-img" src="" alt="Article photo enlarged" class="max-h-[55vh] w-auto object-contain rounded-lg"/>
+
+                <!-- Navigation Arrows -->
+                <button
+                  id="lightbox-prev-btn"
+                  type="button"
+                  onclick="prevLightboxPhoto()"
+                  class="absolute left-3 p-2 rounded-full bg-black/60 hover:bg-black text-white hover:text-amber-400 transition-colors cursor-pointer border border-white/20"
+                  title="Previous Photo (Left Arrow)"
+                >
+                  <span class="material-symbols-outlined text-[24px]">chevron_left</span>
+                </button>
+                <button
+                  id="lightbox-next-btn"
+                  type="button"
+                  onclick="nextLightboxPhoto()"
+                  class="absolute right-3 p-2 rounded-full bg-black/60 hover:bg-black text-white hover:text-amber-400 transition-colors cursor-pointer border border-white/20"
+                  title="Next Photo (Right Arrow)"
+                >
+                  <span class="material-symbols-outlined text-[24px]">chevron_right</span>
+                </button>
               </div>
-              <div class="pt-3 flex items-center justify-between text-xs text-slate-500 font-mono">
+
+              <!-- Thumbnail Strip -->
+              <div id="lightbox-thumbnails" class="mt-3 flex items-center gap-2 overflow-x-auto py-1">
+                <!-- Populated dynamically -->
+              </div>
+
+              <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-mono">
                 <span id="lightbox-docket">JOB-2024-XXXX</span>
                 <span id="lightbox-seal">SEAL-SSR-XXXX</span>
               </div>
