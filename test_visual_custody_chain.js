@@ -130,6 +130,9 @@ assert.strictEqual(indexHtml.includes('<section id="view-delivery"'), true, 'FAI
 assert.strictEqual(indexHtml.includes('<section id="view-delivery-assay"'), true, 'FAIL: View #view-delivery-assay missing');
 assert.strictEqual(indexHtml.includes('id="modal-new-intake-batch"'), true, 'FAIL: #modal-new-intake-batch modal missing');
 assert.strictEqual(indexHtml.includes('id="btn-open-new-intake-batch"'), true, 'FAIL: #btn-open-new-intake-batch button missing');
+assert.strictEqual(indexHtml.includes('id="modal-add-customer-name"'), true, 'FAIL: #modal-add-customer-name modal missing');
+assert.strictEqual(indexHtml.includes('id="btn-open-quick-add-customer"'), true, 'FAIL: #btn-open-quick-add-customer button missing');
+assert.strictEqual(indexHtml.includes('id="btn-add-customer-inline"'), true, 'FAIL: #btn-add-customer-inline button missing');
 assert.strictEqual(indexHtml.includes('id="visual-custody-modal"'), true, 'FAIL: #visual-custody-modal missing');
 
 // 5. Verify validRoutes in js/app.js
@@ -594,6 +597,10 @@ assert.strictEqual(typeof global.window.openNewIntakeBatchModal, 'function', 'FA
 assert.strictEqual(typeof global.window.closeNewIntakeBatchModal, 'function', 'FAIL: closeNewIntakeBatchModal must be exported');
 assert.strictEqual(typeof global.window.populateNewBatchCustomerDatalist, 'function', 'FAIL: populateNewBatchCustomerDatalist must be exported');
 assert.strictEqual(typeof global.window.submitNewIntakeBatch, 'function', 'FAIL: submitNewIntakeBatch must be exported');
+assert.strictEqual(typeof global.window.openQuickAddCustomerModal, 'function', 'FAIL: openQuickAddCustomerModal must be exported');
+assert.strictEqual(typeof global.window.closeQuickAddCustomerModal, 'function', 'FAIL: closeQuickAddCustomerModal must be exported');
+assert.strictEqual(typeof global.window.regenerateQuickCustBis, 'function', 'FAIL: regenerateQuickCustBis must be exported');
+assert.strictEqual(typeof global.window.submitQuickAddCustomer, 'function', 'FAIL: submitQuickAddCustomer must be exported');
 
 // 2. DOM Mock elements for intake modal
 const mockModal = { classList: { add: () => {}, remove: () => {} }, style: {} };
@@ -612,6 +619,15 @@ const mockNetInput = { value: '119.800' };
 const mockDepositorInput = { value: 'Ramesh Sen' };
 const mockReceiverInput = { value: 'Sarah Jenkins (Assay Master)' };
 
+const mockQuickModal = { classList: { add: () => {}, remove: () => {} }, style: {} };
+const mockQuickName = { value: '', focus: () => {} };
+const mockQuickBis = { value: '' };
+const mockQuickMobile = { value: '' };
+const mockQuickDepositor = { value: '' };
+const mockQuickRegion = { value: '' };
+const mockQuickAddress = { value: '' };
+const mockQuickGst = { value: '' };
+
 const elementsMap = {
   'modal-new-intake-batch': mockModal,
   'new-batch-customer-datalist': mockDatalist,
@@ -627,7 +643,15 @@ const elementsMap = {
   'new-batch-gross-wt': mockGrossInput,
   'new-batch-net-wt': mockNetInput,
   'new-batch-depositor': mockDepositorInput,
-  'new-batch-receiver': mockReceiverInput
+  'new-batch-receiver': mockReceiverInput,
+  'modal-add-customer-name': mockQuickModal,
+  'quick-cust-name': mockQuickName,
+  'quick-cust-bis': mockQuickBis,
+  'quick-cust-mobile': mockQuickMobile,
+  'quick-cust-depositor': mockQuickDepositor,
+  'quick-cust-region': mockQuickRegion,
+  'quick-cust-address': mockQuickAddress,
+  'quick-cust-gst': mockQuickGst
 };
 
 const originalGetElementById = global.document.getElementById;
@@ -712,6 +736,55 @@ console.log('  ✓ Selecting existing customer auto-populates BIS license.');
 console.log(`  ✓ Registering new customer "${brandNewCustomer}" adds jeweller to state.customers.`);
 console.log('  ✓ New batch unshifted to state.intakeBatches and immediately selected for Stage 1 photo capture.');
 console.log('  ✓ All 5 piece visual custody baseline slots initialized in PENDING state.');
+// 8. Test Quick Add Customer Name feature (Step 1 requirement)
+global.window.openQuickAddCustomerModal();
+assert.strictEqual(mockQuickBis.value.startsWith('BIS-WB-2026-'), true, 'FAIL: Quick customer BIS must auto-generate');
+
+const quickCustName = 'KALYAN MALABAR GUILD';
+mockQuickName.value = quickCustName;
+mockQuickBis.value = 'BIS-KA-2026-7788';
+mockQuickMobile.value = '+91 98450 99887';
+mockQuickDepositor.value = 'Amitav Ghosh';
+mockQuickRegion.value = 'Bengaluru';
+mockQuickAddress.value = 'Commercial Street, Bangalore';
+mockQuickGst.value = '29AAACK1234A1Z5';
+
+global.window.submitQuickAddCustomer(false);
+const registeredQuick = global.state.customers.find(c => c.name === quickCustName);
+assert.strictEqual(!!registeredQuick, true, 'FAIL: Quick registered customer must exist in state.customers');
+assert.strictEqual(registeredQuick.bis, 'BIS-KA-2026-7788', 'FAIL: Quick registered customer BIS mismatch');
+assert.strictEqual(registeredQuick.depositor, 'AMITAV GHOSH', 'FAIL: Quick registered customer depositor mismatch');
+assert.strictEqual(mockDatalist.innerHTML.includes(quickCustName), true, 'FAIL: Customer datalist must include quick registered jeweller');
+
+// Test Save & Start Batch Intake action from Quick Add Customer
+mockQuickName.value = 'CHANDRA JEWELLERS';
+mockQuickBis.value = 'BIS-WB-2026-4433';
+mockQuickDepositor.value = 'PROSENJIT ROY';
+global.window.submitQuickAddCustomer(true);
+assert.strictEqual(mockCustInput.value, 'CHANDRA JEWELLERS', 'FAIL: Batch customer input must receive quick customer name');
+assert.strictEqual(mockBisInput.value, 'BIS-WB-2026-4433', 'FAIL: Batch BIS input must receive quick customer BIS');
+
+// 9. Test Net Weight > Gross Weight Validation Rejection
+mockCustInput.value = 'TEST WEIGHT CHECK JEWELLER';
+mockBisInput.value = 'BIS-WB-2026-1122';
+mockReqInput.value = 'REQ-2026-1122';
+mockDocketInput.value = 'JOB-2026-1122';
+mockPcsInput.value = '2';
+mockGrossInput.value = '10.000';
+mockNetInput.value = '50.000'; // Invalid: net > gross
+const countBeforeInvalid = global.state.intakeBatches.length;
+global.window.submitNewIntakeBatch();
+assert.strictEqual(global.state.intakeBatches.length, countBeforeInvalid, 'FAIL: Batch with net weight > gross weight must be rejected');
+
+// 10. Test Step 1 Completion and Batch Status Transition
+global.window.completeAssayCenterReceiveSubmission();
+assert.strictEqual(createdBatch.assayCenterReceiveStatus, 'COMPLETED', 'FAIL: Completed batch assayCenterReceiveStatus must be COMPLETED');
+assert.strictEqual(createdBatch.status, 'Stage 1 Intake Completed', 'FAIL: Completed batch status must update to Stage 1 Intake Completed');
+
 console.log('  ✓ Downstream workflow availability verified across Steps 2, 3, 4, 5, and 6.');
+console.log('  ✓ Step 1 Quick Add Customer Name modal registers jewellers with contact & BIS.');
+console.log('  ✓ Quick Add Customer "Save & Start Intake Batch" pre-fills batch particulars.');
+console.log('  ✓ Rejection of invalid net weight exceeding gross weight verified.');
+console.log('  ✓ Step 1 completion status transition to "Stage 1 Intake Completed" verified.');
 
 console.log('\n=== ALL 4-STAGE VISUAL CUSTODY CHAIN TESTS PASSED SUCCESSFULLY! ===');

@@ -7302,6 +7302,8 @@
     activeDraftBatch.articlePhoto = null;
     activeDraftBatch.deliveryStatus = 'READY';
 
+    ensureBatchVisualCustody(activeDraftBatch);
+
     state.intakeBatches.unshift(activeDraftBatch);
     renderIntakeBatchesTable();
     showToast(`BATCH ${activeDraftBatch.jobDocket} CONFIRMED & QUEUED TO BILL GENERATION (BILL #${activeDraftBatch.billNo}).`, 'success');
@@ -7317,10 +7319,22 @@
     if (typeof renderDeliveryQueue === 'function') {
       renderDeliveryQueue();
     }
+    if (typeof renderDeliveryAssayQueue === 'function') {
+      renderDeliveryAssayQueue();
+    }
+    if (typeof renderCustomerTable === 'function') {
+      renderCustomerTable();
+    }
+    if (typeof updateAssayCenterReceiveStats === 'function') {
+      updateAssayCenterReceiveStats();
+    }
+    if (typeof renderAssayCenterReceiveQueue === 'function') {
+      renderAssayCenterReceiveQueue();
+    }
 
     const modal = document.getElementById('intakeConfirmationModal');
     if (modal) modal.classList.add('hidden');
-    document.body.style.overflow = '';
+    if (typeof document !== 'undefined' && document.body) document.body.style.overflow = '';
 
     activeDraftBatch = null;
 
@@ -8551,7 +8565,7 @@
     if (open) {
       panel.classList.remove('hidden');
       const nameInput = document.getElementById('custNameInput');
-      if (nameInput) nameInput.focus();
+      if (nameInput && typeof nameInput.focus === 'function') nameInput.focus();
     } else {
       panel.classList.add('hidden');
       resetCustomerForm();
@@ -12113,6 +12127,7 @@
     if (!activeAssayCenterReceiveBatch) return;
     const batch = activeAssayCenterReceiveBatch;
     batch.assayCenterReceiveStatus = 'COMPLETED';
+    batch.status = 'Stage 1 Intake Completed';
 
     updateAssayCenterReceiveStats();
     renderAssayCenterReceiveQueue(true);
@@ -12152,7 +12167,7 @@
 
     setTimeout(() => {
       const custInput = document.getElementById('new-batch-customer-name');
-      if (custInput) custInput.focus();
+      if (custInput && typeof custInput.focus === 'function') custInput.focus();
     }, 100);
   }
 
@@ -12265,14 +12280,14 @@
     const customerName = custInput ? custInput.value.trim() : '';
     if (!customerName) {
       showToast('PLEASE ENTER CUSTOMER / JEWELLER NAME.', 'error');
-      if (custInput) custInput.focus();
+      if (custInput && typeof custInput.focus === 'function') custInput.focus();
       return;
     }
 
     const pcs = pcsInput ? parseInt(pcsInput.value, 10) : 10;
     if (isNaN(pcs) || pcs <= 0) {
       showToast('TOTAL PIECES MUST BE AT LEAST 1.', 'error');
-      if (pcsInput) pcsInput.focus();
+      if (pcsInput && typeof pcsInput.focus === 'function') pcsInput.focus();
       return;
     }
 
@@ -12280,6 +12295,11 @@
     const netWt = netInput ? parseFloat(netInput.value) : 0;
     if (isNaN(grossWt) || grossWt <= 0 || isNaN(netWt) || netWt <= 0) {
       showToast('PLEASE ENTER VALID GROSS AND NET WEIGHTS.', 'error');
+      return;
+    }
+    if (netWt > grossWt) {
+      showToast('DECLARED NET WEIGHT CANNOT EXCEED GROSS WEIGHT.', 'error');
+      if (netInput && typeof netInput.focus === 'function') netInput.focus();
       return;
     }
 
@@ -12385,9 +12405,135 @@
     if (typeof renderDeliveryAssayQueue === 'function') {
       renderDeliveryAssayQueue();
     }
+    if (typeof updateAssayCenterReceiveStats === 'function') {
+      updateAssayCenterReceiveStats();
+    }
+    if (typeof renderAssayCenterReceiveQueue === 'function') {
+      renderAssayCenterReceiveQueue();
+    }
+    if (typeof renderDeliveryAssayQueue === 'function') {
+      renderDeliveryAssayQueue();
+    }
 
     playAssaySound('save');
     showToast('NEW BATCH ' + jobDocket + ' CREATED FOR ' + customerName + '! READY FOR PIECE 1 PHOTO.', 'success');
+  }
+
+
+  // -------------------------------------------------------------------------
+  // STAGE 1 (USER A): QUICK ADD CUSTOMER / JEWELLER NAME CONTROLLER
+  // -------------------------------------------------------------------------
+
+  let quickCustReturnToBatch = false;
+
+  function openQuickAddCustomerModal(fromBatchModal = false) {
+    quickCustReturnToBatch = !!fromBatchModal;
+    const modal = document.getElementById('modal-add-customer-name');
+    if (!modal) return;
+
+    regenerateQuickCustBis();
+
+    const nameInput = document.getElementById('quick-cust-name');
+    if (nameInput) {
+      const batchCustInput = document.getElementById('new-batch-customer-name');
+      if (batchCustInput && batchCustInput.value.trim()) {
+        nameInput.value = batchCustInput.value.trim();
+      } else {
+        nameInput.value = '';
+      }
+    }
+
+    modal.classList.remove('hidden');
+    if (typeof document !== 'undefined' && document.body) document.body.style.overflow = 'hidden';
+
+    setTimeout(() => {
+      if (nameInput && typeof nameInput.focus === 'function') nameInput.focus();
+    }, 100);
+  }
+
+  function closeQuickAddCustomerModal() {
+    const modal = document.getElementById('modal-add-customer-name');
+    if (modal) modal.classList.add('hidden');
+    if (!quickCustReturnToBatch && typeof document !== 'undefined' && document.body) {
+      document.body.style.overflow = '';
+    }
+    quickCustReturnToBatch = false;
+  }
+
+  function regenerateQuickCustBis() {
+    const bisInput = document.getElementById('quick-cust-bis');
+    if (!bisInput) return;
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    bisInput.value = 'BIS-WB-2026-' + rand;
+  }
+
+  function submitQuickAddCustomer(andOpenBatch = false) {
+    const nameInput = document.getElementById('quick-cust-name');
+    const bisInput = document.getElementById('quick-cust-bis');
+    const mobileInput = document.getElementById('quick-cust-mobile');
+    const depositorInput = document.getElementById('quick-cust-depositor');
+    const regionInput = document.getElementById('quick-cust-region');
+    const addressInput = document.getElementById('quick-cust-address');
+    const gstInput = document.getElementById('quick-cust-gst');
+
+    const name = nameInput ? nameInput.value.trim().toUpperCase() : '';
+    if (!name) {
+      showToast('PLEASE ENTER CUSTOMER / JEWELLER NAME.', 'error');
+      if (nameInput && typeof nameInput.focus === 'function') nameInput.focus();
+      return;
+    }
+
+    const bis = bisInput && bisInput.value.trim() ? bisInput.value.trim().toUpperCase() : ('BIS-WB-2026-' + Math.floor(1000 + Math.random() * 9000));
+    const mobile = mobileInput && mobileInput.value.trim() ? mobileInput.value.trim() : ('+91 98300 ' + Math.floor(10000 + Math.random() * 90000));
+    const depositor = depositorInput && depositorInput.value.trim() ? depositorInput.value.trim().toUpperCase() : 'AUTHORISED AGENT';
+    const region = regionInput && regionInput.value.trim() ? regionInput.value.trim() : 'West Bengal';
+    const address = addressInput && addressInput.value.trim() ? addressInput.value.trim() : 'Central Market, Goldsmith Lane';
+    const gst = gstInput && gstInput.value.trim() ? gstInput.value.trim().toUpperCase() : ('19AAACR' + Math.floor(1000 + Math.random() * 9000) + 'A1Z5');
+
+    if (!Array.isArray(state.customers)) state.customers = [];
+
+    const existingIdx = state.customers.findIndex(c => c.name && c.name.toLowerCase() === name.toLowerCase());
+    const custObj = {
+      id: existingIdx >= 0 ? state.customers[existingIdx].id : ('CUST-' + (state.customers.length + 120)),
+      name: name,
+      code: name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 6) || 'CUST',
+      address: address,
+      area: region,
+      region: region,
+      mobile: mobile,
+      bis: bis,
+      gst: gst,
+      stateCode: '19',
+      activeJobs: 1,
+      since: new Date().getFullYear().toString(),
+      depositor: depositor
+    };
+
+    if (existingIdx >= 0) {
+      state.customers[existingIdx] = Object.assign({}, state.customers[existingIdx], custObj);
+    } else {
+      state.customers.push(custObj);
+    }
+
+    populateNewBatchCustomerDatalist();
+    if (typeof renderCustomerTable === 'function') {
+      renderCustomerTable();
+    }
+
+    closeQuickAddCustomerModal();
+
+    playAssaySound('save');
+    showToast('JEWELLER "' + name + '" REGISTERED SUCCESSFULLY (BIS: ' + bis + ').', 'success');
+
+    if (andOpenBatch || quickCustReturnToBatch) {
+      openNewIntakeBatchModal();
+      const batchCustInput = document.getElementById('new-batch-customer-name');
+      const batchBisInput = document.getElementById('new-batch-bis-license');
+      const batchDepInput = document.getElementById('new-batch-depositor');
+      if (batchCustInput) batchCustInput.value = name;
+      if (batchBisInput) batchBisInput.value = bis;
+      if (batchDepInput && depositor) batchDepInput.value = depositor;
+    }
   }
 
 // -------------------------------------------------------------------------
@@ -13677,6 +13823,10 @@
   window.handleNewBatchGrossInput = handleNewBatchGrossInput;
   window.syncNewBatchNetWeight = syncNewBatchNetWeight;
   window.submitNewIntakeBatch = submitNewIntakeBatch;
+  window.openQuickAddCustomerModal = openQuickAddCustomerModal;
+  window.closeQuickAddCustomerModal = closeQuickAddCustomerModal;
+  window.regenerateQuickCustBis = regenerateQuickCustBis;
+  window.submitQuickAddCustomer = submitQuickAddCustomer;
   try {
     Object.defineProperty(window, 'activeAssayCenterReceiveBatch', {
       get: () => activeAssayCenterReceiveBatch,
