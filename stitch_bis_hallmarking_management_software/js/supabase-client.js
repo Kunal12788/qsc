@@ -161,7 +161,10 @@
 
   // Determine if Supabase credentials are configured
   function isConfigured() {
-    return Boolean(state.url && state.anonKey && state.url.trim().length > 8 && state.anonKey.trim().length > 10);
+    if (!state.url || !state.anonKey) return false;
+    if (state.url.includes('•••') || state.anonKey.includes('•••')) return false;
+    if (state.url.includes('Managed in Vercel')) return false;
+    return Boolean(state.url.trim().length > 8 && state.anonKey.trim().length > 10 && (state.url.startsWith('http://') || state.url.startsWith('https://')));
   }
 
   // Get active Supabase client instance
@@ -293,8 +296,12 @@
 
   // Save new Supabase credentials and re-initialize (in-memory state, strictly protecting localStorage)
   async function saveConfig(url, anonKey, autoSync = true) {
-    state.url = (url || '').trim();
-    state.anonKey = (anonKey || '').trim();
+    if (url && !url.includes('•••') && !url.includes('Managed in Vercel')) {
+      state.url = url.trim();
+    }
+    if (anonKey && !anonKey.includes('•••') && !anonKey.includes('Managed in Vercel')) {
+      state.anonKey = anonKey.trim();
+    }
     state.autoSync = Boolean(autoSync);
 
     // Ensure sensitive credentials are NEVER written to browser localStorage
@@ -302,7 +309,7 @@
     storage.remove('supabase_anon_key');
     storage.set('supabase_auto_sync', state.autoSync ? 'true' : 'false');
 
-    if (!state.url || !state.anonKey) {
+    if (!isConfigured()) {
       state.client = null;
       state.status = 'offline';
       state.statusMessage = 'Local Storage Mode (Credentials Cleared)';
@@ -1209,6 +1216,25 @@
     if (roleIndicator) {
       roleIndicator.title = `Active Role: ${role} • Click to switch profile / sign out`;
     }
+
+    // Active Profile labels in Sidebar and Mobile Drawer
+    const sideRoleEl = document.getElementById('sidebar-user-role');
+    const mobRoleEl = document.getElementById('mobile-drawer-user-role');
+    const roleTitles = {
+      'SUPER ADMIN': 'SUPER ADMIN • Lab Superintendent',
+      'ADMIN': 'ADMIN • Operations Manager',
+      'ASSAY CENTER RECEIVE': 'ASSAY CENTER RECEIVE • Intake Operator',
+      'PAYMENT': 'PAYMENT • Cashier & Accounts'
+    };
+    const roleDisplay = roleTitles[role] || `${role} • Lab Staff`;
+    if (sideRoleEl) sideRoleEl.textContent = roleDisplay;
+    if (mobRoleEl) mobRoleEl.textContent = roleDisplay;
+
+    const sideNameEl = document.getElementById('sidebar-user-name');
+    const mobNameEl = document.getElementById('mobile-drawer-user-name');
+    const userName = state.currentUser ? (state.currentUser.fullName || state.currentUser.email) : 'Sarah Jenkins';
+    if (sideNameEl) sideNameEl.textContent = userName;
+    if (mobNameEl) mobNameEl.textContent = userName;
 
     if (typeof window !== 'undefined' && typeof window.applyRolePermissions === 'function') {
       window.applyRolePermissions(role);

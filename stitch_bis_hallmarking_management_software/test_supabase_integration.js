@@ -17,25 +17,73 @@ global.localStorage = {
   clear: () => { Object.keys(localStore).forEach(k => delete localStore[k]); }
 };
 
-// Global DOM mocks
+// Global DOM mocks with element tracking
+const domElements = {};
+function getOrCreateEl(id) {
+  if (!domElements[id]) {
+    domElements[id] = {
+      id: id,
+      classList: {
+        classes: new Set(),
+        add: (...cls) => cls.forEach(c => domElements[id].classList.classes.add(c)),
+        remove: (...cls) => cls.forEach(c => domElements[id].classList.classes.delete(c)),
+        contains: (c) => domElements[id].classList.classes.has(c)
+      },
+      setAttribute: (k, v) => { domElements[id][k] = v; },
+      getAttribute: (k) => domElements[id][k] || null,
+      removeAttribute: (k) => { delete domElements[id][k]; },
+      style: {},
+      value: '',
+      textContent: '',
+      appendChild: () => {},
+      remove: () => {}
+    };
+  }
+  return domElements[id];
+}
+
+const toastLog = [];
 global.window = global;
 global.window.localStorage = global.localStorage;
 global.window.addEventListener = () => {};
+global.window.scrollTo = () => {};
 global.window.location = { hash: '#/dashboard', href: 'index.html#/dashboard' };
+global.requestAnimationFrame = (cb) => cb();
 global.document = {
   addEventListener: () => {},
   removeEventListener: () => {},
+  createElement: () => getOrCreateEl(`tag-${Date.now()}`),
   querySelector: () => null,
-  querySelectorAll: () => [],
-  getElementById: (id) => null,
+  querySelectorAll: (sel) => {
+    if (sel === '.page-view') return ['view-access-restricted', 'view-dashboard', 'view-settings', 'view-bill-generation', 'view-assay-center-receive', 'view-receive'].map(id => getOrCreateEl(id));
+    if (sel === '[data-path]') return ['dashboard', 'assay_center_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'].map(p => {
+      const el = getOrCreateEl(`nav-${p}`);
+      el.setAttribute('data-path', p);
+      return el;
+    });
+    if (sel === '.role-switch-btn') return ['SUPER ADMIN', 'ADMIN', 'ASSAY CENTER RECEIVE', 'PAYMENT'].map(r => {
+      const el = getOrCreateEl(`btn-role-${r}`);
+      el.textContent = r;
+      return el;
+    });
+    return [];
+  },
+  getElementById: (id) => {
+    // Elements purged from production DOM for security
+    if (['supabase-config-url', 'supabase-config-key', 'supabase-config-autosync', 'supabase-settings-status-badge', 'supabase-quick-modal'].includes(id)) {
+      return null;
+    }
+    return getOrCreateEl(id);
+  },
   documentElement: { classList: { add: () => {}, remove: () => {} } },
-  body: { style: {}, classList: { add: () => {}, remove: () => {} } }
+  body: { style: {}, classList: { add: () => {}, remove: () => {} }, appendChild: () => {} }
 };
 global.navigator = { clipboard: { writeText: async () => {} } };
 
-// Mock Toast
-global.showToast = () => {};
-global.navigateTo = () => {};
+// Mock Toast & Navigation Tracking
+global.showToast = (msg, type) => {
+  toastLog.push({ msg, type });
+};
 
 // Read Core Files
 const indexHtml = fs.readFileSync('./index.html', 'utf8');
@@ -296,10 +344,14 @@ console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
 
   const assayCfg = window.applyRolePermissions('ASSAY CENTER RECEIVE');
   assert.strictEqual(window.isRoutePermittedForRole('assay_center_receive', 'ASSAY CENTER RECEIVE'), true);
+  assert.strictEqual(window.isRoutePermittedForRole('assay-center-receive', 'ASSAY CENTER RECEIVE'), true, 'FAIL: hyphen alias must be permitted');
   assert.strictEqual(window.isRoutePermittedForRole('receive', 'ASSAY CENTER RECEIVE'), true);
   assert.strictEqual(window.isRoutePermittedForRole('bill-generation', 'ASSAY CENTER RECEIVE'), false);
   assert.strictEqual(window.isRoutePermittedForRole('settings', 'ASSAY CENTER RECEIVE'), false);
   assert.deepStrictEqual(assayCfg.visibleNav, ['dashboard', 'assay_center_receive', 'receive']);
+  assert.strictEqual(getOrCreateEl('workstation-header-banner').classList.contains('hidden'), false);
+  assert.strictEqual(getOrCreateEl('workstation-banner-title').textContent.includes('INTAKE & PIECE PHOTOGRAPHY'), true);
+  assert.strictEqual(getOrCreateEl('sidebar-user-role').textContent.includes('ASSAY CENTER RECEIVE'), true);
 
   const paymentCfg = window.applyRolePermissions('PAYMENT');
   assert.strictEqual(window.isRoutePermittedForRole('bill-generation', 'PAYMENT'), true);
@@ -307,9 +359,44 @@ console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
   assert.strictEqual(window.isRoutePermittedForRole('assay_center_receive', 'PAYMENT'), false);
   assert.strictEqual(window.isRoutePermittedForRole('settings', 'PAYMENT'), false);
   assert.deepStrictEqual(paymentCfg.visibleNav, ['dashboard', 'bill-generation', 'records-history']);
+  assert.strictEqual(getOrCreateEl('workstation-banner-title').textContent.includes('BILLING & STATUTORY SETTLEMENT'), true);
+  assert.strictEqual(getOrCreateEl('sidebar-user-role').textContent.includes('PAYMENT'), true);
   console.log('  ✓ Role-based workstation navigation filtering and route permission rules verified.');
 
-  // 6. Sign Out
+  // 6. Security Interception & Access Restricted View Guards
+  await LabSupabase.switchRole('ASSAY CENTER RECEIVE');
+  window.navigateTo('settings');
+  assert.strictEqual(window.location.hash, '#/access-restricted', 'FAIL: Restricted route must navigate to #/access-restricted');
+  assert.strictEqual(getOrCreateEl('view-access-restricted').classList.contains('hidden'), false, 'FAIL: Access restricted view must be visible');
+  assert.strictEqual(getOrCreateEl('restricted-role-name').textContent, 'ASSAY CENTER RECEIVE', 'FAIL: Role name mismatch on restricted view');
+  assert.strictEqual(getOrCreateEl('restricted-return-label').textContent, 'Return to Assay Center Receive', 'FAIL: Return label mismatch');
+
+  await LabSupabase.switchRole('PAYMENT');
+  window.navigateTo('assay_center_receive');
+  assert.strictEqual(window.location.hash, '#/access-restricted', 'FAIL: Restricted route must navigate to #/access-restricted');
+  assert.strictEqual(getOrCreateEl('restricted-role-name').textContent, 'PAYMENT', 'FAIL: Role name mismatch on restricted view for PAYMENT');
+  assert.strictEqual(getOrCreateEl('restricted-return-label').textContent, 'Return to Bill Generation', 'FAIL: Return label mismatch for PAYMENT');
+
+  // Direct navigation to access-restricted route preserves context-aware controls
+  window.navigateTo('access-restricted');
+  assert.strictEqual(getOrCreateEl('restricted-return-label').textContent, 'Return to Bill Generation');
+
+  // Dynamic Workstation Role Switching & Modal Dismissal
+  await window.handleRoleSwitch('ASSAY CENTER RECEIVE');
+  assert.strictEqual(LabSupabase.getCurrentRole(), 'ASSAY CENTER RECEIVE');
+  assert.strictEqual(window.location.hash, '#/assay_center_receive');
+  assert.strictEqual(getOrCreateEl('lab-auth-modal').classList.contains('hidden'), true, 'FAIL: Modal should close after switching role');
+
+  await window.handleRoleSwitch('PAYMENT');
+  assert.strictEqual(LabSupabase.getCurrentRole(), 'PAYMENT');
+  assert.strictEqual(window.location.hash, '#/bill-generation');
+  assert.strictEqual(getOrCreateEl('lab-auth-modal').classList.contains('hidden'), true, 'FAIL: Modal should close after switching role');
+
+  await window.handleRoleSwitch('SUPER ADMIN');
+  assert.strictEqual(LabSupabase.getCurrentRole(), 'SUPER ADMIN');
+  console.log('  ✓ Security interception, access-restricted guard, and dynamic workstation transitions verified.');
+
+  // 7. Sign Out
   await LabSupabase.signOut();
   assert.strictEqual(LabSupabase.getCurrentUser(), null, 'FAIL: Current user should be cleared on sign out');
   assert.strictEqual(localStorage.getItem('ssr_authenticated'), null, 'FAIL: Auth token should be cleared');
@@ -553,6 +640,9 @@ console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
   assert.strictEqual(indexHtml.includes("handleRoleSwitch('PAYMENT')"), true, 'FAIL: PAYMENT role switch button missing');
   assert.strictEqual(indexHtml.includes('id="workstation-header-banner"'), true, 'FAIL: #workstation-header-banner missing in index.html');
   assert.strictEqual(indexHtml.includes('id="view-access-restricted"'), true, 'FAIL: #view-access-restricted missing in index.html');
+  assert.strictEqual(indexHtml.includes('id="sidebar-user-role"'), true, 'FAIL: #sidebar-user-role element missing in index.html');
+  assert.strictEqual(indexHtml.includes('id="mobile-drawer-user-role"'), true, 'FAIL: #mobile-drawer-user-role element missing in index.html');
+  assert.strictEqual(indexHtml.includes('id="auth-modal-role-badge" class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-amber-100 text-amber-900 border border-amber-300">SUPER ADMIN</span>'), true, 'FAIL: auth-modal-role-badge default text should be SUPER ADMIN');
   assert.strictEqual(indexHtml.includes('js/supabase-client.js'), true, 'FAIL: js/supabase-client.js script tag missing in index.html');
   assert.strictEqual(indexHtml.includes('@supabase/supabase-js'), true, 'FAIL: @supabase/supabase-js script tag missing in index.html');
   console.log('  ✓ Supabase JavaScript SDK bundled, Staff Auth Modal & Workstation Banners preserved.');
@@ -562,7 +652,9 @@ console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
   assert.strictEqual(loginHtml.includes('js/supabase-client.js'), true, 'FAIL: supabase-client.js missing in login.html');
   assert.strictEqual(signinHtml.includes('LabSupabase.signIn'), true, 'FAIL: LabSupabase.signIn missing in signin.html');
   assert.strictEqual(loginHtml.includes('LabSupabase.signIn'), true, 'FAIL: LabSupabase.signIn missing in login.html');
-  console.log('  ✓ Sign-in & Login pages wired to Supabase Auth.');
+  assert.strictEqual(signinHtml.includes("dest = 'index.html#/assay_center_receive'"), true, 'FAIL: signin.html must route ASSAY CENTER RECEIVE role to assay_center_receive');
+  assert.strictEqual(signinHtml.includes("dest = 'index.html#/bill-generation'"), true, 'FAIL: signin.html must route PAYMENT role to bill-generation');
+  console.log('  ✓ Sign-in & Login pages wired to Supabase Auth with dedicated role destinations.');
 
   // 6. Window exports in app.js
   const expectedExports = [

@@ -565,6 +565,17 @@
   function isRoutePermittedForRole(route, role) {
     if (route === 'sign-in' || route === 'access-restricted') return true;
     const currentRole = role || (window.LabSupabase && window.LabSupabase.getCurrentRole ? window.LabSupabase.getCurrentRole() : 'SUPER ADMIN');
+    if (window.LabSupabase && window.LabSupabase.ROLE_CONFIGS && window.LabSupabase.ROLE_CONFIGS[currentRole]) {
+      const allowed = window.LabSupabase.ROLE_CONFIGS[currentRole].allowedRoutes || [];
+      if (allowed.includes(route)) return true;
+      if ((route === 'assay_center_receive' || route === 'assay-center-receive') &&
+          (allowed.includes('assay_center_receive') || allowed.includes('assay-center-receive'))) return true;
+      if ((route === 'delivery_assay' || route === 'delivery-assay') &&
+          (allowed.includes('delivery_assay') || allowed.includes('delivery-assay'))) return true;
+      if ((route === 'center_image_receive' || route === 'center-image-receive') &&
+          (allowed.includes('center_image_receive') || allowed.includes('center-image-receive'))) return true;
+      return false;
+    }
     if (currentRole === 'SUPER ADMIN' || currentRole === 'ADMIN') return true;
     if (currentRole === 'ASSAY CENTER RECEIVE') {
       const allowed = ['dashboard', 'assay_center_receive', 'assay-center-receive', 'receive', 'customer-information'];
@@ -577,7 +588,29 @@
     return true;
   }
 
+  function configureAccessRestrictedView(activeRole) {
+    const roleNameEl = document.getElementById('restricted-role-name');
+    const returnBtn = document.getElementById('restricted-return-btn');
+    const returnLabel = document.getElementById('restricted-return-label');
+    if (roleNameEl) roleNameEl.textContent = activeRole;
+
+    if (activeRole === 'ASSAY CENTER RECEIVE') {
+      if (returnBtn) returnBtn.setAttribute('onclick', "navigateTo('assay_center_receive')");
+      if (returnLabel) returnLabel.textContent = 'Return to Assay Center Receive';
+    } else if (activeRole === 'PAYMENT') {
+      if (returnBtn) returnBtn.setAttribute('onclick', "navigateTo('bill-generation')");
+      if (returnLabel) returnLabel.textContent = 'Return to Bill Generation';
+    } else {
+      if (returnBtn) returnBtn.setAttribute('onclick', "navigateTo('dashboard')");
+      if (returnLabel) returnLabel.textContent = 'Return to Dashboard';
+    }
+  }
+
   function navigateTo(route, options = {}) {
+    if (route === 'assay-center-receive' || route === 'assay_center_receive') route = 'assay_center_receive';
+    if (route === 'delivery_assay' || route === 'delivery-assay') route = 'delivery-assay';
+    if (route === 'bill_generation' || route === 'bill-generation') route = 'bill-generation';
+    if (route === 'center-image-receive' || route === 'center_image_receive') route = 'center_image_receive';
     if (!validRoutes.includes(route)) route = 'dashboard';
 
     // Role Permission Guard
@@ -593,27 +626,17 @@
       const restrictedView = document.getElementById('view-access-restricted');
       if (restrictedView) {
         restrictedView.classList.remove('hidden');
-        const roleNameEl = document.getElementById('restricted-role-name');
-        const returnBtn = document.getElementById('restricted-return-btn');
-        const returnLabel = document.getElementById('restricted-return-label');
-        if (roleNameEl) roleNameEl.textContent = activeRole;
-
-        if (activeRole === 'ASSAY CENTER RECEIVE') {
-          if (returnBtn) returnBtn.setAttribute('onclick', "navigateTo('assay_center_receive')");
-          if (returnLabel) returnLabel.textContent = 'Return to Assay Center Receive';
-        } else if (activeRole === 'PAYMENT') {
-          if (returnBtn) returnBtn.setAttribute('onclick', "navigateTo('bill-generation')");
-          if (returnLabel) returnLabel.textContent = 'Return to Bill Generation';
-        } else {
-          if (returnBtn) returnBtn.setAttribute('onclick', "navigateTo('dashboard')");
-          if (returnLabel) returnLabel.textContent = 'Return to Dashboard';
-        }
+        configureAccessRestrictedView(activeRole);
         if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
       }
       showToast(`Access Restricted: ${route} module not available in ${activeRole} mode.`, 'warning');
       return;
+    }
+
+    if (route === 'access-restricted') {
+      configureAccessRestrictedView(activeRole);
     }
 
     state.currentRoute = route;
@@ -14444,6 +14467,34 @@
       roleText.textContent = role;
     }
 
+    // 5. Update Sidebar & Mobile Drawer Profile Labels
+    const sideRoleEl = document.getElementById('sidebar-user-role');
+    const mobRoleEl = document.getElementById('mobile-drawer-user-role');
+    const roleTitles = {
+      'SUPER ADMIN': 'SUPER ADMIN • Lab Superintendent',
+      'ADMIN': 'ADMIN • Operations Manager',
+      'ASSAY CENTER RECEIVE': 'ASSAY CENTER RECEIVE • Intake Operator',
+      'PAYMENT': 'PAYMENT • Cashier & Accounts'
+    };
+    const roleDisplay = roleTitles[role] || `${role} • Lab Staff`;
+    if (sideRoleEl) sideRoleEl.textContent = roleDisplay;
+    if (mobRoleEl) mobRoleEl.textContent = roleDisplay;
+
+    const sideNameEl = document.getElementById('sidebar-user-name');
+    const mobNameEl = document.getElementById('mobile-drawer-user-name');
+    const u = (window.LabSupabase && window.LabSupabase.getCurrentUser) ? window.LabSupabase.getCurrentUser() : null;
+    const userName = u ? (u.fullName || u.email) : 'Sarah Jenkins';
+    if (sideNameEl) sideNameEl.textContent = userName;
+    if (mobNameEl) mobNameEl.textContent = userName;
+
+    // 6. Security Route Guard: Redirect if current route is unauthorized for newly applied role
+    if (typeof state !== 'undefined' && state.currentRoute && state.currentRoute !== 'sign-in' && state.currentRoute !== 'access-restricted') {
+      if (!isRoutePermittedForRole(state.currentRoute, role)) {
+        const fallbackRoute = roleConfig.defaultRoute || 'dashboard';
+        navigateTo(fallbackRoute);
+      }
+    }
+
     return roleConfig;
   }
 
@@ -14464,8 +14515,8 @@
         }
       }
 
+      closeAuthProfileModal();
       showToast(`Active role switched to: ${roleName}`, 'success');
-      openAuthProfileModal();
     } catch (err) {
       showToast('Could not switch role: ' + err.message, 'error');
     }

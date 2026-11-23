@@ -772,6 +772,11 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
         if(window.hallmarkHost) hallmarkHost.react('cheer');
         setTimeout(function(){
           var dest = 'index.html#/dashboard';
+          if (res.user && res.user.role === 'ASSAY CENTER RECEIVE') {
+            dest = 'index.html#/assay_center_receive';
+          } else if (res.user && res.user.role === 'PAYMENT') {
+            dest = 'index.html#/bill-generation';
+          }
           try {
             if (window.top && window.top !== window) {
               window.top.location.href = dest;
