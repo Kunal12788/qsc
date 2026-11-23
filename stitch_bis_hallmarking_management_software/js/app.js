@@ -4252,6 +4252,18 @@
           status: 'MATCHED',
           captured: true
         };
+
+        // Supabase Storage Photo Upload Pipeline (Stage C Dispatch)
+        if (typeof window !== 'undefined' && window.LabSupabase && typeof window.LabSupabase.uploadJewelleryPhoto === 'function') {
+          window.LabSupabase.uploadJewelleryPhoto(photoObj.src, 'custody-photos', `${activeDeliveryBatch.jobDocket}/piece_${targetPiece.pieceIndex}_stage_c_${Date.now()}.jpg`).then(res => {
+            if (res && res.success && res.url) {
+              targetPiece.stageC.photoUrl = res.url;
+              if (window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+                window.LabSupabase.syncBatch(activeDeliveryBatch);
+              }
+            }
+          }).catch(err => console.warn('Supabase Stage C photo upload background:', err));
+        }
       }
     }
 
@@ -6218,6 +6230,18 @@
         status: 'MATCHED',
         captured: true
       };
+
+      // Supabase Storage Photo Upload Pipeline (Stage D Vault Handover)
+      if (typeof window !== 'undefined' && window.LabSupabase && typeof window.LabSupabase.uploadJewelleryPhoto === 'function') {
+        window.LabSupabase.uploadJewelleryPhoto(photoUrl, 'custody-photos', `${activeDeliveryAssayBatch.jobDocket}/piece_${pieceIndex}_stage_d_${Date.now()}.jpg`).then(res => {
+          if (res && res.success && res.url) {
+            vcP.stageD.photoUrl = res.url;
+            if (window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+              window.LabSupabase.syncBatch(activeDeliveryAssayBatch);
+            }
+          }
+        }).catch(err => console.warn('Supabase Stage D photo upload background:', err));
+      }
     }
 
     // Update Last Captured Thumbnail
@@ -11934,6 +11958,18 @@
       captured: true
     };
 
+    // Supabase Storage Photo Upload Pipeline (Stage A Baseline)
+    if (typeof window !== 'undefined' && window.LabSupabase && typeof window.LabSupabase.uploadJewelleryPhoto === 'function') {
+      window.LabSupabase.uploadJewelleryPhoto(photoUrl, 'custody-photos', `${batch.jobDocket}/piece_${pieceIdx}_stage_a_${Date.now()}.jpg`).then(res => {
+        if (res && res.success && res.url) {
+          targetPiece.stageA.photoUrl = res.url;
+          if (window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+            window.LabSupabase.syncBatch(batch);
+          }
+        }
+      }).catch(err => console.warn('Supabase Stage A photo upload background:', err));
+    }
+
     // Update Latest Captured Baseline Card
     const thumbBox = document.getElementById('assay-recv-thumb-box');
     const thumbTime = document.getElementById('assay-recv-thumb-time');
@@ -12381,6 +12417,9 @@
 
     if (!state.intakeBatches) state.intakeBatches = [];
     state.intakeBatches.unshift(newBatch);
+    if (typeof window !== 'undefined' && window.LabSupabase && window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+      window.LabSupabase.syncBatch(newBatch);
+    }
 
     closeNewIntakeBatchModal();
 
@@ -12513,6 +12552,9 @@
       state.customers[existingIdx] = Object.assign({}, state.customers[existingIdx], custObj);
     } else {
       state.customers.push(custObj);
+    if (typeof window !== 'undefined' && window.LabSupabase && window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+      window.LabSupabase.syncCustomer(custObj);
+    }
     }
 
     populateNewBatchCustomerDatalist();
@@ -13041,6 +13083,18 @@
     }
 
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    // Supabase Storage Photo Upload Pipeline (Stage B Receipt)
+    if (typeof window !== 'undefined' && window.LabSupabase && typeof window.LabSupabase.uploadJewelleryPhoto === 'function') {
+      window.LabSupabase.uploadJewelleryPhoto(photoUrl, 'custody-photos', `${batch.jobDocket}/piece_${pieceIdx}_stage_b_${Date.now()}.jpg`).then(res => {
+        if (res && res.success && res.url) {
+          if (targetPiece.stageB) targetPiece.stageB.photoUrl = res.url;
+          if (window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+            window.LabSupabase.syncBatch(batch);
+          }
+        }
+      }).catch(err => console.warn('Supabase Stage B photo upload background:', err));
+    }
 
     if (score >= 60) {
       targetPiece.stageB = {
@@ -13877,6 +13931,295 @@
   window.simulateCenterImageReceiveAllDemo = simulateCenterImageReceiveAllDemo;
   window.completeCenterImageReceiveSubmission = completeCenterImageReceiveSubmission;
 
+
+  // ==========================================================================
+  // SUPABASE INTEGRATION & CLOUD SYNC UI CONTROLLER
+  // ==========================================================================
+  function openSupabaseQuickModal() {
+    const modal = document.getElementById('supabase-quick-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    if (typeof window !== 'undefined' && window.LabSupabase) {
+      const st = window.LabSupabase.state;
+      const text = document.getElementById('quick-sync-status-text');
+      const badge = document.getElementById('quick-sync-status-badge');
+      if (text) text.textContent = st.statusMessage || st.status.toUpperCase();
+      if (badge) {
+        badge.textContent = st.status.toUpperCase();
+        if (st.status === 'connected') badge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800';
+        else if (st.status === 'error') badge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800';
+        else badge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-800';
+      }
+    }
+  }
+
+  function closeSupabaseQuickModal() {
+    const modal = document.getElementById('supabase-quick-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function openFullSupabaseSettings() {
+    closeSupabaseQuickModal();
+    navigateTo('settings');
+    switchSettingsTab(4);
+  }
+
+  function openAuthProfileModal() {
+    const modal = document.getElementById('lab-auth-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    if (typeof window !== 'undefined' && window.LabSupabase) {
+      const u = window.LabSupabase.getCurrentUser();
+      const role = window.LabSupabase.getCurrentRole();
+      const nameEl = document.getElementById('auth-modal-name');
+      const emailEl = document.getElementById('auth-modal-email');
+      const avatarEl = document.getElementById('auth-modal-avatar');
+      const badgeEl = document.getElementById('auth-modal-role-badge');
+
+      if (nameEl) nameEl.textContent = u ? (u.fullName || u.email) : 'Sarah Jenkins';
+      if (emailEl) emailEl.textContent = u ? u.email : 'sarah.jenkins@ssrhallmark.com';
+      if (avatarEl) {
+        const n = u ? (u.fullName || u.email || 'SJ') : 'SJ';
+        avatarEl.textContent = n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'SJ';
+      }
+      if (badgeEl) {
+        badgeEl.textContent = role.toUpperCase();
+        const cfg = window.LabSupabase.ROLE_CONFIGS[role];
+        if (cfg) badgeEl.className = `px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${cfg.badgeClass}`;
+      }
+    }
+  }
+
+  function closeAuthProfileModal() {
+    const modal = document.getElementById('lab-auth-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function switchAuthTab(tab) {
+    const fIn = document.getElementById('auth-form-signin');
+    const fUp = document.getElementById('auth-form-signup');
+    const btnIn = document.getElementById('auth-tab-btn-signin');
+    const btnUp = document.getElementById('auth-tab-btn-signup');
+
+    if (tab === 'signup') {
+      if (fIn) fIn.classList.add('hidden');
+      if (fUp) fUp.classList.remove('hidden');
+      if (btnIn) { btnIn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-on-surface-variant hover:bg-surface-container-low transition-all'; }
+      if (btnUp) { btnUp.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-primary-container text-surface-container-lowest transition-all'; }
+    } else {
+      if (fUp) fUp.classList.add('hidden');
+      if (fIn) fIn.classList.remove('hidden');
+      if (btnUp) { btnUp.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-on-surface-variant hover:bg-surface-container-low transition-all'; }
+      if (btnIn) { btnIn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-primary-container text-surface-container-lowest transition-all'; }
+    }
+  }
+
+  function toggleSupabaseKeyVisibility() {
+    const keyInput = document.getElementById('supabase-config-key');
+    const eyeIcon = document.getElementById('supabase-key-eye-icon');
+    if (!keyInput) return;
+    const isPass = keyInput.type === 'password';
+    keyInput.type = isPass ? 'text' : 'password';
+    if (eyeIcon) eyeIcon.textContent = isPass ? 'visibility_off' : 'visibility';
+  }
+
+  async function testSupabaseConnection() {
+    if (typeof window === 'undefined' || !window.LabSupabase) return;
+    const urlEl = document.getElementById('supabase-config-url');
+    const keyEl = document.getElementById('supabase-config-key');
+
+    if (urlEl && keyEl && urlEl.value.trim() && keyEl.value.trim()) {
+      window.LabSupabase.config.url = urlEl.value.trim();
+      window.LabSupabase.config.anonKey = keyEl.value.trim();
+      window.LabSupabase.init();
+    }
+
+    showToast('Testing live connection to Supabase...', 'info');
+    const res = await window.LabSupabase.testConnection();
+    if (res.success) {
+      showToast(`Connected to Supabase in ${res.latencyMs}ms!`, 'success');
+    } else {
+      showToast(`Connection failed: ${res.error || 'Check URL and Key'}`, 'error');
+    }
+    window.LabSupabase.updateUIElements();
+  }
+
+  async function saveSupabaseSettings() {
+    if (typeof window === 'undefined' || !window.LabSupabase) return;
+    const urlEl = document.getElementById('supabase-config-url');
+    const keyEl = document.getElementById('supabase-config-key');
+    const syncEl = document.getElementById('supabase-config-autosync');
+
+    const url = urlEl ? urlEl.value.trim() : '';
+    const key = keyEl ? keyEl.value.trim() : '';
+    const autoSync = syncEl ? syncEl.checked : true;
+
+    showToast('Saving Supabase credentials and re-testing...', 'info');
+    const res = await window.LabSupabase.saveConfig(url, key, autoSync);
+    if (res.success) {
+      showToast('Supabase settings saved and verified.', 'success');
+    } else {
+      showToast('Saved locally. Connection notice: ' + (res.error || 'Offline'), 'warning');
+    }
+    window.LabSupabase.updateUIElements();
+  }
+
+  async function pushAllToSupabase() {
+    if (typeof window === 'undefined' || !window.LabSupabase) return;
+    showToast('Initiating cloud push of all local datasets...', 'info');
+    const res = await window.LabSupabase.pushAllData(state);
+    if (res.success) {
+      showToast(`Cloud Sync Complete: ${res.results.batchesSynced} batches, ${res.results.customersSynced} customers.`, 'success');
+      const lastSync = document.getElementById('supabase-last-sync-label');
+      if (lastSync) lastSync.textContent = 'Last synced: Just now';
+    } else {
+      showToast('Cloud push failed: ' + (res.error || 'Offline'), 'error');
+    }
+  }
+
+  async function pullAllFromSupabase() {
+    if (typeof window === 'undefined' || !window.LabSupabase) return;
+    showToast('Pulling remote cloud records from Supabase...', 'info');
+    const res = await window.LabSupabase.pullAllData();
+    if (res.success && res.data) {
+      if (Array.isArray(res.data.customers) && res.data.customers.length > 0) {
+        res.data.customers.forEach(c => {
+          const idx = state.customers.findIndex(local => local.id === c.id);
+          if (idx >= 0) state.customers[idx] = Object.assign({}, state.customers[idx], c);
+          else state.customers.push(c);
+        });
+      }
+      if (Array.isArray(res.data.intakeBatches) && res.data.intakeBatches.length > 0) {
+        res.data.intakeBatches.forEach(b => {
+          const idx = state.intakeBatches.findIndex(local => local.jobDocket === b.jobDocket);
+          if (idx >= 0) state.intakeBatches[idx] = Object.assign({}, state.intakeBatches[idx], b);
+          else state.intakeBatches.unshift(b);
+        });
+      }
+      showToast(`Pulled ${res.data.customers.length} customers, ${res.data.intakeBatches.length} batches from cloud.`, 'success');
+      const lastSync = document.getElementById('supabase-last-sync-label');
+      if (lastSync) lastSync.textContent = 'Last synced: Just now';
+
+      if (typeof renderIntakeBatchesTable === 'function') renderIntakeBatchesTable();
+      if (typeof updateAssayCenterReceiveStats === 'function') updateAssayCenterReceiveStats();
+    } else {
+      showToast('Cloud pull failed: ' + (res.error || 'Offline'), 'error');
+    }
+  }
+
+  async function handleLabAuthSignIn(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const emailInput = document.getElementById('auth-signin-email');
+    const pwdInput = document.getElementById('auth-signin-pwd');
+    const email = emailInput ? emailInput.value.trim() : '';
+    const pwd = pwdInput ? pwdInput.value : '';
+
+    if (!email || !pwd) {
+      showToast('Please enter both email and passcode.', 'warning');
+      return;
+    }
+
+    try {
+      showToast('Authenticating with Supabase Auth...', 'info');
+      const res = await window.LabSupabase.signIn(email, pwd);
+      showToast(`Authorized: ${res.user.fullName} (${res.user.role})`, 'success');
+      closeAuthProfileModal();
+      window.LabSupabase.updateUIElements();
+    } catch (err) {
+      showToast('Sign in failed: ' + (err.message || 'Invalid credentials'), 'error');
+    }
+  }
+
+  async function handleLabAuthSignUp(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const nameInput = document.getElementById('auth-signup-name');
+    const emailInput = document.getElementById('auth-signup-email');
+    const roleInput = document.getElementById('auth-signup-role');
+    const pwdInput = document.getElementById('auth-signup-pwd');
+
+    const fullName = nameInput ? nameInput.value.trim() : '';
+    const email = emailInput ? emailInput.value.trim() : '';
+    const role = roleInput ? roleInput.value : 'Quality Auditor';
+    const pwd = pwdInput ? pwdInput.value : '';
+
+    if (!email || !pwd || !fullName) {
+      showToast('Please fill all required registration fields.', 'warning');
+      return;
+    }
+
+    try {
+      showToast('Registering staff profile in Supabase...', 'info');
+      const res = await window.LabSupabase.signUp(email, pwd, { fullName, role });
+      showToast(`Staff profile registered: ${fullName} as ${role}!`, 'success');
+      closeAuthProfileModal();
+      window.LabSupabase.updateUIElements();
+    } catch (err) {
+      showToast('Registration failed: ' + (err.message || 'Error creating user'), 'error');
+    }
+  }
+
+  async function handleLabAuthSignOut() {
+    if (typeof window !== 'undefined' && window.LabSupabase) {
+      await window.LabSupabase.signOut();
+    }
+    closeAuthProfileModal();
+    showToast('Signed out of laboratory session.', 'info');
+    navigateTo('sign-in');
+  }
+
+  async function handleRoleSwitch(roleName) {
+    if (typeof window === 'undefined' || !window.LabSupabase) return;
+    try {
+      await window.LabSupabase.switchRole(roleName);
+      showToast(`Active role switched to: ${roleName}`, 'success');
+      openAuthProfileModal();
+    } catch (err) {
+      showToast('Could not switch role: ' + err.message, 'error');
+    }
+  }
+
+  function copySupabaseSchemaSql() {
+    const sqlPreview = `-- Run this in Supabase Dashboard -> SQL Editor\n-- Complete schema generated in supabase_schema.sql`;
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(sqlPreview).then(() => {
+        const btn = document.getElementById('copy-sql-btn-text');
+        if (btn) btn.textContent = 'Copied to Clipboard!';
+        showToast('Schema SQL query preview copied. Open supabase_schema.sql for the full script.', 'success');
+        setTimeout(() => { if (btn) btn.textContent = 'Copy Schema SQL'; }, 3000);
+      }).catch(() => {
+        showToast('Inspect supabase_schema.sql in workspace root.', 'info');
+      });
+    } else {
+      showToast('Schema file created: supabase_schema.sql in workspace root.', 'info');
+    }
+  }
+
+  async function testStoragePhotoUpload() {
+    if (typeof window === 'undefined' || !window.LabSupabase) return;
+    showToast('Testing Supabase Storage photo upload...', 'info');
+    const dummyCanvas = document.createElement('canvas');
+    dummyCanvas.width = 100;
+    dummyCanvas.height = 100;
+    const ctx = dummyCanvas.getContext('2d');
+    ctx.fillStyle = '#0e1c2f';
+    ctx.fillRect(0, 0, 100, 100);
+    ctx.fillStyle = '#ffd700';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('SSR BIS', 10, 50);
+
+    const testDataUrl = dummyCanvas.toDataURL('image/jpeg', 0.9);
+    const res = await window.LabSupabase.uploadJewelleryPhoto(testDataUrl, 'custody-photos', `test_ping_${Date.now()}.jpg`);
+    if (res.success && !res.fallback) {
+      showToast(`Storage CDN upload successful! Bucket: ${res.bucket}`, 'success');
+    } else if (res.fallback) {
+      showToast('Storage offline: Local photo fallback verified successfully.', 'info');
+    } else {
+      showToast('Storage test failed: ' + (res.error || 'Unknown error'), 'error');
+    }
+  }
+
   // 4-Stage Modal & Matcher Core exports
   window.openVisualCustodyModal = openVisualCustodyModal;
   window.closeVisualCustodyModal = closeVisualCustodyModal;
@@ -13887,6 +14230,25 @@
   window.generateCustodyArticlePhoto = generateCustodyArticlePhoto;
   window.ensureBatchVisualCustody = ensureBatchVisualCustody;
   window.getPieceArticleType = getPieceArticleType;
+
+  // Supabase Integration & UI exports
+  window.openSupabaseQuickModal = openSupabaseQuickModal;
+  window.closeSupabaseQuickModal = closeSupabaseQuickModal;
+  window.openFullSupabaseSettings = openFullSupabaseSettings;
+  window.openAuthProfileModal = openAuthProfileModal;
+  window.closeAuthProfileModal = closeAuthProfileModal;
+  window.switchAuthTab = switchAuthTab;
+  window.toggleSupabaseKeyVisibility = toggleSupabaseKeyVisibility;
+  window.testSupabaseConnection = testSupabaseConnection;
+  window.saveSupabaseSettings = saveSupabaseSettings;
+  window.pushAllToSupabase = pushAllToSupabase;
+  window.pullAllFromSupabase = pullAllFromSupabase;
+  window.handleLabAuthSignIn = handleLabAuthSignIn;
+  window.handleLabAuthSignUp = handleLabAuthSignUp;
+  window.handleLabAuthSignOut = handleLabAuthSignOut;
+  window.handleRoleSwitch = handleRoleSwitch;
+  window.copySupabaseSchemaSql = copySupabaseSchemaSql;
+  window.testStoragePhotoUpload = testStoragePhotoUpload;
 
 })();
 

@@ -727,6 +727,10 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
   </aside>
 </div>
 
+<!-- ================= Supabase Client ================= -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+
 <!-- ================= Form logic ================= -->
 <script>
 (function(){
@@ -747,7 +751,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
   }
   function say(type,msg){ al.className='alert show '+type; al.textContent=msg; }
 
-  f.addEventListener('submit',function(e){
+  f.addEventListener('submit',async function(e){
     e.preventDefault(); al.className='alert';
     var u=user.value.trim(), p=pass.value;
     mark(user,'g-user',!u); mark(pass,'g-pass',!p);
@@ -759,13 +763,34 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 
     sb.disabled=true; sb.classList.add('loading'); sbt.textContent='Signing in';
 
-    /* ------------------------------------------------------------------
-       Connect your real login here. Example with Supabase:
+    try {
+      if (window.LabSupabase) {
+        var res = await window.LabSupabase.signIn(u, p);
+        sb.disabled=false; sb.classList.remove('loading'); sbt.textContent='Sign in';
+        var roleTitle = (res.user && res.user.role) ? res.user.role : 'Staff';
+        say('ok', 'Authorized • Opening workspace (' + roleTitle + ')...');
+        if(window.hallmarkHost) hallmarkHost.react('cheer');
+        setTimeout(function(){
+          var dest = 'index.html#/dashboard';
+          try {
+            if (window.top && window.top !== window) {
+              window.top.location.href = dest;
+            } else {
+              window.location.href = dest;
+            }
+          } catch(err) {
+            window.location.href = dest;
+          }
+        }, 500);
+        return;
+      }
+    } catch(err) {
+      sb.disabled=false; sb.classList.remove('loading'); sbt.textContent='Sign in';
+      if(window.hallmarkHost) hallmarkHost.react('shake');
+      say('error', err.message || 'Email or password is incorrect. Check both and try again.');
+      return;
+    }
 
-       const { data, error } = await supabase.auth.signInWithPassword({ email: u, password: p });
-       if (error) { say('error', 'Email or password is incorrect. Check both and try again.'); hallmarkHost.react('shake'); }
-       else { hallmarkHost.react('cheer'); window.location.href = '/dashboard'; }
-       ------------------------------------------------------------------ */
     setTimeout(function(){
       sb.disabled=false; sb.classList.remove('loading'); sbt.textContent='Sign in';
       say('ok','Authorized • Opening workspace...');
