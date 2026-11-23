@@ -159,7 +159,7 @@ create table if not exists public.user_profiles (
     id uuid primary key references auth.users(id) on delete cascade,
     email text unique not null,
     full_name text,
-    role text not null default 'Quality Auditor' check (role in ('Admin', 'Assay Master', 'Quality Auditor', 'Delivery Agent')),
+    role text not null default 'SUPER ADMIN' check (role in ('SUPER ADMIN', 'ADMIN', 'ASSAY CENTER RECEIVE', 'PAYMENT')),
     phone text,
     badge_number text,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null,
@@ -209,7 +209,7 @@ begin
         new.id,
         new.email,
         coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-        coalesce(new.raw_user_meta_data->>'role', 'Quality Auditor'),
+        coalesce(new.raw_user_meta_data->>'role', 'SUPER ADMIN'),
         coalesce(new.raw_user_meta_data->>'phone', '')
     )
     on conflict (id) do update set
@@ -218,6 +218,15 @@ begin
         role = coalesce(excluded.role, public.user_profiles.role),
         phone = coalesce(excluded.phone, public.user_profiles.phone),
         updated_at = timezone('utc'::text, now());
+    return new;
+exception when unique_violation then
+    update public.user_profiles set
+        id = new.id,
+        full_name = coalesce(new.raw_user_meta_data->>'full_name', public.user_profiles.full_name),
+        role = coalesce(new.raw_user_meta_data->>'role', public.user_profiles.role),
+        phone = coalesce(new.raw_user_meta_data->>'phone', public.user_profiles.phone),
+        updated_at = timezone('utc'::text, now())
+    where email = new.email;
     return new;
 end;
 $$ language plpgsql security definer;

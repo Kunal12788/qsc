@@ -13,18 +13,62 @@
 
   // Available Laboratory Roles
   const LAB_ROLES = [
-    'Admin',
-    'Assay Master',
-    'Quality Auditor',
-    'Delivery Agent'
+    'SUPER ADMIN',
+    'ADMIN',
+    'ASSAY CENTER RECEIVE',
+    'PAYMENT'
   ];
 
-  // Role Color Badges for UI
+  // Role Color Badges & Workstation Specifications for UI
   const ROLE_CONFIGS = {
-    'Admin': { bg: 'bg-amber-500', text: 'text-amber-400', badgeClass: 'bg-amber-100 text-amber-900 border-amber-300' },
-    'Assay Master': { bg: 'bg-blue-600', text: 'text-blue-500', badgeClass: 'bg-blue-100 text-blue-900 border-blue-300' },
-    'Quality Auditor': { bg: 'bg-emerald-600', text: 'text-emerald-500', badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
-    'Delivery Agent': { bg: 'bg-purple-600', text: 'text-purple-500', badgeClass: 'bg-purple-100 text-purple-900 border-purple-300' }
+    'SUPER ADMIN': {
+      bg: 'bg-amber-500',
+      text: 'text-amber-400',
+      badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
+      accentColor: '#fed488',
+      label: 'SUPER ADMIN',
+      workstationTitle: 'MASTER LABORATORY CONTROL TERMINAL • SUPER ADMIN MODE',
+      workstationSubtitle: 'Unrestricted master control across all 6 operational steps, dashboard analytics, records, and system settings.',
+      allowedRoutes: ['dashboard', 'assay_center_receive', 'assay-center-receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings', 'customer-information', 'sign-in'],
+      visibleNav: ['dashboard', 'assay_center_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'],
+      defaultRoute: 'dashboard'
+    },
+    'ADMIN': {
+      bg: 'bg-blue-600',
+      text: 'text-blue-400',
+      badgeClass: 'bg-blue-100 text-blue-900 border-blue-300',
+      accentColor: '#60a5fa',
+      label: 'ADMIN',
+      workstationTitle: 'OPERATIONS MANAGEMENT TERMINAL • ADMIN MODE',
+      workstationSubtitle: 'Operations Manager control across all 6 operational steps, analytical dashboard, and audit records.',
+      allowedRoutes: ['dashboard', 'assay_center_receive', 'assay-center-receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings', 'customer-information', 'sign-in'],
+      visibleNav: ['dashboard', 'assay_center_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'],
+      defaultRoute: 'dashboard'
+    },
+    'ASSAY CENTER RECEIVE': {
+      bg: 'bg-emerald-600',
+      text: 'text-emerald-400',
+      badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      accentColor: '#34d399',
+      label: 'ASSAY CENTER RECEIVE',
+      workstationTitle: 'INTAKE & PIECE PHOTOGRAPHY TERMINAL • OPERATOR MODE',
+      workstationSubtitle: 'Specialized intake terminal for batch registration, optical macro photography, and custody baseline initialization.',
+      allowedRoutes: ['dashboard', 'assay_center_receive', 'assay-center-receive', 'receive', 'customer-information', 'sign-in'],
+      visibleNav: ['dashboard', 'assay_center_receive', 'receive'],
+      defaultRoute: 'assay_center_receive'
+    },
+    'PAYMENT': {
+      bg: 'bg-purple-600',
+      text: 'text-purple-400',
+      badgeClass: 'bg-purple-100 text-purple-900 border-purple-300',
+      accentColor: '#c084fc',
+      label: 'PAYMENT',
+      workstationTitle: 'BILLING & STATUTORY SETTLEMENT TERMINAL • CASHIER & ACCOUNTS MODE',
+      workstationSubtitle: 'Dedicated accounts terminal for hallmarking invoicing, GST compliance, receipt settlement, and billing ledger.',
+      allowedRoutes: ['dashboard', 'bill-generation', 'records-history', 'customer-information', 'sign-in'],
+      visibleNav: ['dashboard', 'bill-generation', 'records-history'],
+      defaultRoute: 'bill-generation'
+    }
   };
 
   // Safe localStorage helper
@@ -68,7 +112,10 @@
     lastSyncTime: storage.get('supabase_last_sync_time', null),
     client: null,
     currentUser: null,
-    currentRole: storage.get('supabase_active_role', 'Admin'),
+    currentRole: (function () {
+      const saved = storage.get('supabase_active_role', 'SUPER ADMIN');
+      return LAB_ROLES.includes(saved) ? saved : 'SUPER ADMIN';
+    })(),
     syncStats: {
       syncedBatches: 0,
       syncedCustomers: 0,
@@ -223,7 +270,8 @@
   function applyUserSession(user) {
     if (!user) return;
     const metadata = user.user_metadata || {};
-    const role = metadata.role || state.currentRole || 'Quality Auditor';
+    let role = metadata.role || state.currentRole || 'SUPER ADMIN';
+    if (!LAB_ROLES.includes(role)) role = 'SUPER ADMIN';
     const fullName = metadata.full_name || (user.email ? user.email.split('@')[0] : 'Lab Operator');
 
     state.currentUser = {
@@ -362,7 +410,9 @@
     }
 
     // 2. Resilient Local / Demo Fallback Mode
-    const defaultRole = (email.toLowerCase().includes('sarah') || email.toLowerCase().includes('admin')) ? 'Admin' : 'Quality Auditor';
+    const defaultRole = (email.toLowerCase().includes('sarah') || email.toLowerCase().includes('super')) ? 'SUPER ADMIN'
+      : (email.toLowerCase().includes('admin') ? 'ADMIN'
+      : (email.toLowerCase().includes('pay') ? 'PAYMENT' : 'ASSAY CENTER RECEIVE'));
     const fallbackUser = {
       id: 'local-' + Date.now(),
       email: email.trim(),
@@ -388,7 +438,7 @@
       throw new Error('Please provide email and password.');
     }
 
-    const role = profileData.role || 'Quality Auditor';
+    const role = profileData.role || 'SUPER ADMIN';
     const fullName = profileData.fullName || email.split('@')[0];
     const phone = profileData.phone || '';
 
@@ -1148,8 +1198,8 @@
     const roleText = document.getElementById('header-role-text');
     const userEmailText = document.getElementById('header-user-email');
 
-    const role = state.currentRole || 'Admin';
-    const roleCfg = ROLE_CONFIGS[role] || ROLE_CONFIGS['Admin'];
+    const role = state.currentRole || 'SUPER ADMIN';
+    const roleCfg = ROLE_CONFIGS[role] || ROLE_CONFIGS['SUPER ADMIN'];
 
     if (roleDot) roleDot.className = `w-2.5 h-2.5 rounded-full ${roleCfg.bg} ring-2 ring-surface-container-lowest`;
     if (roleText) roleText.textContent = role.toUpperCase();
@@ -1158,6 +1208,10 @@
     }
     if (roleIndicator) {
       roleIndicator.title = `Active Role: ${role} • Click to switch profile / sign out`;
+    }
+
+    if (typeof window !== 'undefined' && typeof window.applyRolePermissions === 'function') {
+      window.applyRolePermissions(role);
     }
 
     // 3. Settings Form Inputs (if present) - masked for security so no DOM element exposes credentials

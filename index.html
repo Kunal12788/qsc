@@ -408,11 +408,11 @@
         </div>
 
         <!-- Active User Role & Supabase Auth Indicator -->
-        <button id="header-role-indicator" onclick="openAuthProfileModal()" class="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-low border border-surface-container hover:bg-surface-container-high transition-colors shadow-2xs cursor-pointer" title="Role: Admin • Click to switch profile / sign out">
+        <button id="header-role-indicator" onclick="openAuthProfileModal()" class="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-low border border-surface-container hover:bg-surface-container-high transition-colors shadow-2xs cursor-pointer" title="Role: SUPER ADMIN • Click to switch profile / sign out">
           <span id="header-role-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-surface-container-lowest"></span>
           <div class="flex items-center gap-1.5">
             <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">ROLE:</span>
-            <span id="header-role-text" class="text-xs font-black text-slate-900 tracking-wide uppercase">ADMIN</span>
+            <span id="header-role-text" class="text-xs font-black text-slate-900 tracking-wide uppercase">SUPER ADMIN</span>
           </div>
           <span class="material-symbols-outlined text-[16px] text-slate-400">arrow_drop_down</span>
         </button>
@@ -433,6 +433,50 @@
         <!-- ========================================== -->
         <section id="view-sign-in" class="page-view hidden fixed inset-0 z-50 bg-[#0e1c2f] h-screen h-[100dvh] max-h-screen overflow-hidden">
           <iframe id="sign-in-frame" src="signin.html" class="w-full h-full border-0" title="Sign In"></iframe>
+        </section>
+
+        <!-- DEDICATED WORKSTATION HEADER BANNER -->
+        <div id="workstation-header-banner" class="hidden mb-4 rounded-xl border p-3.5 transition-all shadow-xs">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div id="workstation-banner-icon" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[22px]" id="workstation-banner-icon-glyph">photo_camera_front</span>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span id="workstation-banner-title" class="font-headline font-black text-xs sm:text-sm tracking-wide uppercase">INTAKE & PIECE PHOTOGRAPHY TERMINAL • OPERATOR MODE</span>
+                  <span id="workstation-banner-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">OPERATOR</span>
+                </div>
+                <p id="workstation-banner-subtitle" class="text-[11px] text-on-surface-variant font-medium mt-0.5">Streamlined interface locked to Intake & Receipt workflow.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <button type="button" onclick="openAuthProfileModal()" class="px-3 py-1.5 text-xs font-bold rounded-lg border border-outline/30 hover:bg-surface-container-high transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs">
+                <span class="material-symbols-outlined text-[16px]">switch_account</span>
+                <span>Switch Role</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW: ACCESS RESTRICTED                    -->
+        <!-- ========================================== -->
+        <section id="view-access-restricted" class="page-view hidden flex flex-col items-center justify-center py-16 px-4 text-center">
+          <div class="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mb-4 shadow-sm">
+            <span class="material-symbols-outlined text-[36px]">lock</span>
+          </div>
+          <h2 class="text-xl font-headline font-black text-slate-900 uppercase tracking-tight">Access Restricted</h2>
+          <p id="restricted-notice-message" class="text-xs sm:text-sm text-slate-600 max-w-md mt-2 font-medium">Your current role (<span id="restricted-role-name" class="font-bold">ASSAY CENTER RECEIVE</span>) does not have authorization to access this operational module according to laboratory security policy.</p>
+          <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <button id="restricted-return-btn" type="button" onclick="navigateTo('assay_center_receive')" class="px-5 py-2.5 rounded-xl bg-primary-container text-secondary-fixed hover:bg-slate-800 font-bold text-xs shadow-sm transition-all cursor-pointer flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+              <span id="restricted-return-label">Return to Assay Center Receive</span>
+            </button>
+            <button type="button" onclick="openAuthProfileModal()" class="px-4 py-2.5 rounded-xl border border-outline/30 text-slate-700 hover:bg-surface-container-low font-bold text-xs transition-all cursor-pointer">
+              Switch Role
+            </button>
+          </div>
         </section>
 
                 <!-- ========================================== -->
@@ -6047,10 +6091,10 @@
       <div class="p-4 border-b border-surface-container bg-surface-container-lowest">
         <label class="block text-xs font-bold text-on-surface uppercase tracking-wider mb-2">Switch Active Laboratory Role:</label>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button type="button" onclick="handleRoleSwitch('Admin')" class="role-switch-btn px-2.5 py-2 rounded-lg border border-outline/30 hover:border-amber-500 text-xs font-bold text-slate-800 bg-surface-container-low text-center transition-all cursor-pointer">Admin</button>
-          <button type="button" onclick="handleRoleSwitch('Assay Master')" class="role-switch-btn px-2.5 py-2 rounded-lg border border-outline/30 hover:border-blue-500 text-xs font-bold text-slate-800 bg-surface-container-low text-center transition-all cursor-pointer">Assay Master</button>
-          <button type="button" onclick="handleRoleSwitch('Quality Auditor')" class="role-switch-btn px-2.5 py-2 rounded-lg border border-outline/30 hover:border-emerald-500 text-xs font-bold text-slate-800 bg-surface-container-low text-center transition-all cursor-pointer">Quality Auditor</button>
-          <button type="button" onclick="handleRoleSwitch('Delivery Agent')" class="role-switch-btn px-2.5 py-2 rounded-lg border border-outline/30 hover:border-purple-500 text-xs font-bold text-slate-800 bg-surface-container-low text-center transition-all cursor-pointer">Delivery Agent</button>
+          <button type="button" onclick="handleRoleSwitch('SUPER ADMIN')" class="role-switch-btn px-2.5 py-2 rounded-lg border border-outline/30 hover:border-amber-500 text-xs font-bold text-slate-800 bg-surface-container-low text-center transition-all cursor-pointer">SUPER ADMIN</button>
+          <button type="button" onclick="handleRoleSwitch('ADMIN')" class="role-switch-btn px-2.5 py-2 rounded-lg border border-outline/30 hover:border-blue-500 text-xs font-bold text-slate-800 bg-surface-container-low text-center transition-all cursor-pointer">ADMIN</button>
+          <button type="button" onclick="handleRoleSwitch('ASSAY CENTER RECEIVE')" class="role-switch-btn px-2.5 py-2 rounded-lg border border-outline/30 hover:border-emerald-500 text-xs font-bold text-slate-800 bg-surface-container-low text-center transition-all cursor-pointer">ASSAY CENTER RECEIVE</button>
+          <button type="button" onclick="handleRoleSwitch('PAYMENT')" class="role-switch-btn px-2.5 py-2 rounded-lg border border-outline/30 hover:border-purple-500 text-xs font-bold text-slate-800 bg-surface-container-low text-center transition-all cursor-pointer">PAYMENT</button>
         </div>
       </div>
 
@@ -6096,10 +6140,10 @@
             <div>
               <label class="block text-xs font-semibold text-on-surface mb-1">Laboratory Role</label>
               <select id="auth-signup-role" class="w-full h-9 px-2 bg-surface-container-low rounded-lg border border-outline/30 text-xs font-medium text-on-surface">
-                <option value="Admin">Admin</option>
-                <option value="Assay Master">Assay Master</option>
-                <option value="Quality Auditor" selected>Quality Auditor</option>
-                <option value="Delivery Agent">Delivery Agent</option>
+                <option value="SUPER ADMIN">SUPER ADMIN</option>
+                <option value="ADMIN">ADMIN</option>
+                <option value="ASSAY CENTER RECEIVE" selected>ASSAY CENTER RECEIVE</option>
+                <option value="PAYMENT">PAYMENT</option>
               </select>
             </div>
             <div>

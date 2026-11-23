@@ -90,7 +90,25 @@ assert.strictEqual(schemaSql.includes('update_modified_column()'), true, 'FAIL: 
 assert.strictEqual(schemaSql.includes('handle_new_user()'), true, 'FAIL: handle_new_user trigger function missing');
 assert.strictEqual(schemaSql.includes('unq_delivery_job unique (job_docket)'), true, 'FAIL: unq_delivery_job unique constraint missing on delivery_records');
 assert.strictEqual(schemaSql.includes("coalesce(new.raw_user_meta_data->>'phone', '')"), true, 'FAIL: phone metadata handling missing in handle_new_user');
-console.log('  ✓ Automatic updated_at triggers, phone metadata hook, and unq_delivery_job constraint verified.\n');
+
+// 5. Verify Updated 4 Roles and check constraints in supabase_schema.sql
+assert.strictEqual(
+  schemaSql.includes("check (role in ('SUPER ADMIN', 'ADMIN', 'ASSAY CENTER RECEIVE', 'PAYMENT'))"),
+  true,
+  "FAIL: Role check constraint missing 4 laboratory roles ('SUPER ADMIN', 'ADMIN', 'ASSAY CENTER RECEIVE', 'PAYMENT')"
+);
+assert.strictEqual(
+  schemaSql.includes("coalesce(new.raw_user_meta_data->>'role', 'SUPER ADMIN')"),
+  true,
+  "FAIL: handle_new_user must default role to 'SUPER ADMIN'"
+);
+assert.strictEqual(
+  schemaSql.includes("exception when unique_violation then"),
+  true,
+  "FAIL: handle_new_user must handle unique violation for email conflict"
+);
+console.log('  ✓ Automatic updated_at triggers, phone metadata hook, and unq_delivery_job constraint verified.');
+console.log('  ✓ Updated 4-role check constraint, SUPER ADMIN default, and email conflict handling verified.\n');
 
 // -------------------------------------------------------------
 // SUITE 2: CLIENT CONFIGURATION & LIFECYCLE
@@ -229,33 +247,69 @@ console.log('  ✓ Custom Supabase Client successfully initialized and connected
 console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
 
 (async () => {
-  // 1. Sign Up new staff with laboratory role
+  // 1. Verify LAB_ROLES and visual configurations
+  assert.deepStrictEqual(LabSupabase.LAB_ROLES, ['SUPER ADMIN', 'ADMIN', 'ASSAY CENTER RECEIVE', 'PAYMENT'], 'FAIL: LAB_ROLES mismatch');
+  assert.strictEqual(LabSupabase.ROLE_CONFIGS['SUPER ADMIN'].bg, 'bg-amber-500', 'FAIL: SUPER ADMIN bg mismatch');
+  assert.strictEqual(LabSupabase.ROLE_CONFIGS['ADMIN'].bg, 'bg-blue-600', 'FAIL: ADMIN bg mismatch');
+  assert.strictEqual(LabSupabase.ROLE_CONFIGS['ASSAY CENTER RECEIVE'].bg, 'bg-emerald-600', 'FAIL: ASSAY CENTER RECEIVE bg mismatch');
+  assert.strictEqual(LabSupabase.ROLE_CONFIGS['PAYMENT'].bg, 'bg-purple-600', 'FAIL: PAYMENT bg mismatch');
+  console.log('  ✓ Laboratory Role Definitions & Visual Badges verified across all 4 roles.');
+
+  // 2. Sign Up new staff with laboratory role
   const signupRes = await LabSupabase.signUp('vikram.anand@ssrhallmark.com', 'SecurePass123', {
     fullName: 'Vikram Anand',
-    role: 'Assay Master'
+    role: 'ASSAY CENTER RECEIVE'
   });
   assert.strictEqual(signupRes.success, true, 'FAIL: Sign up should succeed');
-  assert.strictEqual(LabSupabase.getCurrentRole(), 'Assay Master', 'FAIL: Role should be Assay Master');
+  assert.strictEqual(LabSupabase.getCurrentRole(), 'ASSAY CENTER RECEIVE', 'FAIL: Role should be ASSAY CENTER RECEIVE');
   assert.strictEqual(localStorage.getItem('ssr_authenticated'), 'true', 'FAIL: ssr_authenticated flag missing');
-  console.log('  ✓ Supabase staff registration and role assignment verified (Assay Master).');
+  console.log('  ✓ Supabase staff registration and role assignment verified (ASSAY CENTER RECEIVE).');
 
-  // 2. Role switching
-  await LabSupabase.switchRole('Quality Auditor');
-  assert.strictEqual(LabSupabase.getCurrentRole(), 'Quality Auditor', 'FAIL: Role should be switched to Quality Auditor');
-  assert.strictEqual(localStorage.getItem('supabase_active_role'), 'Quality Auditor', 'FAIL: Active role should persist');
-  console.log('  ✓ Role switcher dynamically updates authorization to Quality Auditor.');
+  // 3. Role switching across all 4 roles
+  for (const r of ['SUPER ADMIN', 'ADMIN', 'ASSAY CENTER RECEIVE', 'PAYMENT']) {
+    await LabSupabase.switchRole(r);
+    assert.strictEqual(LabSupabase.getCurrentRole(), r, `FAIL: Role should be switched to ${r}`);
+    assert.strictEqual(localStorage.getItem('supabase_active_role'), r, 'FAIL: Active role should persist');
+  }
+  console.log('  ✓ Role switcher dynamically updates authorization across all 4 roles.');
 
-  // 3. Rejection of invalid roles
+  // 4. Rejection of invalid roles
   let caughtRoleErr = false;
   try {
-    await LabSupabase.switchRole('SuperHackerRole');
+    await LabSupabase.switchRole('Quality Auditor');
   } catch (e) {
     caughtRoleErr = true;
   }
   assert.strictEqual(caughtRoleErr, true, 'FAIL: Invalid role should be rejected');
-  console.log('  ✓ Invalid roles strictly rejected by security constraint.');
+  console.log('  ✓ Invalid and obsolete roles strictly rejected by security constraint.');
 
-  // 4. Sign Out
+  // 5. Workstation Navigation Filtering & Route Permission Tests
+  const superAdminCfg = window.applyRolePermissions('SUPER ADMIN');
+  assert.strictEqual(window.isRoutePermittedForRole('settings', 'SUPER ADMIN'), true);
+  assert.strictEqual(window.isRoutePermittedForRole('bill-generation', 'SUPER ADMIN'), true);
+  assert.strictEqual(superAdminCfg.visibleNav.length, 9, 'FAIL: SUPER ADMIN must see all 9 navigation items');
+
+  const adminCfg = window.applyRolePermissions('ADMIN');
+  assert.strictEqual(window.isRoutePermittedForRole('settings', 'ADMIN'), true);
+  assert.strictEqual(window.isRoutePermittedForRole('delivery-assay', 'ADMIN'), true);
+  assert.strictEqual(adminCfg.visibleNav.length, 9, 'FAIL: ADMIN must see all 9 navigation items');
+
+  const assayCfg = window.applyRolePermissions('ASSAY CENTER RECEIVE');
+  assert.strictEqual(window.isRoutePermittedForRole('assay_center_receive', 'ASSAY CENTER RECEIVE'), true);
+  assert.strictEqual(window.isRoutePermittedForRole('receive', 'ASSAY CENTER RECEIVE'), true);
+  assert.strictEqual(window.isRoutePermittedForRole('bill-generation', 'ASSAY CENTER RECEIVE'), false);
+  assert.strictEqual(window.isRoutePermittedForRole('settings', 'ASSAY CENTER RECEIVE'), false);
+  assert.deepStrictEqual(assayCfg.visibleNav, ['dashboard', 'assay_center_receive', 'receive']);
+
+  const paymentCfg = window.applyRolePermissions('PAYMENT');
+  assert.strictEqual(window.isRoutePermittedForRole('bill-generation', 'PAYMENT'), true);
+  assert.strictEqual(window.isRoutePermittedForRole('records-history', 'PAYMENT'), true);
+  assert.strictEqual(window.isRoutePermittedForRole('assay_center_receive', 'PAYMENT'), false);
+  assert.strictEqual(window.isRoutePermittedForRole('settings', 'PAYMENT'), false);
+  assert.deepStrictEqual(paymentCfg.visibleNav, ['dashboard', 'bill-generation', 'records-history']);
+  console.log('  ✓ Role-based workstation navigation filtering and route permission rules verified.');
+
+  // 6. Sign Out
   await LabSupabase.signOut();
   assert.strictEqual(LabSupabase.getCurrentUser(), null, 'FAIL: Current user should be cleared on sign out');
   assert.strictEqual(localStorage.getItem('ssr_authenticated'), null, 'FAIL: Auth token should be cleared');
@@ -493,9 +547,15 @@ console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
 
   // 5. Staff Auth Profile Modal and JavaScript SDKs preserved
   assert.strictEqual(indexHtml.includes('id="lab-auth-modal"'), true, 'FAIL: #lab-auth-modal missing');
+  assert.strictEqual(indexHtml.includes("handleRoleSwitch('SUPER ADMIN')"), true, 'FAIL: SUPER ADMIN role switch button missing');
+  assert.strictEqual(indexHtml.includes("handleRoleSwitch('ADMIN')"), true, 'FAIL: ADMIN role switch button missing');
+  assert.strictEqual(indexHtml.includes("handleRoleSwitch('ASSAY CENTER RECEIVE')"), true, 'FAIL: ASSAY CENTER RECEIVE role switch button missing');
+  assert.strictEqual(indexHtml.includes("handleRoleSwitch('PAYMENT')"), true, 'FAIL: PAYMENT role switch button missing');
+  assert.strictEqual(indexHtml.includes('id="workstation-header-banner"'), true, 'FAIL: #workstation-header-banner missing in index.html');
+  assert.strictEqual(indexHtml.includes('id="view-access-restricted"'), true, 'FAIL: #view-access-restricted missing in index.html');
   assert.strictEqual(indexHtml.includes('js/supabase-client.js'), true, 'FAIL: js/supabase-client.js script tag missing in index.html');
   assert.strictEqual(indexHtml.includes('@supabase/supabase-js'), true, 'FAIL: @supabase/supabase-js script tag missing in index.html');
-  console.log('  ✓ Supabase JavaScript SDK bundled and Staff Auth Modal preserved.');
+  console.log('  ✓ Supabase JavaScript SDK bundled, Staff Auth Modal & Workstation Banners preserved.');
 
   // 6. Signin.html & Login.html integration
   assert.strictEqual(signinHtml.includes('js/supabase-client.js'), true, 'FAIL: supabase-client.js missing in signin.html');
@@ -521,6 +581,8 @@ console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
     'handleLabAuthSignUp',
     'handleLabAuthSignOut',
     'handleRoleSwitch',
+    'applyRolePermissions',
+    'isRoutePermittedForRole',
     'copySupabaseSchemaSql',
     'testStoragePhotoUpload'
   ];
@@ -528,7 +590,7 @@ console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
   expectedExports.forEach(fnName => {
     assert.strictEqual(typeof window[fnName], 'function', `FAIL: window.${fnName} not exported in app.js`);
   });
-  console.log('  ✓ All 17 Supabase Controller functions properly exported to window.');
+  console.log('  ✓ All 19 Supabase & Role Controller functions properly exported to window.');
 
   // 7. Security Hardening: Ensure credentials are never leaked to localStorage or wiped by UI fallbacks
   assert.strictEqual(!localStorage.getItem('supabase_url'), true, 'FAIL: supabase_url must NOT be stored in localStorage');

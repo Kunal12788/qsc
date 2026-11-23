@@ -546,7 +546,8 @@
     'delivery',
     'delivery-assay',
     'records-history',
-    'settings'
+    'settings',
+    'access-restricted'
   ];
 
   function getRouteFromHash() {
@@ -557,11 +558,64 @@
     if (hash === 'assay_center_receive' || hash === 'assay-center-receive') hash = 'assay_center_receive';
     if (hash === 'center_image_receive' || hash === 'center-image-receive') hash = 'center_image_receive';
     if (hash === 'delivery-assay' || hash === 'delivery_assay') hash = 'delivery-assay';
+    if (hash === 'access-restricted') hash = 'access-restricted';
     return validRoutes.includes(hash) ? hash : 'dashboard';
+  }
+
+  function isRoutePermittedForRole(route, role) {
+    if (route === 'sign-in' || route === 'access-restricted') return true;
+    const currentRole = role || (window.LabSupabase && window.LabSupabase.getCurrentRole ? window.LabSupabase.getCurrentRole() : 'SUPER ADMIN');
+    if (currentRole === 'SUPER ADMIN' || currentRole === 'ADMIN') return true;
+    if (currentRole === 'ASSAY CENTER RECEIVE') {
+      const allowed = ['dashboard', 'assay_center_receive', 'assay-center-receive', 'receive', 'customer-information'];
+      return allowed.includes(route);
+    }
+    if (currentRole === 'PAYMENT') {
+      const allowed = ['dashboard', 'bill-generation', 'records-history', 'customer-information'];
+      return allowed.includes(route);
+    }
+    return true;
   }
 
   function navigateTo(route, options = {}) {
     if (!validRoutes.includes(route)) route = 'dashboard';
+
+    // Role Permission Guard
+    const activeRole = (window.LabSupabase && window.LabSupabase.getCurrentRole ? window.LabSupabase.getCurrentRole() : 'SUPER ADMIN');
+    if (!isRoutePermittedForRole(route, activeRole)) {
+      state.currentRoute = 'access-restricted';
+      window.location.hash = '#/access-restricted';
+
+      // Hide all views, show access restricted view
+      document.querySelectorAll('.page-view').forEach(view => {
+        view.classList.add('hidden');
+      });
+      const restrictedView = document.getElementById('view-access-restricted');
+      if (restrictedView) {
+        restrictedView.classList.remove('hidden');
+        const roleNameEl = document.getElementById('restricted-role-name');
+        const returnBtn = document.getElementById('restricted-return-btn');
+        const returnLabel = document.getElementById('restricted-return-label');
+        if (roleNameEl) roleNameEl.textContent = activeRole;
+
+        if (activeRole === 'ASSAY CENTER RECEIVE') {
+          if (returnBtn) returnBtn.setAttribute('onclick', "navigateTo('assay_center_receive')");
+          if (returnLabel) returnLabel.textContent = 'Return to Assay Center Receive';
+        } else if (activeRole === 'PAYMENT') {
+          if (returnBtn) returnBtn.setAttribute('onclick', "navigateTo('bill-generation')");
+          if (returnLabel) returnLabel.textContent = 'Return to Bill Generation';
+        } else {
+          if (returnBtn) returnBtn.setAttribute('onclick', "navigateTo('dashboard')");
+          if (returnLabel) returnLabel.textContent = 'Return to Dashboard';
+        }
+        if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+      showToast(`Access Restricted: ${route} module not available in ${activeRole} mode.`, 'warning');
+      return;
+    }
+
     state.currentRoute = route;
     window.location.hash = '#/' + route;
 
@@ -11157,8 +11211,19 @@
 
   // --- INITIALIZATION ---
   window.addEventListener('DOMContentLoaded', () => {
+    // 0. Initial Role Permissions & Workstation Setup
+    if (typeof applyRolePermissions === 'function') {
+      const initRole = (window.LabSupabase && window.LabSupabase.getCurrentRole) ? window.LabSupabase.getCurrentRole() : 'SUPER ADMIN';
+      applyRolePermissions(initRole);
+    }
+
     // 1. Initial Routing
-    const initialRoute = getRouteFromHash();
+    let initialRoute = getRouteFromHash();
+    const currRole = (window.LabSupabase && window.LabSupabase.getCurrentRole) ? window.LabSupabase.getCurrentRole() : 'SUPER ADMIN';
+    if (!window.location.hash || window.location.hash === '#/' || window.location.hash === '#/dashboard') {
+      if (currRole === 'ASSAY CENTER RECEIVE') initialRoute = 'assay_center_receive';
+      else if (currRole === 'PAYMENT') initialRoute = 'bill-generation';
+    }
     navigateTo(initialRoute);
 
     // 2. Browser Back / Forward Handling
@@ -14240,6 +14305,16 @@
       showToast(`Authorized: ${res.user.fullName} (${res.user.role})`, 'success');
       closeAuthProfileModal();
       window.LabSupabase.updateUIElements();
+      if (typeof applyRolePermissions === 'function') {
+        applyRolePermissions(res.user.role);
+      }
+      if (res.user.role === 'ASSAY CENTER RECEIVE') {
+        navigateTo('assay_center_receive');
+      } else if (res.user.role === 'PAYMENT') {
+        navigateTo('bill-generation');
+      } else if (state.currentRoute === 'access-restricted') {
+        navigateTo('dashboard');
+      }
     } catch (err) {
       showToast('Sign in failed: ' + (err.message || 'Invalid credentials'), 'error');
     }
@@ -14254,7 +14329,7 @@
 
     const fullName = nameInput ? nameInput.value.trim() : '';
     const email = emailInput ? emailInput.value.trim() : '';
-    const role = roleInput ? roleInput.value : 'Quality Auditor';
+    const role = roleInput ? roleInput.value : 'SUPER ADMIN';
     const pwd = pwdInput ? pwdInput.value : '';
 
     if (!email || !pwd || !fullName) {
@@ -14268,6 +14343,9 @@
       showToast(`Staff profile registered: ${fullName} as ${role}!`, 'success');
       closeAuthProfileModal();
       window.LabSupabase.updateUIElements();
+      if (typeof applyRolePermissions === 'function') {
+        applyRolePermissions(role);
+      }
     } catch (err) {
       showToast('Registration failed: ' + (err.message || 'Error creating user'), 'error');
     }
@@ -14282,15 +14360,126 @@
     navigateTo('sign-in');
   }
 
+  function applyRolePermissions(roleName) {
+    const role = roleName || (window.LabSupabase && window.LabSupabase.getCurrentRole ? window.LabSupabase.getCurrentRole() : 'SUPER ADMIN');
+    const roleConfig = (window.LabSupabase && window.LabSupabase.ROLE_CONFIGS && window.LabSupabase.ROLE_CONFIGS[role]) || {
+      visibleNav: ['dashboard', 'assay_center_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'],
+      allowedRoutes: ['dashboard', 'assay_center_receive', 'assay-center-receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings', 'customer-information', 'sign-in'],
+      badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
+      bg: 'bg-amber-500'
+    };
+
+    // 1. Filter Desktop & Mobile Navigation Links
+    const allowedNav = roleConfig.visibleNav || ['dashboard', 'assay_center_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'];
+    document.querySelectorAll('[data-path]').forEach(link => {
+      const p = link.getAttribute('data-path');
+      if (allowedNav.includes(p)) {
+        link.classList.remove('hidden');
+        link.style.display = '';
+      } else {
+        link.classList.add('hidden');
+        link.style.display = 'none';
+      }
+    });
+
+    // 2. Dedicated Workstation Header Banner
+    const banner = document.getElementById('workstation-header-banner');
+    const bTitle = document.getElementById('workstation-banner-title');
+    const bSubtitle = document.getElementById('workstation-banner-subtitle');
+    const bBadge = document.getElementById('workstation-banner-badge');
+    const bIconGlyph = document.getElementById('workstation-banner-icon-glyph');
+    const bIconBox = document.getElementById('workstation-banner-icon');
+
+    if (banner) {
+      if (role === 'ASSAY CENTER RECEIVE') {
+        banner.classList.remove('hidden');
+        banner.className = 'flex mb-4 rounded-xl border border-emerald-300 bg-emerald-50/90 text-emerald-950 p-3.5 transition-all shadow-xs';
+        if (bTitle) bTitle.textContent = 'INTAKE & PIECE PHOTOGRAPHY TERMINAL • OPERATOR MODE';
+        if (bSubtitle) bSubtitle.textContent = 'Specialized intake terminal for batch registration, optical macro photography, and custody baseline initialization.';
+        if (bBadge) {
+          bBadge.textContent = 'INTAKE WORKSTATION';
+          bBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-200 text-emerald-900';
+        }
+        if (bIconGlyph) bIconGlyph.textContent = 'photo_camera_front';
+        if (bIconBox) bIconBox.className = 'w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs';
+      } else if (role === 'PAYMENT') {
+        banner.classList.remove('hidden');
+        banner.className = 'flex mb-4 rounded-xl border border-purple-300 bg-purple-50/90 text-purple-950 p-3.5 transition-all shadow-xs';
+        if (bTitle) bTitle.textContent = 'BILLING & STATUTORY SETTLEMENT TERMINAL • CASHIER & ACCOUNTS MODE';
+        if (bSubtitle) bSubtitle.textContent = 'Dedicated accounts terminal for hallmarking invoicing, GST compliance, receipt settlement, and billing ledger.';
+        if (bBadge) {
+          bBadge.textContent = 'ACCOUNTS WORKSTATION';
+          bBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-200 text-purple-900';
+        }
+        if (bIconGlyph) bIconGlyph.textContent = 'receipt_long';
+        if (bIconBox) bIconBox.className = 'w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs';
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    // 3. Update Modal Badge & Role Switcher Active Indicator
+    const modalBadge = document.getElementById('auth-modal-role-badge');
+    if (modalBadge) {
+      modalBadge.textContent = role;
+      if (roleConfig.badgeClass) {
+        modalBadge.className = `px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${roleConfig.badgeClass}`;
+      }
+    }
+    document.querySelectorAll('.role-switch-btn').forEach(btn => {
+      if (btn.textContent.trim().toUpperCase() === role.toUpperCase()) {
+        btn.classList.add('ring-2', 'ring-primary', 'font-black', 'bg-surface-container-high');
+      } else {
+        btn.classList.remove('ring-2', 'ring-primary', 'font-black', 'bg-surface-container-high');
+      }
+    });
+
+    // 4. Update Header Indicator
+    const roleDot = document.getElementById('header-role-dot');
+    const roleText = document.getElementById('header-role-text');
+    if (roleDot && roleConfig.bg) {
+      roleDot.className = `w-2.5 h-2.5 rounded-full ${roleConfig.bg} ring-2 ring-surface-container-lowest`;
+    }
+    if (roleText) {
+      roleText.textContent = role;
+    }
+
+    return roleConfig;
+  }
+
   async function handleRoleSwitch(roleName) {
     if (typeof window === 'undefined' || !window.LabSupabase) return;
     try {
       await window.LabSupabase.switchRole(roleName);
+      applyRolePermissions(roleName);
+
+      // Dedicated Workstation Redirection upon role switch
+      if (roleName === 'ASSAY CENTER RECEIVE') {
+        navigateTo('assay_center_receive');
+      } else if (roleName === 'PAYMENT') {
+        navigateTo('bill-generation');
+      } else {
+        if (state.currentRoute === 'access-restricted') {
+          navigateTo('dashboard');
+        }
+      }
+
       showToast(`Active role switched to: ${roleName}`, 'success');
       openAuthProfileModal();
     } catch (err) {
       showToast('Could not switch role: ' + err.message, 'error');
     }
+  }
+
+  // Subscribe to LabSupabase state transitions
+  if (typeof window !== 'undefined' && window.LabSupabase && typeof window.LabSupabase.subscribe === 'function') {
+    window.LabSupabase.subscribe((event, data) => {
+      if (event === 'role_changed' || event === 'auth_state_changed') {
+        if (typeof applyRolePermissions === 'function') {
+          applyRolePermissions(data && data.role);
+        }
+      }
+    });
   }
 
   function copySupabaseSchemaSql() {
@@ -14348,6 +14537,8 @@
   window.handleLabAuthSignUp = handleLabAuthSignUp;
   window.handleLabAuthSignOut = handleLabAuthSignOut;
   window.handleRoleSwitch = handleRoleSwitch;
+  window.applyRolePermissions = applyRolePermissions;
+  window.isRoutePermittedForRole = isRoutePermittedForRole;
   window.copySupabaseSchemaSql = copySupabaseSchemaSql;
   window.testStoragePhotoUpload = testStoragePhotoUpload;
 
