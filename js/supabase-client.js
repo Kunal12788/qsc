@@ -1182,9 +1182,32 @@
     };
   }
 
+  // Attempt to load Vercel Environment Variables via /api/config if not in localStorage
+  async function loadVercelEnvConfig() {
+    if (state.url && state.anonKey) return;
+    try {
+      if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
+        const res = await fetch('/api/config');
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg.supabaseUrl && cfg.supabaseAnonKey) {
+            state.url = cfg.supabaseUrl;
+            state.anonKey = cfg.supabaseAnonKey;
+            storage.set('supabase_url', state.url);
+            storage.set('supabase_anon_key', state.anonKey);
+            init();
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
   // Auto-initialize if running in browser
   if (typeof window !== 'undefined') {
     setTimeout(() => {
+      if (!state.url || !state.anonKey) {
+        loadVercelEnvConfig();
+      }
       init();
     }, 100);
   }
