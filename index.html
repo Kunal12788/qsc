@@ -4522,73 +4522,6 @@
               </div>
             </div>
           </div>
-
-          <!-- ========================================== -->
-          <!-- MODAL: 4-STAGE VISUAL FILMSTRIP LIGHTBOX   -->
-          <!-- ========================================== -->
-          <div id="visual-custody-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs hidden flex items-center justify-center p-3 sm:p-5">
-            <div class="bg-surface-container-lowest rounded-2xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-surface-container overflow-hidden">
-              <!-- Modal Header -->
-              <div class="flex items-center justify-between px-6 py-4 bg-slate-900 text-white">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold">
-                    <span class="material-symbols-outlined text-[22px]">view_timeline</span>
-                  </div>
-                  <div>
-                    <h2 class="text-sm font-black uppercase tracking-wide flex items-center gap-2">
-                      <span id="visual-modal-title">4-STAGE MULTI-ANGLE VISUAL CUSTODY CHAIN</span>
-                      <span id="visual-modal-piece-pill" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700">PIECE #1</span>
-                    </h2>
-                    <span class="text-[11px] text-slate-300 font-mono" id="visual-modal-subtitle">JOB-2026-2369 • ROYCO JEWELLERS • GOLD 22K 916</span>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onclick="printVisualCustodyTrail()"
-                    class="px-3.5 py-1.5 rounded-lg bg-amber-400 text-slate-950 font-bold text-xs hover:bg-amber-300 flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
-                  >
-                    <span class="material-symbols-outlined text-[16px]">print</span>
-                    <span>PRINT CHAIN</span>
-                  </button>
-                  <button
-                    type="button"
-                    onclick="closeVisualCustodyModal()"
-                    class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-all"
-                  >
-                    <span class="material-symbols-outlined text-[18px]">close</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Modal Body: 4-Stage Side-by-Side Filmstrip -->
-              <div class="p-6 overflow-y-auto flex flex-col gap-6">
-                <!-- Integrity Banner -->
-                <div class="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950">
-                  <div class="flex items-center gap-2.5">
-                    <span class="material-symbols-outlined text-emerald-600 text-[22px]">verified</span>
-                    <span class="text-xs font-bold uppercase tracking-wider" id="visual-modal-integrity-text">
-                      4-STAGE VISUAL CHAIN OF CUSTODY VERIFIED • ZERO TAMPERING DETECTED
-                    </span>
-                  </div>
-                  <span class="text-[10px] font-mono text-emerald-700 font-bold" id="visual-modal-hash">SHA-256: 7F4A...82B1</span>
-                </div>
-
-                <!-- 4 Filmstrip Columns Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="visual-modal-filmstrip-grid">
-                  <!-- Populated by renderVisualCustodyModalContent() -->
-                </div>
-
-                <!-- Audit Metadata Table / Summary -->
-                <div class="p-4 rounded-xl bg-surface-container-low border border-surface-container flex flex-col gap-2 text-xs">
-                  <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700">CHAIN OF CUSTODY AUDIT LOG</span>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] text-slate-600 font-mono" id="visual-modal-audit-log">
-                    <!-- Populated by JS -->
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </section>
 
 
@@ -5094,6 +5027,73 @@
 
       </div>
     </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: 4-STAGE VISUAL FILMSTRIP LIGHTBOX   -->
+  <!-- ========================================== -->
+  <div id="visual-custody-modal" onclick="if (event.target === this) closeVisualCustodyModal()" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs hidden flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-surface-container-lowest rounded-2xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-surface-container overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-6 py-4 bg-slate-900 text-white">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold">
+            <span class="material-symbols-outlined text-[22px]">view_timeline</span>
+          </div>
+          <div>
+            <h2 class="text-sm font-black uppercase tracking-wide flex items-center gap-2">
+              <span id="visual-modal-title">4-STAGE MULTI-ANGLE VISUAL CUSTODY CHAIN</span>
+              <span id="visual-modal-piece-pill" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700">PIECE #1</span>
+            </h2>
+            <span class="text-[11px] text-slate-300 font-mono" id="visual-modal-subtitle">JOB-2026-2369 • ROYCO JEWELLERS • GOLD 22K 916</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            onclick="printVisualCustodyTrail()"
+            class="px-3.5 py-1.5 rounded-lg bg-amber-400 text-slate-950 font-bold text-xs hover:bg-amber-300 flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+          >
+            <span class="material-symbols-outlined text-[16px]">print</span>
+            <span>PRINT CHAIN</span>
+          </button>
+          <button
+            type="button"
+            onclick="closeVisualCustodyModal()"
+            class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-all"
+          >
+            <span class="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body: 4-Stage Side-by-Side Filmstrip -->
+      <div class="p-6 overflow-y-auto flex flex-col gap-6">
+        <!-- Integrity Banner -->
+        <div class="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950">
+          <div class="flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-emerald-600 text-[22px]">verified</span>
+            <span class="text-xs font-bold uppercase tracking-wider" id="visual-modal-integrity-text">
+              4-STAGE VISUAL CHAIN OF CUSTODY VERIFIED • ZERO TAMPERING DETECTED
+            </span>
+          </div>
+          <span class="text-[10px] font-mono text-emerald-700 font-bold" id="visual-modal-hash">SHA-256: 7F4A...82B1</span>
+        </div>
+
+        <!-- 4 Filmstrip Columns Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="visual-modal-filmstrip-grid">
+          <!-- Populated by renderVisualCustodyModalContent() -->
+        </div>
+
+        <!-- Audit Metadata Table / Summary -->
+        <div class="p-4 rounded-xl bg-surface-container-low border border-surface-container flex flex-col gap-2 text-xs">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700">CHAIN OF CUSTODY AUDIT LOG</span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] text-slate-600 font-mono" id="visual-modal-audit-log">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ========================================== -->

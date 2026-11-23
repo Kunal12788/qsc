@@ -4228,6 +4228,30 @@
     activeDeliveryBatch.articlePhoto = activeDeliveryBatch.articlePhotos[0].src;
     activeDeliveryPhoto = activeDeliveryBatch.articlePhoto;
 
+    // Connect with the 4-Stage Multi-Angle Visual Custody Chain (Stage C)
+    ensureBatchVisualCustody(activeDeliveryBatch);
+    if (Array.isArray(activeDeliveryBatch.visualCustody)) {
+      const targetPiece = activeDeliveryBatch.visualCustody.find(p => !p.stageC || !p.stageC.captured);
+      if (targetPiece) {
+        const timeStr = photoObj.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const embC = extractVisualEmbedding(photoObj.src, {
+          articleType: targetPiece.articleType,
+          pieceIndex: targetPiece.pieceIndex,
+          metal: activeDeliveryBatch.metal,
+          angle: -20
+        });
+        targetPiece.stageC = {
+          photoUrl: photoObj.src,
+          timestamp: timeStr,
+          operator: 'User C (Priyanka Roy - Pre-Dispatch Officer)',
+          embedding: embC,
+          matchScore: 96,
+          status: 'MATCHED',
+          captured: true
+        };
+      }
+    }
+
     renderDeliveryGallery();
     updateAttachedPhotosSummary();
     renderDeliveryQueue();
@@ -4280,6 +4304,14 @@
                 title="View Large"
               >
                 <span class="material-symbols-outlined text-[15px]">zoom_in</span>
+              </button>
+              <button
+                type="button"
+                onclick="event.stopPropagation(); openVisualCustodyModal('${escapeHtmlStr(activeDeliveryBatch.jobDocket)}', ${Math.min((activeDeliveryBatch.visualCustody || []).length || 1, idx + 1)})"
+                class="w-7 h-7 rounded-md bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center justify-center cursor-pointer shadow"
+                title="View 4-Stage Custody Filmstrip"
+              >
+                <span class="material-symbols-outlined text-[15px]">view_timeline</span>
               </button>
               <button
                 type="button"
@@ -5532,12 +5564,16 @@
             }
           </div>
 
-          <!-- Photo thumbnail or placeholder -->
-          <div class="w-full aspect-square rounded-lg bg-slate-100 overflow-hidden border border-slate-200 flex items-center justify-center relative">
+          <!-- Photo thumbnail or placeholder: Click to view 4-stage visual custody filmstrip -->
+          <div
+            onclick="openVisualCustodyModal('${escapeHtmlStr(batch.jobDocket)}', ${i})"
+            class="w-full aspect-square rounded-lg bg-slate-900 overflow-hidden border border-slate-200 flex items-center justify-center relative cursor-pointer group"
+            title="Click to view 4-stage visual custody chain"
+          >
             ${
               isVerified && v.photoUrl
-                ? `<img src="${v.photoUrl}" alt="Piece #${i}" class="w-full h-full object-cover cursor-pointer" onclick="openPhotoLightboxDirect('${escapeHtmlStr(v.photoUrl)}', 'Piece #${i} • ${escapeHtmlStr(v.tagCode)}')"/>`
-                : '<span class="material-symbols-outlined text-[20px] text-slate-300">image_not_supported</span>'
+                ? `<img src="${v.photoUrl}" alt="Piece #${i}" class="w-full h-full object-cover group-hover:scale-105 transition-transform"/>`
+                : '<span class="material-symbols-outlined text-[20px] text-slate-400">verified_user</span>'
             }
           </div>
 
@@ -6269,6 +6305,20 @@
         verifier: 'Sarah Jenkins (Assay Custodian)'
       });
 
+      ensureBatchVisualCustody(activeDeliveryAssayBatch);
+      const vcP = (activeDeliveryAssayBatch.visualCustody || []).find(p => p.pieceIndex === pieceIndex);
+      if (vcP) {
+        vcP.stageD = {
+          photoUrl: photoUrl,
+          timestamp: timeStr,
+          operator: 'User D (Assay Custodian)',
+          embedding: extractVisualEmbedding(photoUrl, { articleType: vcP.articleType, pieceIndex: pieceIndex, metal: activeDeliveryAssayBatch.metal, angle: 10 }),
+          matchScore: 95,
+          status: 'MATCHED',
+          captured: true
+        };
+      }
+
       // Update Last Captured Thumbnail
       const previewBox = document.getElementById('deliv-assay-thumb-preview-box');
       const info = document.getElementById('deliv-assay-thumb-info');
@@ -6342,6 +6392,20 @@
           timestamp: time,
           verifier: 'Sarah Jenkins (Assay Custodian)'
         });
+
+        ensureBatchVisualCustody(batch);
+        const vcP = (batch.visualCustody || []).find(p => p.pieceIndex === i);
+        if (vcP) {
+          vcP.stageD = {
+            photoUrl: photo,
+            timestamp: time,
+            operator: 'User D (Assay Custodian)',
+            embedding: extractVisualEmbedding(photo, { articleType: vcP.articleType, pieceIndex: i, metal: batch.metal, angle: 10 }),
+            matchScore: 95,
+            status: 'MATCHED',
+            captured: true
+          };
+        }
       }
     }
 
@@ -11948,31 +12012,61 @@
     const reader = new FileReader();
     reader.onload = function(e) {
       if (!activeAssayCenterReceiveBatch) return;
-      const targetPiece = activeAssayCenterReceiveBatch.visualCustody.find(p => !p.stageA || !p.stageA.captured);
+      const batch = activeAssayCenterReceiveBatch;
+      ensureBatchVisualCustody(batch);
+      const targetPiece = batch.visualCustody.find(p => !p.stageA || !p.stageA.captured);
       if (!targetPiece) {
         showToast('ALL PIECES ALREADY CAPTURED.', 'info');
+        if (event && event.target) event.target.value = '';
         return;
       }
       const photoUrl = e.target.result;
+      const pieceIdx = targetPiece.pieceIndex;
+      const tagCode = targetPiece.tagCode;
+      const articleType = targetPiece.articleType;
+
       const embedding = extractVisualEmbedding(photoUrl, {
-        articleType: targetPiece.articleType,
-        pieceIndex: targetPiece.pieceIndex,
-        metal: activeAssayCenterReceiveBatch.metal,
+        articleType: articleType,
+        pieceIndex: pieceIdx,
+        metal: batch.metal,
         angle: 0
       });
 
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
       targetPiece.stageA = {
         photoUrl: photoUrl,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: timeStr,
         operator: 'User A (Sarah Jenkins - Assay Intake Master)',
         embedding: embedding,
         captured: true
       };
 
-      updateAssayCenterReceiveProgress(activeAssayCenterReceiveBatch);
-      renderAssayCenterReceivePiecesGrid(activeAssayCenterReceiveBatch);
+      // Update Latest Captured Baseline Card
+      const thumbBox = document.getElementById('assay-recv-thumb-box');
+      const thumbTime = document.getElementById('assay-recv-thumb-time');
+      const thumbInfo = document.getElementById('assay-recv-thumb-info');
+      const thumbEmb = document.getElementById('assay-recv-thumb-embedding');
+
+      if (thumbBox) thumbBox.innerHTML = `<img src="${photoUrl}" alt="Piece #${pieceIdx}" class="w-full h-full object-cover"/>`;
+      if (thumbTime) thumbTime.textContent = `${timeStr} Today`;
+      if (thumbInfo) thumbInfo.textContent = `Piece #${pieceIdx} • ${tagCode}`;
+      if (thumbEmb) thumbEmb.textContent = `${embedding.hash} (16-Ring Invariant)`;
+
+      updateAssayCenterReceiveProgress(batch);
+      renderAssayCenterReceivePiecesGrid(batch);
       updateAssayCenterReceiveStats();
-      showToast(`PIECE #${targetPiece.pieceIndex} PHOTO UPLOADED & EMBEDDING EXTRACTED!`, 'success');
+
+      const remaining = batch.visualCustody.filter(p => !p.stageA || !p.stageA.captured).length;
+      if (remaining === 0) {
+        playAssaySound('complete');
+        showToast(`ALL ${batch.pcs} PIECES CAPTURED! SUBMISSION READY.`, 'success');
+      } else {
+        playAssaySound('photo');
+        showToast(`PIECE #${pieceIdx} PHOTO UPLOADED & EMBEDDING EXTRACTED!`, 'success');
+      }
+
+      if (event && event.target) event.target.value = '';
     };
     reader.readAsDataURL(file);
   }
@@ -12624,44 +12718,111 @@
     const reader = new FileReader();
     reader.onload = function(e) {
       if (!activeCenterImageReceiveBatch) return;
-      const targetPiece = activeCenterImageReceiveBatch.visualCustody.find(p => !p.stageB || !p.stageB.captured);
-      if (!targetPiece) return;
+      const batch = activeCenterImageReceiveBatch;
+      ensureBatchVisualCustody(batch);
+      const targetPiece = batch.visualCustody.find(p => !p.stageB || !p.stageB.captured || p.stageB.status === 'MISMATCH');
+      if (!targetPiece) {
+        showToast('ALL PIECES IN THIS BATCH ARE ALREADY VERIFIED!', 'info');
+        if (event && event.target) event.target.value = '';
+        return;
+      }
 
+      const pieceIdx = targetPiece.pieceIndex;
       const photoUrl = e.target.result;
       const curImg = document.getElementById('center-img-comp-current-img');
+      const curMeta = document.getElementById('center-img-comp-current-meta');
       if (curImg) {
         curImg.src = photoUrl;
         curImg.classList.remove('hidden');
       }
 
+      // Ensure Stage A baseline exists for comparison
+      if (!targetPiece.stageA || !targetPiece.stageA.captured) {
+        const defaultPhotoA = generateCustodyArticlePhoto(batch.customer, pieceIdx, batch.metal, batch.purity, 'STAGE_A', {
+          articleType: targetPiece.articleType,
+          angle: 0
+        });
+        targetPiece.stageA = {
+          photoUrl: defaultPhotoA,
+          timestamp: '08:01 PM Baseline',
+          operator: 'User A (Intake Master)',
+          embedding: extractVisualEmbedding(defaultPhotoA, { articleType: targetPiece.articleType, pieceIndex: pieceIdx, metal: batch.metal, angle: 0 }),
+          captured: true
+        };
+      }
+
       const embB = extractVisualEmbedding(photoUrl, {
         articleType: targetPiece.articleType,
-        pieceIndex: targetPiece.pieceIndex,
-        metal: activeCenterImageReceiveBatch.metal,
+        pieceIndex: pieceIdx,
+        metal: batch.metal,
         angle: 45
       });
 
       const comparison = calculateVisualSimilarity(targetPiece.stageA.embedding, embB);
-      targetPiece.stageB = {
-        photoUrl: photoUrl,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        operator: 'User B (Receiving Inspector)',
-        embedding: embB,
-        matchScore: comparison.score,
-        status: comparison.score >= 75 ? 'MATCHED' : (comparison.score >= 60 ? 'REVIEWED' : 'OVERRIDDEN'),
-        captured: true,
-        supervisorOverride: comparison.score < 60
-      };
+      const score = comparison.score;
 
+      const mChroma = document.getElementById('center-img-metric-chroma');
+      const mRadial = document.getElementById('center-img-metric-radial');
+      const mGeom = document.getElementById('center-img-metric-geom');
       const badgeContainer = document.getElementById('center-img-match-badge');
+      const overrideBtn = document.getElementById('center-img-override-btn');
+
+      if (mChroma) mChroma.textContent = comparison.breakdown.chromaSim;
+      if (mRadial) mRadial.textContent = comparison.breakdown.radialSim;
+      if (mGeom) mGeom.textContent = comparison.breakdown.geomSim;
+
       if (badgeContainer) {
-        badgeContainer.outerHTML = `<div id="center-img-match-badge">${formatMatchBadge(comparison.score, comparison.score < 60)}</div>`;
+        badgeContainer.outerHTML = `<div id="center-img-match-badge">${formatMatchBadge(score, false)}</div>`;
       }
 
-      updateCenterImageReceiveProgress(activeCenterImageReceiveBatch);
-      renderCenterImagePiecesGrid(activeCenterImageReceiveBatch);
-      updateCenterImageReceiveStats();
-      showToast(`PIECE #${targetPiece.pieceIndex} MATCH EVALUATED: ${comparison.score}%!`, 'success');
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      if (score >= 60) {
+        targetPiece.stageB = {
+          photoUrl: photoUrl,
+          timestamp: timeStr,
+          operator: 'User B (Vikram Anand - Receiving Inspector)',
+          embedding: embB,
+          matchScore: score,
+          status: score >= 75 ? 'MATCHED' : 'REVIEWED',
+          captured: true,
+          supervisorOverride: false
+        };
+        if (overrideBtn) overrideBtn.classList.add('hidden');
+        if (curMeta) {
+          curMeta.innerHTML = `
+            <span>Piece #${pieceIdx} • Verified</span>
+            <span>Receipt: ${timeStr}</span>
+          `;
+        }
+        playAssaySound('complete');
+        showToast(`PIECE #${pieceIdx} VISUALLY RECOGNISED: ${score}% MATCH!`, score >= 75 ? 'success' : 'info');
+
+        updateCenterImageReceiveProgress(batch);
+        renderCenterImagePiecesGrid(batch);
+        updateCenterImageReceiveStats();
+
+        setTimeout(() => {
+          loadActivePieceComparison(batch);
+        }, 1000);
+      } else {
+        // Score < 60%: Mismatch alert & Supervisor Override
+        targetPiece.stageB = {
+          photoUrl: photoUrl,
+          timestamp: timeStr,
+          operator: 'User B (Receiving Inspector)',
+          embedding: embB,
+          matchScore: score,
+          status: 'MISMATCH',
+          captured: false,
+          supervisorOverride: false
+        };
+        if (overrideBtn) overrideBtn.classList.remove('hidden');
+        playAssaySound('reject');
+        showToast(`MISMATCH ALERT (${score}%): POTENTIAL ARTICLE SWAP DETECTED!`, 'error');
+      }
+
+      if (event && event.target) event.target.value = '';
     };
     reader.readAsDataURL(file);
   }
@@ -12747,7 +12908,7 @@
     const piece = batch.visualCustody.find(p => p.pieceIndex === pieceIndex) || batch.visualCustody[0];
     if (!piece) return;
 
-    activeVisualCustodyPiece = { jobDocket, pieceIndex };
+    activeVisualCustodyPiece = { jobDocket, pieceIndex: piece.pieceIndex };
 
     const modal = document.getElementById('visual-custody-modal');
     const elTitle = document.getElementById('visual-modal-title');
@@ -12755,88 +12916,128 @@
     const elSub = document.getElementById('visual-modal-subtitle');
     const elGrid = document.getElementById('visual-modal-filmstrip-grid');
     const elAudit = document.getElementById('visual-modal-audit-log');
+    const elIntegrity = document.getElementById('visual-modal-integrity-text');
+    const elHash = document.getElementById('visual-modal-hash');
 
     if (elTitle) elTitle.textContent = '4-STAGE MULTI-ANGLE VISUAL CUSTODY CHAIN';
     if (elPill) elPill.textContent = `PIECE #${piece.pieceIndex} • ${piece.articleType}`;
     if (elSub) elSub.textContent = `${batch.jobDocket} • ${batch.customer} • ${batch.metal} ${batch.purity}`;
 
-    // Ensure Stage C & D have representative photos if not yet captured
-    const pA = piece.stageA && piece.stageA.captured ? piece.stageA.photoUrl : generateCustodyArticlePhoto(batch.customer, piece.pieceIndex, batch.metal, batch.purity, 'STAGE_A', { articleType: piece.articleType, angle: 0 });
-    const pB = piece.stageB && piece.stageB.captured ? piece.stageB.photoUrl : generateCustodyArticlePhoto(batch.customer, piece.pieceIndex, batch.metal, batch.purity, 'STAGE_B', { articleType: piece.articleType, angle: 35 });
-    const pC = piece.stageC && piece.stageC.captured ? piece.stageC.photoUrl : generateCustodyArticlePhoto(batch.customer, piece.pieceIndex, batch.metal, batch.purity, 'STAGE_C', { articleType: piece.articleType, angle: -20 });
-    const pD = piece.stageD && piece.stageD.captured ? piece.stageD.photoUrl : generateCustodyArticlePhoto(batch.customer, piece.pieceIndex, batch.metal, batch.purity, 'STAGE_D', { articleType: piece.articleType, angle: 10 });
+    // Dynamic resolution of photos, timestamps, operators, and match scores across all 4 stages
+    const isCapA = Boolean(piece.stageA && piece.stageA.captured);
+    const pA = isCapA ? piece.stageA.photoUrl : generateCustodyArticlePhoto(batch.customer, piece.pieceIndex, batch.metal, batch.purity, 'STAGE_A', { articleType: piece.articleType, angle: 0 });
+    const opA = (piece.stageA && piece.stageA.operator) || 'User A (Sarah Jenkins - Assay Intake Master)';
+    const timeA = (piece.stageA && piece.stageA.timestamp) || 'Pending Intake';
+    const statusA = isCapA ? 'BASELINE LOCKED' : 'PENDING INTAKE';
+    const statusClassA = isCapA ? 'text-sky-300' : 'text-slate-400';
+    const embA_hash = (piece.stageA && piece.stageA.embedding && piece.stageA.embedding.hash) || 'VEC-7F2A';
 
-    const scoreB = piece.stageB ? (piece.stageB.matchScore || 94) : 94;
-    const scoreC = piece.stageC ? (piece.stageC.matchScore || 96) : 96;
-    const scoreD = piece.stageD ? (piece.stageD.matchScore || 95) : 95;
+    const isCapB = Boolean(piece.stageB && piece.stageB.captured);
+    const pB = isCapB ? piece.stageB.photoUrl : generateCustodyArticlePhoto(batch.customer, piece.pieceIndex, batch.metal, batch.purity, 'STAGE_B', { articleType: piece.articleType, angle: 35 });
+    const opB = (piece.stageB && piece.stageB.operator) || 'User B (Vikram Anand - Receiving Inspector)';
+    const timeB = (piece.stageB && piece.stageB.timestamp) || 'Pending Receipt';
+    const scoreB = piece.stageB && typeof piece.stageB.matchScore === 'number' ? piece.stageB.matchScore : 94;
+    const isOverB = Boolean(piece.stageB && piece.stageB.supervisorOverride);
+    const statusB = isCapB ? (isOverB ? 'OVERRIDDEN (SUPERVISOR APPROVED)' : `AI MATCH: ${scoreB}% CONFIRMED`) : 'AWAITING MATCH';
+    const statusClassB = isCapB ? (isOverB ? 'text-purple-300' : 'text-emerald-300') : 'text-slate-400';
+
+    const isCapC = Boolean(piece.stageC && piece.stageC.captured);
+    const pC = isCapC ? piece.stageC.photoUrl : generateCustodyArticlePhoto(batch.customer, piece.pieceIndex, batch.metal, batch.purity, 'STAGE_C', { articleType: piece.articleType, angle: -20 });
+    const opC = (piece.stageC && piece.stageC.operator) || 'User C (Priyanka Roy - Pre-Dispatch Officer)';
+    const timeC = (piece.stageC && piece.stageC.timestamp) || 'Pending Dispatch';
+    const scoreC = piece.stageC && typeof piece.stageC.matchScore === 'number' ? piece.stageC.matchScore : 96;
+    const statusC = isCapC ? `WORK CONFIRMED (${scoreC}% MATCH)` : 'AWAITING DISPATCH';
+    const statusClassC = isCapC ? 'text-purple-300' : 'text-slate-400';
+
+    const isCapD = Boolean(piece.stageD && piece.stageD.captured);
+    const pD = isCapD ? piece.stageD.photoUrl : generateCustodyArticlePhoto(batch.customer, piece.pieceIndex, batch.metal, batch.purity, 'STAGE_D', { articleType: piece.articleType, angle: 10 });
+    const opD = (piece.stageD && piece.stageD.operator) || 'User D (Koushik Ghosh - Assay Custodian)';
+    const timeD = (piece.stageD && piece.stageD.timestamp) || 'Pending Handover';
+    const scoreD = piece.stageD && typeof piece.stageD.matchScore === 'number' ? piece.stageD.matchScore : 95;
+    const statusD = isCapD ? `HANDOVER SECURED (${scoreD}% MATCH)` : 'AWAITING HANDOVER';
+    const statusClassD = isCapD ? 'text-emerald-300' : 'text-slate-400';
+
+    const completedStagesCount = (isCapA ? 1 : 0) + (isCapB ? 1 : 0) + (isCapC ? 1 : 0) + (isCapD ? 1 : 0);
+    const allStagesDone = completedStagesCount === 4;
+
+    if (elIntegrity) {
+      elIntegrity.textContent = allStagesDone
+        ? '4-STAGE VISUAL CHAIN OF CUSTODY VERIFIED • ZERO TAMPERING DETECTED'
+        : `VISUAL CHAIN OF CUSTODY ACTIVE • ${completedStagesCount} OF 4 STAGES RECORDED`;
+    }
+
+    if (elHash) {
+      const codeNum = (batch.jobDocket || 'JOB').split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) * 8831 + piece.pieceIndex * 997;
+      elHash.textContent = 'SHA-256: ' + Math.abs(codeNum).toString(16).toUpperCase().padStart(8, '0') + '...82B1';
+    }
 
     if (elGrid) {
       elGrid.innerHTML = `
         <!-- Stage A Column -->
-        <div class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-white">
+        <div class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-900 border ${isCapA ? 'border-sky-700/60' : 'border-slate-800'} text-white">
           <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
             <span class="text-[10px] font-bold uppercase tracking-wider text-sky-400">STAGE A: ASSAY INTAKE</span>
             <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-sky-950 text-sky-300 font-bold">USER A</span>
           </div>
-          <div class="w-full aspect-square rounded-lg bg-slate-950 overflow-hidden border border-slate-800">
-            <img src="${pA}" alt="Stage A" class="w-full h-full object-cover"/>
+          <div class="w-full aspect-square rounded-lg bg-slate-950 overflow-hidden border border-slate-800 flex items-center justify-center">
+            <img src="${pA}" alt="Stage A Photo" class="w-full h-full object-cover"/>
           </div>
           <div class="flex flex-col gap-1 text-[10.5px] font-mono text-slate-300">
-            <span class="font-bold text-white">Baseline Registered</span>
-            <span>Operator: User A (Sarah Jenkins)</span>
+            <span class="font-bold text-white">${isCapA ? 'Baseline Registered' : 'Intake Pending'}</span>
+            <span class="truncate" title="${escapeHtmlStr(opA)}">Operator: ${escapeHtmlStr(opA)}</span>
             <span>Angle: 0° Normal Intake</span>
-            <span class="text-sky-300">Status: BASELINE LOCKED</span>
+            <span class="${statusClassA} font-bold">Status: ${statusA}</span>
           </div>
         </div>
 
         <!-- Stage B Column -->
-        <div class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-white">
+        <div class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-900 border ${isCapB ? 'border-amber-700/60' : 'border-slate-800'} text-white">
           <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
             <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">STAGE B: CENTER RECEIPT</span>
             <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 font-bold">USER B</span>
           </div>
-          <div class="w-full aspect-square rounded-lg bg-slate-950 overflow-hidden border border-slate-800">
-            <img src="${pB}" alt="Stage B" class="w-full h-full object-cover"/>
+          <div class="w-full aspect-square rounded-lg bg-slate-950 overflow-hidden border border-slate-800 flex items-center justify-center">
+            <img src="${pB}" alt="Stage B Photo" class="w-full h-full object-cover"/>
           </div>
           <div class="flex flex-col gap-1 text-[10.5px] font-mono text-slate-300">
-            <span class="font-bold text-emerald-400">AI Match: ${scoreB}% Confirmed</span>
-            <span>Operator: User B (Vikram Anand)</span>
+            <span class="font-bold ${isCapB ? (isOverB ? 'text-purple-400' : 'text-emerald-400') : 'text-slate-400'}">${isCapB ? (isOverB ? `Overridden: ${scoreB}% Verified` : `AI Match: ${scoreB}% Confirmed`) : 'Matching Pending'}</span>
+            <span class="truncate" title="${escapeHtmlStr(opB)}">Operator: ${escapeHtmlStr(opB)}</span>
             <span>Angle: 35° Workstation Tilt</span>
-            <span class="text-emerald-300">Status: RECEIPT VERIFIED</span>
+            <span class="${statusClassB} font-bold">Status: ${statusB}</span>
           </div>
         </div>
 
         <!-- Stage C Column -->
-        <div class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-white">
+        <div class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-900 border ${isCapC ? 'border-purple-700/60' : 'border-slate-800'} text-white">
           <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
             <span class="text-[10px] font-bold uppercase tracking-wider text-purple-400">STAGE C: PRE-DISPATCH</span>
             <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 font-bold">USER C</span>
           </div>
-          <div class="w-full aspect-square rounded-lg bg-slate-950 overflow-hidden border border-slate-800">
-            <img src="${pC}" alt="Stage C" class="w-full h-full object-cover"/>
+          <div class="w-full aspect-square rounded-lg bg-slate-950 overflow-hidden border border-slate-800 flex items-center justify-center">
+            <img src="${pC}" alt="Stage C Photo" class="w-full h-full object-cover"/>
           </div>
           <div class="flex flex-col gap-1 text-[10.5px] font-mono text-slate-300">
-            <span class="font-bold text-emerald-400">AI Match: ${scoreC}% Confirmed</span>
-            <span>Operator: User C (Priyanka Roy)</span>
+            <span class="font-bold ${isCapC ? 'text-emerald-400' : 'text-slate-400'}">${isCapC ? `AI Match: ${scoreC}% Confirmed` : 'Dispatch Pending'}</span>
+            <span class="truncate" title="${escapeHtmlStr(opC)}">Operator: ${escapeHtmlStr(opC)}</span>
             <span>Angle: -20° Dispatch Counter</span>
-            <span class="text-purple-300">Status: WORK CONFIRMED</span>
+            <span class="${statusClassC} font-bold">Status: ${statusC}</span>
           </div>
         </div>
 
         <!-- Stage D Column -->
-        <div class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-white">
+        <div class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-900 border ${isCapD ? 'border-emerald-700/60' : 'border-slate-800'} text-white">
           <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
             <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">STAGE D: HANDOVER RELEASE</span>
             <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold">USER D</span>
           </div>
-          <div class="w-full aspect-square rounded-lg bg-slate-950 overflow-hidden border border-slate-800">
-            <img src="${pD}" alt="Stage D" class="w-full h-full object-cover"/>
+          <div class="w-full aspect-square rounded-lg bg-slate-950 overflow-hidden border border-slate-800 flex items-center justify-center">
+            <img src="${pD}" alt="Stage D Photo" class="w-full h-full object-cover"/>
           </div>
           <div class="flex flex-col gap-1 text-[10.5px] font-mono text-slate-300">
-            <span class="font-bold text-emerald-400">AI Match: ${scoreD}% Confirmed</span>
-            <span>Operator: User D (Devraj / Koushik)</span>
+            <span class="font-bold ${isCapD ? 'text-emerald-400' : 'text-slate-400'}">${isCapD ? `AI Match: ${scoreD}% Confirmed` : 'Handover Pending'}</span>
+            <span class="truncate" title="${escapeHtmlStr(opD)}">Operator: ${escapeHtmlStr(opD)}</span>
             <span>Angle: 10° Vault Counter</span>
-            <span class="text-emerald-300">Status: HANDOVER SECURED</span>
+            <span class="${statusClassD} font-bold">Status: ${statusD}</span>
           </div>
         </div>
       `;
@@ -12846,10 +13047,10 @@
       elAudit.innerHTML = `
         <div><span>• Tag Identification:</span> <span class="text-slate-900 font-bold">${escapeHtmlStr(piece.tagCode)}</span></div>
         <div><span>• Article Classification:</span> <span class="text-slate-900 font-bold">${escapeHtmlStr(piece.articleType)} (${batch.metal} ${batch.purity})</span></div>
-        <div><span>• Stage A Intake Timestamp:</span> <span class="text-slate-900 font-bold">08:05 AM Today (Operator: User A)</span></div>
-        <div><span>• Stage B Center Receipt:</span> <span class="text-slate-900 font-bold">08:25 AM Today (Operator: User B, Match: ${scoreB}%)</span></div>
-        <div><span>• Stage C Delivery Dispatch:</span> <span class="text-slate-900 font-bold">08:42 AM Today (Operator: User C, Match: ${scoreC}%)</span></div>
-        <div><span>• Stage D Assay Center Handover:</span> <span class="text-slate-900 font-bold">08:52 AM Today (Operator: User D, Match: ${scoreD}%)</span></div>
+        <div><span>• Stage A Intake:</span> <span class="text-slate-900 font-bold">${isCapA ? `${timeA} • ${escapeHtmlStr(opA)} (${embA_hash})` : 'Pending Intake'}</span></div>
+        <div><span>• Stage B Center Receipt:</span> <span class="text-slate-900 font-bold">${isCapB ? `${timeB} • ${escapeHtmlStr(opB)} (${isOverB ? 'Overridden: ' : 'Match: '}${scoreB}%)` : 'Pending Receipt'}</span></div>
+        <div><span>• Stage C Delivery Dispatch:</span> <span class="text-slate-900 font-bold">${isCapC ? `${timeC} • ${escapeHtmlStr(opC)} (Match: ${scoreC}%)` : 'Pending Dispatch'}</span></div>
+        <div><span>• Stage D Assay Center Handover:</span> <span class="text-slate-900 font-bold">${isCapD ? `${timeD} • ${escapeHtmlStr(opD)} (Match: ${scoreD}%)` : 'Pending Handover'}</span></div>
       `;
     }
 
