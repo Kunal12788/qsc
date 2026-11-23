@@ -2416,6 +2416,7 @@
     const topCal = document.getElementById('tag-cal-top');
     const leftCal = document.getElementById('tag-cal-left');
     const botCal = document.getElementById('tag-cal-bottom');
+    const gapCal = document.getElementById('tag-cal-gap');
     const fontZoom = document.getElementById('tag-cal-font-scale');
 
     if (!widthInput || !heightInput) return;
@@ -2423,21 +2424,41 @@
     if (unitSelect) unitSelect.value = 'mm';
     document.querySelectorAll('.tag-unit-label').forEach(el => { el.textContent = 'mm'; });
 
-    if (preset === 'rattail-84') {
+    if (preset === 'butterfly-84') {
       widthInput.value = 84;
       heightInput.value = 12;
       if (layoutSelect) layoutSelect.value = 'split';
       if (topCal) topCal.value = 0.8;
-      if (leftCal) leftCal.value = 1.5;
+      if (leftCal) leftCal.value = 1.2;
       if (botCal) botCal.value = 0.8;
+      if (gapCal) gapCal.value = 12;
+      if (fontZoom) fontZoom.value = 100;
+    } else if (preset === 'rattail-84') {
+      widthInput.value = 84;
+      heightInput.value = 12;
+      if (layoutSelect) layoutSelect.value = 'split';
+      if (topCal) topCal.value = 0.8;
+      if (leftCal) leftCal.value = 1.2;
+      if (botCal) botCal.value = 0.8;
+      if (gapCal) gapCal.value = 0;
+      if (fontZoom) fontZoom.value = 100;
+    } else if (preset === 'butterfly-75') {
+      widthInput.value = 75;
+      heightInput.value = 12;
+      if (layoutSelect) layoutSelect.value = 'split';
+      if (topCal) topCal.value = 0.8;
+      if (leftCal) leftCal.value = 1.2;
+      if (botCal) botCal.value = 0.8;
+      if (gapCal) gapCal.value = 11;
       if (fontZoom) fontZoom.value = 100;
     } else if (preset === 'rattail-75') {
       widthInput.value = 75;
       heightInput.value = 12;
       if (layoutSelect) layoutSelect.value = 'split';
       if (topCal) topCal.value = 0.8;
-      if (leftCal) leftCal.value = 1.5;
+      if (leftCal) leftCal.value = 1.2;
       if (botCal) botCal.value = 0.8;
+      if (gapCal) gapCal.value = 0;
       if (fontZoom) fontZoom.value = 100;
     } else if (preset === 'butterfly') {
       widthInput.value = 50;
@@ -2446,14 +2467,16 @@
       if (topCal) topCal.value = 0.8;
       if (leftCal) leftCal.value = 1.2;
       if (botCal) botCal.value = 0.8;
+      if (gapCal) gapCal.value = 0;
       if (fontZoom) fontZoom.value = 100;
     } else if (preset === 'dumbbell') {
       widthInput.value = 48;
       heightInput.value = 26;
-      if (layoutSelect) layoutSelect.value = 'compact';
+      if (layoutSelect) layoutSelect.value = 'split';
       if (topCal) topCal.value = 1.0;
       if (leftCal) leftCal.value = 1.5;
       if (botCal) botCal.value = 1.0;
+      if (gapCal) gapCal.value = 8;
       if (fontZoom) fontZoom.value = 100;
     } else if (preset === 'pouch') {
       widthInput.value = 60;
@@ -2462,10 +2485,11 @@
       if (topCal) topCal.value = 1.5;
       if (leftCal) leftCal.value = 2.0;
       if (botCal) botCal.value = 1.5;
+      if (gapCal) gapCal.value = 0;
       if (fontZoom) fontZoom.value = 100;
     }
 
-    ['rattail-84', 'rattail-75', 'butterfly', 'dumbbell', 'pouch', 'custom'].forEach(p => {
+    ['butterfly-84', 'rattail-84', 'butterfly-75', 'rattail-75', 'butterfly', 'dumbbell', 'pouch', 'custom'].forEach(p => {
       const btn = document.getElementById(`tag-preset-${p}`);
       if (btn) {
         if (p === preset) {
@@ -2516,6 +2540,7 @@
     const heightInput = document.getElementById('tag-print-height') || document.getElementById('tag-cfg-height');
     const unitInput = document.getElementById('tag-print-unit') || document.getElementById('tag-cfg-unit');
     const layoutInput = document.getElementById('tag-print-layout');
+    const gapInput = document.getElementById('tag-cal-gap');
     const fontScaleInput = document.getElementById('tag-cal-font-scale');
     const dimsLabel = document.getElementById('tag-preview-dims-label');
 
@@ -2525,10 +2550,11 @@
     const height = parseFloat(heightInput.value) || 12;
     const unit = unitInput ? unitInput.value : 'mm';
     const layout = layoutInput ? layoutInput.value : (width >= 70 ? 'split' : 'compact');
+    const gapMm = Math.max(0, parseFloat(gapInput?.value || 0));
     const fontZoom = (parseFloat(fontScaleInput?.value || 100)) / 100;
 
     if (dimsLabel) {
-      dimsLabel.textContent = `${width} × ${height} ${unit} • ${layout === 'split' ? 'SPLIT HEAD+TAIL' : 'COMPACT'}`;
+      dimsLabel.textContent = `${width} × ${height} ${unit} • ${layout === 'split' ? (gapMm > 0 ? `BUTTERFLY (GAP ${gapMm}mm)` : 'SPLIT RAT-TAIL') : 'COMPACT'}`;
     }
 
     const ratio = width / height;
@@ -2585,23 +2611,27 @@
     ].join('\n');
 
     if (layout === 'split') {
-      // DUAL-ZONE: Head on Left (56%), Tail on Right (44%)
       miniPreview.style.display = 'flex';
       miniPreview.style.flexDirection = 'row';
       miniPreview.style.padding = '0';
       miniPreview.style.alignItems = 'stretch';
       miniPreview.style.justifyContent = 'space-between';
 
-      const previewTitlePx = Math.max(5.5, Math.min(9.0, targetH * 0.12 * fontZoom)).toFixed(1);
-      const previewDataPx = Math.max(4.5, Math.min(7.5, targetH * 0.095 * fontZoom)).toFixed(1);
-      const previewQrDim = Math.max(18, Math.min(targetH - 22, 60));
+      const previewTitlePx = Math.max(5.5, Math.min(8.8, targetH * 0.115 * fontZoom)).toFixed(1);
+      const previewDataPx = Math.max(4.5, Math.min(7.2, targetH * 0.092 * fontZoom)).toFixed(1);
+      const previewQrDim = Math.max(18, Math.min(targetH - 20, 60));
+
+      const hasBridge = gapMm > 0 && width > gapMm + 20;
+      const headPct = hasBridge ? Math.round(((width - gapMm) / (2 * width)) * 100) : 54;
+      const gapPct = hasBridge ? Math.round((gapMm / width) * 100) : 0;
+      const tailPct = 100 - headPct - gapPct;
 
       miniPreview.innerHTML = `
-        <!-- Left Head Zone (56%) -->
-        <div style="width: 56%; max-width: 56%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: 4px 6px 4px 8px; overflow: hidden; background: #ffffff;">
+        <!-- Left Head Zone (${headPct}%) -->
+        <div style="width: ${headPct}%; max-width: ${headPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: 4px 6px 4px 8px; overflow: hidden; background: #ffffff;">
           ${optCust ? `
             <div style="text-align: center; width: 100%;">
-              <div style="font-family: 'Cinzel', Georgia, serif; font-size: ${previewTitlePx}px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2px; line-height: 1.08; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+              <div style="font-family: 'Cinzel', -apple-system, BlinkMacSystemFont, 'Segoe UI', serif; font-size: ${previewTitlePx}px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15px; line-height: 1.05; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                 ${escapeHtmlStr(custName)}
               </div>
               <div style="display: flex; align-items: center; justify-content: center; width: 100%; margin: 1px 0;">
@@ -2611,11 +2641,11 @@
               </div>
             </div>
           ` : ''}
-          <div style="display: flex; flex-direction: column; justify-content: space-between; flex: 1; font-size: ${previewDataPx}px; font-weight: 800; line-height: 1.12; overflow: hidden; font-family: 'Montserrat', sans-serif;">
+          <div style="display: flex; flex-direction: column; justify-content: space-between; flex: 1; font-size: ${previewDataPx}px; font-weight: 800; line-height: 1.10; overflow: hidden; font-family: 'Montserrat', sans-serif;">
             ${optCust ? `<div class="truncate">DATE: ${escapeHtmlStr(dateStr)}</div>` : ''}
             ${optOrnament ? `
               <div style="display: flex; justify-content: space-between; align-items: baseline; overflow: hidden; white-space: nowrap;">
-                <span class="truncate">ARTICLE: ${escapeHtmlStr(cleanArticle)}</span>
+                <span class="truncate">ART: ${escapeHtmlStr(cleanArticle)}</span>
                 <span class="text-right truncate pl-1">BOX: ${escapeHtmlStr(boxVal)}</span>
               </div>
               <div class="truncate">ORNAMENT: ${escapeHtmlStr(ornamentVal)}</div>
@@ -2628,8 +2658,15 @@
           </div>
         </div>
 
-        <!-- Right Tail Zone (44%) with subtle border & die-cut notch indicator -->
-        <div style="width: 44%; max-width: 44%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; border-left: 1px dashed #cbd5e1; background: #fafafa; overflow: hidden;">
+        ${hasBridge ? `
+          <!-- Center Bridge Notch Gap (${gapPct}%) -->
+          <div style="width: ${gapPct}%; max-width: ${gapPct}%; height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-left: 1px dashed #cbd5e1; border-right: 1px dashed #cbd5e1; background: #f8fafc; overflow: hidden;" title="Die-Cut Bridge Notch (Protected Gap)">
+            <span style="font-size: 8px; font-weight: 800; color: #94a3b8; letter-spacing: 0.5px; transform: rotate(-90deg); white-space: nowrap;">GAP</span>
+          </div>
+        ` : ''}
+
+        <!-- Right Tail Zone (${tailPct}%) -->
+        <div style="width: ${tailPct}%; max-width: ${tailPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; ${hasBridge ? '' : 'border-left: 1px dashed #cbd5e1;'} background: #ffffff; overflow: hidden;">
           ${optQr ? `
             <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1; margin-bottom: 2px; text-align: center;">
               SCAN QR
@@ -2637,7 +2674,7 @@
             <div style="display: flex; align-items: center; justify-content: center; overflow: hidden; width: ${previewQrDim}px; height: ${previewQrDim}px;">
               ${generateQrCodeSvg(samplePayload, previewQrDim)}
             </div>
-            <span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 900; letter-spacing: 0.5px; line-height: 1; margin-top: 2px; text-align: center;">
+            <span style="font-family: 'Montserrat', monospace; font-size: 7px; font-weight: 900; letter-spacing: 0.6px; line-height: 1; margin-top: 2px; text-align: center;">
               ${escapeHtmlStr(huidVal)}
             </span>
           ` : '<span class="text-[9px] text-slate-400 font-mono">TAIL ZONE</span>'}
@@ -2660,7 +2697,7 @@
         <div style="width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; padding-right: 2px;">
           ${optCust ? `
             <div style="text-align: center; width: 100%;">
-              <div style="font-family: 'Cinzel', Georgia, serif; font-size: ${previewTitlePx}px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2px; line-height: 1.08; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+              <div style="font-family: 'Cinzel', -apple-system, BlinkMacSystemFont, 'Segoe UI', serif; font-size: ${previewTitlePx}px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15px; line-height: 1.05; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                 ${escapeHtmlStr(custName)}
               </div>
               <div style="display: flex; align-items: center; justify-content: center; width: 100%; margin: 1px 0;">
@@ -2694,7 +2731,7 @@
             <div style="display: flex; align-items: center; justify-content: center; overflow: hidden; width: ${previewQrDim}px; height: ${previewQrDim}px;">
               ${generateQrCodeSvg(samplePayload, previewQrDim)}
             </div>
-            <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 900; letter-spacing: 0.5px; line-height: 1; margin-top: 2px; text-align: center;">
+            <span style="font-family: 'Montserrat', monospace; font-size: 6.5px; font-weight: 900; letter-spacing: 0.5px; line-height: 1; margin-top: 2px; text-align: center;">
               ${escapeHtmlStr(huidVal)}
             </span>
           ` : ''}
@@ -2742,8 +2779,9 @@
     const layout = document.getElementById('tag-print-layout')?.value || (width >= 70 ? 'split' : 'compact');
 
     const topOffsetMm = parseFloat(document.getElementById('tag-cal-top')?.value || 0.8);
-    const leftOffsetMm = parseFloat(document.getElementById('tag-cal-left')?.value || 1.5);
+    const leftOffsetMm = parseFloat(document.getElementById('tag-cal-left')?.value || 1.2);
     const botOffsetMm = parseFloat(document.getElementById('tag-cal-bottom')?.value || 0.8);
+    const gapMm = Math.max(0, parseFloat(document.getElementById('tag-cal-gap')?.value || 0));
     const fontScaleFactor = (parseFloat(document.getElementById('tag-cal-font-scale')?.value || 100)) / 100;
 
     const incCust = document.getElementById('tag-opt-cust')?.checked !== false;
@@ -2784,6 +2822,7 @@
         }];
 
     const tagsHtml = rowsToPrint.map((row, idx) => {
+      const isLastTag = idx === rowsToPrint.length - 1;
       const customerName = row.customer || defaultCustomer;
       const dateStr = row.date || batchDateStr;
       const purityVal = row.purity || defaultPurity;
@@ -2807,37 +2846,43 @@
       ].join('\n');
 
       if (layout === 'split') {
-        // DUAL-ZONE: Head on Left (56%), Tail on Right (44%)
-        // Optimized font sizes strictly preventing edge clipping
-        const baseTitlePt = usableH <= 11.0 ? 4.2 : Math.min(6.5, (usableH / 12.0) * 5.0);
-        const baseDataPt = usableH <= 11.0 ? 3.0 : Math.min(4.8, (usableH / 12.0) * 3.8);
+        const hasBridge = gapMm > 0 && usableW > gapMm + 20;
+        const headWMm = hasBridge 
+          ? Math.round(((usableW - gapMm) * 0.5) * 10) / 10 
+          : Math.round(usableW * 0.54 * 10) / 10;
+        const bridgeWMm = hasBridge ? gapMm : 0;
+        const tailWMm = Math.max(10.0, Math.round((usableW - bridgeWMm - headWMm) * 10) / 10);
+
+        const baseTitlePt = usableH <= 11.0 ? 4.1 : Math.min(6.2, (usableH / 12.0) * 4.8);
+        const baseDataPt = usableH <= 11.0 ? 2.9 : Math.min(4.5, (usableH / 12.0) * 3.6);
         const titlePt = (baseTitlePt * fontScaleFactor).toFixed(2);
         const dataPt = (baseDataPt * fontScaleFactor).toFixed(2);
         const dividerPt = (Math.max(2.8, baseDataPt * 0.95 * fontScaleFactor)).toFixed(2);
-        const dividerMarginMm = usableH <= 11.0 ? '0.12mm' : '0.25mm';
+        const dividerMarginMm = usableH <= 11.0 ? '0.12mm' : '0.22mm';
 
-        // Tail QR sizing: fits inside usableH with safety margin
+        // Tail QR sizing
         const qrHeaderPt = (Math.max(2.8, Math.min(4.8, usableH * 0.35)) * fontScaleFactor).toFixed(1);
         const qrFooterPt = (Math.max(3.2, Math.min(5.5, usableH * 0.40)) * fontScaleFactor).toFixed(1);
-        const headerHMm = parseFloat(qrHeaderPt) * 0.3527 * 1.1;
-        const footerHMm = parseFloat(qrFooterPt) * 0.3527 * 1.1;
-        const qrGapMm = 0.25;
+        const headerHMm = parseFloat(qrHeaderPt) * 0.3527 * 1.05;
+        const footerHMm = parseFloat(qrFooterPt) * 0.3527 * 1.05;
+        const qrGapMm = 0.22;
         const maxQrDim = usableH - headerHMm - footerHMm - (qrGapMm * 2);
-        const qrBoxDimMm = Math.max(4.5, Math.min(maxQrDim, (usableW * 0.44) - 2.0, 11.0)).toFixed(2);
+        const qrBoxDimMm = Math.max(4.5, Math.min(maxQrDim, tailWMm - 2.0, 11.0)).toFixed(2);
         const qrPixelDim = Math.max(24, Math.round(parseFloat(qrBoxDimMm) * 3.78));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
+        const pageBreakCss = isLastTag ? '' : 'page-break-after:always; break-after:page;';
 
         return `
-          <div class="print-tag tag-split-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:flex; flex-direction:row; align-items:stretch; justify-content:space-between; page-break-after:always; page-break-inside:avoid; break-after:page; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:'Montserrat',Arial,Helvetica,sans-serif;">
+          <div class="print-tag tag-split-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:flex; flex-direction:row; align-items:stretch; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,Helvetica,sans-serif;">
             
-            <!-- LEFT ZONE (PRINTABLE HEAD): 56% Width -->
-            <div style="width:56%; max-width:56%; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:1.2mm; overflow:hidden;">
+            <!-- LEFT ZONE (PRINTABLE HEAD): ${headWMm}mm -->
+            <div class="tag-head" style="width:${headWMm}mm; max-width:${headWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:1.0mm; overflow:hidden;">
               
               ${incCust ? `
-                <!-- Customer Jeweller Header (Centered serif) -->
+                <!-- Customer Jeweller Header -->
                 <div style="width:100%; text-align:center; flex-shrink:0;">
-                  <div style="font-family:'Cinzel','Times New Roman',Georgia,serif; font-size:${titlePt}pt; font-weight:900; text-transform:uppercase; letter-spacing:0.2px; line-height:1.06; word-break:break-word; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">
+                  <div style="font-family:'Cinzel',-apple-system,BlinkMacSystemFont,'Segoe UI',Georgia,serif; font-size:${titlePt}pt; font-weight:900; text-transform:uppercase; letter-spacing:0.15px; line-height:1.04; word-break:break-word; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">
                     ${escapeHtmlStr(customerName)}
                   </div>
                   <!-- Diamond Divider -->
@@ -2850,7 +2895,7 @@
               ` : ''}
 
               <!-- Structured Metadata Rows -->
-              <div style="display:flex; flex-direction:column; justify-content:space-between; flex:1; min-height:0; font-size:${dataPt}pt; font-weight:800; line-height:1.10; overflow:hidden;">
+              <div style="display:flex; flex-direction:column; justify-content:space-between; flex:1; min-height:0; font-size:${dataPt}pt; font-weight:800; line-height:1.06; overflow:hidden;">
                 ${incCust ? `
                   <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                     DATE: ${escapeHtmlStr(dateStr)}
@@ -2859,14 +2904,14 @@
                 ${incOrnament ? `
                   <div style="display:flex; justify-content:space-between; align-items:baseline; white-space:nowrap; overflow:hidden;">
                     <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;">ARTICLE: ${escapeHtmlStr(articleVal)}</span>
-                    <span style="white-space:nowrap; flex-shrink:0; padding-left:1mm; text-align:right;">BOX: ${escapeHtmlStr(boxNoStr)}</span>
+                    <span style="white-space:nowrap; flex-shrink:0; padding-left:0.8mm; text-align:right;">BOX: ${escapeHtmlStr(boxNoStr)}</span>
                   </div>
                   <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                     ORNAMENT: ${escapeHtmlStr(ornamentsType)}
                   </div>
                   <div style="display:flex; justify-content:space-between; align-items:baseline; white-space:nowrap; overflow:hidden;">
                     <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">GROSS: ${escapeHtmlStr(grossVal)}</span>
-                    <span style="white-space:nowrap; flex-shrink:0; padding-left:1mm; text-align:right;">NET: ${escapeHtmlStr(netVal)}</span>
+                    <span style="white-space:nowrap; flex-shrink:0; padding-left:0.8mm; text-align:right;">NET: ${escapeHtmlStr(netVal)}</span>
                   </div>
                 ` : ''}
                 ${incHuid ? `
@@ -2878,20 +2923,25 @@
 
             </div>
 
-            <!-- RIGHT ZONE (TAIL): 44% Width, Centered QR & HUID -->
+            ${bridgeWMm > 0 ? `
+              <!-- CENTER BRIDGE GAP (DIE-CUT NOTCH): ${bridgeWMm}mm -->
+              <div class="tag-bridge" style="width:${bridgeWMm}mm; max-width:${bridgeWMm}mm; height:100%; box-sizing:border-box; flex-shrink:0;"></div>
+            ` : ''}
+
+            <!-- RIGHT ZONE (TAIL): ${tailWMm}mm, Centered QR & HUID -->
             ${incQr ? `
-              <div style="width:44%; max-width:44%; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:1.0mm; padding-right:${padRightMm}mm; overflow:hidden;">
-                <div style="font-family:'Montserrat',Arial,sans-serif; font-size:${qrHeaderPt}pt; font-weight:900; letter-spacing:0.6px; text-transform:uppercase; line-height:1; margin-bottom:${qrGapMm}mm; text-align:center;">
+              <div class="tag-tail" style="width:${tailWMm}mm; max-width:${tailWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:0.8mm; padding-right:${padRightMm}mm; overflow:hidden;">
+                <div style="font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; font-size:${qrHeaderPt}pt; font-weight:900; letter-spacing:0.5px; text-transform:uppercase; line-height:1; margin-bottom:${qrGapMm}mm; text-align:center;">
                   SCAN QR
                 </div>
                 <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0;">
                   ${qrSvg}
                 </div>
-                <div style="font-family:'Montserrat','JetBrains Mono',monospace; font-size:${qrFooterPt}pt; font-weight:900; letter-spacing:0.8px; line-height:1; margin-top:${qrGapMm}mm; text-align:center;">
+                <div style="font-family:'Montserrat','JetBrains Mono',monospace; font-size:${qrFooterPt}pt; font-weight:900; letter-spacing:0.7px; line-height:1; margin-top:${qrGapMm}mm; text-align:center;">
                   ${escapeHtmlStr(huidStr)}
                 </div>
               </div>
-            ` : '<div style="width:44%; height:100%;"></div>'}
+            ` : `<div style="width:${tailWMm}mm; height:100%;"></div>`}
 
           </div>
         `;
@@ -2906,23 +2956,24 @@
 
         const qrHeaderPt = (Math.max(2.6, Math.min(4.5, usableH * 0.33)) * fontScaleFactor).toFixed(1);
         const qrFooterPt = (Math.max(3.0, Math.min(5.2, usableH * 0.38)) * fontScaleFactor).toFixed(1);
-        const headerHMm = parseFloat(qrHeaderPt) * 0.3527 * 1.1;
-        const footerHMm = parseFloat(qrFooterPt) * 0.3527 * 1.1;
+        const headerHMm = parseFloat(qrHeaderPt) * 0.3527 * 1.05;
+        const footerHMm = parseFloat(qrFooterPt) * 0.3527 * 1.05;
         const qrGapMm = 0.2;
         const maxQrDim = usableH - headerHMm - footerHMm - (qrGapMm * 2);
         const qrBoxDimMm = Math.max(4.0, Math.min(maxQrDim, (usableW * 0.46) - 1.5, 9.5)).toFixed(2);
         const qrPixelDim = Math.max(22, Math.round(parseFloat(qrBoxDimMm) * 3.78));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
+        const pageBreakCss = isLastTag ? '' : 'page-break-after:always; break-after:page;';
 
         return `
-          <div class="print-tag tag-compact-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:grid; grid-template-columns:52% 47%; justify-content:space-between; align-items:stretch; page-break-after:always; page-break-inside:avoid; break-after:page; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:'Montserrat',Arial,sans-serif; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm;">
+          <div class="print-tag tag-compact-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:grid; grid-template-columns:52% 47%; justify-content:space-between; align-items:stretch; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm;">
             
             <!-- Left Column: 52% -->
             <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:column; justify-content:space-between; height:100%; box-sizing:border-box; overflow:hidden; padding-right:0.6mm;">
               ${incCust ? `
                 <div style="width:100%; text-align:center; flex-shrink:0;">
-                  <div style="font-family:'Cinzel','Times New Roman',Georgia,serif; font-size:${titlePt}pt; font-weight:900; text-transform:uppercase; letter-spacing:0.2px; line-height:1.05; word-break:break-word; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">
+                  <div style="font-family:'Cinzel',-apple-system,BlinkMacSystemFont,'Segoe UI',Georgia,serif; font-size:${titlePt}pt; font-weight:900; text-transform:uppercase; letter-spacing:0.15px; line-height:1.04; word-break:break-word; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center;">
                     ${escapeHtmlStr(customerName)}
                   </div>
                   <div style="display:flex; align-items:center; justify-content:center; width:100%; margin:${dividerMarginMm} 0;">
@@ -2950,7 +3001,7 @@
             <!-- Right Column: 47% -->
             ${incQr ? `
               <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; box-sizing:border-box; overflow:hidden;">
-                <div style="font-family:'Montserrat',Arial,sans-serif; font-size:${qrHeaderPt}pt; font-weight:900; letter-spacing:0.4px; text-transform:uppercase; line-height:1; margin-bottom:${qrGapMm}mm; text-align:center;">
+                <div style="font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; font-size:${qrHeaderPt}pt; font-weight:900; letter-spacing:0.4px; text-transform:uppercase; line-height:1; margin-bottom:${qrGapMm}mm; text-align:center;">
                   SCAN QR
                 </div>
                 <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0;">
@@ -3004,11 +3055,18 @@
                 height: ${hMm}mm !important;
                 max-width: ${wMm}mm !important;
                 max-height: ${hMm}mm !important;
-                page-break-after: always !important;
                 page-break-inside: avoid !important;
-                break-after: page !important;
+                break-inside: avoid !important;
                 overflow: hidden !important;
                 box-sizing: border-box !important;
+              }
+              .print-tag:not(:last-child) {
+                page-break-after: always !important;
+                break-after: page !important;
+              }
+              .print-tag:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
               }
             }
             * {
@@ -3021,7 +3079,7 @@
               padding: 0;
               background: ${forNewTab ? '#f1f5f9' : '#ffffff'};
               color: #000000;
-              font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+              font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
             }
             ${forNewTab ? `
               .preview-wrapper {
@@ -3045,7 +3103,7 @@
             <div class="no-print" style="position:fixed; top:0; left:0; right:0; background:#0f172a; color:#ffffff; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; z-index:9999; box-shadow:0 2px 10px rgba(0,0,0,0.3); font-family:sans-serif; font-size:12px;">
               <div style="display:flex; align-items:center; gap:12px;">
                 <span style="font-weight:900; color:#c5a059; letter-spacing:0.5px;">JEWELLERY BARCODE TAG PRINT PREVIEW</span>
-                <span style="color:#94a3b8; font-family:monospace;">${wMm} × ${hMm} mm • ${layout.toUpperCase()} • ${rowsToPrint.length} TAG(S)</span>
+                <span style="color:#94a3b8; font-family:monospace;">${wMm} × ${hMm} mm • ${layout.toUpperCase()}${gapMm > 0 ? ` (GAP: ${gapMm}mm)` : ''} • ${rowsToPrint.length} TAG(S)</span>
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
                 <button onclick="window.print()" style="background:#c5a059; color:#0f172a; font-weight:800; padding:6px 16px; border:none; border-radius:6px; cursor:pointer; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">PRINT / SAVE AS PDF</button>
@@ -3092,7 +3150,8 @@
     printFrame = document.createElement('iframe');
     printFrame.id = 'tag-print-frame';
     printFrame.name = 'tag-print-frame';
-    printFrame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+    // Provide a standard viewport size for crisp Chromium layout calculations
+    printFrame.style.cssText = 'position:fixed;right:0;bottom:0;width:210mm;height:297mm;border:0;opacity:0;pointer-events:none;z-index:-9999;';
     document.body.appendChild(printFrame);
 
     const docHtml = buildTagPrintDocument(false);
@@ -11182,6 +11241,7 @@
   window.onTagUnitChanged = onTagUnitChanged;
   window.updateTagMiniPreview = updateTagMiniPreview;
   window.saveTagData = saveTagData;
+  window.buildTagPrintDocument = buildTagPrintDocument;
   window.printCustomTags = printCustomTags;
   window.openTagPrintTab = openTagPrintTab;
   window.syncTagPrintButtonState = syncTagPrintButtonState;
