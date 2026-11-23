@@ -278,13 +278,13 @@
       if (state.client.from) {
         try {
           const { error } = await state.client.from('lab_settings').select('id', { head: true, count: 'exact' });
-          if (!error || error.code === 'PGRST116' || error.message.includes('permission denied')) {
+          if (!error || error.code === 'PGRST116' || (error.message && error.message.includes('permission denied'))) {
             querySuccess = true;
           } else if (error && error.code === '42P01') {
             // Table does not exist yet, but connection to Postgres succeeded!
             querySuccess = true;
           } else if (error) {
-            errorMsg = error.message;
+            errorMsg = error.message || 'Database query failed';
           }
         } catch (e) {
           errorMsg = e.message;
@@ -452,6 +452,29 @@
     });
 
     return { success: true, user: state.currentUser, mode: 'local_fallback' };
+  }
+
+  // Sign In with OAuth provider (e.g. Google)
+  async function signInWithOAuth(provider = 'google') {
+    if (state.client && state.client.auth && typeof state.client.auth.signInWithOAuth === 'function') {
+      try {
+        let dest = 'index.html#/dashboard';
+        if (typeof window !== 'undefined' && window.location) {
+          const origin = window.location.origin || '';
+          const path = (window.location.pathname || '').replace(/[^/]*$/, '');
+          dest = origin + path + 'index.html#/dashboard';
+        }
+        const res = await state.client.auth.signInWithOAuth({
+          provider: provider,
+          options: { redirectTo: dest }
+        });
+        return res;
+      } catch (err) {
+        console.warn('OAuth sign-in exception:', err);
+        throw err;
+      }
+    }
+    return { success: false, error: 'Supabase client not connected. Configure credentials in Settings.' };
   }
 
   // Sign Out
@@ -821,6 +844,8 @@
       customersSynced: 0,
       batchesSynced: 0,
       billsSynced: 0,
+      deliveriesSynced: 0,
+      settingsSynced: false,
       errors: []
     };
 
@@ -851,6 +876,22 @@
           if (res.success) results.billsSynced += 1;
           else if (res.error) results.errors.push(`Bill ${bill.billNo}: ${res.error}`);
         }
+      }
+
+      // 4. Delivery Records
+      const deliveries = localState.deliveryLedger || [];
+      if (Array.isArray(deliveries)) {
+        for (const deliv of deliveries) {
+          const res = await syncDelivery(deliv);
+          if (res.success) results.deliveriesSynced += 1;
+          else if (res.error) results.errors.push(`Delivery ${deliv.jobDocket}: ${res.error}`);
+        }
+      }
+
+      // 5. Lab Settings
+      if (localState.settings || localState.labSettings) {
+        const sRes = await syncSettings(localState.settings || localState.labSettings);
+        if (sRes.success) results.settingsSynced = true;
       }
 
       state.status = 'connected';
@@ -894,6 +935,28 @@
       // 4. Fetch Bills
       const { data: bills, error: billErr } = await state.client.from('bills').select('*');
       if (billErr) console.warn('Bills pull notice:', billErr.message);
+
+      // 5. Fetch Delivery Records
+      let deliveryRecords = [];
+      try {
+        const { data: deliveries, error: delivErr } = await state.client.from('delivery_records').select('*');
+        if (!delivErr && Array.isArray(deliveries)) {
+          deliveryRecords = deliveries;
+        } else if (delivErr) {
+          console.warn('Delivery records pull notice:', delivErr.message);
+        }
+      } catch (e) {
+        console.warn('Delivery records pull exception:', e);
+      }
+
+      // 6. Fetch Lab Settings
+      let fetchedSettings = null;
+      try {
+        const { data: settingsRows, error: sErr } = await state.client.from('lab_settings').select('*').limit(1);
+        if (!sErr && Array.isArray(settingsRows) && settingsRows.length > 0) {
+          fetchedSettings = settingsRows[0];
+        }
+      } catch (e) {}
 
       // Re-map column names to app camelCase conventions
       const mappedCustomers = (customers || []).map(c => ({
@@ -989,6 +1052,25 @@
         time: bl.time
       }));
 
+      const mappedDeliveries = deliveryRecords.map(d => ({
+        jobDocket: d.job_docket,
+        customer: d.customer_name,
+        customerName: d.customer_name,
+        verifiedPieces: d.verified_pieces,
+        totalPieces: d.total_pieces,
+        pcs: d.total_pieces,
+        collector: d.recipient_name,
+        recipientName: d.recipient_name,
+        collectorId: d.recipient_phone,
+        recipientPhone: d.recipient_phone,
+        gatePassNo: d.gatepass_number,
+        gatepassNumber: d.gatepass_number,
+        dispatchTime: d.dispatch_time,
+        status: d.status,
+        dossierUrl: d.dossier_url,
+        stageDVerified: d.stage_d_verified
+      }));
+
       state.status = 'connected';
       state.statusMessage = 'Cloud Synced';
       state.lastSyncTime = new Date().toISOString();
@@ -997,7 +1079,9 @@
       const pullResult = {
         customers: mappedCustomers,
         intakeBatches: mappedBatches,
-        bills: mappedBills
+        bills: mappedBills,
+        deliveries: mappedDeliveries,
+        settings: fetchedSettings
       };
 
       notifyListeners('pull_complete', pullResult);
@@ -1117,6 +1201,7 @@
     saveConfig,
     testConnection,
     signIn,
+    signInWithOAuth,
     signUp,
     signOut,
     switchRole,

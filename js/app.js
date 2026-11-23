@@ -4258,6 +4258,10 @@
           window.LabSupabase.uploadJewelleryPhoto(photoObj.src, 'custody-photos', `${activeDeliveryBatch.jobDocket}/piece_${targetPiece.pieceIndex}_stage_c_${Date.now()}.jpg`).then(res => {
             if (res && res.success && res.url) {
               targetPiece.stageC.photoUrl = res.url;
+              photoObj.src = res.url;
+              if (activeDeliveryBatch.articlePhoto && !activeDeliveryBatch.articlePhoto.startsWith('http')) {
+                activeDeliveryBatch.articlePhoto = res.url;
+              }
               if (window.LabSupabase.config && window.LabSupabase.config.autoSync) {
                 window.LabSupabase.syncBatch(activeDeliveryBatch);
               }
@@ -4265,6 +4269,21 @@
           }).catch(err => console.warn('Supabase Stage C photo upload background:', err));
         }
       }
+    }
+
+    // Also upload jewellery article photo to article-photos storage bucket
+    if (typeof window !== 'undefined' && window.LabSupabase && typeof window.LabSupabase.uploadJewelleryPhoto === 'function') {
+      window.LabSupabase.uploadJewelleryPhoto(photoObj.src, 'article-photos', `${activeDeliveryBatch.jobDocket}/${photoObj.name || ('article_' + Date.now() + '.jpg')}`).then(res => {
+        if (res && res.success && res.url) {
+          photoObj.src = res.url;
+          if (!activeDeliveryBatch.articlePhoto || !activeDeliveryBatch.articlePhoto.startsWith('http')) {
+            activeDeliveryBatch.articlePhoto = res.url;
+          }
+          if (window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+            window.LabSupabase.syncBatch(activeDeliveryBatch);
+          }
+        }
+      }).catch(err => console.warn('Supabase article photo upload background:', err));
     }
 
     renderDeliveryGallery();
@@ -4578,6 +4597,23 @@
     activeDeliveryBatch.articlePhoto = activeDeliveryPhoto;
 
     state.deliveryLedger.unshift(newRecord);
+
+    // Auto-sync gatepass delivery to Supabase Cloud
+    if (typeof window !== 'undefined' && window.LabSupabase && window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+      window.LabSupabase.syncDelivery({
+        jobDocket: activeDeliveryBatch.jobDocket,
+        customerName: activeDeliveryBatch.customer,
+        totalPieces: activeDeliveryBatch.pcs,
+        verifiedPieces: activeDeliveryBatch.pcs,
+        recipientName: collector,
+        recipientPhone: collectorId,
+        gatepassNumber: newGp,
+        dispatchTime: nowStr,
+        status: 'DELIVERED',
+        stageDVerified: true
+      });
+      window.LabSupabase.syncBatch(activeDeliveryBatch);
+    }
 
     renderDeliveryLedgerTable();
     updateDeliveryStats();
@@ -6344,6 +6380,20 @@
           status: 'MATCHED',
           captured: true
         };
+
+        // Supabase Storage Photo Upload Pipeline (Stage D Vault Handover via File Upload)
+        if (typeof window !== 'undefined' && window.LabSupabase && typeof window.LabSupabase.uploadJewelleryPhoto === 'function') {
+          window.LabSupabase.uploadJewelleryPhoto(photoUrl, 'custody-photos', `${activeDeliveryAssayBatch.jobDocket}/piece_${pieceIndex}_stage_d_${Date.now()}.jpg`).then(res => {
+            if (res && res.success && res.url) {
+              vcP.stageD.photoUrl = res.url;
+              const pRec = (activeDeliveryAssayBatch.assayVerifiedPieces || []).find(x => x.pieceIndex === pieceIndex);
+              if (pRec) pRec.photoUrl = res.url;
+              if (window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+                window.LabSupabase.syncBatch(activeDeliveryAssayBatch);
+              }
+            }
+          }).catch(err => console.warn('Supabase Stage D file upload background:', err));
+        }
       }
 
       // Update Last Captured Thumbnail
@@ -6488,6 +6538,23 @@
     openDeliveryAssayDossierModal();
     playAssaySound('complete');
     showToast('ASSAY CENTER DELIVERY COMPLETED SUCCESSFULLY!', 'success');
+
+    // Auto-sync delivery handover to Supabase Cloud
+    if (typeof window !== 'undefined' && window.LabSupabase && window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+      window.LabSupabase.syncDelivery({
+        jobDocket: batch.jobDocket,
+        customerName: batch.customer,
+        totalPieces: total,
+        verifiedPieces: verified,
+        recipientName: batch.customer,
+        gatepassNumber: batch.gatePassNo || `GP-${batch.jobDocket}`,
+        dispatchTime: batch.deliveryCompletedAt || new Date().toISOString(),
+        status: 'COMPLETED',
+        stageDVerified: true,
+        dossierUrl: batch.dossierUrl || ''
+      });
+      window.LabSupabase.syncBatch(batch);
+    }
   }
 
   function openDeliveryAssayDossierModal() {
@@ -10157,6 +10224,30 @@
       updatePrintStatusUI(true);
       renderBillQueue();
       showToast(`Tax Invoice ${activeBillingBatch.billNo} successfully recorded and finalized in BIS Audit Ledger.`, 'success');
+
+      // Auto-sync invoice to Supabase Cloud
+      if (typeof window !== 'undefined' && window.LabSupabase && window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+        window.LabSupabase.syncBill({
+          billNo: activeBillingBatch.billNo,
+          jobDocket: activeBillingBatch.jobDocket,
+          customerName: activeBillingBatch.customer,
+          customerBis: activeBillingBatch.bis,
+          customerGst: activeBillingBatch.customerGst,
+          metal: activeBillingBatch.metal,
+          pcs: activeBillingBatch.pcs,
+          grossWeight: activeBillingBatch.grossWt,
+          netWeight: activeBillingBatch.netWt,
+          ratePerPiece: activeBillingBatch.rate,
+          subtotal: (activeBillingBatch.pcs || 0) * (activeBillingBatch.rate || 0),
+          cgst: ((activeBillingBatch.pcs || 0) * (activeBillingBatch.rate || 0)) * 0.09,
+          sgst: ((activeBillingBatch.pcs || 0) * (activeBillingBatch.rate || 0)) * 0.09,
+          totalAmount: ((activeBillingBatch.pcs || 0) * (activeBillingBatch.rate || 0)) * 1.18,
+          status: 'PAID',
+          date: activeBillingBatch.billDate || activeBillingBatch.date,
+          time: activeBillingBatch.billTime || activeBillingBatch.time
+        });
+        window.LabSupabase.syncBatch(activeBillingBatch);
+      }
     }
   }
 
@@ -12096,6 +12187,18 @@
         captured: true
       };
 
+      // Supabase Storage Photo Upload Pipeline (Stage A Baseline via File Upload)
+      if (typeof window !== 'undefined' && window.LabSupabase && typeof window.LabSupabase.uploadJewelleryPhoto === 'function') {
+        window.LabSupabase.uploadJewelleryPhoto(photoUrl, 'custody-photos', `${batch.jobDocket}/piece_${pieceIdx}_stage_a_${Date.now()}.jpg`).then(res => {
+          if (res && res.success && res.url) {
+            targetPiece.stageA.photoUrl = res.url;
+            if (window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+              window.LabSupabase.syncBatch(batch);
+            }
+          }
+        }).catch(err => console.warn('Supabase Stage A file upload background:', err));
+      }
+
       // Update Latest Captured Baseline Card
       const thumbBox = document.getElementById('assay-recv-thumb-box');
       const thumbTime = document.getElementById('assay-recv-thumb-time');
@@ -13242,6 +13345,18 @@
 
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
+      // Supabase Storage Photo Upload Pipeline (Stage B Receipt via File Upload)
+      if (typeof window !== 'undefined' && window.LabSupabase && typeof window.LabSupabase.uploadJewelleryPhoto === 'function') {
+        window.LabSupabase.uploadJewelleryPhoto(photoUrl, 'custody-photos', `${batch.jobDocket}/piece_${pieceIdx}_stage_b_${Date.now()}.jpg`).then(res => {
+          if (res && res.success && res.url) {
+            if (targetPiece.stageB) targetPiece.stageB.photoUrl = res.url;
+            if (window.LabSupabase.config && window.LabSupabase.config.autoSync) {
+              window.LabSupabase.syncBatch(batch);
+            }
+          }
+        }).catch(err => console.warn('Supabase Stage B file upload background:', err));
+      }
+
       if (score >= 60) {
         targetPiece.stageB = {
           photoUrl: photoUrl,
@@ -14098,7 +14213,28 @@
           else state.intakeBatches.unshift(b);
         });
       }
-      showToast(`Pulled ${res.data.customers.length} customers, ${res.data.intakeBatches.length} batches from cloud.`, 'success');
+      if (Array.isArray(res.data.bills) && res.data.bills.length > 0) {
+        if (!state.historicalInvoices) state.historicalInvoices = [];
+        res.data.bills.forEach(bl => {
+          const idx = state.historicalInvoices.findIndex(local => local.billNo === bl.billNo);
+          if (idx >= 0) state.historicalInvoices[idx] = Object.assign({}, state.historicalInvoices[idx], bl);
+          else state.historicalInvoices.unshift(bl);
+        });
+        if (typeof renderBillQueue === 'function') renderBillQueue();
+      }
+      if (Array.isArray(res.data.deliveries) && res.data.deliveries.length > 0) {
+        if (!state.deliveryLedger) state.deliveryLedger = [];
+        res.data.deliveries.forEach(d => {
+          const idx = state.deliveryLedger.findIndex(local => local.jobDocket === d.jobDocket);
+          if (idx >= 0) state.deliveryLedger[idx] = Object.assign({}, state.deliveryLedger[idx], d);
+          else state.deliveryLedger.unshift(d);
+        });
+        if (typeof renderDeliveryLedgerTable === 'function') renderDeliveryLedgerTable();
+        if (typeof renderDeliveryQueue === 'function') renderDeliveryQueue();
+      }
+      const billsCount = (res.data.bills && res.data.bills.length) || 0;
+      const delivCount = (res.data.deliveries && res.data.deliveries.length) || 0;
+      showToast(`Pulled ${res.data.customers.length} customers, ${res.data.intakeBatches.length} batches, ${billsCount} bills, ${delivCount} deliveries from cloud.`, 'success');
       const lastSync = document.getElementById('supabase-last-sync-label');
       if (lastSync) lastSync.textContent = 'Last synced: Just now';
 
@@ -14181,18 +14317,34 @@
   }
 
   function copySupabaseSchemaSql() {
-    const sqlPreview = `-- Run this in Supabase Dashboard -> SQL Editor\n-- Complete schema generated in supabase_schema.sql`;
-    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(sqlPreview).then(() => {
-        const btn = document.getElementById('copy-sql-btn-text');
-        if (btn) btn.textContent = 'Copied to Clipboard!';
-        showToast('Schema SQL query preview copied. Open supabase_schema.sql for the full script.', 'success');
-        setTimeout(() => { if (btn) btn.textContent = 'Copy Schema SQL'; }, 3000);
-      }).catch(() => {
-        showToast('Inspect supabase_schema.sql in workspace root.', 'info');
-      });
+    const btn = document.getElementById('copy-sql-btn-text');
+    const fallbackCopy = (sqlText) => {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sqlText).then(() => {
+          if (btn) btn.textContent = 'Copied to Clipboard!';
+          showToast('Complete supabase_schema.sql copied to clipboard! Paste directly into Supabase SQL Editor.', 'success');
+          setTimeout(() => { if (btn) btn.textContent = 'Copy Schema SQL'; }, 3000);
+        }).catch(() => {
+          showToast('Inspect supabase_schema.sql in workspace root.', 'info');
+        });
+      } else {
+        showToast('Schema file created: supabase_schema.sql in workspace root.', 'info');
+      }
+    };
+
+    if (typeof fetch === 'function') {
+      fetch('supabase_schema.sql')
+        .then(r => {
+          if (!r.ok) throw new Error('File fetch HTTP status ' + r.status);
+          return r.text();
+        })
+        .then(sql => fallbackCopy(sql))
+        .catch(() => {
+          const sqlFallback = `-- SSR BIS Hallmarking Management System Supabase Schema\n-- Refer to supabase_schema.sql in workspace root\ncreate table if not exists public.customers (id text primary key, name text not null, code text, bis text, gst text, active_jobs int default 0);\ncreate table if not exists public.intake_batches (job_docket text primary key, customer text not null, pcs int, purity text, net_wt numeric, gross_wt numeric, status text);\ncreate table if not exists public.piece_custody_records (id text primary key default gen_random_uuid()::text, job_docket text not null references public.intake_batches(job_docket) on delete cascade, piece_index int not null, tag_code text, stage_a jsonb, stage_b jsonb, stage_c jsonb, stage_d jsonb, constraint unq_piece_custody unique (job_docket, piece_index));\ncreate table if not exists public.bills (id text primary key, bill_no text not null unique, job_docket text, customer_name text, total_amount numeric);\ncreate table if not exists public.delivery_records (id text primary key default gen_random_uuid()::text, job_docket text not null references public.intake_batches(job_docket) on delete cascade, customer_name text not null, verified_pieces int, status text, constraint unq_delivery_job unique (job_docket));\ncreate table if not exists public.lab_settings (id text primary key default 'primary_config', legal_name text, auto_cloud_sync boolean default true);\ncreate table if not exists public.user_profiles (id uuid primary key references auth.users(id) on delete cascade, email text unique, full_name text, role text);\nalter table public.customers enable row level security;\nalter table public.intake_batches enable row level security;\nalter table public.piece_custody_records enable row level security;\nalter table public.bills enable row level security;\nalter table public.delivery_records enable row level security;\nalter table public.lab_settings enable row level security;\nalter table public.user_profiles enable row level security;\n`;
+          fallbackCopy(sqlFallback);
+        });
     } else {
-      showToast('Schema file created: supabase_schema.sql in workspace root.', 'info');
+      fallbackCopy('-- Supabase Schema: Inspect supabase_schema.sql in workspace root.');
     }
   }
 

@@ -88,7 +88,9 @@ console.log('  ✓ Supabase Storage buckets (article-photos, custody-photos, dos
 // 4. Verify triggers for automatic updated_at timestamps
 assert.strictEqual(schemaSql.includes('update_modified_column()'), true, 'FAIL: update_modified_column function missing');
 assert.strictEqual(schemaSql.includes('handle_new_user()'), true, 'FAIL: handle_new_user trigger function missing');
-console.log('  ✓ Automatic updated_at triggers and on_auth_user_created hook verified.\n');
+assert.strictEqual(schemaSql.includes('unq_delivery_job unique (job_docket)'), true, 'FAIL: unq_delivery_job unique constraint missing on delivery_records');
+assert.strictEqual(schemaSql.includes("coalesce(new.raw_user_meta_data->>'phone', '')"), true, 'FAIL: phone metadata handling missing in handle_new_user');
+console.log('  ✓ Automatic updated_at triggers, phone metadata hook, and unq_delivery_job constraint verified.\n');
 
 // -------------------------------------------------------------
 // SUITE 2: CLIENT CONFIGURATION & LIFECYCLE
@@ -152,6 +154,7 @@ function createMockSupabaseClient() {
         mockUser = null;
         return { error: null };
       },
+      signInWithOAuth: async ({ provider }) => ({ data: { provider, url: 'https://accounts.google.com/o/oauth2/auth' }, error: null }),
       updateUser: async ({ data }) => {
         if (mockUser) {
           mockUser.user_metadata = Object.assign(mockUser.user_metadata || {}, data);
@@ -161,17 +164,23 @@ function createMockSupabaseClient() {
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
     },
     from: (tableName) => ({
-      select: async (cols, opts) => {
-        if (opts && opts.count) {
-          return { data: database[tableName] || [], count: (database[tableName] || []).length, error: null };
-        }
-        return { data: database[tableName] || [], error: null };
+      select: (cols, opts) => {
+        const queryPromise = Promise.resolve({
+          data: database[tableName] || [],
+          count: (database[tableName] || []).length,
+          error: null
+        });
+        queryPromise.limit = async (n) => ({
+          data: (database[tableName] || []).slice(0, n),
+          error: null
+        });
+        return queryPromise;
       },
       upsert: async (records, opts) => {
         const rows = Array.isArray(records) ? records : [records];
         if (!database[tableName]) database[tableName] = [];
         rows.forEach(r => {
-          const keyField = tableName === 'intake_batches' ? 'job_docket' : (tableName === 'bills' ? 'bill_no' : 'id');
+          const keyField = tableName === 'intake_batches' ? 'job_docket' : (tableName === 'bills' ? 'bill_no' : (tableName === 'delivery_records' ? 'job_docket' : 'id'));
           const existingIdx = database[tableName].findIndex(x => {
             if (tableName === 'piece_custody_records') {
               return x.job_docket === r.job_docket && x.piece_index === r.piece_index;
@@ -256,7 +265,12 @@ console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
   const signinRes = await LabSupabase.signIn('sarah.jenkins@ssrhallmark.com', 'LaboratoryPass#2025');
   assert.strictEqual(signinRes.success, true, 'FAIL: Sign-in should succeed');
   assert.strictEqual(LabSupabase.getCurrentUser().email, 'sarah.jenkins@ssrhallmark.com');
-  console.log('  ✓ Supabase Sign-In establishes session for Sarah Jenkins.\n');
+  console.log('  ✓ Supabase Sign-In establishes session for Sarah Jenkins.');
+
+  // 6. Supabase OAuth provider verification
+  const oauthRes = await LabSupabase.signInWithOAuth('google');
+  assert.strictEqual(oauthRes.data.provider, 'google', 'FAIL: OAuth provider should be google');
+  console.log('  ✓ Supabase OAuth flow verified for external providers.\n');
 
   // -------------------------------------------------------------
   // SUITE 4: DATABASE SYNCHRONIZATION ENGINE
@@ -345,11 +359,46 @@ console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
   assert.strictEqual(mockClient._db.delivery_records.length, 1, 'FAIL: Delivery should be saved');
   console.log('  ✓ Bills and Delivery records synchronized.');
 
-  // 4. Bi-directional Pull
+  // 4. Push All Data (Batch, Customer, Bill, Delivery, Settings)
+  const pushRes = await LabSupabase.pushAllData({
+    customers: [testCust],
+    intakeBatches: [testBatch],
+    historicalInvoices: [{
+      billNo: '26-27/HM/SUPA1',
+      jobDocket: 'JOB-2026-SUPA1',
+      customerName: 'TEST MAHALAXMI GOLDSMITHS',
+      totalAmount: 177.00
+    }],
+    deliveryLedger: [{
+      jobDocket: 'JOB-2026-SUPA1',
+      customerName: 'TEST MAHALAXMI GOLDSMITHS',
+      totalPieces: 2,
+      verifiedPieces: 2,
+      recipientName: 'Devraj N.',
+      gatepassNumber: 'GP-9012',
+      dispatchTime: '11:15 AM IST',
+      status: 'DELIVERED',
+      stageDVerified: true
+    }],
+    labSettings: {
+      legalName: 'SSR BULLION HALLMARK & ASSAY CENTER PRIVATE LIMITED'
+    }
+  });
+  assert.strictEqual(pushRes.success, true, 'FAIL: Push all data failed');
+  assert.strictEqual(pushRes.results.customersSynced, 1, 'FAIL: 1 customer synced');
+  assert.strictEqual(pushRes.results.batchesSynced, 1, 'FAIL: 1 batch synced');
+  assert.strictEqual(pushRes.results.billsSynced, 1, 'FAIL: 1 bill synced');
+  assert.strictEqual(pushRes.results.deliveriesSynced, 1, 'FAIL: 1 delivery synced');
+  assert.strictEqual(pushRes.results.settingsSynced, true, 'FAIL: lab settings should be synced');
+  console.log('  ✓ Push All Data synchronizes batches, customers, bills, deliveries, and settings.');
+
+  // 5. Bi-directional Pull & Merge
   const pullRes = await LabSupabase.pullAllData();
   assert.strictEqual(pullRes.success, true, 'FAIL: Pull all data failed');
   assert.strictEqual(pullRes.data.customers.length, 1, 'FAIL: 1 customer pulled');
   assert.strictEqual(pullRes.data.intakeBatches.length, 1, 'FAIL: 1 batch pulled');
+  assert.strictEqual(pullRes.data.bills.length, 1, 'FAIL: 1 bill pulled');
+  assert.strictEqual(pullRes.data.deliveries.length, 1, 'FAIL: 1 delivery pulled');
   console.log('  ✓ Bi-directional Pull & Merge correctly maps PostgreSQL rows into app state.\n');
 
   // -------------------------------------------------------------
@@ -370,7 +419,17 @@ console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
   assert.strictEqual(uploadRes.fallback, false, 'FAIL: Should not be in fallback mode when connected');
   console.log('  ✓ Storage CDN upload succeeded. Public URL: ' + uploadRes.url);
 
-  // 3. Fallback when disconnected / offline
+  // 3. Upload to article-photos and dossiers buckets
+  const articleUpload = await LabSupabase.uploadJewelleryPhoto(dummyBase64, 'article-photos', 'JOB-2026-SUPA1/sample_article.jpg');
+  assert.strictEqual(articleUpload.success, true, 'FAIL: article-photos upload failed');
+  assert.strictEqual(articleUpload.bucket, 'article-photos', 'FAIL: bucket should be article-photos');
+
+  const dossierUpload = await LabSupabase.uploadJewelleryPhoto(dummyBase64, 'dossiers', 'JOB-2026-SUPA1/handover_dossier.jpg');
+  assert.strictEqual(dossierUpload.success, true, 'FAIL: dossiers upload failed');
+  assert.strictEqual(dossierUpload.bucket, 'dossiers', 'FAIL: bucket should be dossiers');
+  console.log('  ✓ Supabase Storage multi-bucket pipeline (article-photos, dossiers) verified.');
+
+  // 4. Fallback when disconnected / offline
   const tempClient = LabSupabase.getClient();
   LabSupabase.saveConfig('', ''); // Disconnect
   const fallbackUpload = await LabSupabase.uploadJewelleryPhoto(dummyBase64, 'custody-photos', 'piece_offline.jpg');

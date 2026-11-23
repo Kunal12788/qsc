@@ -136,7 +136,8 @@ create table if not exists public.delivery_records (
     dossier_url text,
     stage_d_verified boolean default false,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+    updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+    constraint unq_delivery_job unique (job_docket)
 );
 
 -- F. LAB SETTINGS TABLE
@@ -203,17 +204,19 @@ create trigger update_user_profiles_modtime before update on public.user_profile
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-    insert into public.user_profiles (id, email, full_name, role)
+    insert into public.user_profiles (id, email, full_name, role, phone)
     values (
         new.id,
         new.email,
         coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-        coalesce(new.raw_user_meta_data->>'role', 'Quality Auditor')
+        coalesce(new.raw_user_meta_data->>'role', 'Quality Auditor'),
+        coalesce(new.raw_user_meta_data->>'phone', '')
     )
     on conflict (id) do update set
         email = excluded.email,
         full_name = coalesce(excluded.full_name, public.user_profiles.full_name),
         role = coalesce(excluded.role, public.user_profiles.role),
+        phone = coalesce(excluded.phone, public.user_profiles.phone),
         updated_at = timezone('utc'::text, now());
     return new;
 end;
