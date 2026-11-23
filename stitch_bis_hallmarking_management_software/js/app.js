@@ -14048,25 +14048,11 @@
 
 
   // ==========================================================================
-  // SUPABASE INTEGRATION & CLOUD SYNC UI CONTROLLER
+  // SUPABASE INTEGRATION & CLOUD SYNC UI CONTROLLER (SECURED VIA VERCEL)
   // ==========================================================================
   function openSupabaseQuickModal() {
-    const modal = document.getElementById('supabase-quick-modal');
-    if (!modal) return;
-    modal.classList.remove('hidden');
-
-    if (typeof window !== 'undefined' && window.LabSupabase) {
-      const st = window.LabSupabase.state;
-      const text = document.getElementById('quick-sync-status-text');
-      const badge = document.getElementById('quick-sync-status-badge');
-      if (text) text.textContent = st.statusMessage || st.status.toUpperCase();
-      if (badge) {
-        badge.textContent = st.status.toUpperCase();
-        if (st.status === 'connected') badge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800';
-        else if (st.status === 'error') badge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800';
-        else badge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-800';
-      }
-    }
+    // Quick modal purged to prevent credentials exposure
+    showToast('Supabase cloud synchronization is managed securely via Vercel.', 'info');
   }
 
   function closeSupabaseQuickModal() {
@@ -14076,8 +14062,7 @@
 
   function openFullSupabaseSettings() {
     closeSupabaseQuickModal();
-    navigateTo('settings');
-    switchSettingsTab(3);
+    showToast('Supabase credentials are managed securely via Vercel Environment Variables.', 'info');
   }
 
   function openAuthProfileModal() {
@@ -14132,53 +14117,45 @@
   }
 
   function toggleSupabaseKeyVisibility() {
-    const keyInput = document.getElementById('supabase-config-key');
-    const eyeIcon = document.getElementById('supabase-key-eye-icon');
-    if (!keyInput) return;
-    const isPass = keyInput.type === 'password';
-    keyInput.type = isPass ? 'text' : 'password';
-    if (eyeIcon) eyeIcon.textContent = isPass ? 'visibility_off' : 'visibility';
+    // Credentials safely managed in Vercel environment variables; no-op
   }
 
   async function testSupabaseConnection() {
     if (typeof window === 'undefined' || !window.LabSupabase) return;
-    const urlEl = document.getElementById('supabase-config-url');
-    const keyEl = document.getElementById('supabase-config-key');
-
-    if (urlEl && keyEl && urlEl.value.trim() && keyEl.value.trim()) {
-      window.LabSupabase.config.url = urlEl.value.trim();
-      window.LabSupabase.config.anonKey = keyEl.value.trim();
-      window.LabSupabase.init();
-    }
-
-    showToast('Testing live connection to Supabase...', 'info');
+    showToast('Testing live connection to Supabase cloud...', 'info');
     const res = await window.LabSupabase.testConnection();
-    if (res.success) {
-      showToast(`Connected to Supabase in ${res.latencyMs}ms!`, 'success');
+    if (res && res.success) {
+      showToast(`Connected to Supabase in ${res.latencyMs || 0}ms!`, 'success');
     } else {
-      showToast(`Connection failed: ${res.error || 'Check URL and Key'}`, 'error');
+      showToast(`Cloud connection notice: ${res && res.error ? res.error : 'Offline (Vercel credentials mode)'}`, 'info');
     }
-    window.LabSupabase.updateUIElements();
+    if (window.LabSupabase.updateUIElements) window.LabSupabase.updateUIElements();
   }
 
   async function saveSupabaseSettings() {
     if (typeof window === 'undefined' || !window.LabSupabase) return;
     const urlEl = document.getElementById('supabase-config-url');
     const keyEl = document.getElementById('supabase-config-key');
-    const syncEl = document.getElementById('supabase-config-autosync');
+
+    // In production without UI inputs, do NOT clear active credentials
+    if (!urlEl && !keyEl) {
+      showToast('Supabase credentials are safely managed via Vercel Environment Variables and cannot be modified from the website.', 'info');
+      return;
+    }
 
     const url = urlEl ? urlEl.value.trim() : '';
     const key = keyEl ? keyEl.value.trim() : '';
+    const syncEl = document.getElementById('supabase-config-autosync');
     const autoSync = syncEl ? syncEl.checked : true;
 
     showToast('Saving Supabase credentials and re-testing...', 'info');
     const res = await window.LabSupabase.saveConfig(url, key, autoSync);
-    if (res.success) {
+    if (res && res.success) {
       showToast('Supabase settings saved and verified.', 'success');
     } else {
-      showToast('Saved locally. Connection notice: ' + (res.error || 'Offline'), 'warning');
+      showToast('Saved locally. Connection notice: ' + (res && res.error ? res.error : 'Offline'), 'warning');
     }
-    window.LabSupabase.updateUIElements();
+    if (window.LabSupabase.updateUIElements) window.LabSupabase.updateUIElements();
   }
 
   async function pushAllToSupabase() {
@@ -14317,35 +14294,7 @@
   }
 
   function copySupabaseSchemaSql() {
-    const btn = document.getElementById('copy-sql-btn-text');
-    const fallbackCopy = (sqlText) => {
-      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(sqlText).then(() => {
-          if (btn) btn.textContent = 'Copied to Clipboard!';
-          showToast('Complete supabase_schema.sql copied to clipboard! Paste directly into Supabase SQL Editor.', 'success');
-          setTimeout(() => { if (btn) btn.textContent = 'Copy Schema SQL'; }, 3000);
-        }).catch(() => {
-          showToast('Inspect supabase_schema.sql in workspace root.', 'info');
-        });
-      } else {
-        showToast('Schema file created: supabase_schema.sql in workspace root.', 'info');
-      }
-    };
-
-    if (typeof fetch === 'function') {
-      fetch('supabase_schema.sql')
-        .then(r => {
-          if (!r.ok) throw new Error('File fetch HTTP status ' + r.status);
-          return r.text();
-        })
-        .then(sql => fallbackCopy(sql))
-        .catch(() => {
-          const sqlFallback = `-- SSR BIS Hallmarking Management System Supabase Schema\n-- Refer to supabase_schema.sql in workspace root\ncreate table if not exists public.customers (id text primary key, name text not null, code text, bis text, gst text, active_jobs int default 0);\ncreate table if not exists public.intake_batches (job_docket text primary key, customer text not null, pcs int, purity text, net_wt numeric, gross_wt numeric, status text);\ncreate table if not exists public.piece_custody_records (id text primary key default gen_random_uuid()::text, job_docket text not null references public.intake_batches(job_docket) on delete cascade, piece_index int not null, tag_code text, stage_a jsonb, stage_b jsonb, stage_c jsonb, stage_d jsonb, constraint unq_piece_custody unique (job_docket, piece_index));\ncreate table if not exists public.bills (id text primary key, bill_no text not null unique, job_docket text, customer_name text, total_amount numeric);\ncreate table if not exists public.delivery_records (id text primary key default gen_random_uuid()::text, job_docket text not null references public.intake_batches(job_docket) on delete cascade, customer_name text not null, verified_pieces int, status text, constraint unq_delivery_job unique (job_docket));\ncreate table if not exists public.lab_settings (id text primary key default 'primary_config', legal_name text, auto_cloud_sync boolean default true);\ncreate table if not exists public.user_profiles (id uuid primary key references auth.users(id) on delete cascade, email text unique, full_name text, role text);\nalter table public.customers enable row level security;\nalter table public.intake_batches enable row level security;\nalter table public.piece_custody_records enable row level security;\nalter table public.bills enable row level security;\nalter table public.delivery_records enable row level security;\nalter table public.lab_settings enable row level security;\nalter table public.user_profiles enable row level security;\n`;
-          fallbackCopy(sqlFallback);
-        });
-    } else {
-      fallbackCopy('-- Supabase Schema: Inspect supabase_schema.sql in workspace root.');
-    }
+    showToast('Database schema is managed in Supabase and deployed via Vercel.', 'info');
   }
 
   async function testStoragePhotoUpload() {

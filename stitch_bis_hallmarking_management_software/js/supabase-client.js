@@ -54,10 +54,14 @@
     }
   };
 
-  // Core Supabase Engine State
+  // Strictly enforce security: proactively purge any plain-text Supabase credentials from browser localStorage
+  storage.remove('supabase_url');
+  storage.remove('supabase_anon_key');
+
+  // Core Supabase Engine State (Credentials kept purely in runtime memory, never written to disk/localStorage)
   const state = {
-    url: storage.get('supabase_url', ''),
-    anonKey: storage.get('supabase_anon_key', ''),
+    url: '',
+    anonKey: '',
     autoSync: storage.get('supabase_auto_sync', 'true') === 'true',
     status: 'offline', // 'offline' | 'connecting' | 'connected' | 'syncing' | 'error'
     statusMessage: 'Local Storage Mode',
@@ -239,14 +243,15 @@
     updateUIElements();
   }
 
-  // Save new Supabase credentials and re-initialize
+  // Save new Supabase credentials and re-initialize (in-memory state, strictly protecting localStorage)
   async function saveConfig(url, anonKey, autoSync = true) {
     state.url = (url || '').trim();
     state.anonKey = (anonKey || '').trim();
     state.autoSync = Boolean(autoSync);
 
-    storage.set('supabase_url', state.url);
-    storage.set('supabase_anon_key', state.anonKey);
+    // Ensure sensitive credentials are NEVER written to browser localStorage
+    storage.remove('supabase_url');
+    storage.remove('supabase_anon_key');
     storage.set('supabase_auto_sync', state.autoSync ? 'true' : 'false');
 
     if (!state.url || !state.anonKey) {
@@ -1155,14 +1160,14 @@
       roleIndicator.title = `Active Role: ${role} • Click to switch profile / sign out`;
     }
 
-    // 3. Settings Form Inputs (if present)
+    // 3. Settings Form Inputs (if present) - masked for security so no DOM element exposes credentials
     const settingsUrl = document.getElementById('supabase-config-url');
     const settingsKey = document.getElementById('supabase-config-key');
     const settingsAutoSync = document.getElementById('supabase-config-autosync');
     const settingsStatusBadge = document.getElementById('supabase-settings-status-badge');
 
-    if (settingsUrl && !settingsUrl.matches(':focus')) settingsUrl.value = state.url || '';
-    if (settingsKey && !settingsKey.matches(':focus')) settingsKey.value = state.anonKey || '';
+    if (settingsUrl) settingsUrl.value = '•••••••••••••••• (Managed in Vercel)';
+    if (settingsKey) settingsKey.value = '•••••••••••••••• (Managed in Vercel)';
     if (settingsAutoSync) settingsAutoSync.checked = state.autoSync;
     if (settingsStatusBadge) {
       settingsStatusBadge.textContent = state.statusMessage || state.status.toUpperCase();
@@ -1185,6 +1190,10 @@
   // Attempt to load Vercel Environment Variables via /api/config
   async function loadVercelEnvConfig() {
     try {
+      // Proactively purge any sensitive credentials from localStorage
+      storage.remove('supabase_url');
+      storage.remove('supabase_anon_key');
+
       if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
         const res = await fetch('/api/config');
         if (res.ok) {
@@ -1193,8 +1202,7 @@
             const hasChanged = state.url !== cfg.supabaseUrl || state.anonKey !== cfg.supabaseAnonKey;
             state.url = cfg.supabaseUrl;
             state.anonKey = cfg.supabaseAnonKey;
-            storage.set('supabase_url', state.url);
-            storage.set('supabase_anon_key', state.anonKey);
+            // Kept strictly in runtime memory, never written to localStorage
             if (hasChanged || !state.client) {
               init();
             }

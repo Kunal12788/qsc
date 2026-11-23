@@ -530,5 +530,17 @@ console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
   });
   console.log('  ✓ All 17 Supabase Controller functions properly exported to window.');
 
+  // 7. Security Hardening: Ensure credentials are never leaked to localStorage or wiped by UI fallbacks
+  assert.strictEqual(!localStorage.getItem('supabase_url'), true, 'FAIL: supabase_url must NOT be stored in localStorage');
+  assert.strictEqual(!localStorage.getItem('supabase_anon_key'), true, 'FAIL: supabase_anon_key must NOT be stored in localStorage');
+
+  // Verify safe execution of window functions when UI inputs are absent
+  const clientBeforeSave = LabSupabase.getClient();
+  window.saveSupabaseSettings(); // Must safely no-op without wiping active client/config
+  assert.strictEqual(LabSupabase.getClient(), clientBeforeSave, 'FAIL: saveSupabaseSettings must not wipe client when inputs are absent');
+  window.openSupabaseQuickModal(); // Must execute safely without error
+  window.copySupabaseSchemaSql(); // Must execute safely without error
+  console.log('  ✓ LocalStorage credential hygiene and safe UI fallback guards verified.');
+
   console.log('\n=== ALL SUPABASE INTEGRATION TESTS PASSED SUCCESSFULLY! ===\n');
 })();
