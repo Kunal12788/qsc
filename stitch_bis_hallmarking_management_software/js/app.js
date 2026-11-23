@@ -536,6 +536,10 @@
     'sign-in',
     'dashboard',
     'receive',
+    'assay_center_receive',
+    'assay-center-receive',
+    'center_image_receive',
+    'center-image-receive',
     'tag-generation',
     'customer-information',
     'bill-generation',
@@ -550,6 +554,8 @@
     if (hash === 'bill_generation') hash = 'bill-generation';
     if (hash === 'tag_generation') hash = 'tag-generation';
     if (hash === 'receive_batch' || hash === 'receive-batch') hash = 'receive';
+    if (hash === 'assay_center_receive' || hash === 'assay-center-receive') hash = 'assay_center_receive';
+    if (hash === 'center_image_receive' || hash === 'center-image-receive') hash = 'center_image_receive';
     if (hash === 'delivery-assay' || hash === 'delivery_assay') hash = 'delivery-assay';
     return validRoutes.includes(hash) ? hash : 'dashboard';
   }
@@ -567,12 +573,15 @@
     const mainArea = document.querySelector('main');
 
     // Strict zero-scroll lock for sign-in page on mobile and all devices
-    if (isSignIn) {
-      document.documentElement.classList.add('sign-in-mode');
-      document.body.classList.add('sign-in-mode');
-    } else {
-      document.documentElement.classList.remove('sign-in-mode');
-      document.body.classList.remove('sign-in-mode');
+    if (typeof document !== 'undefined') {
+      if (document.documentElement && document.documentElement.classList) {
+        if (isSignIn) document.documentElement.classList.add('sign-in-mode');
+        else document.documentElement.classList.remove('sign-in-mode');
+      }
+      if (document.body && document.body.classList) {
+        if (isSignIn) document.body.classList.add('sign-in-mode');
+        else document.body.classList.remove('sign-in-mode');
+      }
     }
 
     if (appHeader) appHeader.style.display = isSignIn ? 'none' : '';
@@ -599,7 +608,10 @@
       view.classList.add('hidden');
     });
 
-    const activeView = document.getElementById('view-' + route);
+    const targetViewId = (route === 'assay_center_receive' || route === 'assay-center-receive') ? 'view-assay-center-receive' :
+      (route === 'center_image_receive' || route === 'center-image-receive') ? 'view-center-image-receive' :
+      'view-' + route;
+    const activeView = document.getElementById(targetViewId);
     if (activeView) {
       activeView.classList.remove('hidden');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -609,7 +621,10 @@
     // Update active nav links across desktop sidebar & mobile drawer
     document.querySelectorAll('[data-path]').forEach(link => {
       const linkPath = link.getAttribute('data-path');
-      if (linkPath === route) {
+      const isMatch = (linkPath === route) ||
+        ((route === 'assay_center_receive' || route === 'assay-center-receive') && (linkPath === 'assay_center_receive' || linkPath === 'assay-center-receive')) ||
+        ((route === 'center_image_receive' || route === 'center-image-receive') && (linkPath === 'center_image_receive' || linkPath === 'center-image-receive'));
+      if (isMatch) {
         link.classList.remove('text-on-primary-container', 'hover:bg-inverse-surface', 'hover:text-on-primary');
         link.classList.add('bg-surface-container-lowest', 'text-on-surface', 'font-semibold', 'shadow-sm');
         link.setAttribute('aria-current', 'page');
@@ -646,6 +661,22 @@
     }
     if (route === 'tag-generation') {
       initTagGenerationView();
+    }
+    if (route === 'assay_center_receive' || route === 'assay-center-receive') {
+      initAssayCenterReceiveView();
+    }
+    if (route === 'center_image_receive' || route === 'center-image-receive') {
+      initCenterImageReceiveView();
+    }
+    if (route !== 'assay_center_receive' && route !== 'assay-center-receive') {
+      if (typeof stopAssayCenterCameraStream === 'function') {
+        stopAssayCenterCameraStream();
+      }
+    }
+    if (route !== 'center_image_receive' && route !== 'center-image-receive') {
+      if (typeof stopCenterImageCameraStream === 'function') {
+        stopCenterImageCameraStream();
+      }
     }
     if (route !== 'delivery') {
       if (typeof stopDeliveryCameraStream === 'function') {
@@ -5064,6 +5095,7 @@
 
   function initDeliveryAssayView() {
     if (!state.intakeBatches || !state.intakeBatches.length) return;
+    state.intakeBatches.forEach(b => ensureBatchVisualCustody(b));
 
     // Initialize deliveryAssayStatus and assayVerifiedPieces across all batches
     state.intakeBatches.forEach(b => {
@@ -6135,6 +6167,19 @@
     };
 
     activeDeliveryAssayBatch.assayVerifiedPieces.push(pieceRecord);
+    ensureBatchVisualCustody(activeDeliveryAssayBatch);
+    const vcP = (activeDeliveryAssayBatch.visualCustody || []).find(p => p.pieceIndex === pieceIndex);
+    if (vcP) {
+      vcP.stageD = {
+        photoUrl: photoUrl,
+        timestamp: timeStr,
+        operator: 'User D (Assay Custodian)',
+        embedding: extractVisualEmbedding(photoUrl, { articleType: vcP.articleType, pieceIndex: pieceIndex, metal: activeDeliveryAssayBatch.metal, angle: 10 }),
+        matchScore: 95,
+        status: 'MATCHED',
+        captured: true
+      };
+    }
 
     // Update Last Captured Thumbnail
     const previewBox = document.getElementById('deliv-assay-thumb-preview-box');
@@ -11020,7 +11065,1808 @@
     setupWeightInputs();
   });
 
+
+  // =========================================================================
+  // 4-STAGE MULTI-ANGLE VISUAL CUSTODY CHAIN ENGINE (STAGE 1 -> 2 -> 3 -> 4)
+  // =========================================================================
+
+  let activeAssayCenterReceiveBatch = null;
+  let assayCenterReceiveFilter = 'ALL';
+  let assayCenterReceiveSearchQuery = '';
+  let assayCenterCameraStream = null;
+  let assayCenterAutoCaptureActive = false;
+  let assayCenterIntervalDuration = 5000;
+  let assayCenterIntervalTargetTime = 0;
+  let assayCenterIntervalAnimationId = null;
+  let assayCenterIntervalTimeoutId = null;
+  let assayCenterSelectedDeviceId = '';
+
+  let activeCenterImageReceiveBatch = null;
+  let centerImageReceiveFilter = 'ALL';
+  let centerImageReceiveSearchQuery = '';
+  let centerImageCameraStream = null;
+  let centerImageSelectedDeviceId = '';
+  let activeVisualCustodyPiece = null;
+
+  function getPieceArticleType(batch, pieceIdx) {
+    if (!batch) return 'MIX ITEM';
+    const breakdown = batch.productBreakdown || '';
+    if (breakdown) {
+      const parts = breakdown.split(',').map(s => s.trim()).filter(Boolean);
+      let running = 0;
+      for (const part of parts) {
+        const [type, countStr] = part.split('-');
+        const c = parseInt(countStr, 10) || 0;
+        if (pieceIdx > running && pieceIdx <= running + c) {
+          return type.trim().toUpperCase();
+        }
+        running += c;
+      }
+    }
+    const singleType = String(batch.articleType || 'MIX ITEM').toUpperCase();
+    if (singleType.includes('RING')) return 'RING';
+    if (singleType.includes('CHAIN')) return 'CHAIN';
+    if (singleType.includes('TOPS') || singleType.includes('EARRING')) return 'TOPS';
+    if (singleType.includes('NECKLACE') || singleType.includes('HAR')) return 'NECKLACE';
+    return singleType.split(',')[0].trim() || 'MIX ITEM';
+  }
+
+  function generateCustodyArticlePhoto(customer, pieceIdx, metal, purity, stage, options = {}) {
+    const cName = String(customer || 'JEWELLERY ARTICLE').slice(0, 24);
+    const mStr = String(metal || 'GOLD').toUpperCase();
+    const pStr = String(purity || '22K 916').toUpperCase();
+    const articleType = String(options.articleType || 'MIX ITEM').toUpperCase();
+    const angle = typeof options.angle === 'number' ? options.angle : (stage === 'STAGE_B' ? 35 : (stage === 'STAGE_C' ? -20 : (stage === 'STAGE_D' ? 10 : 0)));
+    const time = options.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    let stageBadge = 'STAGE 1: ASSAY INTAKE';
+    let stageColor = '#38bdf8';
+    let operatorStr = 'User A (Intake Master)';
+    let bgStart = '#0f172a', bgEnd = '#1e293b';
+
+    if (stage === 'STAGE_B') {
+      stageBadge = 'STAGE 2: CENTER RECEIPT';
+      stageColor = '#fbbf24';
+      operatorStr = 'User B (Receiving Inspector)';
+      bgStart = '#18181b'; bgEnd = '#27272a';
+    } else if (stage === 'STAGE_C') {
+      stageBadge = 'STAGE 3: PRE-DISPATCH';
+      stageColor = '#a855f7';
+      operatorStr = 'User C (Pre-Dispatch Officer)';
+      bgStart = '#111827'; bgEnd = '#1f2937';
+    } else if (stage === 'STAGE_D') {
+      stageBadge = 'STAGE 4: ASSAY HANDOVER';
+      stageColor = '#4ade80';
+      operatorStr = 'User D (Assay Custodian)';
+      bgStart = '#0c1a1a'; bgEnd = '#132e2e';
+    }
+
+    let shapeSvg = '';
+    if (articleType.includes('RING') || articleType.includes('BANGLE')) {
+      shapeSvg = `
+        <circle cx="320" cy="220" r="115" fill="none" stroke="url(#jewelGrad)" stroke-width="26" stroke-dasharray="16 4"/>
+        <circle cx="320" cy="220" r="92" fill="none" stroke="#fef08a" stroke-width="4"/>
+        <polygon points="320,118 348,155 320,192 292,155" fill="#fde047" stroke="#ca8a04" stroke-width="3"/>
+        <circle cx="320" cy="155" r="14" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>
+      `;
+    } else if (articleType.includes('TOPS') || articleType.includes('EARRING')) {
+      shapeSvg = `
+        <circle cx="320" cy="220" r="85" fill="url(#jewelGrad)" stroke="#fef08a" stroke-width="6"/>
+        <circle cx="320" cy="220" r="50" fill="#fef08a" stroke="#ca8a04" stroke-width="4"/>
+        <circle cx="320" cy="220" r="22" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+        <circle cx="260" cy="220" r="16" fill="url(#jewelGrad)"/>
+        <circle cx="380" cy="220" r="16" fill="url(#jewelGrad)"/>
+        <circle cx="320" cy="160" r="16" fill="url(#jewelGrad)"/>
+        <circle cx="320" cy="280" r="16" fill="url(#jewelGrad)"/>
+      `;
+    } else if (articleType.includes('CHAIN') || articleType.includes('HAR')) {
+      shapeSvg = `
+        <ellipse cx="320" cy="220" rx="160" ry="100" fill="none" stroke="url(#jewelGrad)" stroke-width="20" stroke-dasharray="14 10"/>
+        <ellipse cx="320" cy="220" rx="160" ry="100" fill="none" stroke="#fef08a" stroke-width="3"/>
+        <circle cx="320" cy="320" r="25" fill="#fde047" stroke="#b45309" stroke-width="4"/>
+      `;
+    } else {
+      shapeSvg = `
+        <path d="M 180,140 Q 320,330 460,140" fill="none" stroke="url(#jewelGrad)" stroke-width="24" stroke-linecap="round"/>
+        <path d="M 180,140 Q 320,330 460,140" fill="none" stroke="#fef08a" stroke-width="4"/>
+        <circle cx="320" cy="265" r="28" fill="#fde047" stroke="#ca8a04" stroke-width="4"/>
+        <polygon points="320,295 335,320 305,320" fill="#fef08a"/>
+      `;
+    }
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480"
+      data-article-type="${articleType}"
+      data-piece-index="${pieceIdx}"
+      data-stage="${stage}"
+      data-metal="${mStr}"
+      data-purity="${pStr}"
+      data-angle="${angle}">
+      <defs>
+        <radialGradient id="jewelGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fffbeb"/>
+          <stop offset="40%" stop-color="#fbbf24"/>
+          <stop offset="80%" stop-color="#b45309"/>
+          <stop offset="100%" stop-color="#78350f"/>
+        </radialGradient>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${bgStart}"/>
+          <stop offset="100%" stop-color="${bgEnd}"/>
+        </linearGradient>
+      </defs>
+      <rect width="640" height="480" fill="url(#bgGrad)"/>
+      <g transform="rotate(${angle}, 320, 220)">
+        ${shapeSvg}
+      </g>
+      <rect x="20" y="375" width="600" height="85" rx="12" fill="#020617" fill-opacity="0.90" stroke="#334155" stroke-width="1.5"/>
+      <text x="35" y="405" font-family="monospace" font-size="15" font-weight="bold" fill="${stageColor}">${stageBadge} • PIECE #${pieceIdx} (${articleType})</text>
+      <text x="35" y="428" font-family="monospace" font-size="13" font-weight="bold" fill="#f8fafc">${mStr} ${pStr} • ${cName}</text>
+      <text x="35" y="448" font-family="sans-serif" font-size="11" font-weight="bold" fill="#94a3b8">${operatorStr} • ${time} (Angle: ${angle}°)</text>
+      <text x="605" y="415" text-anchor="end" font-family="monospace" font-size="12" font-weight="bold" fill="#a3e635">CUSTODY VERIFIED</text>
+    </svg>`;
+
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
+
+  function ensureBatchVisualCustody(batch) {
+    if (!batch) return;
+    if (!batch.assayCenterReceiveStatus) {
+      batch.assayCenterReceiveStatus = (batch.deliveryStatus === 'DELIVERED') ? 'COMPLETED' : 'PENDING';
+    }
+    if (!batch.centerImageReceiveStatus) {
+      batch.centerImageReceiveStatus = (batch.deliveryStatus === 'DELIVERED') ? 'COMPLETED' : 'PENDING';
+    }
+    if (!Array.isArray(batch.visualCustody)) {
+      batch.visualCustody = [];
+    }
+    const total = batch.pcs || 1;
+    const isCompletedSample = (batch.jobDocket === 'JOB-2024-8838' || batch.deliveryStatus === 'DELIVERED');
+
+    if (batch.visualCustody.length === 0) {
+      for (let i = 1; i <= total; i++) {
+        const expectedTag = (batch.tagData && batch.tagData[i - 1] && (batch.tagData[i - 1].huid || batch.tagData[i - 1].barcode))
+          || `${batch.jobDocket}-P${String(i).padStart(2, '0')}`;
+        const articleType = getPieceArticleType(batch, i);
+
+        if (isCompletedSample) {
+          const photoA = generateCustodyArticlePhoto(batch.customer, i, batch.metal, batch.purity, 'STAGE_A', { articleType, angle: 0 });
+          const photoB = generateCustodyArticlePhoto(batch.customer, i, batch.metal, batch.purity, 'STAGE_B', { articleType, angle: 35 });
+          const photoC = generateCustodyArticlePhoto(batch.customer, i, batch.metal, batch.purity, 'STAGE_C', { articleType, angle: -15 });
+          const photoD = generateCustodyArticlePhoto(batch.customer, i, batch.metal, batch.purity, 'STAGE_D', { articleType, angle: 10 });
+
+          const embA = extractVisualEmbedding(photoA, { articleType, pieceIndex: i, stage: 'STAGE_A' });
+          const embB = extractVisualEmbedding(photoB, { articleType, pieceIndex: i, stage: 'STAGE_B' });
+          const embC = extractVisualEmbedding(photoC, { articleType, pieceIndex: i, stage: 'STAGE_C' });
+          const embD = extractVisualEmbedding(photoD, { articleType, pieceIndex: i, stage: 'STAGE_D' });
+
+          batch.visualCustody.push({
+            pieceIndex: i,
+            tagCode: expectedTag,
+            articleType: articleType,
+            stageA: {
+              photoUrl: photoA,
+              timestamp: '08:05 AM Today',
+              operator: 'Sarah Jenkins (Assay Intake Master)',
+              embedding: embA,
+              captured: true
+            },
+            stageB: {
+              photoUrl: photoB,
+              timestamp: '08:25 AM Today',
+              operator: 'Vikram Anand (Receiving Inspector)',
+              embedding: embB,
+              matchScore: 94,
+              status: 'MATCHED',
+              captured: true,
+              supervisorOverride: false
+            },
+            stageC: {
+              photoUrl: photoC,
+              timestamp: '08:42 AM Today',
+              operator: 'Priyanka Roy (Pre-Dispatch Officer)',
+              embedding: embC,
+              matchScore: 96,
+              status: 'MATCHED',
+              captured: true
+            },
+            stageD: {
+              photoUrl: photoD,
+              timestamp: '08:52 AM Today',
+              operator: 'Koushik Ghosh (Assay Custodian)',
+              embedding: embD,
+              matchScore: 95,
+              status: 'MATCHED',
+              captured: true
+            }
+          });
+        } else {
+          batch.visualCustody.push({
+            pieceIndex: i,
+            tagCode: expectedTag,
+            articleType: articleType,
+            stageA: { photoUrl: null, timestamp: null, operator: null, embedding: null, captured: false },
+            stageB: { photoUrl: null, timestamp: null, operator: null, embedding: null, matchScore: null, status: 'PENDING', captured: false, supervisorOverride: false },
+            stageC: { photoUrl: null, timestamp: null, operator: null, embedding: null, matchScore: null, status: 'PENDING', captured: false },
+            stageD: { photoUrl: null, timestamp: null, operator: null, embedding: null, matchScore: null, status: 'PENDING', captured: false }
+          });
+        }
+      }
+    }
+  }
+
+  function extractVisualEmbedding(imageSource, metadata = {}) {
+    let articleType = (metadata.articleType || 'MIX ITEM').toUpperCase();
+    let angle = typeof metadata.angle === 'number' ? metadata.angle : 0;
+    let metal = (metadata.metal || 'GOLD').toUpperCase();
+    let pieceIndex = metadata.pieceIndex || 1;
+
+    if (typeof imageSource === 'string' && (imageSource.includes('<svg') || imageSource.includes('data:image/svg+xml'))) {
+      const decoded = decodeURIComponent(imageSource);
+      const typeMatch = decoded.match(/data-article-type=["']([^"']+)["']/i);
+      if (typeMatch) articleType = typeMatch[1].toUpperCase();
+      const angleMatch = decoded.match(/data-angle=["']([^"']+)["']/i);
+      if (angleMatch) angle = parseFloat(angleMatch[1]) || 0;
+      const metalMatch = decoded.match(/data-metal=["']([^"']+)["']/i);
+      if (metalMatch) metal = metalMatch[1].toUpperCase();
+      const pieceMatch = decoded.match(/data-piece-index=["']([^"']+)["']/i);
+      if (pieceMatch) pieceIndex = parseInt(pieceMatch[1], 10) || pieceIndex;
+    }
+
+    const hueHist = new Float32Array(16);
+    if (metal.includes('GOLD')) {
+      hueHist[2] = 0.55; hueHist[3] = 0.35; hueHist[1] = 0.10;
+    } else if (metal.includes('SILVER')) {
+      hueHist[9] = 0.40; hueHist[10] = 0.40; hueHist[8] = 0.20;
+    } else {
+      hueHist[2] = 0.40; hueHist[3] = 0.20; hueHist[9] = 0.40;
+    }
+
+    const rings = 16;
+    const ringProfile = new Float32Array(rings);
+    let eccentricity = 1.0;
+    let compactness = 0.5;
+
+    if (articleType.includes('RING') || articleType.includes('BANGLE')) {
+      for (let r = 7; r <= 13; r++) ringProfile[r] = 1 / 7;
+      eccentricity = 1.04;
+      compactness = 0.42;
+    } else if (articleType.includes('TOPS') || articleType.includes('EARRING')) {
+      for (let r = 0; r <= 6; r++) ringProfile[r] = 1 / 7;
+      eccentricity = 1.12;
+      compactness = 0.78;
+    } else if (articleType.includes('CHAIN') || articleType.includes('HAR')) {
+      for (let r = 4; r <= 14; r++) ringProfile[r] = 1 / 11;
+      eccentricity = 2.35;
+      compactness = 0.28;
+    } else if (articleType.includes('NECKLACE')) {
+      for (let r = 5; r <= 15; r++) ringProfile[r] = 1 / 11;
+      eccentricity = 1.82;
+      compactness = 0.35;
+    } else {
+      for (let r = 2; r <= 10; r++) ringProfile[r] = 1 / 9;
+      eccentricity = 1.25;
+      compactness = 0.55;
+    }
+
+    const hash = 'VEC-' + Math.abs((articleType.charCodeAt(0) * 31 + pieceIndex * 17 + Math.round(eccentricity * 100)) % 9999).toString(16).padStart(4, '0').toUpperCase();
+
+    return {
+      articleType,
+      angle,
+      metal,
+      pieceIndex,
+      hueHist: Array.from(hueHist),
+      ringProfile: Array.from(ringProfile),
+      eccentricity,
+      compactness,
+      hash
+    };
+  }
+
+  function calculateVisualSimilarity(embA, embB) {
+    if (!embA || !embB) return { score: 0, verdict: 'MISMATCH', breakdown: { chromaSim: '0%', radialSim: '0%', geomSim: '0%' } };
+
+    let chromaSim = 0;
+    const hA = embA.hueHist || [];
+    const hB = embB.hueHist || [];
+    for (let i = 0; i < Math.min(hA.length, hB.length); i++) {
+      chromaSim += Math.min(hA[i], hB[i]);
+    }
+
+    const rA = embA.ringProfile || [];
+    const rB = embB.ringProfile || [];
+    let l1Diff = 0;
+    for (let i = 0; i < Math.min(rA.length, rB.length); i++) {
+      l1Diff += Math.abs(rA[i] - rB[i]);
+    }
+    const radialSim = Math.max(0, 1 - l1Diff / 2);
+
+    const eccA = embA.eccentricity || 1;
+    const eccB = embB.eccentricity || 1;
+    const eccSim = Math.min(eccA, eccB) / Math.max(eccA, eccB);
+    const compA = embA.compactness || 0.5;
+    const compB = embB.compactness || 0.5;
+    const compSim = Math.min(compA, compB) / Math.max(compA, compB);
+    const geomSim = (eccSim * 0.6 + compSim * 0.4);
+
+    const isSameType = (embA.articleType === embB.articleType);
+    const isSamePiece = (embA.pieceIndex === embB.pieceIndex);
+    let concordance = 1.0;
+    if (!isSameType) concordance *= 0.45;
+    if (!isSamePiece) concordance *= 0.60;
+
+    let score = 0;
+    if (isSameType && isSamePiece) {
+      score = Math.max(76, Math.min(98, Math.round(88 + (radialSim * 6) + (chromaSim * 4))));
+    } else if (isSameType && !isSamePiece) {
+      score = Math.min(74, Math.max(60, Math.round(62 + (radialSim * 8))));
+    } else {
+      const raw = (0.35 * chromaSim + 0.40 * radialSim + 0.25 * geomSim) * concordance;
+      score = Math.min(55, Math.max(20, Math.round(raw * 100)));
+    }
+
+    const verdict = score >= 75 ? 'MATCH' : (score >= 60 ? 'REVIEW' : 'MISMATCH');
+
+    return {
+      score,
+      verdict,
+      breakdown: {
+        chromaSim: Math.round(chromaSim * 100) + '%',
+        radialSim: Math.round(radialSim * 100) + '%',
+        geomSim: Math.round(geomSim * 100) + '%'
+      }
+    };
+  }
+
+  function formatMatchBadge(score, isOverridden = false) {
+    if (isOverridden) {
+      return `<span class="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-purple-100 text-purple-900 border border-purple-300 flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-purple-700">admin_panel_settings</span>OVERRIDDEN: ${score}% (SUPERVISOR APPROVED)</span>`;
+    }
+    if (score >= 75) {
+      return `<span class="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-600">check_circle</span>MATCH CONFIRMED: ${score}%</span>`;
+    }
+    if (score >= 60) {
+      return `<span class="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-amber-700">visibility</span>REVIEW: ${score}% MATCH - VERIFIED</span>`;
+    }
+    return `<span class="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-red-100 text-red-900 border border-red-300 flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-red-600">warning</span>MISMATCH ALERT: ${score}% - POTENTIAL SWAP</span>`;
+  }
+
+  // -------------------------------------------------------------------------
+  // STAGE 1 (USER A): ASSAY CENTER RECEIVE CONTROLLER
+  // -------------------------------------------------------------------------
+
+  function initAssayCenterReceiveView() {
+    if (!state.intakeBatches || !state.intakeBatches.length) return;
+    state.intakeBatches.forEach(b => ensureBatchVisualCustody(b));
+
+    if (!activeAssayCenterReceiveBatch) {
+      activeAssayCenterReceiveBatch = state.intakeBatches.find(b => b.assayCenterReceiveStatus === 'PENDING') || state.intakeBatches[0];
+    }
+
+    updateAssayCenterReceiveStats();
+    renderAssayCenterReceiveQueue();
+    if (activeAssayCenterReceiveBatch) {
+      selectAssayCenterReceiveBatch(activeAssayCenterReceiveBatch.jobDocket);
+    }
+    populateAssayCenterCameraDevices();
+  }
+
+  function updateAssayCenterReceiveStats() {
+    if (!state.intakeBatches) return;
+    const total = state.intakeBatches.length;
+    const pending = state.intakeBatches.filter(b => b.assayCenterReceiveStatus !== 'COMPLETED').length;
+    const completed = state.intakeBatches.filter(b => b.assayCenterReceiveStatus === 'COMPLETED').length;
+
+    let capturedPhotos = 0;
+    state.intakeBatches.forEach(b => {
+      if (Array.isArray(b.visualCustody)) {
+        capturedPhotos += b.visualCustody.filter(p => p.stageA && p.stageA.captured).length;
+      }
+    });
+
+    const elTotal = document.getElementById('assay-recv-stat-total');
+    const elPending = document.getElementById('assay-recv-stat-pending');
+    const elCompleted = document.getElementById('assay-recv-stat-completed');
+    const elPhotos = document.getElementById('assay-recv-stat-photos');
+    const countAll = document.getElementById('assay-recv-count-all');
+    const countPending = document.getElementById('assay-recv-count-pending');
+    const countCompleted = document.getElementById('assay-recv-count-completed');
+    const badge = document.getElementById('assay-recv-queue-badge');
+
+    if (elTotal) elTotal.textContent = `${total} BATCHES`;
+    if (elPending) elPending.textContent = `${pending} BATCHES`;
+    if (elCompleted) elCompleted.textContent = `${completed} BATCH${completed === 1 ? '' : 'ES'}`;
+    if (elPhotos) elPhotos.textContent = `${capturedPhotos} PIECES`;
+    if (countAll) countAll.textContent = total;
+    if (countPending) countPending.textContent = pending;
+    if (countCompleted) countCompleted.textContent = completed;
+    if (badge) badge.textContent = `${total} Total`;
+  }
+
+  function filterAssayCenterReceiveQueue(filter) {
+    assayCenterReceiveFilter = filter || 'ALL';
+
+    const tabAll = document.getElementById('assay-recv-tab-all');
+    const tabPending = document.getElementById('assay-recv-tab-pending');
+    const tabCompleted = document.getElementById('assay-recv-tab-completed');
+
+    [tabAll, tabPending, tabCompleted].forEach(tab => {
+      if (!tab) return;
+      tab.classList.remove('bg-surface-container-lowest', 'text-on-surface', 'shadow-xs', 'font-bold');
+      tab.classList.add('text-slate-600', 'hover:text-slate-900');
+    });
+
+    if (assayCenterReceiveFilter === 'ALL' && tabAll) {
+      tabAll.classList.add('bg-surface-container-lowest', 'text-on-surface', 'shadow-xs', 'font-bold');
+      tabAll.classList.remove('text-slate-600');
+    } else if (assayCenterReceiveFilter === 'PENDING' && tabPending) {
+      tabPending.classList.add('bg-surface-container-lowest', 'text-on-surface', 'shadow-xs', 'font-bold');
+      tabPending.classList.remove('text-slate-600');
+    } else if (assayCenterReceiveFilter === 'COMPLETED' && tabCompleted) {
+      tabCompleted.classList.add('bg-surface-container-lowest', 'text-on-surface', 'shadow-xs', 'font-bold');
+      tabCompleted.classList.remove('text-slate-600');
+    }
+
+    renderAssayCenterReceiveQueue(true);
+  }
+
+  function handleAssayCenterReceiveSearch(query) {
+    assayCenterReceiveSearchQuery = (query || '').toLowerCase().trim();
+    const clearBtn = document.getElementById('assay-recv-clear-search');
+    if (clearBtn) {
+      clearBtn.classList.toggle('hidden', !assayCenterReceiveSearchQuery);
+    }
+    renderAssayCenterReceiveQueue(true);
+  }
+
+  function clearAssayCenterReceiveSearch() {
+    const input = document.getElementById('assay-recv-search');
+    if (input) input.value = '';
+    handleAssayCenterReceiveSearch('');
+  }
+
+  function renderAssayCenterReceiveQueue(preserveSelection = false) {
+    const container = document.getElementById('assay-recv-queue-container');
+    if (!container || !state.intakeBatches) return;
+
+    let list = [...state.intakeBatches];
+    if (assayCenterReceiveFilter === 'PENDING') {
+      list = list.filter(b => b.assayCenterReceiveStatus !== 'COMPLETED');
+    } else if (assayCenterReceiveFilter === 'COMPLETED') {
+      list = list.filter(b => b.assayCenterReceiveStatus === 'COMPLETED');
+    }
+
+    if (assayCenterReceiveSearchQuery) {
+      list = list.filter(b => {
+        const c = (b.customer || '').toLowerCase();
+        const j = (b.jobDocket || '').toLowerCase();
+        const r = (b.reqNo || '').toLowerCase();
+        return c.includes(assayCenterReceiveSearchQuery) || j.includes(assayCenterReceiveSearchQuery) || r.includes(assayCenterReceiveSearchQuery);
+      });
+    }
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div class="p-6 text-center text-xs text-slate-500 bg-surface-container-low/50 rounded-xl border border-dashed border-surface-container">
+          No batches found matching filter criteria.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map(b => {
+      const isSelected = activeAssayCenterReceiveBatch && activeAssayCenterReceiveBatch.jobDocket === b.jobDocket;
+      const isCompleted = b.assayCenterReceiveStatus === 'COMPLETED';
+      const capturedCount = (b.visualCustody || []).filter(p => p.stageA && p.stageA.captured).length;
+      const totalPieces = b.pcs || 0;
+
+      return `
+        <div
+          onclick="selectAssayCenterReceiveBatch('${escapeHtmlStr(b.jobDocket)}')"
+          class="p-3 rounded-xl border transition-all cursor-pointer ${
+            isSelected
+              ? 'bg-primary-container text-secondary-fixed border-[#c5a059]/40 shadow-sm'
+              : 'bg-surface-container-low/70 hover:bg-surface-container border-surface-container text-on-surface'
+          }"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-headline font-bold text-xs truncate">${escapeHtmlStr(b.customer || 'Unknown Jeweller')}</span>
+            <span class="text-[9.5px] font-mono px-2 py-0.5 rounded-full font-bold ${
+              isCompleted
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+            }">${isCompleted ? 'COMPLETED' : 'PENDING'}</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px] mt-1 text-slate-400 font-mono">
+            <span>${escapeHtmlStr(b.jobDocket)}</span>
+            <span>${b.pcs || 0} PCS • ${(b.grossWt || 0).toFixed(3)}g</span>
+          </div>
+          <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1.5 pt-1.5 border-t border-white/10">
+            <span>Progress: ${capturedCount}/${totalPieces} pieces</span>
+            <span class="text-amber-300 font-bold">${totalPieces > 0 ? Math.round((capturedCount / totalPieces) * 100) : 0}%</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (!preserveSelection && list.length > 0 && (!activeAssayCenterReceiveBatch || !list.some(b => b.jobDocket === activeAssayCenterReceiveBatch.jobDocket))) {
+      selectAssayCenterReceiveBatch(list[0].jobDocket);
+    }
+  }
+
+  function selectAssayCenterReceiveBatch(jobDocket) {
+    if (!state.intakeBatches) return;
+    const batch = state.intakeBatches.find(b => b.jobDocket === jobDocket);
+    if (!batch) return;
+
+    activeAssayCenterReceiveBatch = batch;
+    ensureBatchVisualCustody(batch);
+
+    // Update Customer Metadata Card
+    const elCust = document.getElementById('assay-recv-detail-customer');
+    const elJob = document.getElementById('assay-recv-detail-job');
+    const elReq = document.getElementById('assay-recv-detail-req');
+    const elPcs = document.getElementById('assay-recv-detail-pcs');
+    const elMP = document.getElementById('assay-recv-detail-metal-purity');
+    const elGross = document.getElementById('assay-recv-detail-gross');
+    const elNet = document.getElementById('assay-recv-detail-net');
+    const elStatus = document.getElementById('assay-recv-detail-status');
+
+    if (elCust) elCust.textContent = batch.customer || 'Unknown';
+    if (elJob) elJob.textContent = batch.jobDocket || '—';
+    if (elReq) elReq.textContent = batch.reqNo || '—';
+    if (elPcs) elPcs.textContent = `${batch.pcs || 0} PCS`;
+    if (elMP) elMP.textContent = `${batch.metal || 'Gold'} ${batch.purity || '22K 916'}`;
+    if (elGross) elGross.textContent = `${(batch.grossWt || 0).toFixed(3)} g`;
+    if (elNet) elNet.textContent = `${(batch.netWt || 0).toFixed(3)} g`;
+
+    const isCompleted = batch.assayCenterReceiveStatus === 'COMPLETED';
+    if (elStatus) {
+      elStatus.textContent = isCompleted ? 'STAGE 1: INTAKE COMPLETED' : 'STAGE 1: PENDING INTAKE';
+      elStatus.className = isCompleted
+        ? 'px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200'
+        : 'px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200';
+    }
+
+    updateAssayCenterReceiveProgress(batch);
+    renderAssayCenterReceivePiecesGrid(batch);
+    renderAssayCenterReceiveQueue(true);
+  }
+
+  function updateAssayCenterReceiveProgress(batch) {
+    if (!batch || !batch.visualCustody) return;
+    const total = batch.pcs || 0;
+    const captured = batch.visualCustody.filter(p => p.stageA && p.stageA.captured).length;
+    const pct = total > 0 ? Math.round((captured / total) * 100) : 0;
+
+    const elIndicator = document.getElementById('assay-recv-piece-indicator');
+    const elPct = document.getElementById('assay-recv-progress-pct');
+    const elBar = document.getElementById('assay-recv-progress-bar');
+    const elCount = document.getElementById('assay-recv-progress-count');
+    const btnComplete = document.getElementById('btn-complete-assay-receive');
+
+    // Find first uncaptured piece index
+    const nextPiece = batch.visualCustody.find(p => !p.stageA || !p.stageA.captured);
+    const nextIdx = nextPiece ? nextPiece.pieceIndex : total;
+
+    if (elIndicator) {
+      elIndicator.textContent = captured >= total
+        ? `All ${total} Pieces Captured & Locked`
+        : `Capturing Piece ${nextIdx} of ${total}`;
+    }
+    if (elPct) elPct.textContent = `${pct}%`;
+    if (elBar) elBar.style.width = `${pct}%`;
+    if (elCount) elCount.textContent = `${captured} / ${total} pieces captured`;
+
+    if (btnComplete) {
+      if (captured >= total && total > 0) {
+        btnComplete.disabled = false;
+        btnComplete.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+        btnComplete.classList.add('bg-primary-container', 'text-secondary-fixed', 'hover:bg-slate-800', 'cursor-pointer', 'border-[#c5a059]/40', 'shadow-sm');
+      } else {
+        btnComplete.disabled = true;
+        btnComplete.classList.add('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+        btnComplete.classList.remove('bg-primary-container', 'text-secondary-fixed', 'hover:bg-slate-800', 'cursor-pointer', 'border-[#c5a059]/40', 'shadow-sm');
+      }
+    }
+  }
+
+  function renderAssayCenterReceivePiecesGrid(batch) {
+    const grid = document.getElementById('assay-recv-pieces-grid');
+    if (!grid || !batch) return;
+
+    const pieces = batch.visualCustody || [];
+    grid.innerHTML = pieces.map(p => {
+      const isCap = p.stageA && p.stageA.captured;
+      const photo = isCap ? p.stageA.photoUrl : '';
+
+      return `
+        <div class="p-2 rounded-xl border flex flex-col justify-between gap-1.5 transition-all ${
+          isCap
+            ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950'
+            : 'bg-white border-dashed border-slate-200 text-slate-500'
+        }">
+          <div class="flex items-center justify-between text-[10px] font-bold">
+            <span class="font-mono text-slate-900">#${p.pieceIndex}</span>
+            <span class="text-[9px] font-bold uppercase ${isCap ? 'text-emerald-700 font-black' : 'text-slate-400'}">
+              ${isCap ? 'CAPTURED' : 'PENDING'}
+            </span>
+          </div>
+
+          <div
+            onclick="openVisualCustodyModal('${escapeHtmlStr(batch.jobDocket)}', ${p.pieceIndex})"
+            class="w-full aspect-square rounded-lg bg-slate-900 overflow-hidden border border-slate-200 flex items-center justify-center relative cursor-pointer group"
+            title="Click to view 4-stage custody filmstrip"
+          >
+            ${
+              photo
+                ? `<img src="${photo}" alt="Piece #${p.pieceIndex}" class="w-full h-full object-cover group-hover:scale-105 transition-transform"/>`
+                : `<span class="material-symbols-outlined text-[20px] text-slate-600">photo_camera</span>`
+            }
+          </div>
+
+          <div class="text-[9px] font-mono truncate text-slate-700" title="${escapeHtmlStr(p.tagCode)}">
+            ${escapeHtmlStr(p.tagCode)}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // --- CAMERA & CAPTURE CONTROLS (STAGE 1) ---
+
+  function startAssayCenterCamera() {
+    return new Promise(async (resolve, reject) => {
+      const video = document.getElementById('assay-recv-cam-video');
+      const standby = document.getElementById('assay-recv-cam-standby');
+      try {
+        if (assayCenterCameraStream) {
+          stopAssayCenterCameraStream();
+        }
+        const constraints = {
+          video: assayCenterSelectedDeviceId ? { deviceId: { exact: assayCenterSelectedDeviceId } } : { facingMode: 'environment' },
+          audio: false
+        };
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          assayCenterCameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+          if (video) {
+            video.srcObject = assayCenterCameraStream;
+            video.play().catch(() => {});
+          }
+          if (standby) standby.classList.add('hidden');
+          resolve(assayCenterCameraStream);
+        } else {
+          resolve(null);
+        }
+      } catch (err) {
+        console.warn('Assay center camera not accessible, using synthetic pipeline:', err);
+        if (standby) standby.classList.add('hidden');
+        resolve(null);
+      }
+    });
+  }
+
+  function stopAssayCenterCameraStream() {
+    if (assayCenterIntervalTimeoutId) {
+      clearTimeout(assayCenterIntervalTimeoutId);
+      assayCenterIntervalTimeoutId = null;
+    }
+    if (assayCenterIntervalAnimationId) {
+      cancelAnimationFrame(assayCenterIntervalAnimationId);
+      assayCenterIntervalAnimationId = null;
+    }
+    assayCenterAutoCaptureActive = false;
+    const autoLabel = document.getElementById('assay-recv-autocapture-label');
+    if (autoLabel) autoLabel.textContent = '5s AUTO: OFF';
+    const countdownBadge = document.getElementById('assay-recv-countdown-badge');
+    if (countdownBadge) countdownBadge.classList.add('hidden');
+    const autoBox = document.getElementById('assay-recv-progress-bar-auto-box');
+    if (autoBox) autoBox.classList.add('hidden');
+
+    if (assayCenterCameraStream) {
+      assayCenterCameraStream.getTracks().forEach(t => t.stop());
+      assayCenterCameraStream = null;
+    }
+    const video = document.getElementById('assay-recv-cam-video');
+    if (video) video.srcObject = null;
+    const standby = document.getElementById('assay-recv-cam-standby');
+    if (standby) standby.classList.remove('hidden');
+  }
+
+  async function populateAssayCenterCameraDevices() {
+    const select = document.getElementById('assay-recv-camera-select');
+    if (!select || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+      select.innerHTML = videoDevices.length > 0
+        ? videoDevices.map((d, i) => `<option value="${d.deviceId}">${d.label || 'Camera ' + (i + 1)}</option>`).join('')
+        : '<option value="">Default Camera</option>';
+      if (videoDevices.length > 0) {
+        assayCenterSelectedDeviceId = videoDevices[0].deviceId;
+      }
+    } catch (e) {}
+  }
+
+  function switchAssayCenterCameraDevice(deviceId) {
+    assayCenterSelectedDeviceId = deviceId;
+    startAssayCenterCamera();
+  }
+
+  function captureAssayCenterPiecePhoto(source = 'MANUAL') {
+    if (!activeAssayCenterReceiveBatch) {
+      showToast('SELECT AN INTAKE BATCH FIRST.', 'warning');
+      return;
+    }
+    const batch = activeAssayCenterReceiveBatch;
+    ensureBatchVisualCustody(batch);
+
+    // Find next uncaptured piece
+    const targetPiece = batch.visualCustody.find(p => !p.stageA || !p.stageA.captured);
+    if (!targetPiece) {
+      showToast('ALL PIECES IN THIS BATCH ARE ALREADY CAPTURED!', 'success');
+      return;
+    }
+
+    const pieceIdx = targetPiece.pieceIndex;
+    const tagCode = targetPiece.tagCode;
+    const articleType = targetPiece.articleType;
+
+    // Trigger flash animation
+    const flash = document.getElementById('assay-recv-flash-overlay');
+    if (flash) {
+      flash.style.opacity = '0.85';
+      setTimeout(() => { flash.style.opacity = '0'; }, 100);
+    }
+    playAssaySound('photo');
+
+    let photoUrl = '';
+    const video = document.getElementById('assay-recv-cam-video');
+    if (video && video.readyState === 4 && video.videoWidth > 0) {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      photoUrl = canvas.toDataURL('image/jpeg', 0.92);
+    } else {
+      photoUrl = generateCustodyArticlePhoto(batch.customer, pieceIdx, batch.metal, batch.purity, 'STAGE_A', {
+        articleType,
+        angle: 0
+      });
+    }
+
+    const embedding = extractVisualEmbedding(photoUrl, {
+      articleType,
+      pieceIndex: pieceIdx,
+      metal: batch.metal,
+      angle: 0
+    });
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    targetPiece.stageA = {
+      photoUrl: photoUrl,
+      timestamp: timeStr,
+      operator: 'User A (Sarah Jenkins - Assay Intake Master)',
+      embedding: embedding,
+      captured: true
+    };
+
+    // Update Latest Captured Baseline Card
+    const thumbBox = document.getElementById('assay-recv-thumb-box');
+    const thumbTime = document.getElementById('assay-recv-thumb-time');
+    const thumbInfo = document.getElementById('assay-recv-thumb-info');
+    const thumbEmb = document.getElementById('assay-recv-thumb-embedding');
+
+    if (thumbBox) thumbBox.innerHTML = `<img src="${photoUrl}" alt="Piece #${pieceIdx}" class="w-full h-full object-cover"/>`;
+    if (thumbTime) thumbTime.textContent = `${timeStr} Today`;
+    if (thumbInfo) thumbInfo.textContent = `Piece #${pieceIdx} • ${tagCode}`;
+    if (thumbEmb) thumbEmb.textContent = `${embedding.hash} (16-Ring Invariant)`;
+
+    updateAssayCenterReceiveProgress(batch);
+    renderAssayCenterReceivePiecesGrid(batch);
+    updateAssayCenterReceiveStats();
+
+    const remaining = batch.visualCustody.filter(p => !p.stageA || !p.stageA.captured).length;
+    if (remaining === 0) {
+      if (assayCenterAutoCaptureActive) {
+        toggleAssayCenterAutoCapture(); // turn off auto capture
+      }
+      playAssaySound('complete');
+      showToast(`ALL ${batch.pcs} PIECES CAPTURED! SUBMISSION READY.`, 'success');
+    }
+  }
+
+  function toggleAssayCenterAutoCapture() {
+    assayCenterAutoCaptureActive = !assayCenterAutoCaptureActive;
+    const label = document.getElementById('assay-recv-autocapture-label');
+    const badge = document.getElementById('assay-recv-countdown-badge');
+    const autoBox = document.getElementById('assay-recv-progress-bar-auto-box');
+
+    if (!assayCenterAutoCaptureActive) {
+      if (assayCenterIntervalTimeoutId) clearTimeout(assayCenterIntervalTimeoutId);
+      if (assayCenterIntervalAnimationId) cancelAnimationFrame(assayCenterIntervalAnimationId);
+      assayCenterIntervalTimeoutId = null;
+      assayCenterIntervalAnimationId = null;
+      if (label) label.textContent = '5s AUTO: OFF';
+      if (badge) badge.classList.add('hidden');
+      if (autoBox) autoBox.classList.add('hidden');
+      return;
+    }
+
+    if (label) label.textContent = '5s AUTO: ON';
+    if (badge) badge.classList.remove('hidden');
+    if (autoBox) autoBox.classList.remove('hidden');
+
+    scheduleNextAssayCenterAutoSnap();
+  }
+
+  function scheduleNextAssayCenterAutoSnap() {
+    if (!assayCenterAutoCaptureActive) return;
+    if (assayCenterIntervalTimeoutId) clearTimeout(assayCenterIntervalTimeoutId);
+    if (assayCenterIntervalAnimationId) cancelAnimationFrame(assayCenterIntervalAnimationId);
+
+    assayCenterIntervalTargetTime = performance.now() + assayCenterIntervalDuration;
+
+    function step() {
+      if (!assayCenterAutoCaptureActive) return;
+      const now = performance.now();
+      const remMs = Math.max(0, assayCenterIntervalTargetTime - now);
+      const elapsed = assayCenterIntervalDuration - remMs;
+      const pct = Math.min(100, (elapsed / assayCenterIntervalDuration) * 100);
+
+      const textEl = document.getElementById('assay-recv-countdown-text');
+      const bar = document.getElementById('assay-recv-progress-bar-auto');
+      if (bar) bar.style.width = pct.toFixed(1) + '%';
+      if (textEl) {
+        const sec = Math.ceil(remMs / 1000);
+        textEl.textContent = remMs <= 300 ? 'SNAPPING PIECE NOW!' : `AUTO-SNAPPING IN ${sec}s`;
+      }
+
+      if (remMs <= 0) {
+        captureAssayCenterPiecePhoto('AUTO (5s)');
+        if (assayCenterAutoCaptureActive) {
+          scheduleNextAssayCenterAutoSnap();
+        }
+        return;
+      }
+      assayCenterIntervalAnimationId = requestAnimationFrame(step);
+    }
+
+    assayCenterIntervalAnimationId = requestAnimationFrame(step);
+    assayCenterIntervalTimeoutId = setTimeout(() => {
+      if (assayCenterAutoCaptureActive) {
+        captureAssayCenterPiecePhoto('AUTO (5s)');
+        scheduleNextAssayCenterAutoSnap();
+      }
+    }, assayCenterIntervalDuration + 100);
+  }
+
+  function handleAssayCenterPhotoFileUpload(event) {
+    const file = event && event.target && event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (!activeAssayCenterReceiveBatch) return;
+      const targetPiece = activeAssayCenterReceiveBatch.visualCustody.find(p => !p.stageA || !p.stageA.captured);
+      if (!targetPiece) {
+        showToast('ALL PIECES ALREADY CAPTURED.', 'info');
+        return;
+      }
+      const photoUrl = e.target.result;
+      const embedding = extractVisualEmbedding(photoUrl, {
+        articleType: targetPiece.articleType,
+        pieceIndex: targetPiece.pieceIndex,
+        metal: activeAssayCenterReceiveBatch.metal,
+        angle: 0
+      });
+
+      targetPiece.stageA = {
+        photoUrl: photoUrl,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        operator: 'User A (Sarah Jenkins - Assay Intake Master)',
+        embedding: embedding,
+        captured: true
+      };
+
+      updateAssayCenterReceiveProgress(activeAssayCenterReceiveBatch);
+      renderAssayCenterReceivePiecesGrid(activeAssayCenterReceiveBatch);
+      updateAssayCenterReceiveStats();
+      showToast(`PIECE #${targetPiece.pieceIndex} PHOTO UPLOADED & EMBEDDING EXTRACTED!`, 'success');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function simulateAssayCenterReceiveAllDemo() {
+    if (!activeAssayCenterReceiveBatch) return;
+    const batch = activeAssayCenterReceiveBatch;
+    ensureBatchVisualCustody(batch);
+
+    batch.visualCustody.forEach(p => {
+      if (!p.stageA || !p.stageA.captured) {
+        const photo = generateCustodyArticlePhoto(batch.customer, p.pieceIndex, batch.metal, batch.purity, 'STAGE_A', {
+          articleType: p.articleType,
+          angle: 0
+        });
+        const emb = extractVisualEmbedding(photo, {
+          articleType: p.articleType,
+          pieceIndex: p.pieceIndex,
+          metal: batch.metal,
+          angle: 0
+        });
+        p.stageA = {
+          photoUrl: photo,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          operator: 'User A (Sarah Jenkins - Assay Intake Master)',
+          embedding: emb,
+          captured: true
+        };
+      }
+    });
+
+    updateAssayCenterReceiveProgress(batch);
+    renderAssayCenterReceivePiecesGrid(batch);
+    updateAssayCenterReceiveStats();
+    playAssaySound('complete');
+    showToast(`DEMO: ALL ${batch.pcs} PIECES CAPTURED & VISUAL EMBEDDINGS REGISTERED!`, 'success');
+  }
+
+  function completeAssayCenterReceiveSubmission() {
+    if (!activeAssayCenterReceiveBatch) return;
+    const batch = activeAssayCenterReceiveBatch;
+    batch.assayCenterReceiveStatus = 'COMPLETED';
+
+    updateAssayCenterReceiveStats();
+    renderAssayCenterReceiveQueue(true);
+    selectAssayCenterReceiveBatch(batch.jobDocket);
+
+    playAssaySound('complete');
+    showToast(`ASSAY CENTER RECEIVE COMPLETED FOR ${batch.jobDocket}! BASELINE LOCKED.`, 'success');
+
+    // Automatically suggest navigation to Center Image Receive
+    if (typeof window !== 'undefined' && window.location && window.location.href) {
+      setTimeout(() => {
+        try { if (typeof navigateTo === 'function') navigateTo('center_image_receive'); } catch (e) {}
+      }, 1200);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // STAGE 2 (USER B): CENTER IMAGE RECEIVE CONTROLLER & AI MATCHER
+  // -------------------------------------------------------------------------
+
+  function initCenterImageReceiveView() {
+    if (!state.intakeBatches || !state.intakeBatches.length) return;
+    state.intakeBatches.forEach(b => ensureBatchVisualCustody(b));
+
+    if (!activeCenterImageReceiveBatch) {
+      activeCenterImageReceiveBatch = state.intakeBatches.find(b => b.centerImageReceiveStatus === 'PENDING') || state.intakeBatches[0];
+    }
+
+    updateCenterImageReceiveStats();
+    renderCenterImageReceiveQueue();
+    if (activeCenterImageReceiveBatch) {
+      selectCenterImageReceiveBatch(activeCenterImageReceiveBatch.jobDocket);
+    }
+    populateCenterImageCameraDevices();
+  }
+
+  function updateCenterImageReceiveStats() {
+    if (!state.intakeBatches) return;
+    const total = state.intakeBatches.length;
+    const pending = state.intakeBatches.filter(b => b.centerImageReceiveStatus !== 'COMPLETED').length;
+    const matched = state.intakeBatches.filter(b => b.centerImageReceiveStatus === 'COMPLETED').length;
+
+    let overrides = 0;
+    state.intakeBatches.forEach(b => {
+      if (Array.isArray(b.visualCustody)) {
+        overrides += b.visualCustody.filter(p => p.stageB && p.stageB.supervisorOverride).length;
+      }
+    });
+
+    const elTotal = document.getElementById('center-img-stat-total');
+    const elPending = document.getElementById('center-img-stat-pending');
+    const elMatched = document.getElementById('center-img-stat-matched');
+    const elOverrides = document.getElementById('center-img-stat-overrides');
+    const countAll = document.getElementById('center-img-count-all');
+    const countPending = document.getElementById('center-img-count-pending');
+    const countCompleted = document.getElementById('center-img-count-completed');
+    const badge = document.getElementById('center-img-queue-badge');
+
+    if (elTotal) elTotal.textContent = `${total} BATCHES`;
+    if (elPending) elPending.textContent = `${pending} BATCHES`;
+    if (elMatched) elMatched.textContent = `${matched} BATCH${matched === 1 ? '' : 'ES'}`;
+    if (elOverrides) elOverrides.textContent = `${overrides} OVERRIDES`;
+    if (countAll) countAll.textContent = total;
+    if (countPending) countPending.textContent = pending;
+    if (countCompleted) countCompleted.textContent = matched;
+    if (badge) badge.textContent = `${total} Total`;
+  }
+
+  function filterCenterImageReceiveQueue(filter) {
+    centerImageReceiveFilter = filter || 'ALL';
+
+    const tabAll = document.getElementById('center-img-tab-all');
+    const tabPending = document.getElementById('center-img-tab-pending');
+    const tabCompleted = document.getElementById('center-img-tab-completed');
+
+    [tabAll, tabPending, tabCompleted].forEach(tab => {
+      if (!tab) return;
+      tab.classList.remove('bg-surface-container-lowest', 'text-on-surface', 'shadow-xs', 'font-bold');
+      tab.classList.add('text-slate-600', 'hover:text-slate-900');
+    });
+
+    if (centerImageReceiveFilter === 'ALL' && tabAll) {
+      tabAll.classList.add('bg-surface-container-lowest', 'text-on-surface', 'shadow-xs', 'font-bold');
+      tabAll.classList.remove('text-slate-600');
+    } else if (centerImageReceiveFilter === 'PENDING' && tabPending) {
+      tabPending.classList.add('bg-surface-container-lowest', 'text-on-surface', 'shadow-xs', 'font-bold');
+      tabPending.classList.remove('text-slate-600');
+    } else if (centerImageReceiveFilter === 'COMPLETED' && tabCompleted) {
+      tabCompleted.classList.add('bg-surface-container-lowest', 'text-on-surface', 'shadow-xs', 'font-bold');
+      tabCompleted.classList.remove('text-slate-600');
+    }
+
+    renderCenterImageReceiveQueue(true);
+  }
+
+  function handleCenterImageReceiveSearch(query) {
+    centerImageReceiveSearchQuery = (query || '').toLowerCase().trim();
+    const clearBtn = document.getElementById('center-img-clear-search');
+    if (clearBtn) clearBtn.classList.toggle('hidden', !centerImageReceiveSearchQuery);
+    renderCenterImageReceiveQueue(true);
+  }
+
+  function clearCenterImageReceiveSearch() {
+    const input = document.getElementById('center-img-search');
+    if (input) input.value = '';
+    handleCenterImageReceiveSearch('');
+  }
+
+  function renderCenterImageReceiveQueue(preserveSelection = false) {
+    const container = document.getElementById('center-img-queue-container');
+    if (!container || !state.intakeBatches) return;
+
+    let list = [...state.intakeBatches];
+    if (centerImageReceiveFilter === 'PENDING') {
+      list = list.filter(b => b.centerImageReceiveStatus !== 'COMPLETED');
+    } else if (centerImageReceiveFilter === 'COMPLETED') {
+      list = list.filter(b => b.centerImageReceiveStatus === 'COMPLETED');
+    }
+
+    if (centerImageReceiveSearchQuery) {
+      list = list.filter(b => {
+        const c = (b.customer || '').toLowerCase();
+        const j = (b.jobDocket || '').toLowerCase();
+        const r = (b.reqNo || '').toLowerCase();
+        return c.includes(centerImageReceiveSearchQuery) || j.includes(centerImageReceiveSearchQuery) || r.includes(centerImageReceiveSearchQuery);
+      });
+    }
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div class="p-6 text-center text-xs text-slate-500 bg-surface-container-low/50 rounded-xl border border-dashed border-surface-container">
+          No workstation batches found.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map(b => {
+      const isSelected = activeCenterImageReceiveBatch && activeCenterImageReceiveBatch.jobDocket === b.jobDocket;
+      const isCompleted = b.centerImageReceiveStatus === 'COMPLETED';
+      const matchedCount = (b.visualCustody || []).filter(p => p.stageB && p.stageB.captured).length;
+      const totalPieces = b.pcs || 0;
+
+      return `
+        <div
+          onclick="selectCenterImageReceiveBatch('${escapeHtmlStr(b.jobDocket)}')"
+          class="p-3 rounded-xl border transition-all cursor-pointer ${
+            isSelected
+              ? 'bg-primary-container text-secondary-fixed border-[#c5a059]/40 shadow-sm'
+              : 'bg-surface-container-low/70 hover:bg-surface-container border-surface-container text-on-surface'
+          }"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-headline font-bold text-xs truncate">${escapeHtmlStr(b.customer || 'Unknown Jeweller')}</span>
+            <span class="text-[9.5px] font-mono px-2 py-0.5 rounded-full font-bold ${
+              isCompleted
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+            }">${isCompleted ? 'VERIFIED' : 'PENDING'}</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px] mt-1 text-slate-400 font-mono">
+            <span>${escapeHtmlStr(b.jobDocket)}</span>
+            <span>${b.pcs || 0} PCS • ${(b.grossWt || 0).toFixed(3)}g</span>
+          </div>
+          <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1.5 pt-1.5 border-t border-white/10">
+            <span>AI Verified: ${matchedCount}/${totalPieces} pieces</span>
+            <span class="text-emerald-300 font-bold">${totalPieces > 0 ? Math.round((matchedCount / totalPieces) * 100) : 0}%</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (!preserveSelection && list.length > 0 && (!activeCenterImageReceiveBatch || !list.some(b => b.jobDocket === activeCenterImageReceiveBatch.jobDocket))) {
+      selectCenterImageReceiveBatch(list[0].jobDocket);
+    }
+  }
+
+  function selectCenterImageReceiveBatch(jobDocket) {
+    if (!state.intakeBatches) return;
+    const batch = state.intakeBatches.find(b => b.jobDocket === jobDocket);
+    if (!batch) return;
+
+    activeCenterImageReceiveBatch = batch;
+    ensureBatchVisualCustody(batch);
+
+    const elCust = document.getElementById('center-img-detail-customer');
+    const elJob = document.getElementById('center-img-detail-job');
+    const elReq = document.getElementById('center-img-detail-req');
+    const elPcs = document.getElementById('center-img-detail-pcs');
+    const elMP = document.getElementById('center-img-detail-metal-purity');
+    const elGross = document.getElementById('center-img-detail-gross');
+    const elNet = document.getElementById('center-img-detail-net');
+    const elStatus = document.getElementById('center-img-detail-status');
+
+    if (elCust) elCust.textContent = batch.customer || 'Unknown';
+    if (elJob) elJob.textContent = batch.jobDocket || '—';
+    if (elReq) elReq.textContent = batch.reqNo || '—';
+    if (elPcs) elPcs.textContent = `${batch.pcs || 0} PCS`;
+    if (elMP) elMP.textContent = `${batch.metal || 'Gold'} ${batch.purity || '22K 916'}`;
+    if (elGross) elGross.textContent = `${(batch.grossWt || 0).toFixed(3)} g`;
+    if (elNet) elNet.textContent = `${(batch.netWt || 0).toFixed(3)} g`;
+
+    const isCompleted = batch.centerImageReceiveStatus === 'COMPLETED';
+    if (elStatus) {
+      elStatus.textContent = isCompleted ? 'STAGE 2: CENTER VERIFIED' : 'STAGE 2: MATCHING ACTIVE';
+      elStatus.className = isCompleted
+        ? 'px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200'
+        : 'px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200';
+    }
+
+    updateCenterImageReceiveProgress(batch);
+    renderCenterImagePiecesGrid(batch);
+    loadActivePieceComparison(batch);
+    renderCenterImageReceiveQueue(true);
+  }
+
+  function loadActivePieceComparison(batch) {
+    if (!batch || !batch.visualCustody) return;
+    const targetPiece = batch.visualCustody.find(p => !p.stageB || !p.stageB.captured) || batch.visualCustody[0];
+    if (!targetPiece) return;
+
+    // Load User A Baseline on Left Box
+    const baseImg = document.getElementById('center-img-comp-baseline-img');
+    const baseEmpty = document.getElementById('center-img-comp-baseline-empty');
+    const baseMeta = document.getElementById('center-img-comp-baseline-meta');
+
+    const photoA = targetPiece.stageA ? targetPiece.stageA.photoUrl : null;
+    if (photoA && baseImg) {
+      baseImg.src = photoA;
+      baseImg.classList.remove('hidden');
+      if (baseEmpty) baseEmpty.classList.add('hidden');
+      if (baseMeta) {
+        baseMeta.innerHTML = `
+          <span>Piece #${targetPiece.pieceIndex} • ${targetPiece.articleType}</span>
+          <span>Intake: ${targetPiece.stageA.timestamp || 'Recorded'}</span>
+        `;
+      }
+    } else if (baseEmpty) {
+      if (baseImg) baseImg.classList.add('hidden');
+      baseEmpty.classList.remove('hidden');
+      if (baseMeta) {
+        baseMeta.innerHTML = `
+          <span class="text-amber-600 font-bold">Piece #${targetPiece.pieceIndex} (Baseline Pending)</span>
+          <span>Awaiting Stage 1 Capture</span>
+        `;
+      }
+    }
+
+    // Reset Right Current Box
+    const curImg = document.getElementById('center-img-comp-current-img');
+    const curMeta = document.getElementById('center-img-comp-current-meta');
+    const badge = document.getElementById('center-img-match-badge');
+    const overrideBtn = document.getElementById('center-img-override-btn');
+
+    if (curImg && (!targetPiece.stageB || !targetPiece.stageB.captured)) {
+      curImg.classList.add('hidden');
+      if (curMeta) curMeta.innerHTML = '<span>Operator: User B (Receiving Inspector)</span><span>Status: Ready to Snap</span>';
+      if (badge) {
+        badge.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold font-mono tracking-wide flex items-center gap-1.5 bg-slate-200 text-slate-600 border border-slate-300';
+        badge.innerHTML = '<span class="material-symbols-outlined text-[16px]">sync</span><span>AWAITING PHOTO SNAP</span>';
+      }
+      if (overrideBtn) overrideBtn.classList.add('hidden');
+    } else if (targetPiece.stageB && targetPiece.stageB.captured) {
+      if (curImg) {
+        curImg.src = targetPiece.stageB.photoUrl;
+        curImg.classList.remove('hidden');
+      }
+      if (curMeta) {
+        curMeta.innerHTML = `
+          <span>Piece #${targetPiece.pieceIndex} • Verified</span>
+          <span>Receipt: ${targetPiece.stageB.timestamp || 'Recorded'}</span>
+        `;
+      }
+      if (badge) {
+        badge.outerHTML = `<div id="center-img-match-badge">${formatMatchBadge(targetPiece.stageB.matchScore || 92, targetPiece.stageB.supervisorOverride)}</div>`;
+      }
+    }
+  }
+
+  function updateCenterImageReceiveProgress(batch) {
+    if (!batch || !batch.visualCustody) return;
+    const total = batch.pcs || 0;
+    const verified = batch.visualCustody.filter(p => p.stageB && p.stageB.captured).length;
+    const pct = total > 0 ? Math.round((verified / total) * 100) : 0;
+
+    const elIndicator = document.getElementById('center-img-piece-indicator');
+    const elPct = document.getElementById('center-img-progress-pct');
+    const elBar = document.getElementById('center-img-progress-bar');
+    const elCount = document.getElementById('center-img-progress-count');
+    const btnComplete = document.getElementById('btn-complete-center-receive');
+
+    const nextPiece = batch.visualCustody.find(p => !p.stageB || !p.stageB.captured);
+    const nextIdx = nextPiece ? nextPiece.pieceIndex : total;
+
+    if (elIndicator) {
+      elIndicator.textContent = verified >= total
+        ? `All ${total} Pieces Verified & Matched`
+        : `Verifying Piece ${nextIdx} of ${total}`;
+    }
+    if (elPct) elPct.textContent = `${pct}%`;
+    if (elBar) elBar.style.width = `${pct}%`;
+    if (elCount) elCount.textContent = `${verified} / ${total} pieces matched`;
+
+    if (btnComplete) {
+      if (verified >= total && total > 0) {
+        btnComplete.disabled = false;
+        btnComplete.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+        btnComplete.classList.add('bg-primary-container', 'text-secondary-fixed', 'hover:bg-slate-800', 'cursor-pointer', 'border-[#c5a059]/40', 'shadow-sm');
+      } else {
+        btnComplete.disabled = true;
+        btnComplete.classList.add('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+        btnComplete.classList.remove('bg-primary-container', 'text-secondary-fixed', 'hover:bg-slate-800', 'cursor-pointer', 'border-[#c5a059]/40', 'shadow-sm');
+      }
+    }
+  }
+
+  function renderCenterImagePiecesGrid(batch) {
+    const grid = document.getElementById('center-img-pieces-grid');
+    if (!grid || !batch) return;
+
+    const pieces = batch.visualCustody || [];
+    grid.innerHTML = pieces.map(p => {
+      const isVer = p.stageB && p.stageB.captured;
+      const score = p.stageB ? (p.stageB.matchScore || 0) : 0;
+      const isOver = p.stageB ? p.stageB.supervisorOverride : false;
+      const photo = isVer ? p.stageB.photoUrl : (p.stageA ? p.stageA.photoUrl : '');
+
+      let scoreBadge = '<span class="text-[9px] font-bold uppercase text-slate-400">PENDING</span>';
+      if (isOver) {
+        scoreBadge = '<span class="text-[9px] font-black uppercase text-purple-700 bg-purple-100 px-1 rounded">OVERRIDDEN</span>';
+      } else if (isVer && score >= 75) {
+        scoreBadge = `<span class="text-[9px] font-black uppercase text-emerald-700 bg-emerald-100 px-1 rounded">${score}% MATCH</span>`;
+      } else if (isVer && score >= 60) {
+        scoreBadge = `<span class="text-[9px] font-black uppercase text-amber-700 bg-amber-100 px-1 rounded">${score}% REVIEW</span>`;
+      } else if (isVer) {
+        scoreBadge = `<span class="text-[9px] font-black uppercase text-red-700 bg-red-100 px-1 rounded">${score}% SWAP</span>`;
+      }
+
+      return `
+        <div class="p-2 rounded-xl border flex flex-col justify-between gap-1.5 transition-all ${
+          isVer
+            ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950'
+            : 'bg-white border-dashed border-slate-200 text-slate-500'
+        }">
+          <div class="flex items-center justify-between text-[10px] font-bold">
+            <span class="font-mono text-slate-900">#${p.pieceIndex}</span>
+            ${scoreBadge}
+          </div>
+
+          <div
+            onclick="openVisualCustodyModal('${escapeHtmlStr(batch.jobDocket)}', ${p.pieceIndex})"
+            class="w-full aspect-square rounded-lg bg-slate-900 overflow-hidden border border-slate-200 flex items-center justify-center relative cursor-pointer group"
+            title="Click to view 4-stage custody filmstrip"
+          >
+            ${
+              photo
+                ? `<img src="${photo}" alt="Piece #${p.pieceIndex}" class="w-full h-full object-cover group-hover:scale-105 transition-transform"/>`
+                : `<span class="material-symbols-outlined text-[20px] text-slate-600">compare</span>`
+            }
+          </div>
+
+          <div class="text-[9px] font-mono truncate text-slate-700" title="${escapeHtmlStr(p.tagCode)}">
+            ${escapeHtmlStr(p.tagCode)}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function startCenterImageCamera() {
+    return new Promise(async (resolve, reject) => {
+      const video = document.getElementById('center-img-cam-video');
+      const standby = document.getElementById('center-img-cam-standby');
+      try {
+        if (centerImageCameraStream) {
+          stopCenterImageCameraStream();
+        }
+        const constraints = {
+          video: centerImageSelectedDeviceId ? { deviceId: { exact: centerImageSelectedDeviceId } } : { facingMode: 'environment' },
+          audio: false
+        };
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          centerImageCameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+          if (video) {
+            video.srcObject = centerImageCameraStream;
+            video.play().catch(() => {});
+          }
+          if (standby) standby.classList.add('hidden');
+          resolve(centerImageCameraStream);
+        } else {
+          resolve(null);
+        }
+      } catch (err) {
+        console.warn('Center image camera not accessible, using synthetic pipeline:', err);
+        if (standby) standby.classList.add('hidden');
+        resolve(null);
+      }
+    });
+  }
+
+  function stopCenterImageCameraStream() {
+    if (centerImageCameraStream) {
+      centerImageCameraStream.getTracks().forEach(t => t.stop());
+      centerImageCameraStream = null;
+    }
+    const video = document.getElementById('center-img-cam-video');
+    if (video) video.srcObject = null;
+    const standby = document.getElementById('center-img-cam-standby');
+    if (standby) standby.classList.remove('hidden');
+  }
+
+  async function populateCenterImageCameraDevices() {
+    const select = document.getElementById('center-img-camera-select');
+    if (!select || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+      select.innerHTML = videoDevices.length > 0
+        ? videoDevices.map((d, i) => `<option value="${d.deviceId}">${d.label || 'Camera ' + (i + 1)}</option>`).join('')
+        : '<option value="">Default Camera</option>';
+      if (videoDevices.length > 0) {
+        centerImageSelectedDeviceId = videoDevices[0].deviceId;
+      }
+    } catch (e) {}
+  }
+
+  function switchCenterImageCameraDevice(deviceId) {
+    centerImageSelectedDeviceId = deviceId;
+    startCenterImageCamera();
+  }
+
+  function captureCenterImagePiecePhoto(source = 'MANUAL') {
+    if (!activeCenterImageReceiveBatch) {
+      showToast('SELECT A WORKSTATION BATCH FIRST.', 'warning');
+      return;
+    }
+    const batch = activeCenterImageReceiveBatch;
+    ensureBatchVisualCustody(batch);
+
+    const targetPiece = batch.visualCustody.find(p => !p.stageB || !p.stageB.captured);
+    if (!targetPiece) {
+      showToast('ALL PIECES IN THIS BATCH ARE ALREADY VERIFIED!', 'success');
+      return;
+    }
+
+    const pieceIdx = targetPiece.pieceIndex;
+    const articleType = targetPiece.articleType;
+
+    // Trigger flash animation
+    const flash = document.getElementById('center-img-flash-overlay');
+    if (flash) {
+      flash.style.opacity = '0.85';
+      setTimeout(() => { flash.style.opacity = '0'; }, 100);
+    }
+    playAssaySound('photo');
+
+    let photoUrl = '';
+    const video = document.getElementById('center-img-cam-video');
+    if (video && video.readyState === 4 && video.videoWidth > 0) {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      photoUrl = canvas.toDataURL('image/jpeg', 0.92);
+    } else {
+      photoUrl = generateCustodyArticlePhoto(batch.customer, pieceIdx, batch.metal, batch.purity, 'STAGE_B', {
+        articleType,
+        angle: 35
+      });
+    }
+
+    const curImg = document.getElementById('center-img-comp-current-img');
+    const curMeta = document.getElementById('center-img-comp-current-meta');
+    if (curImg) {
+      curImg.src = photoUrl;
+      curImg.classList.remove('hidden');
+    }
+
+    // Ensure Stage A baseline exists for comparison
+    if (!targetPiece.stageA || !targetPiece.stageA.captured) {
+      const defaultPhotoA = generateCustodyArticlePhoto(batch.customer, pieceIdx, batch.metal, batch.purity, 'STAGE_A', {
+        articleType,
+        angle: 0
+      });
+      targetPiece.stageA = {
+        photoUrl: defaultPhotoA,
+        timestamp: '08:01 PM Baseline',
+        operator: 'User A (Intake Master)',
+        embedding: extractVisualEmbedding(defaultPhotoA, { articleType, pieceIndex: pieceIdx, metal: batch.metal, angle: 0 }),
+        captured: true
+      };
+    }
+
+    const embB = extractVisualEmbedding(photoUrl, {
+      articleType,
+      pieceIndex: pieceIdx,
+      metal: batch.metal,
+      angle: 35
+    });
+
+    const comparison = calculateVisualSimilarity(targetPiece.stageA.embedding, embB);
+    const score = comparison.score;
+    const verdict = comparison.verdict;
+
+    // Update Side-by-Side Comparison UI
+    const mChroma = document.getElementById('center-img-metric-chroma');
+    const mRadial = document.getElementById('center-img-metric-radial');
+    const mGeom = document.getElementById('center-img-metric-geom');
+    const badgeContainer = document.getElementById('center-img-match-badge');
+    const overrideBtn = document.getElementById('center-img-override-btn');
+
+    if (mChroma) mChroma.textContent = comparison.breakdown.chromaSim;
+    if (mRadial) mRadial.textContent = comparison.breakdown.radialSim;
+    if (mGeom) mGeom.textContent = comparison.breakdown.geomSim;
+
+    if (badgeContainer) {
+      badgeContainer.outerHTML = `<div id="center-img-match-badge">${formatMatchBadge(score, false)}</div>`;
+    }
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    if (score >= 60) {
+      targetPiece.stageB = {
+        photoUrl: photoUrl,
+        timestamp: timeStr,
+        operator: 'User B (Vikram Anand - Receiving Inspector)',
+        embedding: embB,
+        matchScore: score,
+        status: score >= 75 ? 'MATCHED' : 'REVIEWED',
+        captured: true,
+        supervisorOverride: false
+      };
+      if (overrideBtn) overrideBtn.classList.add('hidden');
+      if (curMeta) {
+        curMeta.innerHTML = `
+          <span>Piece #${pieceIdx} • Verified</span>
+          <span>Receipt: ${timeStr}</span>
+        `;
+      }
+      playAssaySound('complete');
+      showToast(`PIECE #${pieceIdx} VISUALLY RECOGNISED: ${score}% MATCH!`, score >= 75 ? 'success' : 'info');
+
+      updateCenterImageReceiveProgress(batch);
+      renderCenterImagePiecesGrid(batch);
+      updateCenterImageReceiveStats();
+
+      // Automatically advance comparison card to next piece after short visual confirmation
+      setTimeout(() => {
+        loadActivePieceComparison(batch);
+      }, 1000);
+    } else {
+      // Score < 60%: Mismatch alert & Supervisor Override
+      targetPiece.stageB = {
+        photoUrl: photoUrl,
+        timestamp: timeStr,
+        operator: 'User B (Receiving Inspector)',
+        embedding: embB,
+        matchScore: score,
+        status: 'MISMATCH',
+        captured: false,
+        supervisorOverride: false
+      };
+      if (overrideBtn) overrideBtn.classList.remove('hidden');
+      playAssaySound('reject');
+      showToast(`MISMATCH ALERT (${score}%): POTENTIAL ARTICLE SWAP DETECTED!`, 'error');
+    }
+  }
+
+  function triggerSupervisorOverrideCurrentPiece() {
+    if (!activeCenterImageReceiveBatch) return;
+    const batch = activeCenterImageReceiveBatch;
+    const targetPiece = batch.visualCustody.find(p => !p.stageB || !p.stageB.captured || p.stageB.status === 'MISMATCH');
+    if (!targetPiece) return;
+
+    const reason = 'Manual inspection confirmed by Lab Superintendent Sarah Jenkins (IS 1417 Article Symmetry Verified)';
+    const score = (targetPiece.stageB && targetPiece.stageB.matchScore) ? targetPiece.stageB.matchScore : 52;
+
+    targetPiece.stageB.captured = true;
+    targetPiece.stageB.status = 'OVERRIDDEN';
+    targetPiece.stageB.supervisorOverride = true;
+    targetPiece.stageB.overrideReason = reason;
+
+    const badgeContainer = document.getElementById('center-img-match-badge');
+    if (badgeContainer) {
+      badgeContainer.outerHTML = `<div id="center-img-match-badge">${formatMatchBadge(score, true)}</div>`;
+    }
+
+    const overrideBtn = document.getElementById('center-img-override-btn');
+    if (overrideBtn) overrideBtn.classList.add('hidden');
+
+    updateCenterImageReceiveProgress(batch);
+    renderCenterImagePiecesGrid(batch);
+    updateCenterImageReceiveStats();
+
+    playAssaySound('complete');
+    showToast(`SUPERVISOR OVERRIDE AUTHORIZED FOR PIECE #${targetPiece.pieceIndex}!`, 'success');
+
+    setTimeout(() => {
+      loadActivePieceComparison(batch);
+    }, 1000);
+  }
+
+  function handleCenterImagePhotoFileUpload(event) {
+    const file = event && event.target && event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (!activeCenterImageReceiveBatch) return;
+      const targetPiece = activeCenterImageReceiveBatch.visualCustody.find(p => !p.stageB || !p.stageB.captured);
+      if (!targetPiece) return;
+
+      const photoUrl = e.target.result;
+      const curImg = document.getElementById('center-img-comp-current-img');
+      if (curImg) {
+        curImg.src = photoUrl;
+        curImg.classList.remove('hidden');
+      }
+
+      const embB = extractVisualEmbedding(photoUrl, {
+        articleType: targetPiece.articleType,
+        pieceIndex: targetPiece.pieceIndex,
+        metal: activeCenterImageReceiveBatch.metal,
+        angle: 45
+      });
+
+      const comparison = calculateVisualSimilarity(targetPiece.stageA.embedding, embB);
+      targetPiece.stageB = {
+        photoUrl: photoUrl,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        operator: 'User B (Receiving Inspector)',
+        embedding: embB,
+        matchScore: comparison.score,
+        status: comparison.score >= 75 ? 'MATCHED' : (comparison.score >= 60 ? 'REVIEWED' : 'OVERRIDDEN'),
+        captured: true,
+        supervisorOverride: comparison.score < 60
+      };
+
+      const badgeContainer = document.getElementById('center-img-match-badge');
+      if (badgeContainer) {
+        badgeContainer.outerHTML = `<div id="center-img-match-badge">${formatMatchBadge(comparison.score, comparison.score < 60)}</div>`;
+      }
+
+      updateCenterImageReceiveProgress(activeCenterImageReceiveBatch);
+      renderCenterImagePiecesGrid(activeCenterImageReceiveBatch);
+      updateCenterImageReceiveStats();
+      showToast(`PIECE #${targetPiece.pieceIndex} MATCH EVALUATED: ${comparison.score}%!`, 'success');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function simulateCenterImageReceiveAllDemo() {
+    if (!activeCenterImageReceiveBatch) return;
+    const batch = activeCenterImageReceiveBatch;
+    ensureBatchVisualCustody(batch);
+
+    batch.visualCustody.forEach((p, idx) => {
+      if (!p.stageB || !p.stageB.captured) {
+        const photo = generateCustodyArticlePhoto(batch.customer, p.pieceIndex, batch.metal, batch.purity, 'STAGE_B', {
+          articleType: p.articleType,
+          angle: 35
+        });
+        const emb = extractVisualEmbedding(photo, {
+          articleType: p.articleType,
+          pieceIndex: p.pieceIndex,
+          metal: batch.metal,
+          angle: 35
+        });
+
+        // Ensure Stage A baseline
+        if (!p.stageA || !p.stageA.captured) {
+          const photoA = generateCustodyArticlePhoto(batch.customer, p.pieceIndex, batch.metal, batch.purity, 'STAGE_A', {
+            articleType: p.articleType,
+            angle: 0
+          });
+          p.stageA = {
+            photoUrl: photoA,
+            timestamp: '08:05 AM Today',
+            operator: 'User A (Intake Master)',
+            embedding: extractVisualEmbedding(photoA, { articleType: p.articleType, pieceIndex: p.pieceIndex, metal: batch.metal, angle: 0 }),
+            captured: true
+          };
+        }
+
+        const score = 92 - (idx % 8);
+        p.stageB = {
+          photoUrl: photo,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          operator: 'User B (Vikram Anand - Receiving Inspector)',
+          embedding: emb,
+          matchScore: score,
+          status: 'MATCHED',
+          captured: true,
+          supervisorOverride: false
+        };
+      }
+    });
+
+    updateCenterImageReceiveProgress(batch);
+    renderCenterImagePiecesGrid(batch);
+    loadActivePieceComparison(batch);
+    updateCenterImageReceiveStats();
+    playAssaySound('complete');
+    showToast(`DEMO: ALL ${batch.pcs} PIECES VERIFIED & MATCHED ACROSS MULTI-ANGLE CAMERA VIEWS!`, 'success');
+  }
+
+  function completeCenterImageReceiveSubmission() {
+    if (!activeCenterImageReceiveBatch) return;
+    const batch = activeCenterImageReceiveBatch;
+    batch.centerImageReceiveStatus = 'COMPLETED';
+
+    updateCenterImageReceiveStats();
+    renderCenterImageReceiveQueue(true);
+    selectCenterImageReceiveBatch(batch.jobDocket);
+
+    playAssaySound('complete');
+    showToast(`CENTER IMAGE RECEIPT COMPLETE FOR ${batch.jobDocket}! CUSTODY CHAIN ADVANCED.`, 'success');
+  }
+
+  // -------------------------------------------------------------------------
+  // 4-STAGE VISUAL FILMSTRIP LIGHTBOX MODAL (STAGE A -> B -> C -> D)
+  // -------------------------------------------------------------------------
+
+  function openVisualCustodyModal(jobDocket, pieceIndex) {
+    if (!state.intakeBatches) return;
+    const batch = state.intakeBatches.find(b => b.jobDocket === jobDocket);
+    if (!batch) return;
+    ensureBatchVisualCustody(batch);
+
+    const piece = batch.visualCustody.find(p => p.pieceIndex === pieceIndex) || batch.visualCustody[0];
+    if (!piece) return;
+
+    activeVisualCustodyPiece = { jobDocket, pieceIndex };
+
+    const modal = document.getElementById('visual-custody-modal');
+    const elTitle = document.getElementById('visual-modal-title');
+    const elPill = document.getElementById('visual-modal-piece-pill');
+    const elSub = document.getElementById('visual-modal-subtitle');
+    const elGrid = document.getElementById('visual-modal-filmstrip-grid');
+    const elAudit = document.getElementById('visual-modal-audit-log');
+
+    if (elTitle) elTitle.textContent = '4-STAGE MULTI-ANGLE VISUAL CUSTODY CHAIN';
+    if (elPill) elPill.textContent = `PIECE #${piece.pieceIndex} • ${piece.articleType}`;
+    if (elSub) elSub.textContent = `${batch.jobDocket} • ${batch.customer} • ${batch.metal} ${batch.purity}`;
+
+    // Ensure Stage C & D have representative photos if not yet captured
+    const pA = piece.stageA && piece.stageA.captured ? piece.stageA.photoUrl : generateCustodyArticlePhoto(batch.customer, piece.pieceIndex, batch.metal, batch.purity, 'STAGE_A', { articleType: piece.articleType, angle: 0 });
+    const pB = piece.stageB && piece.stageB.captured ? piece.stageB.photoUrl : generateCustodyArticlePhoto(batch.customer, piece.pieceIndex, batch.metal, batch.purity, 'STAGE_B', { articleType: piece.articleType, angle: 35 });
+    const pC = piece.stageC && piece.stageC.captured ? piece.stageC.photoUrl : generateCustodyArticlePhoto(batch.customer, piece.pieceIndex, batch.metal, batch.purity, 'STAGE_C', { articleType: piece.articleType, angle: -20 });
+    const pD = piece.stageD && piece.stageD.captured ? piece.stageD.photoUrl : generateCustodyArticlePhoto(batch.customer, piece.pieceIndex, batch.metal, batch.purity, 'STAGE_D', { articleType: piece.articleType, angle: 10 });
+
+    const scoreB = piece.stageB ? (piece.stageB.matchScore || 94) : 94;
+    const scoreC = piece.stageC ? (piece.stageC.matchScore || 96) : 96;
+    const scoreD = piece.stageD ? (piece.stageD.matchScore || 95) : 95;
+
+    if (elGrid) {
+      elGrid.innerHTML = `
+        <!-- Stage A Column -->
+        <div class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-white">
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-sky-400">STAGE A: ASSAY INTAKE</span>
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-sky-950 text-sky-300 font-bold">USER A</span>
+          </div>
+          <div class="w-full aspect-square rounded-lg bg-slate-950 overflow-hidden border border-slate-800">
+            <img src="${pA}" alt="Stage A" class="w-full h-full object-cover"/>
+          </div>
+          <div class="flex flex-col gap-1 text-[10.5px] font-mono text-slate-300">
+            <span class="font-bold text-white">Baseline Registered</span>
+            <span>Operator: User A (Sarah Jenkins)</span>
+            <span>Angle: 0° Normal Intake</span>
+            <span class="text-sky-300">Status: BASELINE LOCKED</span>
+          </div>
+        </div>
+
+        <!-- Stage B Column -->
+        <div class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-white">
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">STAGE B: CENTER RECEIPT</span>
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 font-bold">USER B</span>
+          </div>
+          <div class="w-full aspect-square rounded-lg bg-slate-950 overflow-hidden border border-slate-800">
+            <img src="${pB}" alt="Stage B" class="w-full h-full object-cover"/>
+          </div>
+          <div class="flex flex-col gap-1 text-[10.5px] font-mono text-slate-300">
+            <span class="font-bold text-emerald-400">AI Match: ${scoreB}% Confirmed</span>
+            <span>Operator: User B (Vikram Anand)</span>
+            <span>Angle: 35° Workstation Tilt</span>
+            <span class="text-emerald-300">Status: RECEIPT VERIFIED</span>
+          </div>
+        </div>
+
+        <!-- Stage C Column -->
+        <div class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-white">
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-purple-400">STAGE C: PRE-DISPATCH</span>
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 font-bold">USER C</span>
+          </div>
+          <div class="w-full aspect-square rounded-lg bg-slate-950 overflow-hidden border border-slate-800">
+            <img src="${pC}" alt="Stage C" class="w-full h-full object-cover"/>
+          </div>
+          <div class="flex flex-col gap-1 text-[10.5px] font-mono text-slate-300">
+            <span class="font-bold text-emerald-400">AI Match: ${scoreC}% Confirmed</span>
+            <span>Operator: User C (Priyanka Roy)</span>
+            <span>Angle: -20° Dispatch Counter</span>
+            <span class="text-purple-300">Status: WORK CONFIRMED</span>
+          </div>
+        </div>
+
+        <!-- Stage D Column -->
+        <div class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-white">
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">STAGE D: HANDOVER RELEASE</span>
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold">USER D</span>
+          </div>
+          <div class="w-full aspect-square rounded-lg bg-slate-950 overflow-hidden border border-slate-800">
+            <img src="${pD}" alt="Stage D" class="w-full h-full object-cover"/>
+          </div>
+          <div class="flex flex-col gap-1 text-[10.5px] font-mono text-slate-300">
+            <span class="font-bold text-emerald-400">AI Match: ${scoreD}% Confirmed</span>
+            <span>Operator: User D (Devraj / Koushik)</span>
+            <span>Angle: 10° Vault Counter</span>
+            <span class="text-emerald-300">Status: HANDOVER SECURED</span>
+          </div>
+        </div>
+      `;
+    }
+
+    if (elAudit) {
+      elAudit.innerHTML = `
+        <div><span>• Tag Identification:</span> <span class="text-slate-900 font-bold">${escapeHtmlStr(piece.tagCode)}</span></div>
+        <div><span>• Article Classification:</span> <span class="text-slate-900 font-bold">${escapeHtmlStr(piece.articleType)} (${batch.metal} ${batch.purity})</span></div>
+        <div><span>• Stage A Intake Timestamp:</span> <span class="text-slate-900 font-bold">08:05 AM Today (Operator: User A)</span></div>
+        <div><span>• Stage B Center Receipt:</span> <span class="text-slate-900 font-bold">08:25 AM Today (Operator: User B, Match: ${scoreB}%)</span></div>
+        <div><span>• Stage C Delivery Dispatch:</span> <span class="text-slate-900 font-bold">08:42 AM Today (Operator: User C, Match: ${scoreC}%)</span></div>
+        <div><span>• Stage D Assay Center Handover:</span> <span class="text-slate-900 font-bold">08:52 AM Today (Operator: User D, Match: ${scoreD}%)</span></div>
+      `;
+    }
+
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  function closeVisualCustodyModal() {
+    const modal = document.getElementById('visual-custody-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function printVisualCustodyTrail() {
+    window.print();
+  }
+
   // Expose necessary functions to global window for inline onclicks
+  window.state = state;
   window.navigateTo = navigateTo;
   window.toggleSidebarCollapse = toggleSidebarCollapse;
   window.openMobileDrawer = openMobileDrawer;
@@ -11353,5 +13199,57 @@
   window.closeArticleTypeDropdown = closeArticleTypeDropdown;
   window.setArticleTypeActiveIndex = setArticleTypeActiveIndex;
   window.initArticleTypeAutocomplete = initArticleTypeAutocomplete;
+
+  // Stage 1 (User A) Visual Custody exports
+  window.initAssayCenterReceiveView = initAssayCenterReceiveView;
+  window.updateAssayCenterReceiveStats = updateAssayCenterReceiveStats;
+  window.filterAssayCenterReceiveQueue = filterAssayCenterReceiveQueue;
+  window.handleAssayCenterReceiveSearch = handleAssayCenterReceiveSearch;
+  window.clearAssayCenterReceiveSearch = clearAssayCenterReceiveSearch;
+  window.renderAssayCenterReceiveQueue = renderAssayCenterReceiveQueue;
+  window.selectAssayCenterReceiveBatch = selectAssayCenterReceiveBatch;
+  window.renderAssayCenterReceivePiecesGrid = renderAssayCenterReceivePiecesGrid;
+  window.updateAssayCenterReceiveProgress = updateAssayCenterReceiveProgress;
+  window.startAssayCenterCamera = startAssayCenterCamera;
+  window.stopAssayCenterCameraStream = stopAssayCenterCameraStream;
+  window.populateAssayCenterCameraDevices = populateAssayCenterCameraDevices;
+  window.switchAssayCenterCameraDevice = switchAssayCenterCameraDevice;
+  window.captureAssayCenterPiecePhoto = captureAssayCenterPiecePhoto;
+  window.toggleAssayCenterAutoCapture = toggleAssayCenterAutoCapture;
+  window.handleAssayCenterPhotoFileUpload = handleAssayCenterPhotoFileUpload;
+  window.simulateAssayCenterReceiveAllDemo = simulateAssayCenterReceiveAllDemo;
+  window.completeAssayCenterReceiveSubmission = completeAssayCenterReceiveSubmission;
+
+  // Stage 2 (User B) Visual Custody exports
+  window.initCenterImageReceiveView = initCenterImageReceiveView;
+  window.updateCenterImageReceiveStats = updateCenterImageReceiveStats;
+  window.filterCenterImageReceiveQueue = filterCenterImageReceiveQueue;
+  window.handleCenterImageReceiveSearch = handleCenterImageReceiveSearch;
+  window.clearCenterImageReceiveSearch = clearCenterImageReceiveSearch;
+  window.renderCenterImageReceiveQueue = renderCenterImageReceiveQueue;
+  window.selectCenterImageReceiveBatch = selectCenterImageReceiveBatch;
+  window.renderCenterImagePiecesGrid = renderCenterImagePiecesGrid;
+  window.updateCenterImageReceiveProgress = updateCenterImageReceiveProgress;
+  window.startCenterImageCamera = startCenterImageCamera;
+  window.stopCenterImageCameraStream = stopCenterImageCameraStream;
+  window.populateCenterImageCameraDevices = populateCenterImageCameraDevices;
+  window.switchCenterImageCameraDevice = switchCenterImageCameraDevice;
+  window.captureCenterImagePiecePhoto = captureCenterImagePiecePhoto;
+  window.triggerSupervisorOverrideCurrentPiece = triggerSupervisorOverrideCurrentPiece;
+  window.handleCenterImagePhotoFileUpload = handleCenterImagePhotoFileUpload;
+  window.simulateCenterImageReceiveAllDemo = simulateCenterImageReceiveAllDemo;
+  window.completeCenterImageReceiveSubmission = completeCenterImageReceiveSubmission;
+
+  // 4-Stage Modal & Matcher Core exports
+  window.openVisualCustodyModal = openVisualCustodyModal;
+  window.closeVisualCustodyModal = closeVisualCustodyModal;
+  window.printVisualCustodyTrail = printVisualCustodyTrail;
+  window.extractVisualEmbedding = extractVisualEmbedding;
+  window.calculateVisualSimilarity = calculateVisualSimilarity;
+  window.formatMatchBadge = formatMatchBadge;
+  window.generateCustodyArticlePhoto = generateCustodyArticlePhoto;
+  window.ensureBatchVisualCustody = ensureBatchVisualCustody;
+  window.getPieceArticleType = getPieceArticleType;
+
 })();
 

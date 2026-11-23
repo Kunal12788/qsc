@@ -207,6 +207,14 @@
           <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">move_to_inbox</span>
           <span class="font-label-md text-sm font-medium">Receive Batch</span>
         </a>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="assay_center_receive" href="#/assay_center_receive">
+          <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">photo_camera_front</span>
+          <span class="font-label-md text-sm font-medium">Assay Center Receive</span>
+        </a>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="center_image_receive" href="#/center_image_receive">
+          <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">compare</span>
+          <span class="font-label-md text-sm font-medium">Center Image Receive</span>
+        </a>
         <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="tag-generation" href="#/tag-generation">
           <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">label</span>
           <span class="font-label-md text-sm font-medium">Tag Generation</span>
@@ -313,6 +321,14 @@
         <a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="receive" href="#/receive" title="Receive Batch">
           <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim shrink-0">move_to_inbox</span>
           <span class="font-label-md text-label-md sidebar-text">Receive Batch</span>
+        </a>
+        <a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="assay_center_receive" href="#/assay_center_receive" title="Assay Center Receive (User A)">
+          <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim shrink-0">photo_camera_front</span>
+          <span class="font-label-md text-label-md sidebar-text">Assay Center Receive</span>
+        </a>
+        <a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="center_image_receive" href="#/center_image_receive" title="Center Image Receive (User B)">
+          <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim shrink-0">compare</span>
+          <span class="font-label-md text-label-md sidebar-text">Center Image Receive</span>
         </a>
         <a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="tag-generation" href="#/tag-generation" title="Tag Generation">
           <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim shrink-0">label</span>
@@ -1646,7 +1662,635 @@
 
 
         <!-- ========================================== -->
-        <!-- VIEW: TAG GENERATION                       -->
+        <!-- VIEW: ASSAY CENTER RECEIVE (STAGE 1 - USER A) -->
+        <!-- ========================================== -->
+        <section id="view-assay-center-receive" class="page-view hidden flex flex-col w-full">
+          <!-- Top Context Ribbon & Header -->
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md py-space-md border-b border-surface-container mb-6">
+            <div class="flex flex-col">
+              <div class="flex items-center gap-2 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                <span>LABORATORY OPERATIONS</span>
+                <span class="text-outline">/</span>
+                <span class="text-primary font-bold">STAGE 1: ASSAY CENTER RECEIVE</span>
+              </div>
+              <h1 class="font-headline-lg text-2xl lg:text-[26px] font-bold text-on-surface tracking-tight mt-0.5">ASSAY CENTER RECEIVE & PIECE INTAKE BASELINE</h1>
+              <span class="text-xs text-on-surface-variant font-medium">USER A INTAKE WORKSTATION • SEQUENTIAL PIECE-BY-PIECE PHOTO CAPTURE & VISUAL EMBEDDING REGISTRATION</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5">
+              <button
+                id="btn-assay-recv-verify-all"
+                type="button"
+                onclick="simulateAssayCenterReceiveAllDemo()"
+                class="px-4 py-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container border border-surface-container text-slate-800 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+                title="Rapid Demo: Snap all remaining pieces instantly"
+              >
+                <span class="material-symbols-outlined text-[18px] text-amber-500">auto_fix_high</span>
+                <span>VERIFY ALL (DEMO)</span>
+              </button>
+              <button
+                id="btn-complete-assay-receive"
+                type="button"
+                onclick="completeAssayCenterReceiveSubmission()"
+                disabled
+                class="px-5 py-2.5 rounded-lg bg-slate-300 text-slate-500 font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center gap-2 cursor-not-allowed border border-transparent"
+              >
+                <span class="material-symbols-outlined text-[18px]">verified</span>
+                <span>COMPLETE ASSAY CENTER RECEIVE</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Top Metric Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs">
+              <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">TOTAL INTAKE BATCHES</span>
+              <div class="text-2xl font-black text-slate-900 mt-1 font-mono" id="assay-recv-stat-total">6 BATCHES</div>
+              <span class="text-[10px] text-slate-500 font-medium mt-0.5 block">ALL REGISTERED BATCHES</span>
+            </div>
+            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs">
+              <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">PENDING INTAKE</span>
+              <div class="text-2xl font-black text-amber-600 mt-1 font-mono" id="assay-recv-stat-pending">5 BATCHES</div>
+              <span class="text-[10px] text-amber-600 font-bold mt-0.5 block">STAGE 1 PHOTO BASELINE AWAITING</span>
+            </div>
+            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs">
+              <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">INTAKE COMPLETED</span>
+              <div class="text-2xl font-black text-emerald-600 mt-1 font-mono" id="assay-recv-stat-completed">1 BATCH</div>
+              <span class="text-[10px] text-emerald-600 font-bold mt-0.5 block">READY FOR STAGE 2 VERIFICATION</span>
+            </div>
+            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs">
+              <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">BASELINE PHOTOS ARCHIVED</span>
+              <div class="text-2xl font-black text-primary mt-1 font-mono" id="assay-recv-stat-photos">6 PIECES</div>
+              <span class="text-[10px] text-primary font-bold mt-0.5 block">VISUAL EMBEDDINGS LOCKED</span>
+            </div>
+          </div>
+
+          <!-- Main Layout Grid: Batch Queue (Left) & Piece Photo Intake Workstation (Right) -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <!-- Left: Batch Selection Queue -->
+            <div class="lg:col-span-4 flex flex-col gap-4">
+              <div class="bg-surface-container-lowest rounded-2xl p-4 border border-surface-container shadow-xs flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px] text-primary">inbox</span>
+                    <h2 class="font-headline font-bold text-sm text-on-surface uppercase tracking-wide">Intake Batches Queue</h2>
+                  </div>
+                  <span id="assay-recv-queue-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-secondary-container text-on-secondary-container">6 Total</span>
+                </div>
+
+                <!-- Tabs: All, Pending, Completed -->
+                <div class="flex items-center bg-surface-container-low p-1 rounded-xl text-xs font-semibold">
+                  <button type="button" id="assay-recv-tab-all" onclick="filterAssayCenterReceiveQueue('ALL')" class="flex-1 py-1.5 rounded-lg bg-surface-container-lowest shadow-xs text-on-surface text-center transition-all cursor-pointer font-bold">
+                    All (<span id="assay-recv-count-all">6</span>)
+                  </button>
+                  <button type="button" id="assay-recv-tab-pending" onclick="filterAssayCenterReceiveQueue('PENDING')" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 text-center transition-all cursor-pointer">
+                    Pending (<span id="assay-recv-count-pending">5</span>)
+                  </button>
+                  <button type="button" id="assay-recv-tab-completed" onclick="filterAssayCenterReceiveQueue('COMPLETED')" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 text-center transition-all cursor-pointer">
+                    Completed (<span id="assay-recv-count-completed">1</span>)
+                  </button>
+                </div>
+
+                <!-- Search Input -->
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">search</span>
+                  <input
+                    type="text"
+                    id="assay-recv-search"
+                    oninput="handleAssayCenterReceiveSearch(this.value)"
+                    placeholder="Search customer, job docket, req..."
+                    class="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-surface-container-low border border-surface-container focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <button type="button" onclick="clearAssayCenterReceiveSearch()" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 hidden" id="assay-recv-clear-search">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                  </button>
+                </div>
+
+                <!-- Batch Cards Container -->
+                <div id="assay-recv-queue-container" class="flex flex-col gap-2.5 max-h-[620px] overflow-y-auto pr-0.5">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Customer Metadata Card + Sequential Photo Intake Workstation -->
+            <div class="lg:col-span-8 flex flex-col gap-5">
+              <!-- Customer & Batch Metadata Card -->
+              <div class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-xs">
+                <div class="flex items-center justify-between pb-3.5 mb-3.5 border-b border-surface-container">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-primary-container text-secondary-fixed flex items-center justify-center font-bold">
+                      <span class="material-symbols-outlined text-[18px]">badge</span>
+                    </div>
+                    <div>
+                      <h3 class="font-headline font-bold text-sm text-on-surface" id="assay-recv-detail-customer">ROYCO JEWELLERS (CHINSURAH)</h3>
+                      <span class="text-[11px] text-on-surface-variant font-mono" id="assay-recv-detail-job">JOB-2026-2369</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span id="assay-recv-detail-status" class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                      STAGE 1: PENDING INTAKE
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 6 Metadata Pill Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 text-xs">
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">REQUEST #</span>
+                    <span class="font-mono font-bold text-slate-800 text-xs mt-0.5 block truncate" id="assay-recv-detail-req">119813505</span>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">TOTAL PIECES</span>
+                    <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block" id="assay-recv-detail-pcs">94 PCS</span>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">METAL & PURITY</span>
+                    <span class="font-mono font-bold text-amber-700 text-xs mt-0.5 block" id="assay-recv-detail-metal-purity">Gold 22K 916</span>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">GROSS WEIGHT</span>
+                    <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block" id="assay-recv-detail-gross">375.000 g</span>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">NET WEIGHT</span>
+                    <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block" id="assay-recv-detail-net">375.000 g</span>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">OPERATOR</span>
+                    <span class="font-mono font-bold text-slate-700 text-xs mt-0.5 block truncate" id="assay-recv-detail-operator">User A (Sarah)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sequential Photo Capture Workstation -->
+              <div class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-xs flex flex-col gap-5">
+                <!-- Piece Progress Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-low p-3.5 rounded-xl border border-surface-container">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center font-bold shadow-xs">
+                      <span class="material-symbols-outlined text-[20px]">add_a_photo</span>
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold uppercase tracking-wide text-slate-900" id="assay-recv-piece-indicator">Capturing Piece 1 of 94</span>
+                        <span id="assay-recv-progress-pct" class="text-[11px] font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">0%</span>
+                      </div>
+                      <p class="text-[11px] text-slate-500 mt-0.5">Instant Snap or 5s Auto-Capture for sequential intake. Visual embeddings auto-computed.</p>
+                    </div>
+                  </div>
+                  <div class="w-full sm:w-48 flex flex-col gap-1">
+                    <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div id="assay-recv-progress-bar" class="h-full bg-primary rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <span class="text-[10px] text-right font-mono text-slate-500" id="assay-recv-progress-count">0 / 94 pieces captured</span>
+                  </div>
+                </div>
+
+                <!-- Camera Feed & Controls Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
+                  <!-- Live Viewport (7 cols) -->
+                  <div class="md:col-span-7 flex flex-col gap-3">
+                    <div class="relative w-full aspect-4/3 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-inner flex items-center justify-center">
+                      <video id="assay-recv-cam-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
+
+                      <!-- Standby / Off State Overlay -->
+                      <div id="assay-recv-cam-standby" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90 text-white gap-2 z-10">
+                        <span class="material-symbols-outlined text-4xl text-slate-400">photo_camera</span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-200">CAMERA STANDBY</span>
+                        <button type="button" onclick="startAssayCenterCamera()" class="mt-2 px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-slate-800 transition-all cursor-pointer shadow-sm">
+                          START CAMERA
+                        </button>
+                      </div>
+
+                      <!-- Reticle / Target Box -->
+                      <div id="assay-recv-cam-reticle" class="absolute inset-8 border-2 border-dashed border-amber-400/60 rounded-xl pointer-events-none flex items-center justify-center">
+                        <div class="w-3 h-3 border-t-2 border-l-2 border-amber-400 absolute top-0 left-0"></div>
+                        <div class="w-3 h-3 border-t-2 border-r-2 border-amber-400 absolute top-0 right-0"></div>
+                        <div class="w-3 h-3 border-b-2 border-l-2 border-amber-400 absolute bottom-0 left-0"></div>
+                        <div class="w-3 h-3 border-b-2 border-r-2 border-amber-400 absolute bottom-0 right-0"></div>
+                      </div>
+
+                      <!-- Flash Animation Overlay -->
+                      <div id="assay-recv-flash-overlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-100 z-20"></div>
+
+                      <!-- 5-Second Auto-Capture HUD Overlay -->
+                      <div id="assay-recv-countdown-badge" class="absolute top-3 left-3 bg-slate-900/85 backdrop-blur-xs text-amber-400 px-3 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 z-10 hidden border border-amber-400/30">
+                        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                        <span id="assay-recv-countdown-text">AUTO-SNAPPING IN 5s</span>
+                      </div>
+
+                      <div id="assay-recv-progress-bar-auto-box" class="absolute bottom-0 left-0 right-0 h-1.5 bg-slate-800 z-10 hidden">
+                        <div id="assay-recv-progress-bar-auto" class="h-full bg-amber-400 transition-all duration-100" style="width: 0%"></div>
+                      </div>
+                    </div>
+
+                    <!-- Camera Control Toolbar -->
+                    <div class="flex flex-wrap items-center justify-between gap-2.5">
+                      <div class="flex items-center gap-2">
+                        <button
+                          id="assay-recv-snap-btn"
+                          type="button"
+                          onclick="captureAssayCenterPiecePhoto('MANUAL')"
+                          class="px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-xs uppercase tracking-wider hover:bg-slate-800 shadow-sm flex items-center gap-2 cursor-pointer transition-all border border-amber-400/40"
+                        >
+                          <span class="material-symbols-outlined text-[18px] text-amber-400">camera</span>
+                          <span>SNAP PHOTO NOW</span>
+                        </button>
+                        <button
+                          id="assay-recv-autocapture-btn"
+                          type="button"
+                          onclick="toggleAssayCenterAutoCapture()"
+                          class="px-3.5 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-surface-container text-slate-700 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all"
+                        >
+                          <span class="material-symbols-outlined text-[18px] text-amber-600">timer</span>
+                          <span id="assay-recv-autocapture-label">5s AUTO: OFF</span>
+                        </button>
+                      </div>
+
+                      <div class="flex items-center gap-2">
+                        <label class="px-3 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container border border-surface-container text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all">
+                          <span class="material-symbols-outlined text-[18px]">upload</span>
+                          <span>UPLOAD</span>
+                          <input type="file" id="assay-recv-photo-upload-input" accept="image/*" class="hidden" onchange="handleAssayCenterPhotoFileUpload(event)" />
+                        </label>
+                        <select
+                          id="assay-recv-camera-select"
+                          onchange="switchAssayCenterCameraDevice(this.value)"
+                          class="text-xs py-2 px-2.5 rounded-xl bg-surface-container-low border border-surface-container text-slate-700 focus:outline-none max-w-[130px]"
+                        >
+                          <option value="">Default Cam</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Last Captured Thumbnail & Feature Embedding Card (5 cols) -->
+                  <div class="md:col-span-5 flex flex-col justify-between bg-surface-container-low/70 rounded-2xl p-4 border border-surface-container gap-3">
+                    <div class="flex items-center justify-between pb-2 border-b border-surface-container">
+                      <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700">LATEST CAPTURED BASELINE</span>
+                      <span id="assay-recv-thumb-time" class="text-[10px] font-mono text-slate-500">Awaiting capture</span>
+                    </div>
+
+                    <div class="w-full aspect-square rounded-xl bg-slate-900 border border-slate-700 overflow-hidden flex items-center justify-center relative shadow-inner" id="assay-recv-thumb-box">
+                      <span class="material-symbols-outlined text-4xl text-slate-600">image</span>
+                      <span class="text-[11px] text-slate-400 absolute bottom-3">No photo yet</span>
+                    </div>
+
+                    <div class="flex flex-col gap-1.5 text-xs">
+                      <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-slate-500 font-medium">Piece & Tag:</span>
+                        <span class="font-mono font-bold text-slate-800 truncate" id="assay-recv-thumb-info">—</span>
+                      </div>
+                      <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-slate-500 font-medium">Operator:</span>
+                        <span class="font-bold text-primary truncate" id="assay-recv-thumb-operator">User A (Sarah)</span>
+                      </div>
+                      <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-slate-500 font-medium">Visual AI Hash:</span>
+                        <span class="font-mono text-[10px] text-emerald-700 truncate" id="assay-recv-thumb-embedding">—</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Piece Checklist Grid / Table -->
+                <div class="flex flex-col gap-3 pt-4 border-t border-surface-container">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-[18px] text-primary">checklist</span>
+                      <h4 class="font-headline font-bold text-xs uppercase tracking-wider text-slate-900">Piece Intake Checklist</h4>
+                    </div>
+                    <span class="text-[11px] text-slate-500">Click any captured piece thumbnail to view 4-stage filmstrip</span>
+                  </div>
+
+                  <div id="assay-recv-pieces-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5 max-h-[360px] overflow-y-auto p-1">
+                    <!-- Populated by JS -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- VIEW: CENTER IMAGE RECEIVE (STAGE 2 - USER B) -->
+        <!-- ========================================== -->
+        <section id="view-center-image-receive" class="page-view hidden flex flex-col w-full">
+          <!-- Top Context Ribbon & Header -->
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md py-space-md border-b border-surface-container mb-6">
+            <div class="flex flex-col">
+              <div class="flex items-center gap-2 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                <span>LABORATORY OPERATIONS</span>
+                <span class="text-outline">/</span>
+                <span class="text-primary font-bold">STAGE 2: CENTER IMAGE RECEIVE</span>
+              </div>
+              <h1 class="font-headline-lg text-2xl lg:text-[26px] font-bold text-on-surface tracking-tight mt-0.5">WORKSTATION RECEIPT & VISUAL AI ARTICLE RECOGNITION</h1>
+              <span class="text-xs text-on-surface-variant font-medium">USER B WORKSTATION • ROTATION, ANGLE & LIGHTING-INVARIANT VISUAL AI MATCHING AGAINST USER A BASELINE</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5">
+              <button
+                id="btn-center-img-match-all"
+                type="button"
+                onclick="simulateCenterImageReceiveAllDemo()"
+                class="px-4 py-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container border border-surface-container text-slate-800 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+                title="Rapid Demo: AI match all remaining pieces"
+              >
+                <span class="material-symbols-outlined text-[18px] text-amber-500">auto_awesome</span>
+                <span>MATCH ALL (DEMO)</span>
+              </button>
+              <button
+                id="btn-complete-center-receive"
+                type="button"
+                onclick="completeCenterImageReceiveSubmission()"
+                disabled
+                class="px-5 py-2.5 rounded-lg bg-slate-300 text-slate-500 font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center gap-2 cursor-not-allowed border border-transparent"
+              >
+                <span class="material-symbols-outlined text-[18px]">verified_user</span>
+                <span>COMPLETE CENTER RECEIPT</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Top Metric Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs">
+              <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">CENTER WORKSTATION BATCHES</span>
+              <div class="text-2xl font-black text-slate-900 mt-1 font-mono" id="center-img-stat-total">6 BATCHES</div>
+              <span class="text-[10px] text-slate-500 font-medium mt-0.5 block">TOTAL REGISTERED BATCHES</span>
+            </div>
+            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs">
+              <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">AWAITING AI MATCH</span>
+              <div class="text-2xl font-black text-amber-600 mt-1 font-mono" id="center-img-stat-pending">5 BATCHES</div>
+              <span class="text-[10px] text-amber-600 font-bold mt-0.5 block">STAGE 2 VERIFICATION QUEUE</span>
+            </div>
+            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs">
+              <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">AI MATCH CONFIRMED</span>
+              <div class="text-2xl font-black text-emerald-600 mt-1 font-mono" id="center-img-stat-matched">1 BATCH</div>
+              <span class="text-[10px] text-emerald-600 font-bold mt-0.5 block">VERIFIED & TRANSIT-READY</span>
+            </div>
+            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs">
+              <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">SUPERVISOR OVERRIDES</span>
+              <div class="text-2xl font-black text-purple-600 mt-1 font-mono" id="center-img-stat-overrides">0 OVERRIDES</div>
+              <span class="text-[10px] text-purple-600 font-bold mt-0.5 block">LOGGED WITH AUDIT TRAIL</span>
+            </div>
+          </div>
+
+          <!-- Main Layout Grid: Batch Queue (Left) & Side-by-Side Matching Workstation (Right) -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <!-- Left: Batch Selection Queue -->
+            <div class="lg:col-span-4 flex flex-col gap-4">
+              <div class="bg-surface-container-lowest rounded-2xl p-4 border border-surface-container shadow-xs flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px] text-primary">fact_check</span>
+                    <h2 class="font-headline font-bold text-sm text-on-surface uppercase tracking-wide">Workstation Batches</h2>
+                  </div>
+                  <span id="center-img-queue-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-secondary-container text-on-secondary-container">6 Total</span>
+                </div>
+
+                <!-- Tabs: All, Pending, Completed -->
+                <div class="flex items-center bg-surface-container-low p-1 rounded-xl text-xs font-semibold">
+                  <button type="button" id="center-img-tab-all" onclick="filterCenterImageReceiveQueue('ALL')" class="flex-1 py-1.5 rounded-lg bg-surface-container-lowest shadow-xs text-on-surface text-center transition-all cursor-pointer font-bold">
+                    All (<span id="center-img-count-all">6</span>)
+                  </button>
+                  <button type="button" id="center-img-tab-pending" onclick="filterCenterImageReceiveQueue('PENDING')" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 text-center transition-all cursor-pointer">
+                    Pending (<span id="center-img-count-pending">5</span>)
+                  </button>
+                  <button type="button" id="center-img-tab-completed" onclick="filterCenterImageReceiveQueue('COMPLETED')" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 text-center transition-all cursor-pointer">
+                    Completed (<span id="center-img-count-completed">1</span>)
+                  </button>
+                </div>
+
+                <!-- Search Input -->
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">search</span>
+                  <input
+                    type="text"
+                    id="center-img-search"
+                    oninput="handleCenterImageReceiveSearch(this.value)"
+                    placeholder="Search customer, job docket, req..."
+                    class="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-surface-container-low border border-surface-container focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <button type="button" onclick="clearCenterImageReceiveSearch()" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 hidden" id="center-img-clear-search">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                  </button>
+                </div>
+
+                <!-- Batch Cards Container -->
+                <div id="center-img-queue-container" class="flex flex-col gap-2.5 max-h-[620px] overflow-y-auto pr-0.5">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Customer Metadata Card + Side-by-Side Matching Workstation -->
+            <div class="lg:col-span-8 flex flex-col gap-5">
+              <!-- Customer & Batch Metadata Card -->
+              <div class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-xs">
+                <div class="flex items-center justify-between pb-3.5 mb-3.5 border-b border-surface-container">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-primary-container text-secondary-fixed flex items-center justify-center font-bold">
+                      <span class="material-symbols-outlined text-[18px]">compare</span>
+                    </div>
+                    <div>
+                      <h3 class="font-headline font-bold text-sm text-on-surface" id="center-img-detail-customer">ROYCO JEWELLERS (CHINSURAH)</h3>
+                      <span class="text-[11px] text-on-surface-variant font-mono" id="center-img-detail-job">JOB-2026-2369</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span id="center-img-detail-status" class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                      STAGE 2: MATCHING ACTIVE
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Metadata Pill Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 text-xs">
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">REQUEST #</span>
+                    <span class="font-mono font-bold text-slate-800 text-xs mt-0.5 block truncate" id="center-img-detail-req">119813505</span>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">PIECES</span>
+                    <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block" id="center-img-detail-pcs">94 PCS</span>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">METAL & PURITY</span>
+                    <span class="font-mono font-bold text-amber-700 text-xs mt-0.5 block" id="center-img-detail-metal-purity">Gold 22K 916</span>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">GROSS WEIGHT</span>
+                    <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block" id="center-img-detail-gross">375.000 g</span>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">NET WEIGHT</span>
+                    <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block" id="center-img-detail-net">375.000 g</span>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">OPERATOR</span>
+                    <span class="font-mono font-bold text-slate-700 text-xs mt-0.5 block truncate" id="center-img-detail-operator">User B (Vikram)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Side-by-Side Matching Workstation -->
+              <div class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-xs flex flex-col gap-5">
+                <!-- Matching Progress Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-low p-3.5 rounded-xl border border-surface-container">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-xs">
+                      <span class="material-symbols-outlined text-[20px]">document_scanner</span>
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold uppercase tracking-wide text-slate-900" id="center-img-piece-indicator">Verifying Piece 1 of 94</span>
+                        <span id="center-img-progress-pct" class="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">0%</span>
+                      </div>
+                      <p class="text-[11px] text-slate-500 mt-0.5">Snap piece photo from any angle or rotation. Visual AI performs multi-angle feature correlation.</p>
+                    </div>
+                  </div>
+                  <div class="w-full sm:w-48 flex flex-col gap-1">
+                    <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div id="center-img-progress-bar" class="h-full bg-emerald-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <span class="text-[10px] text-right font-mono text-slate-500" id="center-img-progress-count">0 / 94 pieces matched</span>
+                  </div>
+                </div>
+
+                <!-- Side-by-Side Comparison Container -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch">
+                  <!-- Left: User A Baseline Photo (4 cols) -->
+                  <div class="md:col-span-4 flex flex-col gap-2 p-3.5 rounded-2xl bg-surface-container-low/70 border border-surface-container">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] font-bold uppercase tracking-wider text-slate-700">USER A BASELINE (INTAKE)</span>
+                      <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">STAGE 1</span>
+                    </div>
+                    <div class="w-full aspect-square rounded-xl bg-slate-900 border border-slate-700 overflow-hidden flex items-center justify-center relative shadow-inner" id="center-img-comp-baseline-box">
+                      <img id="center-img-comp-baseline-img" src="" alt="Baseline Photo" class="w-full h-full object-cover hidden" />
+                      <span class="material-symbols-outlined text-4xl text-slate-600" id="center-img-comp-baseline-empty">image</span>
+                    </div>
+                    <div class="flex flex-col text-[10.5px] text-slate-500 font-mono mt-1" id="center-img-comp-baseline-meta">
+                      <span>Operator: User A (Intake Master)</span>
+                      <span>Timestamp: 08:01 PM Baseline</span>
+                    </div>
+                  </div>
+
+                  <!-- Center: AI Matching Verdict & Badges (4 cols) -->
+                  <div class="md:col-span-4 flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-container-low border border-surface-container text-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white border border-slate-300 flex items-center justify-center shadow-xs">
+                      <span class="material-symbols-outlined text-[22px] text-primary">auto_awesome</span>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-1.5 w-full">
+                      <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">VISUAL AI RECOGNITION</span>
+                      
+                      <!-- Real-time Match Score Badge -->
+                      <div id="center-img-match-badge" class="px-3.5 py-1.5 rounded-xl text-xs font-bold font-mono tracking-wide flex items-center gap-1.5 bg-slate-200 text-slate-600 border border-slate-300">
+                        <span class="material-symbols-outlined text-[16px]">sync</span>
+                        <span>AWAITING PHOTO SNAP</span>
+                      </div>
+                    </div>
+
+                    <!-- Metrics Breakdown -->
+                    <div id="center-img-match-metrics" class="w-full flex flex-col gap-1 text-[10px] font-mono text-slate-600 bg-white/70 p-2.5 rounded-xl border border-slate-200 text-left">
+                      <div class="flex justify-between"><span>Chroma Similarity:</span><span class="font-bold" id="center-img-metric-chroma">—</span></div>
+                      <div class="flex justify-between"><span>Radial Symmetry:</span><span class="font-bold" id="center-img-metric-radial">—</span></div>
+                      <div class="flex justify-between"><span>Principal Geometry:</span><span class="font-bold" id="center-img-metric-geom">—</span></div>
+                    </div>
+
+                    <!-- Supervisor Override Button (Shown on < 60% mismatch) -->
+                    <button
+                      id="center-img-override-btn"
+                      type="button"
+                      onclick="triggerSupervisorOverrideCurrentPiece()"
+                      class="w-full px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold uppercase tracking-wider hidden transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
+                      <span>SUPERVISOR OVERRIDE</span>
+                    </button>
+                  </div>
+
+                  <!-- Right: User B Current Photo / Camera Feed (4 cols) -->
+                  <div class="md:col-span-4 flex flex-col gap-2 p-3.5 rounded-2xl bg-surface-container-low/70 border border-surface-container">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] font-bold uppercase tracking-wider text-slate-700">USER B PHOTO (RECEIPT)</span>
+                      <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">STAGE 2</span>
+                    </div>
+                    <div class="relative w-full aspect-square rounded-xl bg-slate-950 border border-slate-800 overflow-hidden flex items-center justify-center shadow-inner" id="center-img-comp-current-box">
+                      <video id="center-img-cam-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                      <img id="center-img-comp-current-img" src="" alt="Current Snap" class="w-full h-full object-cover hidden z-10" />
+
+                      <!-- Standby / Off State Overlay -->
+                      <div id="center-img-cam-standby" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90 text-white gap-2 z-10">
+                        <span class="material-symbols-outlined text-4xl text-slate-400">photo_camera</span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-200">CAMERA STANDBY</span>
+                        <button type="button" onclick="startCenterImageCamera()" class="mt-1 px-3 py-1 rounded-lg bg-primary text-white text-[11px] font-bold cursor-pointer">
+                          START CAMERA
+                        </button>
+                      </div>
+
+                      <!-- Flash Animation Overlay -->
+                      <div id="center-img-flash-overlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-100 z-20"></div>
+                    </div>
+                    <div class="flex flex-col text-[10.5px] text-slate-500 font-mono mt-1" id="center-img-comp-current-meta">
+                      <span>Operator: User B (Receiving Inspector)</span>
+                      <span>Status: Ready to Snap</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Camera Controls & Actions Toolbar -->
+                <div class="flex flex-wrap items-center justify-between gap-2.5 p-2 bg-surface-container-low rounded-xl border border-surface-container">
+                  <div class="flex items-center gap-2">
+                    <button
+                      id="center-img-snap-btn"
+                      type="button"
+                      onclick="captureCenterImagePiecePhoto('MANUAL')"
+                      class="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs uppercase tracking-wider hover:bg-slate-800 shadow-sm flex items-center gap-2 cursor-pointer transition-all border border-amber-400/40"
+                    >
+                      <span class="material-symbols-outlined text-[18px] text-amber-400">camera_alt</span>
+                      <span>SNAP PIECE PHOTO</span>
+                    </button>
+                    <label class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-xs">
+                      <span class="material-symbols-outlined text-[18px]">file_upload</span>
+                      <span>UPLOAD</span>
+                      <input type="file" id="center-img-photo-upload-input" accept="image/*" class="hidden" onchange="handleCenterImagePhotoFileUpload(event)" />
+                    </label>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <select
+                      id="center-img-camera-select"
+                      onchange="switchCenterImageCameraDevice(this.value)"
+                      class="text-xs py-2 px-2.5 rounded-xl bg-white border border-slate-300 text-slate-700 focus:outline-none max-w-[130px]"
+                    >
+                      <option value="">Default Cam</option>
+                    </select>
+                    <button type="button" onclick="startCenterImageCamera()" class="p-2 rounded-xl bg-white border border-slate-300 text-slate-700 hover:text-slate-900 cursor-pointer" title="Refresh Camera Feed">
+                      <span class="material-symbols-outlined text-[18px]">videocam</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Piece Matching Checklist Grid / Table -->
+                <div class="flex flex-col gap-3 pt-4 border-t border-surface-container">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-[18px] text-primary">verified</span>
+                      <h4 class="font-headline font-bold text-xs uppercase tracking-wider text-slate-900">Piece Matching Checklist & Audit Trail</h4>
+                    </div>
+                    <span class="text-[11px] text-slate-500">Green ($\ge 75\%$), Amber ($60-74\%$), Red ($< 60\%$). Click any piece to inspect 4-stage custody.</span>
+                  </div>
+
+                  <div id="center-img-pieces-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5 max-h-[360px] overflow-y-auto p-1">
+                    <!-- Populated by JS -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
         <!-- ========================================== -->
         <section id="view-tag-generation" class="page-view hidden flex flex-col w-full">
           <!-- Top Context Ribbon & Breadcrumb Header (PRESERVED) -->
@@ -3875,6 +4519,73 @@
               <!-- Printable Dossier Body -->
               <div id="deliv-assay-printable-dossier" class="p-6 overflow-y-auto flex flex-col gap-5 text-slate-900">
                 <!-- Populated dynamically by renderDeliveryAssayDossierModal() -->
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================== -->
+          <!-- MODAL: 4-STAGE VISUAL FILMSTRIP LIGHTBOX   -->
+          <!-- ========================================== -->
+          <div id="visual-custody-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs hidden flex items-center justify-center p-3 sm:p-5">
+            <div class="bg-surface-container-lowest rounded-2xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-surface-container overflow-hidden">
+              <!-- Modal Header -->
+              <div class="flex items-center justify-between px-6 py-4 bg-slate-900 text-white">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold">
+                    <span class="material-symbols-outlined text-[22px]">view_timeline</span>
+                  </div>
+                  <div>
+                    <h2 class="text-sm font-black uppercase tracking-wide flex items-center gap-2">
+                      <span id="visual-modal-title">4-STAGE MULTI-ANGLE VISUAL CUSTODY CHAIN</span>
+                      <span id="visual-modal-piece-pill" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700">PIECE #1</span>
+                    </h2>
+                    <span class="text-[11px] text-slate-300 font-mono" id="visual-modal-subtitle">JOB-2026-2369 • ROYCO JEWELLERS • GOLD 22K 916</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onclick="printVisualCustodyTrail()"
+                    class="px-3.5 py-1.5 rounded-lg bg-amber-400 text-slate-950 font-bold text-xs hover:bg-amber-300 flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+                  >
+                    <span class="material-symbols-outlined text-[16px]">print</span>
+                    <span>PRINT CHAIN</span>
+                  </button>
+                  <button
+                    type="button"
+                    onclick="closeVisualCustodyModal()"
+                    class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-all"
+                  >
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Modal Body: 4-Stage Side-by-Side Filmstrip -->
+              <div class="p-6 overflow-y-auto flex flex-col gap-6">
+                <!-- Integrity Banner -->
+                <div class="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950">
+                  <div class="flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-emerald-600 text-[22px]">verified</span>
+                    <span class="text-xs font-bold uppercase tracking-wider" id="visual-modal-integrity-text">
+                      4-STAGE VISUAL CHAIN OF CUSTODY VERIFIED • ZERO TAMPERING DETECTED
+                    </span>
+                  </div>
+                  <span class="text-[10px] font-mono text-emerald-700 font-bold" id="visual-modal-hash">SHA-256: 7F4A...82B1</span>
+                </div>
+
+                <!-- 4 Filmstrip Columns Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="visual-modal-filmstrip-grid">
+                  <!-- Populated by renderVisualCustodyModalContent() -->
+                </div>
+
+                <!-- Audit Metadata Table / Summary -->
+                <div class="p-4 rounded-xl bg-surface-container-low border border-surface-container flex flex-col gap-2 text-xs">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700">CHAIN OF CUSTODY AUDIT LOG</span>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] text-slate-600 font-mono" id="visual-modal-audit-log">
+                    <!-- Populated by JS -->
+                  </div>
+                </div>
               </div>
             </div>
           </div>
