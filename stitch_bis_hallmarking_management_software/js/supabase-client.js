@@ -1102,7 +1102,7 @@
   function updateUIElements() {
     if (typeof document === 'undefined') return;
 
-    // 1. Supabase Status Badge in Header
+    // 1. Supabase Status Badge in Header (Read-Only)
     const statusPill = document.getElementById('supabase-status-pill');
     const statusDot = document.getElementById('supabase-status-dot');
     const statusLabel = document.getElementById('supabase-status-label');
@@ -1111,29 +1111,29 @@
       if (state.status === 'connected') {
         statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500 relative';
         statusLabel.textContent = 'Cloud Synced';
-        statusPill.title = 'Supabase Cloud Connected • Auto-Sync Active';
-        statusPill.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold cursor-pointer shadow-2xs hover:bg-emerald-100 transition-colors';
+        statusPill.title = 'Supabase Cloud Connected (Vercel Environment)';
+        statusPill.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-2xs select-none cursor-default transition-colors';
       } else if (state.status === 'syncing') {
         statusDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse relative';
         statusLabel.textContent = 'Syncing...';
         statusPill.title = 'Synchronizing with Supabase PostgreSQL...';
-        statusPill.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold cursor-pointer shadow-2xs hover:bg-amber-100 transition-colors';
+        statusPill.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold shadow-2xs select-none cursor-default transition-colors';
       } else if (state.status === 'connecting') {
         statusDot.className = 'w-2 h-2 rounded-full bg-blue-500 animate-ping relative';
         statusLabel.textContent = 'Connecting...';
-        statusPill.title = 'Connecting to Supabase...';
-        statusPill.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold cursor-pointer shadow-2xs';
+        statusPill.title = 'Connecting to Supabase Cloud...';
+        statusPill.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold shadow-2xs select-none cursor-default';
       } else if (state.status === 'error') {
         statusDot.className = 'w-2 h-2 rounded-full bg-rose-500 relative';
         statusLabel.textContent = 'Cloud Offline';
-        statusPill.title = 'Supabase Connection Error: Click to view details';
-        statusPill.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold cursor-pointer shadow-2xs hover:bg-rose-100 transition-colors';
+        statusPill.title = 'Supabase Cloud Offline';
+        statusPill.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold shadow-2xs select-none cursor-default transition-colors';
       } else {
         // Offline / Local
         statusDot.className = 'w-2 h-2 rounded-full bg-slate-400 relative';
         statusLabel.textContent = 'Local Mode';
-        statusPill.title = 'Running in Local Storage Mode (Click to connect Supabase)';
-        statusPill.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold cursor-pointer shadow-2xs hover:bg-slate-200 transition-colors';
+        statusPill.title = 'Running in Local Storage Mode';
+        statusPill.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold shadow-2xs select-none cursor-default transition-colors';
       }
     }
 
@@ -1182,20 +1182,22 @@
     };
   }
 
-  // Attempt to load Vercel Environment Variables via /api/config if not in localStorage
+  // Attempt to load Vercel Environment Variables via /api/config
   async function loadVercelEnvConfig() {
-    if (state.url && state.anonKey) return;
     try {
       if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
         const res = await fetch('/api/config');
         if (res.ok) {
           const cfg = await res.json();
           if (cfg.supabaseUrl && cfg.supabaseAnonKey) {
+            const hasChanged = state.url !== cfg.supabaseUrl || state.anonKey !== cfg.supabaseAnonKey;
             state.url = cfg.supabaseUrl;
             state.anonKey = cfg.supabaseAnonKey;
             storage.set('supabase_url', state.url);
             storage.set('supabase_anon_key', state.anonKey);
-            init();
+            if (hasChanged || !state.client) {
+              init();
+            }
           }
         }
       }
@@ -1205,9 +1207,7 @@
   // Auto-initialize if running in browser
   if (typeof window !== 'undefined') {
     setTimeout(() => {
-      if (!state.url || !state.anonKey) {
-        loadVercelEnvConfig();
-      }
+      loadVercelEnvConfig();
       init();
     }, 100);
   }
@@ -1222,6 +1222,7 @@
     isConfigured,
     getClient,
     saveConfig,
+    loadVercelEnvConfig,
     testConnection,
     signIn,
     signInWithOAuth,

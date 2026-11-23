@@ -14077,7 +14077,7 @@
   function openFullSupabaseSettings() {
     closeSupabaseQuickModal();
     navigateTo('settings');
-    switchSettingsTab(4);
+    switchSettingsTab(3);
   }
 
   function openAuthProfileModal() {

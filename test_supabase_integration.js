@@ -441,37 +441,63 @@ console.log('[Suite 3] Supabase Authentication & Role-Based Access:');
   LabSupabase.init(tempClient);
 
   // -------------------------------------------------------------
-  // SUITE 6: DOM COMPONENTS & UI INTEGRATION
+  // SUITE 6: SECURITY ENFORCEMENT, UI SANITIZATION & VERCEL CONFIG
   // -------------------------------------------------------------
-  console.log('\n[Suite 6] DOM Structure, Header Indicators & Settings Controls:');
+  console.log('\n[Suite 6] DOM Structure, Security Sanitization & Vercel Env Management:');
 
-  // 1. Header controls in index.html
+  // 1. Header controls in index.html (Read-Only Status Pill)
   assert.strictEqual(indexHtml.includes('id="supabase-status-pill"'), true, 'FAIL: Header #supabase-status-pill missing');
   assert.strictEqual(indexHtml.includes('id="supabase-status-dot"'), true, 'FAIL: Header #supabase-status-dot missing');
   assert.strictEqual(indexHtml.includes('id="supabase-status-label"'), true, 'FAIL: Header #supabase-status-label missing');
   assert.strictEqual(indexHtml.includes('id="header-role-indicator"'), true, 'FAIL: Header #header-role-indicator missing');
   assert.strictEqual(indexHtml.includes('id="header-role-text"'), true, 'FAIL: Header #header-role-text missing');
-  console.log('  ✓ Header Supabase Status Pill and Role Badges verified.');
+  assert.strictEqual(indexHtml.includes('openSupabaseQuickModal()'), false, 'FAIL: Header status pill must NOT trigger modal or expose credentials');
+  console.log('  ✓ Header Supabase Status Pill is read-only and Role Badges verified.');
 
-  // 2. Settings 5th tab button and section
-  assert.strictEqual(indexHtml.includes('switchSettingsTab(4)'), true, 'FAIL: switchSettingsTab(4) button missing');
-  assert.strictEqual(indexHtml.includes('id="settings-section-supabase"'), true, 'FAIL: #settings-section-supabase section missing');
-  assert.strictEqual(indexHtml.includes('id="supabase-config-url"'), true, 'FAIL: #supabase-config-url input missing');
-  assert.strictEqual(indexHtml.includes('id="supabase-config-key"'), true, 'FAIL: #supabase-config-key input missing');
-  assert.strictEqual(indexHtml.includes('id="supabase-config-autosync"'), true, 'FAIL: #supabase-config-autosync checkbox missing');
-  console.log('  ✓ Settings 5th Tab (Cloud & Supabase Integration) controls verified.');
+  // 2. Settings 5th Tab and Credential Inputs completely removed from website UI
+  assert.strictEqual(indexHtml.includes('switchSettingsTab(4)'), false, 'FAIL: 5th tab switchSettingsTab(4) must be removed from website');
+  assert.strictEqual(indexHtml.includes('id="settings-section-supabase"'), false, 'FAIL: #settings-section-supabase panel must be removed');
+  assert.strictEqual(indexHtml.includes('id="settings-panel-supabase"'), false, 'FAIL: #settings-panel-supabase must be removed');
+  assert.strictEqual(indexHtml.includes('id="supabase-config-url"'), false, 'FAIL: #supabase-config-url input must be removed from website');
+  assert.strictEqual(indexHtml.includes('id="supabase-config-key"'), false, 'FAIL: #supabase-config-key input must be removed from website');
+  assert.strictEqual(indexHtml.includes('id="supabase-config-autosync"'), false, 'FAIL: #supabase-config-autosync checkbox must be removed from website');
+  console.log('  ✓ Supabase Project URL & Anon Key inputs completely purged from Settings UI.');
 
-  // 3. Modals in index.html
+  // 3. Quick Credential Modal completely removed
+  assert.strictEqual(indexHtml.includes('id="supabase-quick-modal"'), false, 'FAIL: #supabase-quick-modal must be removed from website');
+  console.log('  ✓ Quick modal purged from DOM so no user can access or edit credentials.');
+
+  // 4. Vercel Serverless API Route & Environment Variable Management
+  const configApiExists = fs.existsSync('./api/config.js');
+  assert.strictEqual(configApiExists, true, 'FAIL: api/config.js must exist for Vercel deployment');
+  const configApiCode = fs.readFileSync('./api/config.js', 'utf8');
+  assert.strictEqual(configApiCode.includes('process.env.SUPABASE_URL'), true, 'FAIL: api/config.js must read SUPABASE_URL from environment');
+  assert.strictEqual(configApiCode.includes('process.env.SUPABASE_ANON_KEY'), true, 'FAIL: api/config.js must read SUPABASE_ANON_KEY from environment');
+
+  // Verify serverless route execution
+  const vercelApiHandler = require('./api/config.js');
+  let vercelResponse = {};
+  const mockRes = {
+    setHeader: () => {},
+    status: (code) => ({
+      json: (data) => { vercelResponse = { code, data }; },
+      end: () => {}
+    })
+  };
+  vercelApiHandler({ method: 'GET' }, mockRes);
+  assert.strictEqual(vercelResponse.code, 200, 'FAIL: Vercel api/config must return 200 OK');
+  assert.strictEqual('supabaseUrl' in vercelResponse.data, true, 'FAIL: response missing supabaseUrl property');
+  assert.strictEqual('supabaseAnonKey' in vercelResponse.data, true, 'FAIL: response missing supabaseAnonKey property');
+  assert.strictEqual(typeof LabSupabase.loadVercelEnvConfig, 'function', 'FAIL: LabSupabase.loadVercelEnvConfig missing');
+  console.log('  ✓ Vercel serverless /api/config verified with environment variables.');
+
+  // 5. Staff Auth Profile Modal and JavaScript SDKs preserved
   assert.strictEqual(indexHtml.includes('id="lab-auth-modal"'), true, 'FAIL: #lab-auth-modal missing');
-  assert.strictEqual(indexHtml.includes('id="supabase-quick-modal"'), true, 'FAIL: #supabase-quick-modal missing');
-  console.log('  ✓ Auth & Cloud Quick Modals verified in DOM.');
-
-  // 4. Scripts in index.html
   assert.strictEqual(indexHtml.includes('js/supabase-client.js'), true, 'FAIL: js/supabase-client.js script tag missing in index.html');
   assert.strictEqual(indexHtml.includes('@supabase/supabase-js'), true, 'FAIL: @supabase/supabase-js script tag missing in index.html');
-  console.log('  ✓ Supabase JavaScript SDK bundled in index.html.');
+  console.log('  ✓ Supabase JavaScript SDK bundled and Staff Auth Modal preserved.');
 
-  // 5. Signin.html & Login.html integration
+  // 6. Signin.html & Login.html integration
   assert.strictEqual(signinHtml.includes('js/supabase-client.js'), true, 'FAIL: supabase-client.js missing in signin.html');
   assert.strictEqual(loginHtml.includes('js/supabase-client.js'), true, 'FAIL: supabase-client.js missing in login.html');
   assert.strictEqual(signinHtml.includes('LabSupabase.signIn'), true, 'FAIL: LabSupabase.signIn missing in signin.html');
