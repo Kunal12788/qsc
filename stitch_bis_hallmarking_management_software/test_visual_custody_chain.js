@@ -15,7 +15,8 @@ global.document = {
   removeEventListener: () => {},
   querySelector: () => null,
   querySelectorAll: () => [],
-  getElementById: () => null
+  getElementById: () => null,
+  body: { style: {} }
 };
 global.navigator = { mediaDevices: {} };
 
@@ -27,72 +28,122 @@ const appJs = fs.readFileSync('./js/app.js', 'utf8');
 require('./js/app.js');
 
 // -------------------------------------------------------------
-// SUITE 1: Navigation & Route Registration Verification
+// SUITE 1: Navigation & Route Registration Verification (6-Step Workflow)
 // -------------------------------------------------------------
-console.log('[Suite 1] Navigation & Route Structure Verification:');
+console.log('[Suite 1] Navigation & Route Structure Verification (6-Step Workflow):');
 
-// 1. Verify Desktop sidebar links and exact order
-const receiveDesktopIdx = indexHtml.indexOf('data-path="receive" href="#/receive" title="Receive Batch"');
-const assayRecvDesktopIdx = indexHtml.indexOf('data-path="assay_center_receive" href="#/assay_center_receive" title="Assay Center Receive (User A)"');
-const centerImgDesktopIdx = indexHtml.indexOf('data-path="center_image_receive" href="#/center_image_receive" title="Center Image Receive (User B)"');
-const tagGenDesktopIdx = indexHtml.indexOf('data-path="tag-generation" href="#/tag-generation" title="Tag Generation"');
+// 1. Verify Desktop sidebar links and exact 6-step chronological order:
+// Step 1: Assay Center Receive -> Step 2: Receive Batch -> Step 3: Tag Generation -> Step 4: Bill Generation -> Step 5: Delivery -> Step 6: Delivery (Assay Center)
+const desktopNavMatch = indexHtml.match(/<nav[^>]*id="desktop-nav-links"[\s\S]*?<\/nav>/i);
+assert.strictEqual(!!desktopNavMatch, true, 'FAIL: Desktop navigation container #desktop-nav-links missing');
+const desktopNavHtml = desktopNavMatch[0];
 
-assert.strictEqual(receiveDesktopIdx !== -1, true, 'FAIL: Desktop Receive Batch navigation link missing');
+const assayRecvDesktopIdx = desktopNavHtml.indexOf('data-path="assay_center_receive"');
+const receiveDesktopIdx = desktopNavHtml.indexOf('data-path="receive"');
+const tagGenDesktopIdx = desktopNavHtml.indexOf('data-path="tag-generation"');
+const billGenDesktopIdx = desktopNavHtml.indexOf('data-path="bill-generation"');
+const deliveryDesktopIdx = desktopNavHtml.indexOf('data-path="delivery"');
+const deliveryAssayDesktopIdx = desktopNavHtml.indexOf('data-path="delivery-assay"');
+
 assert.strictEqual(assayRecvDesktopIdx !== -1, true, 'FAIL: Desktop Assay Center Receive link missing');
-assert.strictEqual(centerImgDesktopIdx !== -1, true, 'FAIL: Desktop Center Image Receive link missing');
+assert.strictEqual(receiveDesktopIdx !== -1, true, 'FAIL: Desktop Receive Batch link missing');
 assert.strictEqual(tagGenDesktopIdx !== -1, true, 'FAIL: Desktop Tag Generation link missing');
+assert.strictEqual(billGenDesktopIdx !== -1, true, 'FAIL: Desktop Bill Generation link missing');
+assert.strictEqual(deliveryDesktopIdx !== -1, true, 'FAIL: Desktop Delivery link missing');
+assert.strictEqual(deliveryAssayDesktopIdx !== -1, true, 'FAIL: Desktop Delivery (Assay Center) link missing');
 
+// Verify Center Image Receive is REMOVED from desktop sidebar navigation
 assert.strictEqual(
-  receiveDesktopIdx < assayRecvDesktopIdx && assayRecvDesktopIdx < centerImgDesktopIdx && centerImgDesktopIdx < tagGenDesktopIdx,
-  true,
-  'FAIL: Desktop sidebar navigation must follow exact order: Receive Batch -> Assay Center Receive -> Center Image Receive -> Tag Generation'
+  desktopNavHtml.includes('center_image_receive'),
+  false,
+  'FAIL: Center Image Receive must be removed from desktop sidebar navigation'
 );
 
-// 2. Verify Mobile drawer links and exact order
-const receiveMobileIdx = indexHtml.indexOf('data-path="receive" href="#/receive"');
-const assayRecvMobileIdx = indexHtml.indexOf('data-path="assay_center_receive" href="#/assay_center_receive"');
-const centerImgMobileIdx = indexHtml.indexOf('data-path="center_image_receive" href="#/center_image_receive"');
-const tagGenMobileIdx = indexHtml.indexOf('data-path="tag-generation" href="#/tag-generation"');
+assert.strictEqual(
+  assayRecvDesktopIdx < receiveDesktopIdx &&
+  receiveDesktopIdx < tagGenDesktopIdx &&
+  tagGenDesktopIdx < billGenDesktopIdx &&
+  billGenDesktopIdx < deliveryDesktopIdx &&
+  deliveryDesktopIdx < deliveryAssayDesktopIdx,
+  true,
+  'FAIL: Desktop sidebar navigation must follow exact 6-step order: Assay Center Receive (Step 1) -> Receive Batch (Step 2) -> Tag Generation (Step 3) -> Bill Generation (Step 4) -> Delivery (Step 5) -> Delivery Assay Center (Step 6)'
+);
 
-assert.strictEqual(receiveMobileIdx !== -1, true, 'FAIL: Mobile Receive Batch link missing');
+// 2. Verify Mobile drawer links and exact 6-step chronological order
+const mobileNavMatch = indexHtml.match(/<nav[^>]*id="mobile-nav-links"[\s\S]*?<\/nav>/i);
+assert.strictEqual(!!mobileNavMatch, true, 'FAIL: Mobile drawer navigation container #mobile-nav-links missing');
+const mobileNavHtml = mobileNavMatch[0];
+
+const assayRecvMobileIdx = mobileNavHtml.indexOf('data-path="assay_center_receive"');
+const receiveMobileIdx = mobileNavHtml.indexOf('data-path="receive"');
+const tagGenMobileIdx = mobileNavHtml.indexOf('data-path="tag-generation"');
+const billGenMobileIdx = mobileNavHtml.indexOf('data-path="bill-generation"');
+const deliveryMobileIdx = mobileNavHtml.indexOf('data-path="delivery"');
+const deliveryAssayMobileIdx = mobileNavHtml.indexOf('data-path="delivery-assay"');
+
 assert.strictEqual(assayRecvMobileIdx !== -1, true, 'FAIL: Mobile Assay Center Receive link missing');
-assert.strictEqual(centerImgMobileIdx !== -1, true, 'FAIL: Mobile Center Image Receive link missing');
+assert.strictEqual(receiveMobileIdx !== -1, true, 'FAIL: Mobile Receive Batch link missing');
 assert.strictEqual(tagGenMobileIdx !== -1, true, 'FAIL: Mobile Tag Generation link missing');
+assert.strictEqual(billGenMobileIdx !== -1, true, 'FAIL: Mobile Bill Generation link missing');
+assert.strictEqual(deliveryMobileIdx !== -1, true, 'FAIL: Mobile Delivery link missing');
+assert.strictEqual(deliveryAssayMobileIdx !== -1, true, 'FAIL: Mobile Delivery (Assay Center) link missing');
+
+// Verify Center Image Receive is REMOVED from mobile drawer navigation
+assert.strictEqual(
+  mobileNavHtml.includes('center_image_receive'),
+  false,
+  'FAIL: Center Image Receive must be removed from mobile drawer navigation'
+);
 
 assert.strictEqual(
-  receiveMobileIdx < assayRecvMobileIdx && assayRecvMobileIdx < centerImgMobileIdx && centerImgMobileIdx < tagGenMobileIdx,
+  assayRecvMobileIdx < receiveMobileIdx &&
+  receiveMobileIdx < tagGenMobileIdx &&
+  tagGenMobileIdx < billGenMobileIdx &&
+  billGenMobileIdx < deliveryMobileIdx &&
+  deliveryMobileIdx < deliveryAssayMobileIdx,
   true,
-  'FAIL: Mobile drawer navigation must follow exact order: Receive Batch -> Assay Center Receive -> Center Image Receive -> Tag Generation'
+  'FAIL: Mobile drawer navigation must follow exact 6-step order: Assay Center Receive (Step 1) -> Receive Batch (Step 2) -> Tag Generation (Step 3) -> Bill Generation (Step 4) -> Delivery (Step 5) -> Delivery Assay Center (Step 6)'
 );
 
-// 3. Verify View sections exist in index.html
+// 3. Verify Route Numbering Badges (STEP 1 through STEP 6)
+assert.strictEqual(desktopNavHtml.includes('STEP 1') && mobileNavHtml.includes('STEP 1'), true, 'FAIL: STEP 1 badge missing in navigation');
+assert.strictEqual(desktopNavHtml.includes('STEP 2') && mobileNavHtml.includes('STEP 2'), true, 'FAIL: STEP 2 badge missing in navigation');
+assert.strictEqual(desktopNavHtml.includes('STEP 3') && mobileNavHtml.includes('STEP 3'), true, 'FAIL: STEP 3 badge missing in navigation');
+assert.strictEqual(desktopNavHtml.includes('STEP 4') && mobileNavHtml.includes('STEP 4'), true, 'FAIL: STEP 4 badge missing in navigation');
+assert.strictEqual(desktopNavHtml.includes('STEP 5') && mobileNavHtml.includes('STEP 5'), true, 'FAIL: STEP 5 badge missing in navigation');
+assert.strictEqual(desktopNavHtml.includes('STEP 6') && mobileNavHtml.includes('STEP 6'), true, 'FAIL: STEP 6 badge missing in navigation');
+
+// Verify Header Route Numbering Badges
+assert.strictEqual(indexHtml.includes('STEP 1: ASSAY CENTER RECEIVE'), true, 'FAIL: STEP 1 header badge missing');
+assert.strictEqual(indexHtml.includes('STEP 2: RECEIVE BATCH'), true, 'FAIL: STEP 2 header badge missing');
+assert.strictEqual(indexHtml.includes('STEP 3: TAG GENERATION'), true, 'FAIL: STEP 3 header badge missing');
+assert.strictEqual(indexHtml.includes('STEP 4: BILL GENERATION'), true, 'FAIL: STEP 4 header badge missing');
+assert.strictEqual(indexHtml.includes('STEP 5: DELIVERY'), true, 'FAIL: STEP 5 header badge missing');
+assert.strictEqual(indexHtml.includes('STEP 6: DELIVERY (ASSAY CENTER)'), true, 'FAIL: STEP 6 header badge missing');
+
+// 4. Verify View sections and Modals exist in index.html
+assert.strictEqual(indexHtml.includes('<section id="view-assay-center-receive"'), true, 'FAIL: View #view-assay-center-receive missing');
+assert.strictEqual(indexHtml.includes('<section id="view-receive"'), true, 'FAIL: View #view-receive missing');
+assert.strictEqual(indexHtml.includes('<section id="view-tag-generation"'), true, 'FAIL: View #view-tag-generation missing');
+assert.strictEqual(indexHtml.includes('<section id="view-bill-generation"'), true, 'FAIL: View #view-bill-generation missing');
+assert.strictEqual(indexHtml.includes('<section id="view-delivery"'), true, 'FAIL: View #view-delivery missing');
+assert.strictEqual(indexHtml.includes('<section id="view-delivery-assay"'), true, 'FAIL: View #view-delivery-assay missing');
+assert.strictEqual(indexHtml.includes('id="modal-new-intake-batch"'), true, 'FAIL: #modal-new-intake-batch modal missing');
+assert.strictEqual(indexHtml.includes('id="btn-open-new-intake-batch"'), true, 'FAIL: #btn-open-new-intake-batch button missing');
+assert.strictEqual(indexHtml.includes('id="visual-custody-modal"'), true, 'FAIL: #visual-custody-modal missing');
+
+// 5. Verify validRoutes in js/app.js
 assert.strictEqual(
-  indexHtml.includes('<section id="view-assay-center-receive"'),
+  appJs.includes("'assay_center_receive'") && appJs.includes("'receive'") && appJs.includes("'delivery-assay'"),
   true,
-  'FAIL: View section #view-assay-center-receive missing from index.html'
-);
-assert.strictEqual(
-  indexHtml.includes('<section id="view-center-image-receive"'),
-  true,
-  'FAIL: View section #view-center-image-receive missing from index.html'
-);
-assert.strictEqual(
-  indexHtml.includes('id="visual-custody-modal"'),
-  true,
-  'FAIL: 4-Stage Visual Filmstrip Modal #visual-custody-modal missing from index.html'
+  'FAIL: validRoutes in js/app.js must include workflow routes'
 );
 
-// 4. Verify validRoutes in js/app.js
-assert.strictEqual(
-  appJs.includes("'assay_center_receive'") && appJs.includes("'center_image_receive'"),
-  true,
-  'FAIL: validRoutes in js/app.js must include assay_center_receive and center_image_receive'
-);
-
-console.log('  ✓ Desktop & mobile navigation items correctly located below Receive Batch.');
-console.log('  ✓ Chronological navigation order: Receive -> Assay Center (User A) -> Center Image (User B) -> Tag Gen.');
-console.log('  ✓ Views #view-assay-center-receive, #view-center-image-receive, and #visual-custody-modal verified.');
-console.log('  ✓ Routes registered in validRoutes.');
+console.log('  ✓ Desktop & mobile navigation strictly follows 6-step workflow sequence.');
+console.log('  ✓ Chronological order: 1. Assay Center Receive -> 2. Receive Batch -> 3. Tag Gen -> 4. Bill Gen -> 5. Delivery -> 6. Delivery Assay.');
+console.log('  ✓ Center Image Receive cleanly removed from main sidebar and mobile drawer navigation.');
+console.log('  ✓ Route numbering badges STEP 1 through STEP 6 verified across headers and sidebars.');
+console.log('  ✓ Views, modals, and routes verified.');
 
 
 // -------------------------------------------------------------
@@ -531,5 +582,136 @@ assert.strictEqual(mismatchedPiece.stageB.status, 'OVERRIDDEN', 'FAIL: Status mu
 console.log(`  ✓ Mismatched article correctly identified as swap alert (${swapSim.score}% < 60%).`);
 console.log('  ✓ System blocks automatic advancement and locks piece in MISMATCH state.');
 console.log('  ✓ Supervisor override authorization logged with superintendent audit justification.');
+
+
+// -------------------------------------------------------------
+// SUITE 10: Stage 1 New Customer Intake Batch & Downstream Workflow
+// -------------------------------------------------------------
+console.log('\n[Suite 10] Stage 1 New Customer Intake Batch & Downstream Workflow:');
+
+// 1. Verify functions exported to window
+assert.strictEqual(typeof global.window.openNewIntakeBatchModal, 'function', 'FAIL: openNewIntakeBatchModal must be exported');
+assert.strictEqual(typeof global.window.closeNewIntakeBatchModal, 'function', 'FAIL: closeNewIntakeBatchModal must be exported');
+assert.strictEqual(typeof global.window.populateNewBatchCustomerDatalist, 'function', 'FAIL: populateNewBatchCustomerDatalist must be exported');
+assert.strictEqual(typeof global.window.submitNewIntakeBatch, 'function', 'FAIL: submitNewIntakeBatch must be exported');
+
+// 2. DOM Mock elements for intake modal
+const mockModal = { classList: { add: () => {}, remove: () => {} }, style: {} };
+const mockDatalist = { innerHTML: '' };
+const mockReqInput = { value: '' };
+const mockDocketInput = { value: '' };
+const mockTrayInput = { value: '' };
+const mockCustInput = { value: '', focus: () => {} };
+const mockBisInput = { value: '' };
+const mockPcsInput = { value: '15' };
+const mockMetalSelect = { value: 'Gold' };
+const mockPuritySelect = { value: '22K 916', innerHTML: '' };
+const mockArticleInput = { value: 'NECKLACE & BANGLES' };
+const mockGrossInput = { value: '120.500' };
+const mockNetInput = { value: '119.800' };
+const mockDepositorInput = { value: 'Ramesh Sen' };
+const mockReceiverInput = { value: 'Sarah Jenkins (Assay Master)' };
+
+const elementsMap = {
+  'modal-new-intake-batch': mockModal,
+  'new-batch-customer-datalist': mockDatalist,
+  'new-batch-req-no': mockReqInput,
+  'new-batch-job-docket': mockDocketInput,
+  'new-batch-tray': mockTrayInput,
+  'new-batch-customer-name': mockCustInput,
+  'new-batch-bis-license': mockBisInput,
+  'new-batch-pcs': mockPcsInput,
+  'new-batch-metal': mockMetalSelect,
+  'new-batch-purity': mockPuritySelect,
+  'new-batch-article-type': mockArticleInput,
+  'new-batch-gross-wt': mockGrossInput,
+  'new-batch-net-wt': mockNetInput,
+  'new-batch-depositor': mockDepositorInput,
+  'new-batch-receiver': mockReceiverInput
+};
+
+const originalGetElementById = global.document.getElementById;
+global.document.getElementById = (id) => elementsMap[id] || (originalGetElementById ? originalGetElementById(id) : null);
+
+// 3. Test open modal and datalist population
+global.window.openNewIntakeBatchModal();
+assert.strictEqual(mockDatalist.innerHTML.includes('ROYCO JEWELLERS'), true, 'FAIL: Datalist must include existing customers');
+assert.strictEqual(mockReqInput.value.length > 0, true, 'FAIL: Request number must be auto-generated');
+assert.strictEqual(mockDocketInput.value.startsWith('JOB-'), true, 'FAIL: Docket number must be auto-generated');
+
+// 4. Test customer selection auto-fills BIS
+global.window.handleNewBatchCustomerInput('ROYCO JEWELLERS (CHINSURAH)');
+assert.strictEqual(mockBisInput.value, '5439472', 'FAIL: Existing customer BIS must auto-populate');
+
+// 5. Test metal change updates purity options
+global.window.handleNewBatchMetalChange('Silver');
+assert.strictEqual(mockPuritySelect.innerHTML.includes('999'), true, 'FAIL: Silver purity options must be rendered');
+global.window.handleNewBatchMetalChange('Gold');
+assert.strictEqual(mockPuritySelect.innerHTML.includes('22K 916'), true, 'FAIL: Gold purity options must be rendered');
+
+// 6. Test registering a brand new customer name
+const brandNewCustomer = 'SHREE GANESH JEWELLERY WORKS';
+mockCustInput.value = brandNewCustomer;
+mockBisInput.value = 'BIS-WB-2026-9812';
+mockReqInput.value = 'REQ-2026-9881';
+mockDocketInput.value = 'JOB-2026-9911';
+mockPcsInput.value = '5';
+mockMetalSelect.value = 'Gold';
+mockPuritySelect.value = '22K 916';
+mockArticleInput.value = 'KADA & RINGS';
+mockGrossInput.value = '75.250';
+mockNetInput.value = '74.800';
+mockTrayInput.value = 'BOX-TR-99';
+
+const prevBatchesCount = global.state.intakeBatches.length;
+global.window.submitNewIntakeBatch();
+
+// Verify batch created and unshifted
+assert.strictEqual(global.state.intakeBatches.length, prevBatchesCount + 1, 'FAIL: Batch count must increase by 1');
+const createdBatch = global.state.intakeBatches[0];
+assert.strictEqual(createdBatch.jobDocket, 'JOB-2026-9911', 'FAIL: Created batch jobDocket mismatch');
+assert.strictEqual(createdBatch.customer, brandNewCustomer, 'FAIL: Created batch customer mismatch');
+assert.strictEqual(createdBatch.pcs, 5, 'FAIL: Created batch pcs mismatch');
+assert.strictEqual(createdBatch.netWt, 74.800, 'FAIL: Created batch netWt mismatch');
+assert.strictEqual(createdBatch.grossWt, 75.250, 'FAIL: Created batch grossWt mismatch');
+assert.strictEqual(createdBatch.assayCenterReceiveStatus, 'PENDING', 'FAIL: New batch must be PENDING intake');
+
+// Verify brand new customer was registered in state.customers
+const registeredCustomer = global.state.customers.find(c => c.name === brandNewCustomer);
+assert.strictEqual(!!registeredCustomer, true, 'FAIL: Brand new customer must be registered in state.customers');
+assert.strictEqual(registeredCustomer.bis, 'BIS-WB-2026-9812', 'FAIL: Registered customer BIS mismatch');
+
+// Verify activeAssayCenterReceiveBatch is immediately selected
+assert.strictEqual(global.activeAssayCenterReceiveBatch.jobDocket, 'JOB-2026-9911', 'FAIL: Created batch must be active in Step 1');
+
+// Verify 5 piece custody baseline slots initialized
+assert.strictEqual(Array.isArray(createdBatch.visualCustody), true, 'FAIL: visualCustody array must be present');
+assert.strictEqual(createdBatch.visualCustody.length, 5, 'FAIL: visualCustody must have 5 slots');
+assert.strictEqual(createdBatch.visualCustody[0].stageA.captured, false, 'FAIL: Piece 1 stageA must initially be uncaptured');
+
+// 7. Verify downstream workflow integration across all 6 steps:
+// Step 2 Receive Batch: batch exists in state.intakeBatches
+const step2Batch = global.state.intakeBatches.find(b => b.jobDocket === 'JOB-2026-9911');
+assert.strictEqual(!!step2Batch, true, 'FAIL: Created batch must be accessible in Step 2 Receive Batch');
+
+// Step 3 Tag Generation: batch is present with tagStatus PENDING
+assert.strictEqual(step2Batch.tagStatus, 'PENDING', 'FAIL: Created batch must be ready for Step 3 Tag Generation');
+
+// Step 4 Bill Generation: billNo generated
+assert.strictEqual(step2Batch.billNo.startsWith('BILL-'), true, 'FAIL: Created batch must have billNo for Step 4 Bill Generation');
+
+// Step 5 Delivery: deliveryStatus READY
+assert.strictEqual(step2Batch.deliveryStatus, 'READY', 'FAIL: Created batch must be ready for Step 5 Delivery');
+
+// Step 6 Delivery Assay: deliveryAssayStatus PENDING
+assert.strictEqual(step2Batch.deliveryAssayStatus, 'PENDING', 'FAIL: Created batch must be ready for Step 6 Delivery Assay');
+
+console.log('  ✓ Step 1 modal opens and populates dynamic customer autocomplete datalist.');
+console.log('  ✓ Auto-generated Request number and Job Docket number verified.');
+console.log('  ✓ Selecting existing customer auto-populates BIS license.');
+console.log(`  ✓ Registering new customer "${brandNewCustomer}" adds jeweller to state.customers.`);
+console.log('  ✓ New batch unshifted to state.intakeBatches and immediately selected for Stage 1 photo capture.');
+console.log('  ✓ All 5 piece visual custody baseline slots initialized in PENDING state.');
+console.log('  ✓ Downstream workflow availability verified across Steps 2, 3, 4, 5, and 6.');
 
 console.log('\n=== ALL 4-STAGE VISUAL CUSTODY CHAIN TESTS PASSED SUCCESSFULLY! ===');

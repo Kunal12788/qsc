@@ -644,6 +644,9 @@
     }
     if (route === 'receive') {
       renderVaultBoxes();
+      if (typeof renderIntakeBatchesTable === 'function') {
+        renderIntakeBatchesTable();
+      }
       if (state.selectedVaultBoxId) {
         const box = state.vaultBoxes.find(b => b.id === state.selectedVaultBoxId);
         if (box) renderVaultSlots(box);
@@ -7256,7 +7259,7 @@
     `;
 
     modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    if (typeof document !== 'undefined' && document.body) document.body.style.overflow = 'hidden';
 
     // Auto-focus confirm button
     setTimeout(() => {
@@ -7268,7 +7271,7 @@
   function closeIntakeConfirmationModal() {
     const modal = document.getElementById('intakeConfirmationModal');
     if (modal) modal.classList.add('hidden');
-    document.body.style.overflow = '';
+    if (typeof document !== 'undefined' && document.body) document.body.style.overflow = '';
     activeDraftBatch = null;
 
     // Refocus Save button
@@ -11512,6 +11515,7 @@
       selectAssayCenterReceiveBatch(activeAssayCenterReceiveBatch.jobDocket);
     }
     populateAssayCenterCameraDevices();
+    populateNewBatchCustomerDatalist();
   }
 
   function updateAssayCenterReceiveStats() {
@@ -12120,12 +12124,273 @@
     // Automatically suggest navigation to Center Image Receive
     if (typeof window !== 'undefined' && window.location && window.location.href) {
       setTimeout(() => {
-        try { if (typeof navigateTo === 'function') navigateTo('center_image_receive'); } catch (e) {}
+        try { if (typeof navigateTo === 'function') navigateTo('receive'); } catch (e) {}
       }, 1200);
     }
   }
 
+    // -------------------------------------------------------------------------
+  // STAGE 1 (USER A): NEW CUSTOMER INTAKE BATCH CONTROLLER
   // -------------------------------------------------------------------------
+
+  function openNewIntakeBatchModal() {
+    const modal = document.getElementById('modal-new-intake-batch');
+    if (!modal) return;
+
+    populateNewBatchCustomerDatalist();
+    regenerateNewBatchReqNo();
+    regenerateNewBatchDocketNo();
+
+    const trayInput = document.getElementById('new-batch-tray');
+    if (trayInput) {
+      const nextTray = (state.intakeBatches ? state.intakeBatches.length : 0) + 1;
+      trayInput.value = 'BOX-TR-' + String(nextTray).padStart(2, '0');
+    }
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    setTimeout(() => {
+      const custInput = document.getElementById('new-batch-customer-name');
+      if (custInput) custInput.focus();
+    }, 100);
+  }
+
+  function closeNewIntakeBatchModal() {
+    const modal = document.getElementById('modal-new-intake-batch');
+    if (modal) modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  function populateNewBatchCustomerDatalist() {
+    const datalist = document.getElementById('new-batch-customer-datalist');
+    if (!datalist) return;
+
+    const custNames = new Set();
+    if (Array.isArray(state.customers)) {
+      state.customers.forEach(c => { if (c.name) custNames.add(c.name); });
+    }
+    if (Array.isArray(state.intakeBatches)) {
+      state.intakeBatches.forEach(b => { if (b.customer) custNames.add(b.customer); });
+    }
+
+    datalist.innerHTML = Array.from(custNames)
+      .map(name => '<option value="' + escapeHtmlStr(name) + '"></option>')
+      .join('');
+  }
+
+  function regenerateNewBatchReqNo() {
+    const reqInput = document.getElementById('new-batch-req-no');
+    if (!reqInput) return;
+    const base = 119810000;
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    reqInput.value = String(base + rand);
+  }
+
+  function regenerateNewBatchDocketNo() {
+    const docketInput = document.getElementById('new-batch-job-docket');
+    if (!docketInput) return;
+    const year = new Date().getFullYear();
+    const count = (state.intakeBatches ? state.intakeBatches.length : 0) + 1;
+    const docketNum = 2370 + count;
+    docketInput.value = 'JOB-' + year + '-' + docketNum;
+  }
+
+  function handleNewBatchCustomerInput(val) {
+    if (!val) return;
+    const query = val.trim().toLowerCase();
+    let found = null;
+    if (Array.isArray(state.customers)) {
+      found = state.customers.find(c => c.name && c.name.toLowerCase() === query);
+    }
+    if (!found && Array.isArray(state.intakeBatches)) {
+      found = state.intakeBatches.find(b => b.customer && b.customer.toLowerCase() === query);
+    }
+    if (found && found.bis) {
+      const bisInput = document.getElementById('new-batch-bis-license');
+      if (bisInput) bisInput.value = found.bis;
+    }
+  }
+
+  function handleNewBatchMetalChange(metal) {
+    const puritySelect = document.getElementById('new-batch-purity');
+    if (!puritySelect) return;
+    if (metal === 'Silver') {
+      puritySelect.innerHTML = [
+        '<option value="999">999 (99.9% Fine Silver)</option>',
+        '<option value="925">925 (Sterling Silver)</option>',
+        '<option value="900">900 (Coin Silver)</option>'
+      ].join('');
+    } else {
+      puritySelect.innerHTML = [
+        '<option value="22K 916">22K 916 (91.6% Fine)</option>',
+        '<option value="24K 999">24K 999 (Pure Gold)</option>',
+        '<option value="18K 750">18K 750 (75.0% Fine)</option>',
+        '<option value="14K 585">14K 585 (58.5% Fine)</option>',
+        '<option value="9K 375">9K 375 (37.5% Gold)</option>'
+      ].join('');
+    }
+  }
+
+  function handleNewBatchGrossInput(val) {
+    const netInput = document.getElementById('new-batch-net-wt');
+    if (netInput && (!netInput.value || netInput.value === '50.000')) {
+      netInput.value = val;
+    }
+  }
+
+  function syncNewBatchNetWeight() {
+    const grossInput = document.getElementById('new-batch-gross-wt');
+    const netInput = document.getElementById('new-batch-net-wt');
+    if (grossInput && netInput) {
+      netInput.value = grossInput.value;
+    }
+  }
+
+  function submitNewIntakeBatch() {
+    const custInput = document.getElementById('new-batch-customer-name');
+    const bisInput = document.getElementById('new-batch-bis-license');
+    const reqInput = document.getElementById('new-batch-req-no');
+    const docketInput = document.getElementById('new-batch-job-docket');
+    const pcsInput = document.getElementById('new-batch-pcs');
+    const metalSelect = document.getElementById('new-batch-metal');
+    const puritySelect = document.getElementById('new-batch-purity');
+    const articleInput = document.getElementById('new-batch-article-type');
+    const grossInput = document.getElementById('new-batch-gross-wt');
+    const netInput = document.getElementById('new-batch-net-wt');
+    const trayInput = document.getElementById('new-batch-tray');
+    const depositorInput = document.getElementById('new-batch-depositor');
+    const receiverInput = document.getElementById('new-batch-receiver');
+
+    const customerName = custInput ? custInput.value.trim() : '';
+    if (!customerName) {
+      showToast('PLEASE ENTER CUSTOMER / JEWELLER NAME.', 'error');
+      if (custInput) custInput.focus();
+      return;
+    }
+
+    const pcs = pcsInput ? parseInt(pcsInput.value, 10) : 10;
+    if (isNaN(pcs) || pcs <= 0) {
+      showToast('TOTAL PIECES MUST BE AT LEAST 1.', 'error');
+      if (pcsInput) pcsInput.focus();
+      return;
+    }
+
+    const grossWt = grossInput ? parseFloat(grossInput.value) : 0;
+    const netWt = netInput ? parseFloat(netInput.value) : 0;
+    if (isNaN(grossWt) || grossWt <= 0 || isNaN(netWt) || netWt <= 0) {
+      showToast('PLEASE ENTER VALID GROSS AND NET WEIGHTS.', 'error');
+      return;
+    }
+
+    const jobDocket = docketInput ? docketInput.value.trim() : ('JOB-2026-' + Math.floor(1000 + Math.random() * 9000));
+    const bisLicense = bisInput ? bisInput.value.trim() : ('BIS-WB-' + Math.floor(1000 + Math.random() * 9000));
+    const reqNo = reqInput ? reqInput.value.trim() : ('REQ-' + Date.now().toString().slice(-6));
+    const metal = metalSelect ? metalSelect.value : 'Gold';
+    const purity = puritySelect ? puritySelect.value : '22K 916';
+    const articleType = articleInput ? articleInput.value.trim() : 'MIX ORNAMENTS';
+    const tray = trayInput ? trayInput.value.trim() : 'BOX-TR-01';
+    const depositor = depositorInput ? depositorInput.value.trim() : 'KOUSHIK GHOSH';
+    const receiver = receiverInput ? receiverInput.value.trim() : 'Sarah Jenkins';
+
+    // If customer is not in state.customers, register customer
+    if (Array.isArray(state.customers)) {
+      const exists = state.customers.some(c => c.name && c.name.toLowerCase() === customerName.toLowerCase());
+      if (!exists) {
+        state.customers.push({
+          id: 'CUST-' + (state.customers.length + 120),
+          name: customerName,
+          code: customerName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 6) || 'CUST',
+          address: 'Main Market, Local City',
+          area: 'Registered BIS Jeweller',
+          region: 'West Bengal',
+          mobile: '+91 98300 ' + Math.floor(10000 + Math.random() * 90000),
+          bis: bisLicense,
+          activeJobs: 1,
+          since: new Date().getFullYear().toString()
+        });
+      }
+    }
+
+    const nextSeq = 4194 + (state.intakeBatches ? state.intakeBatches.length : 0);
+    const newBatch = {
+      jobDocket: jobDocket,
+      receiptNo: 'REC-' + (11980 + (state.intakeBatches ? state.intakeBatches.length : 0)),
+      customer: customerName,
+      customerAddress: 'Registered BIS Jewellery Counter',
+      bis: bisLicense,
+      customerGst: '19AAACR' + Math.floor(1000 + Math.random() * 9000) + 'A1Z5',
+      customerStateCode: '19',
+      reqNo: reqNo,
+      metal: metal,
+      purity: purity,
+      articleType: articleType,
+      productBreakdown: ',' + articleType + '-' + pcs,
+      pcs: pcs,
+      netWt: netWt,
+      grossWt: grossWt,
+      rate: metal === 'Gold' ? 75.00 : 45.00,
+      stream: 'Main Branch',
+      tray: tray,
+      depositor: depositor,
+      receiver: receiver,
+      date: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' Today',
+      status: 'Intake Registered',
+      assayCenterReceiveStatus: 'PENDING',
+      centerImageReceiveStatus: 'PENDING',
+      deliveryAssayStatus: 'PENDING',
+      billNo: 'BILL-2026-' + String(nextSeq).padStart(5, '0'),
+      billPrinted: false,
+      disposition: {
+        rejected: 0,
+        destroyed: 0,
+        nonFeasible: 0,
+        irrucd: 0,
+        passed: pcs
+      },
+      tagStatus: 'PENDING',
+      tagData: [],
+      tagDimensions: { width: 84, height: 12, unit: 'mm', preset: 'rattail-84', layout: 'split' },
+      articlePhoto: null,
+      deliveryStatus: 'READY',
+      visualCustody: []
+    };
+
+    ensureBatchVisualCustody(newBatch);
+
+    if (!state.intakeBatches) state.intakeBatches = [];
+    state.intakeBatches.unshift(newBatch);
+
+    closeNewIntakeBatchModal();
+
+    activeAssayCenterReceiveBatch = newBatch;
+    window.activeAssayCenterReceiveBatch = newBatch;
+    updateAssayCenterReceiveStats();
+    renderAssayCenterReceiveQueue(true);
+    selectAssayCenterReceiveBatch(newBatch.jobDocket);
+
+    if (typeof renderIntakeBatchesTable === 'function') {
+      renderIntakeBatchesTable();
+    }
+    if (typeof renderTagStatusQueue === 'function') {
+      renderTagStatusQueue();
+    }
+    if (typeof renderBillQueue === 'function') {
+      renderBillQueue();
+    }
+    if (typeof renderDeliveryQueue === 'function') {
+      renderDeliveryQueue();
+    }
+    if (typeof renderDeliveryAssayQueue === 'function') {
+      renderDeliveryAssayQueue();
+    }
+
+    playAssaySound('save');
+    showToast('NEW BATCH ' + jobDocket + ' CREATED FOR ' + customerName + '! READY FOR PIECE 1 PHOTO.', 'success');
+  }
+
+// -------------------------------------------------------------------------
   // STAGE 2 (USER B): CENTER IMAGE RECEIVE CONTROLLER & AI MATCHER
   // -------------------------------------------------------------------------
 
@@ -13400,6 +13665,27 @@
   window.closeArticleTypeDropdown = closeArticleTypeDropdown;
   window.setArticleTypeActiveIndex = setArticleTypeActiveIndex;
   window.initArticleTypeAutocomplete = initArticleTypeAutocomplete;
+
+  // Stage 1 (User A) New Customer Intake Batch exports
+  window.openNewIntakeBatchModal = openNewIntakeBatchModal;
+  window.closeNewIntakeBatchModal = closeNewIntakeBatchModal;
+  window.populateNewBatchCustomerDatalist = populateNewBatchCustomerDatalist;
+  window.regenerateNewBatchReqNo = regenerateNewBatchReqNo;
+  window.regenerateNewBatchDocketNo = regenerateNewBatchDocketNo;
+  window.handleNewBatchCustomerInput = handleNewBatchCustomerInput;
+  window.handleNewBatchMetalChange = handleNewBatchMetalChange;
+  window.handleNewBatchGrossInput = handleNewBatchGrossInput;
+  window.syncNewBatchNetWeight = syncNewBatchNetWeight;
+  window.submitNewIntakeBatch = submitNewIntakeBatch;
+  try {
+    Object.defineProperty(window, 'activeAssayCenterReceiveBatch', {
+      get: () => activeAssayCenterReceiveBatch,
+      set: (v) => { activeAssayCenterReceiveBatch = v; },
+      configurable: true
+    });
+  } catch (e) {
+    window.activeAssayCenterReceiveBatch = activeAssayCenterReceiveBatch;
+  }
 
   // Stage 1 (User A) Visual Custody exports
   window.initAssayCenterReceiveView = initAssayCenterReceiveView;
