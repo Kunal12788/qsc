@@ -105,13 +105,13 @@ assert.strictEqual(
   'FAIL: Mobile drawer navigation must follow exact 6-step order: Assay Center Receive (Step 1) -> Receive Batch (Step 2) -> Tag Generation (Step 3) -> Bill Generation (Step 4) -> Delivery (Step 5) -> Delivery Assay Center (Step 6)'
 );
 
-// 3. Verify Route Numbering Badges (STEP 1 through STEP 6)
-assert.strictEqual(desktopNavHtml.includes('STEP 1') && mobileNavHtml.includes('STEP 1'), true, 'FAIL: STEP 1 badge missing in navigation');
-assert.strictEqual(desktopNavHtml.includes('STEP 2') && mobileNavHtml.includes('STEP 2'), true, 'FAIL: STEP 2 badge missing in navigation');
-assert.strictEqual(desktopNavHtml.includes('STEP 3') && mobileNavHtml.includes('STEP 3'), true, 'FAIL: STEP 3 badge missing in navigation');
-assert.strictEqual(desktopNavHtml.includes('STEP 4') && mobileNavHtml.includes('STEP 4'), true, 'FAIL: STEP 4 badge missing in navigation');
-assert.strictEqual(desktopNavHtml.includes('STEP 5') && mobileNavHtml.includes('STEP 5'), true, 'FAIL: STEP 5 badge missing in navigation');
-assert.strictEqual(desktopNavHtml.includes('STEP 6') && mobileNavHtml.includes('STEP 6'), true, 'FAIL: STEP 6 badge missing in navigation');
+// 3. Verify Sidebar Navigation is clean (STEP badges removed from sidebar per user request)
+assert.strictEqual(!desktopNavHtml.includes('STEP 1') && !mobileNavHtml.includes('STEP 1'), true, 'FAIL: STEP 1 badge should be removed from sidebar navigation');
+assert.strictEqual(!desktopNavHtml.includes('STEP 2') && !mobileNavHtml.includes('STEP 2'), true, 'FAIL: STEP 2 badge should be removed from sidebar navigation');
+assert.strictEqual(!desktopNavHtml.includes('STEP 3') && !mobileNavHtml.includes('STEP 3'), true, 'FAIL: STEP 3 badge should be removed from sidebar navigation');
+assert.strictEqual(!desktopNavHtml.includes('STEP 4') && !mobileNavHtml.includes('STEP 4'), true, 'FAIL: STEP 4 badge should be removed from sidebar navigation');
+assert.strictEqual(!desktopNavHtml.includes('STEP 5') && !mobileNavHtml.includes('STEP 5'), true, 'FAIL: STEP 5 badge should be removed from sidebar navigation');
+assert.strictEqual(!desktopNavHtml.includes('STEP 6') && !mobileNavHtml.includes('STEP 6'), true, 'FAIL: STEP 6 badge should be removed from sidebar navigation');
 
 // Verify Header Route Numbering Badges
 assert.strictEqual(indexHtml.includes('STEP 1: ASSAY CENTER RECEIVE'), true, 'FAIL: STEP 1 header badge missing');
