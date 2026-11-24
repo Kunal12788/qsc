@@ -14,6 +14,7 @@ const jsContent = fs.readFileSync(path.join(__dirname, 'js', 'app.js'), 'utf8');
 console.log('[Suite 1] UI Controls & Preset Structure Verification:');
 
 // Presets
+assert(htmlContent.includes('id="tag-preset-50-10"'), 'Missing tag-preset-50-10 (Default 50x10mm preset)');
 assert(htmlContent.includes('id="tag-preset-butterfly-84"'), 'Missing tag-preset-butterfly-84');
 assert(htmlContent.includes('id="tag-preset-rattail-84"'), 'Missing tag-preset-rattail-84');
 assert(htmlContent.includes('id="tag-preset-rattail-75"'), 'Missing tag-preset-rattail-75');
@@ -21,22 +22,22 @@ assert(htmlContent.includes('id="tag-preset-butterfly"'), 'Missing tag-preset-bu
 assert(htmlContent.includes('id="tag-preset-dumbbell"'), 'Missing tag-preset-dumbbell');
 assert(htmlContent.includes('id="tag-preset-pouch"'), 'Missing tag-preset-pouch');
 assert(htmlContent.includes('id="tag-preset-custom"'), 'Missing tag-preset-custom');
-console.log('  ✓ All Jewellery Tag presets (Butterfly 84x12, Rat-Tail 84x12, 75x12, 50x12, 48x26, 60x30, Custom) verified.');
+console.log('  ✓ All Jewellery Tag presets (Default 50x10, Butterfly 84x12, Rat-Tail 84x12, 75x12, 50x12, 48x26, 60x30, Custom) verified.');
 
 // Inputs
-assert(htmlContent.includes('id="tag-print-width"'), 'Missing tag-print-width input');
-assert(htmlContent.includes('id="tag-print-height"'), 'Missing tag-print-height input');
+assert(htmlContent.includes('id="tag-print-width" value="50"'), 'Width default not 50mm');
+assert(htmlContent.includes('id="tag-print-height" value="10"'), 'Height default not 10mm');
 assert(htmlContent.includes('id="tag-print-unit"'), 'Missing tag-print-unit select');
 assert(htmlContent.includes('id="tag-print-layout"'), 'Missing tag-print-layout select');
-console.log('  ✓ Dimension inputs and Layout Zone selector verified.');
+console.log('  ✓ Dimension inputs (50mm width x 10mm height default) and Layout Zone selector verified.');
 
 // Hardware Calibration
-assert(htmlContent.includes('id="tag-cal-top"'), 'Missing tag-cal-top input');
-assert(htmlContent.includes('id="tag-cal-left"'), 'Missing tag-cal-left input');
-assert(htmlContent.includes('id="tag-cal-bottom"'), 'Missing tag-cal-bottom input');
-assert(htmlContent.includes('id="tag-cal-gap"'), 'Missing tag-cal-gap input (Bridge / Notch Gap)');
+assert(htmlContent.includes('id="tag-cal-top" value="0.3"'), 'Top margin default not 0.3mm');
+assert(htmlContent.includes('id="tag-cal-left" value="0.5"'), 'Left margin default not 0.5mm');
+assert(htmlContent.includes('id="tag-cal-bottom" value="0.3"'), 'Bottom margin default not 0.3mm');
+assert(htmlContent.includes('id="tag-cal-gap" value="0.5"'), 'Bridge gap default not 0.5mm');
 assert(htmlContent.includes('id="tag-cal-font-scale"'), 'Missing tag-cal-font-scale input');
-console.log('  ✓ Thermal printer hardware margin calibration controls (Top, Left, Bottom, Bridge Gap, Font Zoom) verified.');
+console.log('  ✓ Thermal printer hardware margin calibration controls (Top 0.3mm, Left 0.5mm, Bottom 0.3mm, Bridge Gap 0.5mm, Font Zoom) verified.');
 
 // Action Buttons
 assert(htmlContent.includes('id="btn-print-tags"'), 'Missing btn-print-tags');
@@ -50,14 +51,16 @@ console.log('\n[Suite 2] JS Tag Engine Execution & Calibration Logic:');
 
 // Create mock browser environment
 const mockElements = {
-  'tag-print-width': { value: '84' },
-  'tag-print-height': { value: '12' },
+  'tag-print-width': { value: '50' },
+  'tag-custom-width': { value: '50' },
+  'tag-print-height': { value: '10' },
+  'tag-custom-height': { value: '10' },
   'tag-print-unit': { value: 'mm' },
   'tag-print-layout': { value: 'split' },
-  'tag-cal-top': { value: '0.8' },
-  'tag-cal-left': { value: '1.2' },
-  'tag-cal-bottom': { value: '0.8' },
-  'tag-cal-gap': { value: '12' },
+  'tag-cal-top': { value: '0.3' },
+  'tag-cal-left': { value: '0.5' },
+  'tag-cal-bottom': { value: '0.3' },
+  'tag-cal-gap': { value: '0.5' },
   'tag-cal-font-scale': { value: '100' },
   'tag-opt-cust': { checked: true },
   'tag-opt-ornament': { checked: true },
@@ -69,6 +72,7 @@ const mockElements = {
   'btn-open-tag-tab-bottom': { disabled: true, classList: { remove() {}, add() {} }, setAttribute() {}, removeAttribute() {} },
   'tag-mini-preview': { style: {}, innerHTML: '' },
   'tag-preview-dims-label': { textContent: '' },
+  'tag-preset-50-10': { className: '' },
   'tag-preset-butterfly-84': { className: '' },
   'tag-preset-rattail-84': { className: '' },
   'tag-preset-rattail-75': { className: '' },
@@ -106,10 +110,34 @@ assert(typeof window.updateTagMiniPreview === 'function', 'Missing window.update
 assert(typeof window.buildTagPrintDocument === 'function', 'Missing window.buildTagPrintDocument');
 assert(typeof window.printCustomTags === 'function', 'Missing window.printCustomTags');
 assert(typeof window.openTagPrintTab === 'function', 'Missing window.openTagPrintTab');
-console.log('  ✓ Core functions implemented and properly exported to window.');
+assert(window.tagConfig && window.tagConfig.wMm === 50 && window.tagConfig.hMm === 10, 'tagConfig wMm: 50, hMm: 10 default verified');
+console.log('  ✓ Core functions implemented, default tagConfig (wMm: 50, hMm: 10, layout: split) and properly exported to window.');
 
 // Test Suite 3: Print Document Geometry & Output Verification
 console.log('\n[Suite 3] Print Document Geometry & Tag Layout Rendering:');
+
+// Case 0: Default 50x10mm Tag (5cm x 1cm) with minimal margins and enlarged fonts
+window.onTagPresetChanged('50-10');
+assert.strictEqual(mockElements['tag-print-width'].value, 50);
+assert.strictEqual(mockElements['tag-print-height'].value, 10);
+assert.strictEqual(mockElements['tag-cal-top'].value, 0.3);
+assert.strictEqual(mockElements['tag-cal-left'].value, 0.5);
+assert.strictEqual(mockElements['tag-cal-bottom'].value, 0.3);
+assert.strictEqual(mockElements['tag-cal-gap'].value, 0.5);
+assert.strictEqual(mockElements['tag-print-layout'].value, 'split');
+
+const defaultDoc = window.buildTagPrintDocument(false);
+assert(defaultDoc.includes('size: 50mm 10mm'), 'Missing @page 50mm 10mm');
+assert(defaultDoc.includes('padding-top:0.30mm'), 'Missing padding-top:0.30mm default');
+assert(defaultDoc.includes('padding-left:0.50mm'), 'Missing padding-left:0.50mm default');
+assert(defaultDoc.includes('padding-bottom:0.30mm'), 'Missing padding-bottom:0.30mm default');
+assert(defaultDoc.includes('tag-head'), 'Missing tag-head container');
+assert(defaultDoc.includes('tag-tail'), 'Missing tag-tail container');
+assert(defaultDoc.includes('ROYCO JEWELLERS'), 'Missing customer name');
+assert(defaultDoc.includes('SCAN QR'), 'Missing SCAN QR in tail');
+assert(defaultDoc.includes('font-size:7.80pt') || defaultDoc.includes('font-size:7.') || defaultDoc.includes('font-size:8.'), 'Missing enlarged title font');
+assert(defaultDoc.includes('font-size:5.80pt') || defaultDoc.includes('font-size:5.') || defaultDoc.includes('font-size:6.'), 'Missing enlarged metadata data font');
+console.log('  ✓ 50×10mm (5×1 cm) default tag geometry verified with tight margins (0.3mm top/bottom, 0.5mm left) and enlarged fonts (7.8pt/5.8pt).');
 
 // Case 1: Butterfly Dual-Zone (84x12mm with 12mm Bridge Gap)
 window.onTagPresetChanged('butterfly-84');

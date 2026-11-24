@@ -2611,11 +2611,16 @@
               <div class="lg:col-span-8 space-y-4">
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-2 uppercase">SELECT JEWELLERY TAG PRESET OR CUSTOM SIZING</label>
-                  <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 text-xs">
-                    <button type="button" onclick="onTagPresetChanged('butterfly-84')" id="tag-preset-butterfly-84" class="tag-preset-btn p-2.5 rounded-xl border-2 border-primary-container bg-primary-container/10 text-left font-bold text-slate-800 transition-all cursor-pointer shadow-xs">
-                      <div class="text-[11px] font-extrabold uppercase text-amber-900">BUTTERFLY (84×12)</div>
-                      <div class="text-[10px] text-slate-600 font-mono mt-0.5 font-bold">84 × 12 mm</div>
-                      <div class="text-[9px] text-amber-700 font-medium mt-0.5">Head + Tail + Gap ⭐</div>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-xs">
+                    <button type="button" onclick="onTagPresetChanged('50-10')" id="tag-preset-50-10" class="tag-preset-btn p-2.5 rounded-xl border-2 border-primary-container bg-primary-container/10 text-left font-bold text-slate-800 transition-all cursor-pointer shadow-xs">
+                      <div class="text-[11px] font-extrabold uppercase text-amber-900">JEWELLERY TAG (50×10) ⭐</div>
+                      <div class="text-[10px] text-slate-600 font-mono mt-0.5 font-bold">50 × 10 mm (5×1 cm)</div>
+                      <div class="text-[9px] text-amber-700 font-medium mt-0.5">Default • Split Tag</div>
+                    </button>
+                    <button type="button" onclick="onTagPresetChanged('butterfly-84')" id="tag-preset-butterfly-84" class="tag-preset-btn p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 text-left font-bold text-slate-700 transition-all cursor-pointer">
+                      <div class="text-[11px] font-extrabold uppercase">BUTTERFLY (84×12)</div>
+                      <div class="text-[10px] text-slate-500 font-mono mt-0.5">84 × 12 mm</div>
+                      <div class="text-[9px] text-slate-500 font-normal mt-0.5">Head + Tail + Gap</div>
                     </button>
                     <button type="button" onclick="onTagPresetChanged('rattail-84')" id="tag-preset-rattail-84" class="tag-preset-btn p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 text-left font-bold text-slate-700 transition-all cursor-pointer">
                       <div class="text-[11px] font-extrabold uppercase">RAT-TAIL (84×12)</div>
@@ -2655,14 +2660,16 @@
                   <div>
                     <label class="block text-[11px] font-bold text-slate-700 mb-1 uppercase" for="tag-print-width">WIDTH</label>
                     <div class="relative flex items-center">
-                      <input type="number" id="tag-print-width" value="84" step="any" min="10" max="250" oninput="onTagDimensionInput()" class="w-full h-9 px-3 pr-10 bg-white rounded-lg text-xs font-mono font-bold text-slate-900 border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      <input type="number" id="tag-print-width" value="50" step="any" min="10" max="250" oninput="onTagDimensionInput()" class="w-full h-9 px-3 pr-10 bg-white rounded-lg text-xs font-mono font-bold text-slate-900 border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      <input type="hidden" id="tag-custom-width" value="50"/>
                       <span class="absolute right-3 text-xs text-slate-400 font-bold tag-unit-label">mm</span>
                     </div>
                   </div>
                   <div>
                     <label class="block text-[11px] font-bold text-slate-700 mb-1 uppercase" for="tag-print-height">HEIGHT</label>
                     <div class="relative flex items-center">
-                      <input type="number" id="tag-print-height" value="12" step="any" min="5" max="250" oninput="onTagDimensionInput()" class="w-full h-9 px-3 pr-10 bg-white rounded-lg text-xs font-mono font-bold text-slate-900 border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      <input type="number" id="tag-print-height" value="10" step="any" min="5" max="250" oninput="onTagDimensionInput()" class="w-full h-9 px-3 pr-10 bg-white rounded-lg text-xs font-mono font-bold text-slate-900 border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      <input type="hidden" id="tag-custom-height" value="10"/>
                       <span class="absolute right-3 text-xs text-slate-400 font-bold tag-unit-label">mm</span>
                     </div>
                   </div>
@@ -2694,22 +2701,22 @@
                   <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
                     <div>
                       <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-cal-top">TOP OFFSET (MM)</label>
-                      <input type="number" id="tag-cal-top" value="0.8" step="0.1" min="0" max="6" oninput="updateTagMiniPreview()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      <input type="number" id="tag-cal-top" value="0.3" step="0.1" min="0" max="6" oninput="updateTagMiniPreview()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
                       <span class="text-[9px] text-slate-400">Pushes top text down</span>
                     </div>
                     <div>
                       <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-cal-left">LEFT OFFSET (MM)</label>
-                      <input type="number" id="tag-cal-left" value="1.2" step="0.1" min="0" max="8" oninput="updateTagMiniPreview()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      <input type="number" id="tag-cal-left" value="0.5" step="0.1" min="0" max="8" oninput="updateTagMiniPreview()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
                       <span class="text-[9px] text-slate-400">Hardware left margin</span>
                     </div>
                     <div>
                       <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-cal-bottom">BOTTOM MARGIN (MM)</label>
-                      <input type="number" id="tag-cal-bottom" value="0.8" step="0.1" min="0" max="6" oninput="updateTagMiniPreview()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      <input type="number" id="tag-cal-bottom" value="0.3" step="0.1" min="0" max="6" oninput="updateTagMiniPreview()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
                       <span class="text-[9px] text-slate-400">Protects HUID row</span>
                     </div>
                     <div>
                       <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-cal-gap">BRIDGE GAP (MM)</label>
-                      <input type="number" id="tag-cal-gap" value="12" step="0.5" min="0" max="30" oninput="updateTagMiniPreview()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      <input type="number" id="tag-cal-gap" value="0.5" step="0.5" min="0" max="30" oninput="updateTagMiniPreview()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
                       <span class="text-[9px] text-slate-400">Die-cut notch space</span>
                     </div>
                     <div>
@@ -2746,7 +2753,7 @@
                 <div>
                   <div class="flex items-center justify-between text-xs font-bold text-slate-700 pb-2 mb-2 border-b border-slate-200">
                     <span class="uppercase">LIVE DIMENSION PREVIEW</span>
-                    <span id="tag-preview-dims-label" class="text-primary-container font-mono text-[11px]">84 × 12 mm</span>
+                    <span id="tag-preview-dims-label" class="text-primary-container font-mono text-[11px]">50 × 10 mm</span>
                   </div>
 
                   <!-- Scaled Tag Sample -->
