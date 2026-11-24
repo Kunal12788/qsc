@@ -1779,10 +1779,9 @@
     renderTagStatusQueue();
     selectTagBatch(activeTagBatch.jobDocket);
 
-    // Ensure 50x10mm default preset is active on tag view load
+    // Ensure 50x10mm default preset is active on tag view load if not already customized
     if (typeof onTagPresetChanged === 'function') {
-      const widthEl = document.getElementById('tag-print-width') || document.getElementById('tag-custom-width');
-      if (!widthEl || widthEl.value === '84' || widthEl.value === '50' || !widthEl.value) {
+      if (!tagConfig || !tagConfig.preset || tagConfig.preset === '50-10') {
         onTagPresetChanged('50-10');
       }
     }
@@ -2539,10 +2538,12 @@
 
   // --- CUSTOM TAG PRINT SIZING ENGINE ---
   function onTagPresetChanged(preset) {
-    const widthInput = document.getElementById('tag-print-width') || document.getElementById('tag-custom-width') || document.getElementById('tag-cfg-width');
-    const heightInput = document.getElementById('tag-print-height') || document.getElementById('tag-custom-height') || document.getElementById('tag-cfg-height');
     const customWidthInput = document.getElementById('tag-custom-width');
     const customHeightInput = document.getElementById('tag-custom-height');
+    const printWidthInput = document.getElementById('tag-print-width');
+    const printHeightInput = document.getElementById('tag-print-height');
+    const widthInput = customWidthInput || printWidthInput || document.getElementById('tag-cfg-width');
+    const heightInput = customHeightInput || printHeightInput || document.getElementById('tag-cfg-height');
     const unitSelect = document.getElementById('tag-print-unit') || document.getElementById('tag-cfg-unit');
     const layoutSelect = document.getElementById('tag-print-layout');
     const topCal = document.getElementById('tag-cal-top');
@@ -2556,9 +2557,20 @@
     if (unitSelect) unitSelect.value = 'mm';
     document.querySelectorAll('.tag-unit-label').forEach(el => { el.textContent = 'mm'; });
 
+    const setWidthVal = (val) => {
+      if (widthInput) widthInput.value = val;
+      if (customWidthInput) customWidthInput.value = val;
+      if (printWidthInput) printWidthInput.value = val;
+    };
+    const setHeightVal = (val) => {
+      if (heightInput) heightInput.value = val;
+      if (customHeightInput) customHeightInput.value = val;
+      if (printHeightInput) printHeightInput.value = val;
+    };
+
     if (preset === '50-10' || preset === '50x10' || preset === '50x10mm' || preset === 'default') {
-      widthInput.value = 50;
-      heightInput.value = 10;
+      setWidthVal(50);
+      setHeightVal(10);
       if (layoutSelect) layoutSelect.value = 'split';
       if (topCal) topCal.value = 0.3;
       if (leftCal) leftCal.value = 0.5;
@@ -2575,8 +2587,8 @@
       tagConfig.fontScale = 100;
       tagConfig.preset = '50-10';
     } else if (preset === 'butterfly-84') {
-      widthInput.value = 84;
-      heightInput.value = 12;
+      setWidthVal(84);
+      setHeightVal(12);
       if (layoutSelect) layoutSelect.value = 'split';
       if (topCal) topCal.value = 0.8;
       if (leftCal) leftCal.value = 1.2;
@@ -2592,8 +2604,8 @@
       tagConfig.bridgeGap = 12;
       tagConfig.preset = 'butterfly-84';
     } else if (preset === 'rattail-84') {
-      widthInput.value = 84;
-      heightInput.value = 12;
+      setWidthVal(84);
+      setHeightVal(12);
       if (layoutSelect) layoutSelect.value = 'split';
       if (topCal) topCal.value = 0.8;
       if (leftCal) leftCal.value = 1.2;
@@ -2609,8 +2621,8 @@
       tagConfig.bridgeGap = 0;
       tagConfig.preset = 'rattail-84';
     } else if (preset === 'butterfly-75') {
-      widthInput.value = 75;
-      heightInput.value = 12;
+      setWidthVal(75);
+      setHeightVal(12);
       if (layoutSelect) layoutSelect.value = 'split';
       if (topCal) topCal.value = 0.8;
       if (leftCal) leftCal.value = 1.2;
@@ -2626,8 +2638,8 @@
       tagConfig.bridgeGap = 11;
       tagConfig.preset = 'butterfly-75';
     } else if (preset === 'rattail-75') {
-      widthInput.value = 75;
-      heightInput.value = 12;
+      setWidthVal(75);
+      setHeightVal(12);
       if (layoutSelect) layoutSelect.value = 'split';
       if (topCal) topCal.value = 0.8;
       if (leftCal) leftCal.value = 1.2;
@@ -2643,8 +2655,8 @@
       tagConfig.bridgeGap = 0;
       tagConfig.preset = 'rattail-75';
     } else if (preset === 'butterfly') {
-      widthInput.value = 50;
-      heightInput.value = 12;
+      setWidthVal(50);
+      setHeightVal(12);
       if (layoutSelect) layoutSelect.value = 'compact';
       if (topCal) topCal.value = 0.8;
       if (leftCal) leftCal.value = 1.2;
@@ -2660,8 +2672,8 @@
       tagConfig.bridgeGap = 0;
       tagConfig.preset = 'butterfly';
     } else if (preset === 'dumbbell') {
-      widthInput.value = 48;
-      heightInput.value = 26;
+      setWidthVal(48);
+      setHeightVal(26);
       if (layoutSelect) layoutSelect.value = 'split';
       if (topCal) topCal.value = 1.0;
       if (leftCal) leftCal.value = 1.5;
@@ -2677,8 +2689,8 @@
       tagConfig.bridgeGap = 8;
       tagConfig.preset = 'dumbbell';
     } else if (preset === 'pouch') {
-      widthInput.value = 60;
-      heightInput.value = 30;
+      setWidthVal(60);
+      setHeightVal(30);
       if (layoutSelect) layoutSelect.value = 'compact';
       if (topCal) topCal.value = 1.5;
       if (leftCal) leftCal.value = 2.0;
@@ -2700,8 +2712,18 @@
       tagConfig.preset = 'custom';
     }
 
-    if (customWidthInput) customWidthInput.value = widthInput.value;
-    if (customHeightInput) customHeightInput.value = heightInput.value;
+    if (customWidthInput && printWidthInput) {
+      if (customWidthInput.value !== printWidthInput.value) {
+        customWidthInput.value = widthInput.value;
+        printWidthInput.value = widthInput.value;
+      }
+    }
+    if (customHeightInput && printHeightInput) {
+      if (customHeightInput.value !== printHeightInput.value) {
+        customHeightInput.value = heightInput.value;
+        printHeightInput.value = heightInput.value;
+      }
+    }
 
     const normalizedPreset = (preset === '50x10' || preset === '50x10mm' || preset === 'default') ? '50-10' : preset;
     ['50-10', 'butterfly-84', 'rattail-84', 'butterfly-75', 'rattail-75', 'butterfly', 'dumbbell', 'pouch', 'custom'].forEach(p => {
@@ -2718,16 +2740,57 @@
     updateTagMiniPreview();
   }
 
-  function onTagDimensionInput() {
-    const widthInput = document.getElementById('tag-print-width') || document.getElementById('tag-custom-width') || document.getElementById('tag-cfg-width');
-    const heightInput = document.getElementById('tag-print-height') || document.getElementById('tag-custom-height') || document.getElementById('tag-cfg-height');
+  function onTagDimensionInput(e) {
     const customWidthInput = document.getElementById('tag-custom-width');
     const customHeightInput = document.getElementById('tag-custom-height');
-    if (widthInput && customWidthInput && widthInput !== customWidthInput) customWidthInput.value = widthInput.value;
-    if (heightInput && customHeightInput && heightInput !== customHeightInput) customHeightInput.value = heightInput.value;
+    const printWidthInput = document.getElementById('tag-print-width');
+    const printHeightInput = document.getElementById('tag-print-height');
 
-    const w = parseFloat(widthInput?.value || 50);
-    const h = parseFloat(heightInput?.value || 10);
+    let w = 50;
+    let h = 10;
+
+    if (e && e.target) {
+      if (e.target === customWidthInput || e.target.id === 'tag-custom-width') {
+        w = parseFloat(customWidthInput.value) || 50;
+        if (printWidthInput) printWidthInput.value = customWidthInput.value;
+      } else if (e.target === printWidthInput || e.target.id === 'tag-print-width') {
+        w = parseFloat(printWidthInput.value) || 50;
+        if (customWidthInput) customWidthInput.value = printWidthInput.value;
+      }
+      if (e.target === customHeightInput || e.target.id === 'tag-custom-height') {
+        h = parseFloat(customHeightInput.value) || 10;
+        if (printHeightInput) printHeightInput.value = customHeightInput.value;
+      } else if (e.target === printHeightInput || e.target.id === 'tag-print-height') {
+        h = parseFloat(printHeightInput.value) || 10;
+        if (customHeightInput) customHeightInput.value = printHeightInput.value;
+      }
+    } else {
+      const wEl = customWidthInput || printWidthInput;
+      const hEl = customHeightInput || printHeightInput;
+      w = parseFloat(wEl?.value || 50);
+      h = parseFloat(hEl?.value || 10);
+      if (customWidthInput && printWidthInput) {
+        if (typeof document !== 'undefined' && document.activeElement === customWidthInput) {
+          printWidthInput.value = customWidthInput.value;
+        } else if (typeof document !== 'undefined' && document.activeElement === printWidthInput) {
+          customWidthInput.value = printWidthInput.value;
+        } else {
+          customWidthInput.value = String(w);
+          printWidthInput.value = String(w);
+        }
+      }
+      if (customHeightInput && printHeightInput) {
+        if (typeof document !== 'undefined' && document.activeElement === customHeightInput) {
+          printHeightInput.value = customHeightInput.value;
+        } else if (typeof document !== 'undefined' && document.activeElement === printHeightInput) {
+          customHeightInput.value = printHeightInput.value;
+        } else {
+          customHeightInput.value = String(h);
+          printHeightInput.value = String(h);
+        }
+      }
+    }
+
     if (w === 50 && h === 10) {
       onTagPresetChanged('50-10');
     } else {
@@ -2884,9 +2947,10 @@
               <div style="display: flex; justify-content: space-between; align-items: baseline; overflow: hidden; white-space: nowrap;">
                 <span class="truncate">GW: ${escapeHtmlStr(grossVal)}</span>
                 <span class="text-right truncate pl-1">NW: ${escapeHtmlStr(netVal)}</span>
+                ${optHuid ? `<span class="text-right truncate pl-1 font-black" style="font-weight: 900;">HUID: ${escapeHtmlStr(huidVal)}</span>` : ''}
               </div>
             ` : ''}
-            ${optHuid ? `<div class="truncate font-black" style="font-weight: 900;">HUID: ${escapeHtmlStr(huidVal)}</div>` : ''}
+            ${(optHuid && !optOrnament) ? `<div class="truncate font-black" style="font-weight: 900;">HUID: ${escapeHtmlStr(huidVal)}</div>` : ''}
           </div>
         </div>
 
@@ -3005,8 +3069,12 @@
 
   // --- COMPREHENSIVE TAG PRINT DOCUMENT BUILDER ---
   function buildTagPrintDocument(forNewTab = false) {
-    const widthInput = document.getElementById('tag-print-width') || document.getElementById('tag-custom-width') || document.getElementById('tag-cfg-width');
-    const heightInput = document.getElementById('tag-print-height') || document.getElementById('tag-custom-height') || document.getElementById('tag-cfg-height');
+    const customWidthInput = document.getElementById('tag-custom-width');
+    const customHeightInput = document.getElementById('tag-custom-height');
+    const printWidthInput = document.getElementById('tag-print-width');
+    const printHeightInput = document.getElementById('tag-print-height');
+    const widthInput = customWidthInput || printWidthInput || document.getElementById('tag-cfg-width');
+    const heightInput = customHeightInput || printHeightInput || document.getElementById('tag-cfg-height');
     const width = parseFloat(widthInput?.value || tagConfig.wMm || 50);
     const height = parseFloat(heightInput?.value || tagConfig.hMm || 10);
     const unit = (document.getElementById('tag-print-unit') || document.getElementById('tag-cfg-unit'))?.value || 'mm';
@@ -3090,17 +3158,17 @@
         const baseDataPt = (usableH <= 10.5) ? 5.8 : Math.min(6.5, (usableH / 12.0) * 6.0);
         const titlePt = (baseTitlePt * fontScaleFactor).toFixed(2);
         const dataPt = (baseDataPt * fontScaleFactor).toFixed(2);
-        const dividerPt = (Math.max(2.8, baseDataPt * 0.85 * fontScaleFactor)).toFixed(2);
-        const dividerMarginMm = '0.08mm';
+        const dividerPt = (usableH <= 10.5) ? '2.60' : (Math.max(2.8, baseDataPt * 0.85 * fontScaleFactor)).toFixed(2);
+        const dividerMarginMm = (usableH <= 10.5) ? '0.04mm' : '0.08mm';
 
         // Tail QR sizing: dynamically scale to fill 10mm height with bold HUID underneath
-        const qrHeaderPt = (Math.max(2.8, Math.min(4.2, usableH * 0.32)) * fontScaleFactor).toFixed(1);
-        const qrFooterPt = (Math.max(4.8, Math.min(6.2, usableH * 0.50)) * fontScaleFactor).toFixed(1);
+        const qrHeaderPt = (usableH <= 10.5) ? '2.4' : (Math.max(2.8, Math.min(4.2, usableH * 0.32)) * fontScaleFactor).toFixed(1);
+        const qrFooterPt = (usableH <= 10.5) ? '4.8' : (Math.max(4.8, Math.min(6.2, usableH * 0.50)) * fontScaleFactor).toFixed(1);
         const headerHMm = parseFloat(qrHeaderPt) * 0.3527 * 1.02;
         const footerHMm = parseFloat(qrFooterPt) * 0.3527 * 1.02;
-        const qrGapMm = 0.12;
+        const qrGapMm = (usableH <= 10.5) ? 0.06 : 0.12;
         const maxQrDim = usableH - headerHMm - footerHMm - (qrGapMm * 2);
-        const qrBoxDimMm = Math.max(5.5, Math.min(maxQrDim, tailWMm - 1.2, 9.2)).toFixed(2);
+        const qrBoxDimMm = Math.max(5.5, Math.min(maxQrDim, tailWMm - 1.0, 9.2)).toFixed(2);
         const qrPixelDim = Math.max(28, Math.round(parseFloat(qrBoxDimMm) * 3.78));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
@@ -3128,7 +3196,7 @@
               ` : ''}
 
               <!-- Structured Metadata Rows -->
-              <div style="display:flex; flex-direction:column; justify-content:space-between; flex:1; min-height:0; font-size:${dataPt}pt; font-weight:800; line-height:1.08; overflow:hidden;">
+              <div style="display:flex; flex-direction:column; justify-content:space-between; flex:1; min-height:0; font-size:${dataPt}pt; font-weight:800; line-height:1.06; overflow:hidden;">
                 ${incCust ? `
                   <div style="display:flex; justify-content:space-between; align-items:baseline; white-space:nowrap; overflow:hidden;">
                     <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">DATE: ${escapeHtmlStr(dateStr)}</span>
@@ -3143,9 +3211,12 @@
                   <div style="display:flex; justify-content:space-between; align-items:baseline; white-space:nowrap; overflow:hidden;">
                     <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">GW: ${escapeHtmlStr(grossVal)}</span>
                     <span style="white-space:nowrap; flex-shrink:0; padding-left:0.6mm; text-align:right;">NW: ${escapeHtmlStr(netVal)}</span>
+                    ${(incHuid && usableH <= 10.5) ? `
+                      <span style="white-space:nowrap; flex-shrink:0; padding-left:0.8mm; font-weight:900; text-align:right;">HUID: ${escapeHtmlStr(huidStr)}</span>
+                    ` : ''}
                   </div>
                 ` : ''}
-                ${incHuid ? `
+                ${(incHuid && (!incOrnament || usableH > 10.5)) ? `
                   <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:900;">
                     HUID NUMBER: ${escapeHtmlStr(huidStr)}
                   </div>

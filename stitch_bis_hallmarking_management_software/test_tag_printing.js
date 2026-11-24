@@ -25,6 +25,8 @@ assert(htmlContent.includes('id="tag-preset-custom"'), 'Missing tag-preset-custo
 console.log('  ✓ All Jewellery Tag presets (Default 50x10, Butterfly 84x12, Rat-Tail 84x12, 75x12, 50x12, 48x26, 60x30, Custom) verified.');
 
 // Inputs
+assert(htmlContent.includes('id="tag-custom-width" value="50"'), 'Width custom input default not 50mm');
+assert(htmlContent.includes('id="tag-custom-height" value="10"'), 'Height custom input default not 10mm');
 assert(htmlContent.includes('id="tag-print-width" value="50"'), 'Width default not 50mm');
 assert(htmlContent.includes('id="tag-print-height" value="10"'), 'Height default not 10mm');
 assert(htmlContent.includes('id="tag-print-unit"'), 'Missing tag-print-unit select');
@@ -119,7 +121,9 @@ console.log('\n[Suite 3] Print Document Geometry & Tag Layout Rendering:');
 // Case 0: Default 50x10mm Tag (5cm x 1cm) with minimal margins and enlarged fonts
 window.onTagPresetChanged('50-10');
 assert.strictEqual(mockElements['tag-print-width'].value, 50);
+assert.strictEqual(mockElements['tag-custom-width'].value, 50);
 assert.strictEqual(mockElements['tag-print-height'].value, 10);
+assert.strictEqual(mockElements['tag-custom-height'].value, 10);
 assert.strictEqual(mockElements['tag-cal-top'].value, 0.3);
 assert.strictEqual(mockElements['tag-cal-left'].value, 0.5);
 assert.strictEqual(mockElements['tag-cal-bottom'].value, 0.3);
@@ -188,5 +192,26 @@ assert(calDoc.includes('padding-left:2.00mm'), 'Missing padding-left:2.00mm');
 assert(calDoc.includes('padding-bottom:1.00mm'), 'Missing padding-bottom:1.00mm');
 assert(calDoc.includes('width:14mm'), 'Missing bridge width:14mm');
 console.log('  ✓ Hardware margin offsets (Top 1.2mm, Left 2.0mm, Bottom 1.0mm, Gap 14mm) applied with precision.');
+
+// Case 5: Custom Dimension Input & Bidirectional Synchronization
+mockElements['tag-custom-width'].value = '65';
+window.onTagDimensionInput({ target: mockElements['tag-custom-width'] });
+assert.strictEqual(mockElements['tag-print-width'].value, '65');
+assert.strictEqual(window.tagConfig.wMm, 65);
+assert.strictEqual(window.tagConfig.preset, 'custom');
+
+mockElements['tag-print-height'].value = '15';
+window.onTagDimensionInput({ target: mockElements['tag-print-height'] });
+assert.strictEqual(mockElements['tag-custom-height'].value, '15');
+assert.strictEqual(window.tagConfig.hMm, 15);
+
+// Reset back to 50x10 default
+mockElements['tag-custom-width'].value = '50';
+mockElements['tag-custom-height'].value = '10';
+window.onTagDimensionInput({ target: mockElements['tag-custom-width'] });
+assert.strictEqual(window.tagConfig.wMm, 50);
+assert.strictEqual(window.tagConfig.hMm, 10);
+assert.strictEqual(window.tagConfig.preset, '50-10');
+console.log('  ✓ Bidirectional dimension synchronization and auto-preset toggling verified.');
 
 console.log('\n=== ALL JEWELLERY TAG PRINTING & CALIBRATION TESTS PASSED SUCCESSFULLY! ===');
