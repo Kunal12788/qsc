@@ -2346,6 +2346,8 @@
     const cleanCust = defaultCustomer.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
     const cleanPurityCode = (activeTagBatch ? activeTagBatch.purity : '916').replace(/[^0-9]/g, '').slice(0, 3) || '916';
 
+    let colMap = null;
+
     for (let i = 0; i < sheet.length; i++) {
       const r = sheet[i];
       if (!r || !r.length) continue;
@@ -2353,14 +2355,26 @@
       const hasData = r.some(cell => cell !== undefined && cell !== null && String(cell).trim() !== '');
       if (!hasData) continue;
 
-      const isHeader = r.some(c => /^(sl\.?\s*no|s\s*no\.?|huid|item|desc|category|pieces?|pcs|no\s*of\s*unit|gross|net|purity|karat|barcode|box|weight)/i.test(String(c).trim()));
+      const isHeader = r.some(c => /^(sl\.?\s*no|s\.?\s*no\.?|huid|item|desc|category|pieces?|pcs|no\.?\s*of\s*unit|tag\s*id|tag\s*no|gross|net|purity|karat|barcode|box|weight)/i.test(String(c).trim()));
       if (rows.length === 0 && isHeader && !r.some(c => /^HUID-|^JOB-|^GP-|^REQ-/i.test(String(c).trim()))) {
+        // Detect explicit column mapping from header row
+        colMap = {};
+        r.forEach((cellVal, idx) => {
+          const h = String(cellVal || '').trim().toLowerCase();
+          if (/^(sl\.?\s*no|s\.?\s*no\.?)$/.test(h)) colMap.slNo = idx;
+          else if (/item\s*category|ornament|desc/.test(h)) colMap.category = idx;
+          else if (/no\.?\s*of\s*unit|pcs|unit|qty/.test(h)) colMap.pcs = idx;
+          else if (/huid/.test(h)) colMap.huid = idx;
+          else if (/tag\s*id|tag\s*no|tag\s*number/.test(h)) colMap.tagId = idx;
+          else if (/weight/.test(h)) colMap.weight = idx;
+        });
         continue;
       }
 
       const rowIdx = rows.length + 1;
       const padNum = String(rowIdx).padStart(3, '0');
       const cells = r.map(c => (c !== undefined && c !== null) ? String(c).trim() : '');
+      const nonEmptyCells = cells.filter(c => c !== '');
 
       let slNo = rowIdx;
       let customer = defaultCustomer;
@@ -2371,11 +2385,54 @@
       let grossWt = '0.000';
       let netWt = '0.000';
       let huid = '';
+      let tagNo = '';
       let boxNo = defaultBox;
       let purity = defaultPurity;
       let barcode = '';
 
       const matched = new Set();
+
+      // Exact Structured Column Mapping if Header Map exists or matches 5/6-column BIS format
+      if (colMap && (colMap.huid !== undefined || colMap.category !== undefined || colMap.weight !== undefined)) {
+        if (colMap.slNo !== undefined && cells[colMap.slNo]) { slNo = parseInt(cells[colMap.slNo], 10) || rowIdx; matched.add(colMap.slNo); }
+        if (colMap.category !== undefined && cells[colMap.category]) { ornamentsType = cells[colMap.category].toUpperCase(); matched.add(colMap.category); }
+        if (colMap.pcs !== undefined && cells[colMap.pcs]) { pcs = parseInt(cells[colMap.pcs], 10) || 1; matched.add(colMap.pcs); }
+        if (colMap.huid !== undefined && cells[colMap.huid]) { huid = cells[colMap.huid].toUpperCase(); matched.add(colMap.huid); }
+        if (colMap.tagId !== undefined && cells[colMap.tagId]) { tagNo = cells[colMap.tagId].toUpperCase(); matched.add(colMap.tagId); }
+        if (colMap.weight !== undefined && cells[colMap.weight]) {
+          const wNum = parseFloat(cells[colMap.weight]);
+          if (!isNaN(wNum)) {
+            weight = wNum.toFixed(3);
+            grossWt = weight;
+            netWt = weight;
+            matched.add(colMap.weight);
+          }
+        }
+      } else if (nonEmptyCells.length === 6 && /^\d+$/.test(nonEmptyCells[0]) && /^\d+$/.test(nonEmptyCells[2]) && /^\d+(\.\d{1,4})?$/.test(nonEmptyCells[5])) {
+        // Auto-detect 6-column format without headers: S No | Item Category | No Of Unit | HUID | Tag Id | Weight of Article(Gms)
+        slNo = parseInt(nonEmptyCells[0], 10);
+        ornamentsType = nonEmptyCells[1].toUpperCase();
+        pcs = parseInt(nonEmptyCells[2], 10) || 1;
+        huid = nonEmptyCells[3].toUpperCase();
+        tagNo = nonEmptyCells[4].toUpperCase();
+        const wNum = parseFloat(nonEmptyCells[5]);
+        weight = wNum.toFixed(3);
+        grossWt = weight;
+        netWt = weight;
+        for (let k = 0; k < 6; k++) matched.add(k);
+      } else if (nonEmptyCells.length === 5 && /^\d+$/.test(nonEmptyCells[0]) && /^\d+$/.test(nonEmptyCells[2]) && /^\d+(\.\d{1,4})?$/.test(nonEmptyCells[4])) {
+        // Auto-detect 5-column format without headers: S No | Item Category | No Of Unit | HUID | Weight of Article(Gms)
+        slNo = parseInt(nonEmptyCells[0], 10);
+        ornamentsType = nonEmptyCells[1].toUpperCase();
+        pcs = parseInt(nonEmptyCells[2], 10) || 1;
+        huid = nonEmptyCells[3].toUpperCase();
+        tagNo = '';
+        const wNum = parseFloat(nonEmptyCells[4]);
+        weight = wNum.toFixed(3);
+        grossWt = weight;
+        netWt = weight;
+        for (let k = 0; k < 5; k++) matched.add(k);
+      }
 
       // 1. Look for BIS HUID:
       // Either starts with HUID- or is 6 alphanumeric characters (like Y6P2F5, 7K2P9X) and not purely numeric
@@ -2498,10 +2555,21 @@
         netWt: netWt,
         purity: purity,
         huid: huid,
+        tagNo: tagNo,
         boxNo: boxNo,
         barcode: barcode,
         rawCells: cells
       });
+    }
+
+    if (rows.length > 0 && typeof document !== 'undefined') {
+      const hasExplicitTagId = rows.some(r => r.tagNo && r.tagNo.trim() !== '');
+      const withRadio = document.getElementById('tag-no-with');
+      const withoutRadio = document.getElementById('tag-no-without');
+      if (withRadio && withoutRadio) {
+        withRadio.checked = hasExplicitTagId;
+        withoutRadio.checked = !hasExplicitTagId;
+      }
     }
 
     return rows;
@@ -2894,6 +2962,7 @@
     const optHuid = document.getElementById('tag-opt-huid') ? document.getElementById('tag-opt-huid').checked : true;
     const optQr = document.getElementById('tag-opt-qr') ? document.getElementById('tag-opt-qr').checked : true;
     const showNetWtPreview = !(document.getElementById('tag-weight-gross-only')?.checked);
+    const showTagNoPreview = !(document.getElementById('tag-no-without')?.checked);
 
     // Pick sample row from activeTagRows or activeTagBatch
     const sampleRow = (activeTagRows && activeTagRows[0]) ? activeTagRows[0] : null;
@@ -2915,7 +2984,7 @@
       'CUSTOMER: ' + custName,
       'DATE: ' + dateStr,
       'ARTICLE: ' + cleanArticle,
-      'TAG NO: ' + tagNoVal,
+      ...(showTagNoPreview ? ['TAG NO: ' + tagNoVal] : []),
       'ORNAMENT: ' + ornamentVal,
       'GROSS WEIGHT: ' + grossVal,
       ...(showNetWtPreview ? ['NET WEIGHT: ' + netVal] : []),
@@ -2954,7 +3023,7 @@
           <div style="width: ${headPct}%; max-width: ${headPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-start; gap: 1.5px; padding-right: 2px; overflow: hidden; background: #ffffff; border-right: 1px dashed #e2e8f0; color: #000000; font-size: ${previewDataPx}px; font-weight: 700; line-height: 1.1; font-family: Arial, Helvetica, sans-serif;">
             ${optCust ? `<div style="word-break: break-word;">DATE: ${escapeHtmlStr(dateStr)}</div>` : ''}
             ${optOrnament ? `
-              <div style="word-break: break-word;">ARTICLE: ${escapeHtmlStr(cleanArticle)} &nbsp; TAG NO : ${escapeHtmlStr(tagNoVal)}</div>
+              <div style="word-break: break-word;">ARTICLE: ${escapeHtmlStr(cleanArticle)}${showTagNoPreview ? ` &nbsp; TAG NO : ${escapeHtmlStr(tagNoVal)}` : ''}</div>
               <div style="word-break: break-word;">ORNAMENT: ${escapeHtmlStr(ornamentVal)}</div>
               <div style="word-break: break-word;">GROSS WEIGHT: ${escapeHtmlStr(grossVal)}</div>
               ${showNetWtPreview ? `<div style="word-break: break-word;">NET WEIGHT: ${escapeHtmlStr(netVal)}</div>` : ''}
@@ -3097,6 +3166,7 @@
     const incHuid = document.getElementById('tag-opt-huid')?.checked !== false;
     const incQr = document.getElementById('tag-opt-qr')?.checked !== false;
     const showNetWt = !(document.getElementById('tag-weight-gross-only')?.checked);
+    const showTagNo = !(document.getElementById('tag-no-without')?.checked);
 
     const defaultCustomer = (activeTagBatch ? activeTagBatch.customer : '') || 'ROYCO JEWELLERS (CHINSURAH)';
     const defaultMetal = (activeTagBatch ? activeTagBatch.metal : '') || 'Gold';
@@ -3148,7 +3218,7 @@
         'CUSTOMER: ' + customerName,
         'DATE: ' + dateStr,
         'ARTICLE: ' + articleVal,
-        'TAG NO: ' + tagNoStr,
+        ...(showTagNo ? ['TAG NO: ' + tagNoStr] : []),
         'ORNAMENT: ' + ornamentsType,
         'GROSS WEIGHT: ' + grossVal,
         ...(showNetWt ? ['NET WEIGHT: ' + netVal] : []),
@@ -3204,7 +3274,7 @@
                   <div style="word-break:break-word;">DATE: ${escapeHtmlStr(dateStr)}</div>
                 ` : ''}
                 ${incOrnament ? `
-                  <div style="word-break:break-word;">ARTICLE: ${escapeHtmlStr(articleVal)} &nbsp; TAG NO : ${escapeHtmlStr(tagNoStr)}</div>
+                  <div style="word-break:break-word;">ARTICLE: ${escapeHtmlStr(articleVal)}${showTagNo ? ` &nbsp; TAG NO : ${escapeHtmlStr(tagNoStr)}` : ''}</div>
                   <div style="word-break:break-word;">ORNAMENT: ${escapeHtmlStr(ornamentsType)}</div>
                   <div style="word-break:break-word;">GROSS WEIGHT: ${escapeHtmlStr(grossVal)}</div>
                   ${showNetWt ? `<div style="word-break:break-word;">NET WEIGHT: ${escapeHtmlStr(netVal)}</div>` : ''}
@@ -3407,6 +3477,76 @@
         </body>
       </html>
     `;
+  }
+
+  function openTagPrintOptionsModal() {
+    if (!activeTagBatch) {
+      showToast('NO ACTIVE BATCH SELECTED FOR PRINTING.', 'warning');
+      return;
+    }
+    if (!activeTagRows || activeTagRows.length === 0) {
+      const converted = convertExcelSheetToRows(excelSheetData);
+      if (converted && converted.length > 0) {
+        activeTagRows = converted;
+        if (activeTagBatch) {
+          activeTagBatch.tagData = converted;
+          activeTagBatch.tagStatus = 'DONE';
+        }
+      }
+    }
+    if (!activeTagRows || activeTagRows.length === 0) {
+      showToast('NO TAG ROWS TO PRINT. PASTE EXCEL DATA FIRST.', 'warning');
+      return;
+    }
+    const modal = document.getElementById('modal-tag-print-options');
+    if (modal) {
+      updateTagPrintModalWeightBadges();
+      modal.classList.remove('hidden');
+    } else {
+      printCustomTags();
+    }
+  }
+
+  function closeTagPrintOptionsModal() {
+    const modal = document.getElementById('modal-tag-print-options');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function updateTagPrintModalWeightBadges() {
+    const isGrossOnly = Boolean(document.getElementById('tag-weight-gross-only')?.checked);
+    const bothBtn = document.getElementById('modal-weight-both-btn');
+    const grossBtn = document.getElementById('modal-weight-gross-btn');
+    if (bothBtn && grossBtn) {
+      bothBtn.className = !isGrossOnly
+        ? 'px-2.5 py-1 rounded-lg font-bold border border-amber-500 bg-amber-100 text-amber-900 text-[11px] transition-all cursor-pointer'
+        : 'px-2.5 py-1 rounded-lg font-bold border border-slate-300 bg-white text-slate-600 text-[11px] transition-all cursor-pointer';
+      grossBtn.className = isGrossOnly
+        ? 'px-2.5 py-1 rounded-lg font-bold border border-amber-500 bg-amber-100 text-amber-900 text-[11px] transition-all cursor-pointer'
+        : 'px-2.5 py-1 rounded-lg font-bold border border-slate-300 bg-white text-slate-600 text-[11px] transition-all cursor-pointer';
+    }
+  }
+
+  function setTagWeightModeFromModal(mode) {
+    const bothRadio = document.getElementById('tag-weight-both');
+    const grossRadio = document.getElementById('tag-weight-gross-only');
+    if (bothRadio && grossRadio) {
+      bothRadio.checked = (mode !== 'gross');
+      grossRadio.checked = (mode === 'gross');
+    }
+    updateTagPrintModalWeightBadges();
+    updateTagMiniPreview();
+  }
+
+  function confirmTagPrintWithMode(tagNoMode) {
+    const withRadio = document.getElementById('tag-no-with');
+    const withoutRadio = document.getElementById('tag-no-without');
+    if (withRadio && withoutRadio) {
+      withRadio.checked = (tagNoMode !== 'without');
+      withoutRadio.checked = (tagNoMode === 'without');
+    }
+    closeTagPrintOptionsModal();
+    updateTagMiniPreview();
+    printCustomTags();
   }
 
   function printCustomTags() {
@@ -14138,6 +14278,11 @@
   window.saveTagData = saveTagData;
   window.buildTagPrintDocument = buildTagPrintDocument;
   window.printCustomTags = printCustomTags;
+  window.openTagPrintOptionsModal = openTagPrintOptionsModal;
+  window.closeTagPrintOptionsModal = closeTagPrintOptionsModal;
+  window.setTagWeightModeFromModal = setTagWeightModeFromModal;
+  window.confirmTagPrintWithMode = confirmTagPrintWithMode;
+  window.convertExcelSheetToRows = convertExcelSheetToRows;
   window.openTagPrintTab = openTagPrintTab;
   window.syncTagPrintButtonState = syncTagPrintButtonState;
   window.onTagBatchSelected = selectTagBatch;

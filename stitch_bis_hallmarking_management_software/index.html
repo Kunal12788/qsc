@@ -2417,7 +2417,7 @@
                 <span class="material-symbols-outlined text-[17px] text-primary">picture_as_pdf</span>
                 <span>PREVIEW & PDF</span>
               </button>
-              <button id="btn-print-tags" onclick="printCustomTags()" disabled="true" class="btn-print-disabled px-5 py-2.5 rounded-lg bg-primary-container text-secondary-fixed font-bold text-xs tracking-wider shadow-sm border border-[#c5a059]/40 transition-all flex items-center gap-2" type="button">
+              <button id="btn-print-tags" onclick="openTagPrintOptionsModal()" disabled="true" class="btn-print-disabled px-5 py-2.5 rounded-lg bg-primary-container text-secondary-fixed font-bold text-xs tracking-wider shadow-sm border border-[#c5a059]/40 transition-all flex items-center gap-2" type="button">
                 <span class="material-symbols-outlined text-[18px] text-amber-400">print</span>
                 <span>PRINT TAGS</span>
               </button>
@@ -2727,20 +2727,37 @@
                   </div>
                 </div>
 
-                <!-- Weight Display Mode Option (Gross + Net vs Gross Only) -->
-                <div class="flex flex-wrap items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                  <span class="font-bold text-slate-700 uppercase text-[11px] flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[15px] text-primary-container">scale</span>
-                    <span>WEIGHT DISPLAY MODE:</span>
-                  </span>
-                  <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
-                    <input type="radio" name="tag-weight-mode" id="tag-weight-both" value="both" checked onchange="updateTagMiniPreview()" class="text-primary-container focus:ring-0 cursor-pointer"/>
-                    <span>Gross Weight + Net Weight</span>
-                  </label>
-                  <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
-                    <input type="radio" name="tag-weight-mode" id="tag-weight-gross-only" value="gross" onchange="updateTagMiniPreview()" class="text-primary-container focus:ring-0 cursor-pointer"/>
-                    <span>Gross Weight Only</span>
-                  </label>
+                <!-- Weight Display Mode & Tag No Display Mode Options -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  <div class="flex flex-wrap items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <span class="font-bold text-slate-700 uppercase text-[11px] flex items-center gap-1 w-full">
+                      <span class="material-symbols-outlined text-[15px] text-primary-container">scale</span>
+                      <span>WEIGHT DISPLAY MODE:</span>
+                    </span>
+                    <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
+                      <input type="radio" name="tag-weight-mode" id="tag-weight-both" value="both" checked onchange="updateTagMiniPreview()" class="text-primary-container focus:ring-0 cursor-pointer"/>
+                      <span>Gross + Net Weight</span>
+                    </label>
+                    <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
+                      <input type="radio" name="tag-weight-mode" id="tag-weight-gross-only" value="gross" onchange="updateTagMiniPreview()" class="text-primary-container focus:ring-0 cursor-pointer"/>
+                      <span>Gross Weight Only</span>
+                    </label>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <span class="font-bold text-slate-700 uppercase text-[11px] flex items-center gap-1 w-full">
+                      <span class="material-symbols-outlined text-[15px] text-primary-container">tag</span>
+                      <span>TAG NUMBER DISPLAY:</span>
+                    </span>
+                    <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
+                      <input type="radio" name="tag-no-mode" id="tag-no-with" value="with" checked onchange="updateTagMiniPreview()" class="text-primary-container focus:ring-0 cursor-pointer"/>
+                      <span>With Tag No (Q1)</span>
+                    </label>
+                    <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
+                      <input type="radio" name="tag-no-mode" id="tag-no-without" value="without" onchange="updateTagMiniPreview()" class="text-primary-container focus:ring-0 cursor-pointer"/>
+                      <span>Without Tag No</span>
+                    </label>
+                  </div>
                 </div>
 
                 <!-- Print Options Checkboxes -->
@@ -2790,7 +2807,7 @@
                     <span class="material-symbols-outlined text-[16px] text-primary">picture_as_pdf</span>
                     <span>PDF / TAB</span>
                   </button>
-                  <button type="button" id="btn-print-tags-bottom" onclick="printCustomTags()" disabled="true" class="btn-print-disabled flex-1 py-2.5 px-3 rounded-lg bg-primary-container text-secondary-fixed font-bold text-xs uppercase tracking-wider shadow-sm border border-[#c5a059]/40 transition-all flex items-center justify-center gap-1.5">
+                  <button type="button" id="btn-print-tags-bottom" onclick="openTagPrintOptionsModal()" disabled="true" class="btn-print-disabled flex-1 py-2.5 px-3 rounded-lg bg-primary-container text-secondary-fixed font-bold text-xs uppercase tracking-wider shadow-sm border border-[#c5a059]/40 transition-all flex items-center justify-center gap-1.5">
                     <span class="material-symbols-outlined text-[17px] text-amber-400">print</span>
                     <span>PRINT TAGS</span>
                   </button>
@@ -6181,6 +6198,51 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TAG PRINT OPTIONS (WITH TAG NO vs WITHOUT TAG NO) -->
+  <div id="modal-tag-print-options" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs" onclick="if (event.target === this) closeTagPrintOptionsModal()">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200" onclick="event.stopPropagation()">
+      <div class="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-amber-400 text-[20px]">print</span>
+          <span class="font-bold text-sm uppercase tracking-wider">SELECT TAG PRINT FORMAT</span>
+        </div>
+        <button type="button" onclick="closeTagPrintOptionsModal()" class="text-slate-400 hover:text-white cursor-pointer">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+      <div class="p-5 space-y-4">
+        <p class="text-xs text-slate-600 font-medium">Choose whether to include the <strong>Tag Number (Tag Id)</strong> on the printed tags and verify your weight display option:</p>
+
+        <!-- Quick Weight Mode Reminder/Toggle inside modal -->
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2 text-xs">
+          <span class="font-bold text-slate-700 uppercase text-[11px]">WEIGHT MODE:</span>
+          <div class="flex items-center gap-2">
+            <button type="button" id="modal-weight-both-btn" onclick="setTagWeightModeFromModal('both')" class="px-2.5 py-1 rounded-lg font-bold border text-[11px] transition-all cursor-pointer">Gross + Net</button>
+            <button type="button" id="modal-weight-gross-btn" onclick="setTagWeightModeFromModal('gross')" class="px-2.5 py-1 rounded-lg font-bold border text-[11px] transition-all cursor-pointer">Gross Only</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3">
+          <button type="button" id="btn-confirm-print-with-tag" onclick="confirmTagPrintWithMode('with')" class="w-full p-3.5 rounded-xl border-2 border-amber-500/60 bg-amber-50/70 hover:bg-amber-100/80 text-left transition-all cursor-pointer flex items-center justify-between group">
+            <div>
+              <div class="font-extrabold text-sm text-slate-900 uppercase">Print WITH Tag No</div>
+              <div class="text-[11px] text-slate-600 font-mono mt-0.5">Shows: ARTICLE: Gold &nbsp; TAG NO : Q1</div>
+            </div>
+            <span class="material-symbols-outlined text-amber-700 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
+
+          <button type="button" id="btn-confirm-print-without-tag" onclick="confirmTagPrintWithMode('without')" class="w-full p-3.5 rounded-xl border-2 border-slate-300 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-center justify-between group">
+            <div>
+              <div class="font-extrabold text-sm text-slate-900 uppercase">Print WITHOUT Tag No</div>
+              <div class="text-[11px] text-slate-600 font-mono mt-0.5">Shows: ARTICLE: Gold (No Tag No)</div>
+            </div>
+            <span class="material-symbols-outlined text-slate-600 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -48,7 +48,12 @@ assert(htmlContent.includes('id="btn-open-tag-tab"'), 'Missing btn-open-tag-tab'
 assert(htmlContent.includes('id="btn-open-tag-tab-bottom"'), 'Missing btn-open-tag-tab-bottom');
 assert(htmlContent.includes('id="tag-weight-both"'), 'Missing tag-weight-both radio');
 assert(htmlContent.includes('id="tag-weight-gross-only"'), 'Missing tag-weight-gross-only radio');
-console.log('  ✓ Print Tags, Weight Display Mode (Gross+Net vs Gross Only), and Preview/PDF export buttons verified.');
+assert(htmlContent.includes('id="tag-no-with"'), 'Missing tag-no-with radio');
+assert(htmlContent.includes('id="tag-no-without"'), 'Missing tag-no-without radio');
+assert(htmlContent.includes('id="modal-tag-print-options"'), 'Missing modal-tag-print-options modal');
+assert(htmlContent.includes('id="btn-confirm-print-with-tag"'), 'Missing btn-confirm-print-with-tag');
+assert(htmlContent.includes('id="btn-confirm-print-without-tag"'), 'Missing btn-confirm-print-without-tag');
+console.log('  ✓ Print Tags, Weight Display Mode, Tag No Display Mode (With vs Without), and Print Prompt Modal verified.');
 
 // Test Suite 2: Mock DOM Execution of Tag Engine & Real app.js Loading
 console.log('\n[Suite 2] JS Tag Engine Execution & Calibration Logic:');
@@ -72,6 +77,8 @@ const mockElements = {
   'tag-opt-qr': { checked: true },
   'tag-weight-both': { checked: true },
   'tag-weight-gross-only': { checked: false },
+  'tag-no-with': { checked: true },
+  'tag-no-without': { checked: false },
   'btn-print-tags': { disabled: true, classList: { remove() {}, add() {} }, setAttribute() {}, removeAttribute() {} },
   'btn-print-tags-bottom': { disabled: true, classList: { remove() {}, add() {} }, setAttribute() {}, removeAttribute() {} },
   'btn-open-tag-tab': { disabled: true, classList: { remove() {}, add() {} }, setAttribute() {}, removeAttribute() {} },
@@ -158,7 +165,40 @@ assert(grossOnlyDoc.includes('GROSS WEIGHT:'), 'Missing GROSS WEIGHT in Gross On
 assert(!grossOnlyDoc.includes('NET WEIGHT:'), 'NET WEIGHT must not appear in Gross Weight Only mode');
 mockElements['tag-weight-both'].checked = true;
 mockElements['tag-weight-gross-only'].checked = false;
-console.log('  ✓ 50×15mm default tag verified: 0.5mm margins, 100% Customer Name, TAG NO : Q1, Both vs Gross-Only weight modes, and clean QR.');
+// Test Without Tag No mode
+mockElements['tag-no-with'].checked = false;
+mockElements['tag-no-without'].checked = true;
+const withoutTagDoc = window.buildTagPrintDocument(false);
+assert(!withoutTagDoc.includes('TAG NO'), 'TAG NO must not appear in Without Tag No mode');
+assert(withoutTagDoc.includes('ARTICLE: Gold'), 'ARTICLE: Gold must appear in Without Tag No mode');
+mockElements['tag-no-with'].checked = true;
+mockElements['tag-no-without'].checked = false;
+
+// Test 6-column With Tag Id and 5-column Without Tag Id Excel Paste Parsing
+const sheetWithTag = [
+  ['S No.', 'Item Category', 'No Of Unit', 'HUID', 'Tag Id', 'Weight of Article(Gms)'],
+  ['1', 'RING', '1', '45GNA3', 'Q1', '11.990'],
+  ['2', 'CHAIN', '1', '7K2P9X', 'T25', '24.500']
+];
+const parsedWithTag = window.convertExcelSheetToRows(sheetWithTag);
+assert.strictEqual(parsedWithTag.length, 2);
+assert.strictEqual(parsedWithTag[0].tagNo, 'Q1');
+assert.strictEqual(parsedWithTag[0].huid, '45GNA3');
+assert.strictEqual(parsedWithTag[0].grossWt, '11.990');
+assert.strictEqual(parsedWithTag[1].tagNo, 'T25');
+
+const sheetWithoutTag = [
+  ['S No.', 'Item Category', 'No Of Unit', 'HUID', 'Weight of Article(Gms)'],
+  ['1', 'BANGLE', '1', '9M4L2Z', '18.250']
+];
+const parsedWithoutTag = window.convertExcelSheetToRows(sheetWithoutTag);
+assert.strictEqual(parsedWithoutTag.length, 1);
+assert.strictEqual(parsedWithoutTag[0].tagNo, '');
+assert.strictEqual(parsedWithoutTag[0].huid, '9M4L2Z');
+assert.strictEqual(parsedWithoutTag[0].ornamentsType, 'BANGLE');
+assert.strictEqual(parsedWithoutTag[0].grossWt, '18.250');
+
+console.log('  ✓ 50×15mm default tag, With/Without Tag No modes, and 5/6-column Excel paste parsing verified.');
 
 // Case 1: Butterfly Dual-Zone (84x12mm with 12mm Bridge Gap)
 window.onTagPresetChanged('butterfly-84');
