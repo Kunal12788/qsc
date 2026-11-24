@@ -46,7 +46,9 @@ assert(htmlContent.includes('id="btn-print-tags"'), 'Missing btn-print-tags');
 assert(htmlContent.includes('id="btn-print-tags-bottom"'), 'Missing btn-print-tags-bottom');
 assert(htmlContent.includes('id="btn-open-tag-tab"'), 'Missing btn-open-tag-tab');
 assert(htmlContent.includes('id="btn-open-tag-tab-bottom"'), 'Missing btn-open-tag-tab-bottom');
-console.log('  ✓ Print Tags and Preview/PDF export buttons verified.');
+assert(htmlContent.includes('id="tag-weight-both"'), 'Missing tag-weight-both radio');
+assert(htmlContent.includes('id="tag-weight-gross-only"'), 'Missing tag-weight-gross-only radio');
+console.log('  ✓ Print Tags, Weight Display Mode (Gross+Net vs Gross Only), and Preview/PDF export buttons verified.');
 
 // Test Suite 2: Mock DOM Execution of Tag Engine & Real app.js Loading
 console.log('\n[Suite 2] JS Tag Engine Execution & Calibration Logic:');
@@ -68,6 +70,8 @@ const mockElements = {
   'tag-opt-ornament': { checked: true },
   'tag-opt-huid': { checked: true },
   'tag-opt-qr': { checked: true },
+  'tag-weight-both': { checked: true },
+  'tag-weight-gross-only': { checked: false },
   'btn-print-tags': { disabled: true, classList: { remove() {}, add() {} }, setAttribute() {}, removeAttribute() {} },
   'btn-print-tags-bottom': { disabled: true, classList: { remove() {}, add() {} }, setAttribute() {}, removeAttribute() {} },
   'btn-open-tag-tab': { disabled: true, classList: { remove() {}, add() {} }, setAttribute() {}, removeAttribute() {} },
@@ -137,12 +141,24 @@ assert(defaultDoc.includes('padding-left:0.50mm'), 'Missing padding-left:0.50mm'
 assert(defaultDoc.includes('padding-bottom:0.50mm'), 'Missing padding-bottom:0.50mm');
 assert(defaultDoc.includes('tag-customer-header'), 'Missing 100% width tag-customer-header');
 assert(defaultDoc.includes('width:24.5mm'), 'Missing equal 24.5mm left half');
-assert(defaultDoc.includes('justify-content:flex-start; gap:0.18mm'), 'Missing uniform even line spacing');
+assert(defaultDoc.includes('justify-content:flex-start; gap:0.22mm'), 'Missing uniform even line spacing');
 assert(defaultDoc.includes('tag-head'), 'Missing tag-head container');
 assert(defaultDoc.includes('tag-tail'), 'Missing tag-tail container');
 assert(defaultDoc.includes('ROYCO JEWELLERS'), 'Missing customer name');
-assert(defaultDoc.includes('SCAN QR'), 'Missing SCAN QR in tail');
-console.log('  ✓ 50×15mm default tag verified: 0.5mm margins, 100% Customer Name header, 50/50 split, reduced QR, and even line spacing.');
+assert(defaultDoc.includes('TAG NO : Q1'), 'Missing TAG NO : Q1');
+assert(defaultDoc.includes('GROSS WEIGHT:'), 'Missing GROSS WEIGHT');
+assert(defaultDoc.includes('NET WEIGHT:'), 'Missing NET WEIGHT in Both mode');
+assert(!defaultDoc.includes('SCAN QR'), 'SCAN QR should be removed from right half');
+
+// Test Gross Weight Only mode
+mockElements['tag-weight-both'].checked = false;
+mockElements['tag-weight-gross-only'].checked = true;
+const grossOnlyDoc = window.buildTagPrintDocument(false);
+assert(grossOnlyDoc.includes('GROSS WEIGHT:'), 'Missing GROSS WEIGHT in Gross Only mode');
+assert(!grossOnlyDoc.includes('NET WEIGHT:'), 'NET WEIGHT must not appear in Gross Weight Only mode');
+mockElements['tag-weight-both'].checked = true;
+mockElements['tag-weight-gross-only'].checked = false;
+console.log('  ✓ 50×15mm default tag verified: 0.5mm margins, 100% Customer Name, TAG NO : Q1, Both vs Gross-Only weight modes, and clean QR.');
 
 // Case 1: Butterfly Dual-Zone (84x12mm with 12mm Bridge Gap)
 window.onTagPresetChanged('butterfly-84');
@@ -157,7 +173,7 @@ assert(butterflyDoc.includes('tag-head'), 'Missing tag-head container');
 assert(butterflyDoc.includes('tag-bridge'), 'Missing tag-bridge gap container');
 assert(butterflyDoc.includes('tag-tail'), 'Missing tag-tail container');
 assert(butterflyDoc.includes('ROYCO JEWELLERS'), 'Missing customer name');
-assert(butterflyDoc.includes('SCAN QR'), 'Missing SCAN QR in tail');
+assert(butterflyDoc.includes('45GNA3'), 'Missing HUID in tail');
 assert(butterflyDoc.includes('.print-tag:last-child'), 'Missing print-tag:last-child page break rule');
 assert(butterflyDoc.includes('page-break-after: auto !important'), 'Missing page-break-after auto rule for last child');
 console.log('  ✓ 84×12mm Butterfly dual-zone document verified (Head + 12mm Bridge Gap + Tail + Zero trailing blank pages).');

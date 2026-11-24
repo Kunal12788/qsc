@@ -2727,6 +2727,22 @@
                   </div>
                 </div>
 
+                <!-- Weight Display Mode Option (Gross + Net vs Gross Only) -->
+                <div class="flex flex-wrap items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                  <span class="font-bold text-slate-700 uppercase text-[11px] flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[15px] text-primary-container">scale</span>
+                    <span>WEIGHT DISPLAY MODE:</span>
+                  </span>
+                  <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
+                    <input type="radio" name="tag-weight-mode" id="tag-weight-both" value="both" checked onchange="updateTagMiniPreview()" class="text-primary-container focus:ring-0 cursor-pointer"/>
+                    <span>Gross Weight + Net Weight</span>
+                  </label>
+                  <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
+                    <input type="radio" name="tag-weight-mode" id="tag-weight-gross-only" value="gross" onchange="updateTagMiniPreview()" class="text-primary-container focus:ring-0 cursor-pointer"/>
+                    <span>Gross Weight Only</span>
+                  </label>
+                </div>
+
                 <!-- Print Options Checkboxes -->
                 <div class="flex items-center gap-4 text-xs flex-wrap">
                   <label class="flex items-center gap-1.5 cursor-pointer text-slate-700 font-medium">
@@ -2739,7 +2755,7 @@
                   </label>
                   <label class="flex items-center gap-1.5 cursor-pointer text-slate-700 font-medium">
                     <input type="checkbox" id="tag-opt-huid" checked onchange="updateTagMiniPreview()" class="rounded text-primary-container focus:ring-0"/>
-                    <span>5. HUID & 6. Box Number</span>
+                    <span>5. HUID & Tag No</span>
                   </label>
                   <label class="flex items-center gap-1.5 cursor-pointer text-slate-700 font-medium">
                     <input type="checkbox" id="tag-opt-qr" checked onchange="updateTagMiniPreview()" class="rounded text-primary-container focus:ring-0"/>
