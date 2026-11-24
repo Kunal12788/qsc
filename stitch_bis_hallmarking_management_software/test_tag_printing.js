@@ -34,12 +34,12 @@ assert(htmlContent.includes('id="tag-print-layout"'), 'Missing tag-print-layout 
 console.log('  ✓ Dimension inputs (50mm width x 15mm height default) and Layout Zone selector verified.');
 
 // Hardware Calibration
-assert(htmlContent.includes('id="tag-cal-top" value="0"'), 'Top margin default not 0mm');
-assert(htmlContent.includes('id="tag-cal-left" value="0"'), 'Left margin default not 0mm');
-assert(htmlContent.includes('id="tag-cal-bottom" value="0"'), 'Bottom margin default not 0mm');
+assert(htmlContent.includes('id="tag-cal-top" value="0.5"'), 'Top margin default not 0.5mm');
+assert(htmlContent.includes('id="tag-cal-left" value="0.5"'), 'Left margin default not 0.5mm');
+assert(htmlContent.includes('id="tag-cal-bottom" value="0.5"'), 'Bottom margin default not 0.5mm');
 assert(htmlContent.includes('id="tag-cal-gap" value="0"'), 'Bridge gap default not 0mm');
 assert(htmlContent.includes('id="tag-cal-font-scale"'), 'Missing tag-cal-font-scale input');
-console.log('  ✓ Thermal printer hardware margin calibration controls (Zero Margins 0mm, Bridge Gap 0mm, Font Zoom) verified.');
+console.log('  ✓ Thermal printer hardware margin calibration controls (Little Margins 0.5mm, Bridge Gap 0mm, Font Zoom) verified.');
 
 // Action Buttons
 assert(htmlContent.includes('id="btn-print-tags"'), 'Missing btn-print-tags');
@@ -59,9 +59,9 @@ const mockElements = {
   'tag-custom-height': { value: '15' },
   'tag-print-unit': { value: 'mm' },
   'tag-print-layout': { value: 'split' },
-  'tag-cal-top': { value: '0' },
-  'tag-cal-left': { value: '0' },
-  'tag-cal-bottom': { value: '0' },
+  'tag-cal-top': { value: '0.5' },
+  'tag-cal-left': { value: '0.5' },
+  'tag-cal-bottom': { value: '0.5' },
   'tag-cal-gap': { value: '0' },
   'tag-cal-font-scale': { value: '100' },
   'tag-opt-cust': { checked: true },
@@ -118,29 +118,31 @@ console.log('  ✓ Core functions implemented, default tagConfig (wMm: 50, hMm: 
 // Test Suite 3: Print Document Geometry & Output Verification
 console.log('\n[Suite 3] Print Document Geometry & Tag Layout Rendering:');
 
-// Case 0: Default 50x15mm Tag (5cm x 1.5cm) with zero margins and 50/50 equal half split
+// Case 0: Default 50x15mm Tag (5cm x 1.5cm) with 0.5mm little margins, 100% full-width customer name, 50/50 bottom split & even spacing
 window.onTagPresetChanged('50-15');
 assert.strictEqual(mockElements['tag-print-width'].value, 50);
 assert.strictEqual(mockElements['tag-custom-width'].value, 50);
 assert.strictEqual(mockElements['tag-print-height'].value, 15);
 assert.strictEqual(mockElements['tag-custom-height'].value, 15);
-assert.strictEqual(mockElements['tag-cal-top'].value, 0);
-assert.strictEqual(mockElements['tag-cal-left'].value, 0);
-assert.strictEqual(mockElements['tag-cal-bottom'].value, 0);
+assert.strictEqual(mockElements['tag-cal-top'].value, 0.5);
+assert.strictEqual(mockElements['tag-cal-left'].value, 0.5);
+assert.strictEqual(mockElements['tag-cal-bottom'].value, 0.5);
 assert.strictEqual(mockElements['tag-cal-gap'].value, 0);
 assert.strictEqual(mockElements['tag-print-layout'].value, 'split');
 
 const defaultDoc = window.buildTagPrintDocument(false);
 assert(defaultDoc.includes('size: 50mm 15mm'), 'Missing @page 50mm 15mm');
-assert(defaultDoc.includes('padding-top:0.00mm'), 'Missing padding-top:0.00mm zero margin');
-assert(defaultDoc.includes('padding-left:0.00mm'), 'Missing padding-left:0.00mm zero margin');
-assert(defaultDoc.includes('padding-bottom:0.00mm'), 'Missing padding-bottom:0.00mm zero margin');
-assert(defaultDoc.includes('width:25mm'), 'Missing equal 25mm left half');
+assert(defaultDoc.includes('padding-top:0.50mm'), 'Missing padding-top:0.50mm');
+assert(defaultDoc.includes('padding-left:0.50mm'), 'Missing padding-left:0.50mm');
+assert(defaultDoc.includes('padding-bottom:0.50mm'), 'Missing padding-bottom:0.50mm');
+assert(defaultDoc.includes('tag-customer-header'), 'Missing 100% width tag-customer-header');
+assert(defaultDoc.includes('width:24.5mm'), 'Missing equal 24.5mm left half');
+assert(defaultDoc.includes('justify-content:flex-start; gap:0.18mm'), 'Missing uniform even line spacing');
 assert(defaultDoc.includes('tag-head'), 'Missing tag-head container');
 assert(defaultDoc.includes('tag-tail'), 'Missing tag-tail container');
 assert(defaultDoc.includes('ROYCO JEWELLERS'), 'Missing customer name');
 assert(defaultDoc.includes('SCAN QR'), 'Missing SCAN QR in tail');
-console.log('  ✓ 50×15mm (5×1.5 cm) default tag geometry verified with 0mm margins and equal 50/50 halves (25mm Details | 25mm QR).');
+console.log('  ✓ 50×15mm default tag verified: 0.5mm margins, 100% Customer Name header, 50/50 split, reduced QR, and even line spacing.');
 
 // Case 1: Butterfly Dual-Zone (84x12mm with 12mm Bridge Gap)
 window.onTagPresetChanged('butterfly-84');
