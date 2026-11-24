@@ -1733,20 +1733,10 @@
                   STEP 1: ASSAY CENTER RECEIVE
                 </span>
               </div>
-              <h1 class="font-headline-lg text-2xl lg:text-[26px] font-bold text-on-surface tracking-tight mt-0.5">ASSAY CENTER RECEIVE & PIECE INTAKE BASELINE</h1>
-              <span class="text-xs text-on-surface-variant font-medium">USER A INTAKE WORKSTATION • COUNTER INTAKE, CUSTOMER BATCH REGISTRATION & SEQUENTIAL PHOTO BASELINE</span>
+              <h1 class="font-headline-lg text-2xl lg:text-[26px] font-bold text-on-surface tracking-tight mt-0.5">ASSAY CENTER RECEIVE & PIECE INTAKE</h1>
+              <span class="text-xs text-on-surface-variant font-medium">USER A INTAKE WORKSTATION • COUNTER INTAKE REGISTRATION & DIRECT CAMERA PHOTO CAPTURE</span>
             </div>
             <div class="flex flex-wrap items-center gap-2.5">
-              <button
-                id="btn-open-quick-add-customer"
-                type="button"
-                onclick="openQuickAddCustomerModal()"
-                class="px-3.5 py-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container border border-surface-container text-slate-800 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-                title="Add and register new customer/jeweller name into system"
-              >
-                <span class="material-symbols-outlined text-[18px] text-primary">person_add</span>
-                <span>+ ADD CUSTOMER NAME</span>
-              </button>
               <button
                 id="btn-open-new-intake-batch"
                 type="button"
@@ -1757,174 +1747,228 @@
                 <span class="material-symbols-outlined text-[18px] text-amber-400">add_circle</span>
                 <span>+ NEW INTAKE BATCH</span>
               </button>
-              <button
-                id="btn-assay-recv-verify-all"
-                type="button"
-                onclick="simulateAssayCenterReceiveAllDemo()"
-                class="px-4 py-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container border border-surface-container text-slate-800 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-xs"
-                title="Rapid Demo: Snap all remaining pieces instantly"
-              >
-                <span class="material-symbols-outlined text-[18px] text-amber-500">auto_fix_high</span>
-                <span>VERIFY ALL (DEMO)</span>
-              </button>
-              <button
-                id="btn-complete-assay-receive"
-                type="button"
-                onclick="completeAssayCenterReceiveSubmission()"
-                disabled
-                class="px-5 py-2.5 rounded-lg bg-slate-300 text-slate-500 font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center gap-2 cursor-not-allowed border border-transparent"
-              >
-                <span class="material-symbols-outlined text-[18px]">verified</span>
-                <span>COMPLETE ASSAY CENTER RECEIVE</span>
-              </button>
             </div>
           </div>
 
-          <!-- Top Metric Cards -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs">
+          <!-- Top Metric Card (TOTAL INTAKE BATCHES ONLY) + Search by Date -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+            <div class="lg:col-span-4 p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs flex flex-col justify-center">
               <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">TOTAL INTAKE BATCHES</span>
               <div class="text-2xl font-black text-slate-900 mt-1 font-mono" id="assay-recv-stat-total">6 BATCHES</div>
-              <span class="text-[10px] text-slate-500 font-medium mt-0.5 block">ALL REGISTERED BATCHES</span>
+              <span class="text-[10px] text-slate-500 font-medium mt-0.5 block" id="assay-recv-stat-subtitle">ALL REGISTERED BATCHES</span>
             </div>
-            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs">
-              <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">PENDING INTAKE</span>
-              <div class="text-2xl font-black text-amber-600 mt-1 font-mono" id="assay-recv-stat-pending">5 BATCHES</div>
-              <span class="text-[10px] text-amber-600 font-bold mt-0.5 block">STAGE 1 PHOTO BASELINE AWAITING</span>
-            </div>
-            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs">
-              <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">INTAKE COMPLETED</span>
-              <div class="text-2xl font-black text-emerald-600 mt-1 font-mono" id="assay-recv-stat-completed">1 BATCH</div>
-              <span class="text-[10px] text-emerald-600 font-bold mt-0.5 block">READY FOR STAGE 2 VERIFICATION</span>
-            </div>
-            <div class="p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs">
-              <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">BASELINE PHOTOS ARCHIVED</span>
-              <div class="text-2xl font-black text-primary mt-1 font-mono" id="assay-recv-stat-photos">6 PIECES</div>
-              <span class="text-[10px] text-primary font-bold mt-0.5 block">VISUAL EMBEDDINGS LOCKED</span>
+
+            <div class="lg:col-span-8 p-4 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs flex flex-col gap-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[20px] text-primary">calendar_month</span>
+                  <div>
+                    <span class="text-xs font-bold uppercase text-slate-800 tracking-wider block">Search Intake Batches by Date</span>
+                    <span class="text-[10px] text-slate-500">Pick a date to view exact intake count and batches for that day</span>
+                  </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <input
+                    type="date"
+                    id="assay-recv-date-filter"
+                    onchange="handleAssayRecvDateFilter(this.value)"
+                    class="px-3 py-1.5 text-xs font-mono rounded-xl bg-surface-container-low border border-surface-container text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <button
+                    type="button"
+                    id="btn-assay-recv-date-today"
+                    onclick="setAssayRecvDateFilterToday()"
+                    class="px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-bold text-[11px] uppercase tracking-wider cursor-pointer transition-all"
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-assay-recv-date-clear"
+                    onclick="clearAssayRecvDateFilter()"
+                    class="px-3 py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-slate-600 font-bold text-[11px] uppercase tracking-wider cursor-pointer transition-all hidden"
+                  >
+                    All Dates
+                  </button>
+                </div>
+              </div>
+              <div id="assay-recv-date-results" class="hidden flex flex-col gap-2 max-h-[200px] overflow-y-auto pt-2 border-t border-surface-container">
+                <!-- Populated by JS when a date is selected -->
+              </div>
             </div>
           </div>
 
-          <!-- Main Layout Grid: Batch Queue (Left) & Piece Photo Intake Workstation (Right) -->
+          <!-- Main Layout Grid: Intake Form (Left) & Direct Camera Capture Workstation (Right) -->
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <!-- Left: Batch Selection Queue -->
-            <div class="lg:col-span-4 flex flex-col gap-4">
-              <div class="bg-surface-container-lowest rounded-2xl p-4 border border-surface-container shadow-xs flex flex-col gap-3">
-                <div class="flex items-center justify-between">
+            <!-- Left: Assay Center Receive Intake Form (5 cols) -->
+            <div class="lg:col-span-5 flex flex-col gap-4">
+              <form id="assay-recv-intake-form" onsubmit="event.preventDefault(); openAssayRecvConfirmationPage();" class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-xs flex flex-col gap-4">
+                <div class="flex items-center justify-between pb-3 border-b border-surface-container">
                   <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-[20px] text-primary">inbox</span>
-                    <h2 class="font-headline font-bold text-sm text-on-surface uppercase tracking-wide">Intake Batches Queue</h2>
+                    <span class="material-symbols-outlined text-[20px] text-primary">assignment_add</span>
+                    <h2 class="font-headline font-bold text-sm text-on-surface uppercase tracking-wide">Intake Registration Details</h2>
                   </div>
-                  <div class="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      id="btn-add-customer-inline"
-                      onclick="openQuickAddCustomerModal()"
-                      class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-surface-container hover:bg-surface-container-high text-slate-700 border border-slate-300 flex items-center gap-1 cursor-pointer transition-all"
-                      title="Quick Add Customer / Jeweller Name"
-                    >
-                      <span class="material-symbols-outlined text-[13px] text-primary">person_add</span>
-                      <span>+ NAME</span>
-                    </button>
-                    <button
-                      type="button"
-                      id="btn-add-new-customer-batch-inline"
-                      onclick="openNewIntakeBatchModal()"
-                      class="px-2.5 py-1 rounded-md text-[10.5px] font-bold uppercase tracking-wider bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 flex items-center gap-1 cursor-pointer transition-all"
-                      title="Add New Customer Batch"
-                    >
-                      <span class="material-symbols-outlined text-[14px]">add</span>
-                      <span>+ ADD BATCH</span>
-                    </button>
-                    <span id="assay-recv-queue-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-secondary-container text-on-secondary-container">6 Total</span>
-                  </div>
-                </div>
-
-                <!-- Tabs: All, Pending, Completed -->
-                <div class="flex items-center bg-surface-container-low p-1 rounded-xl text-xs font-semibold">
-                  <button type="button" id="assay-recv-tab-all" onclick="filterAssayCenterReceiveQueue('ALL')" class="flex-1 py-1.5 rounded-lg bg-surface-container-lowest shadow-xs text-on-surface text-center transition-all cursor-pointer font-bold">
-                    All (<span id="assay-recv-count-all">6</span>)
-                  </button>
-                  <button type="button" id="assay-recv-tab-pending" onclick="filterAssayCenterReceiveQueue('PENDING')" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 text-center transition-all cursor-pointer">
-                    Pending (<span id="assay-recv-count-pending">5</span>)
-                  </button>
-                  <button type="button" id="assay-recv-tab-completed" onclick="filterAssayCenterReceiveQueue('COMPLETED')" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 text-center transition-all cursor-pointer">
-                    Completed (<span id="assay-recv-count-completed">1</span>)
+                  <button
+                    type="button"
+                    onclick="resetAssayRecvForm()"
+                    class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800 cursor-pointer"
+                  >
+                    Reset Form
                   </button>
                 </div>
 
-                <!-- Search Input -->
-                <div class="relative">
-                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">search</span>
+                <!-- Date & Time with AM/PM -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="flex flex-col gap-1">
+                    <label for="assay-recv-form-date" class="text-[10px] font-bold uppercase tracking-wider text-slate-600">Date *</label>
+                    <input
+                      type="date"
+                      id="assay-recv-form-date"
+                      required
+                      class="w-full px-3 py-2 text-xs font-mono rounded-xl bg-surface-container-low border border-surface-container text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between">
+                      <label class="text-[10px] font-bold uppercase tracking-wider text-slate-600">Time (AM/PM) *</label>
+                      <button type="button" onclick="setAssayRecvFormTimeNow()" class="text-[10px] font-bold text-primary hover:underline cursor-pointer">Set Now</button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1.5">
+                      <select id="assay-recv-form-hour" class="px-2 py-2 text-xs font-mono rounded-xl bg-surface-container-low border border-surface-container text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary">
+                        <option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option>
+                        <option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option>
+                        <option value="09">09</option><option value="10" selected>10</option><option value="11">11</option><option value="12">12</option>
+                      </select>
+                      <select id="assay-recv-form-minute" class="px-2 py-2 text-xs font-mono rounded-xl bg-surface-container-low border border-surface-container text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary">
+                        <option value="00">00</option><option value="05">05</option><option value="10">10</option><option value="15">15</option>
+                        <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
+                        <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+                      </select>
+                      <select id="assay-recv-form-ampm" class="px-2 py-2 text-xs font-bold rounded-xl bg-surface-container-low border border-surface-container text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary">
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Customer Name -->
+                <div class="flex flex-col gap-1">
+                  <label for="assay-recv-form-customer" class="text-[10px] font-bold uppercase tracking-wider text-slate-600">Customer Name *</label>
                   <input
                     type="text"
-                    id="assay-recv-search"
-                    oninput="handleAssayCenterReceiveSearch(this.value)"
-                    placeholder="Search customer, job docket, req..."
-                    class="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-surface-container-low border border-surface-container focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                    id="assay-recv-form-customer"
+                    list="assay-recv-customer-datalist"
+                    placeholder="Enter or select customer / jeweller name..."
+                    required
+                    class="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-surface-container-low border border-surface-container text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary"
                   />
-                  <button type="button" onclick="clearAssayCenterReceiveSearch()" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 hidden" id="assay-recv-clear-search">
-                    <span class="material-symbols-outlined text-[16px]">close</span>
-                  </button>
+                  <datalist id="assay-recv-customer-datalist"></datalist>
                 </div>
 
-                <!-- Batch Cards Container -->
-                <div id="assay-recv-queue-container" class="flex flex-col gap-2.5 max-h-[620px] overflow-y-auto pr-0.5">
-                  <!-- Populated by JS -->
+                <!-- Total Pieces & Article Metal -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="flex flex-col gap-1">
+                    <label for="assay-recv-form-total-pieces" class="text-[10px] font-bold uppercase tracking-wider text-slate-600">Total Pieces *</label>
+                    <input
+                      type="number"
+                      id="assay-recv-form-total-pieces"
+                      min="1"
+                      value="1"
+                      oninput="handleAssayRecvTotalPiecesChange(this.value)"
+                      required
+                      class="w-full px-3 py-2 text-xs font-mono font-bold rounded-xl bg-surface-container-low border border-surface-container text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label for="assay-recv-form-metal" class="text-[10px] font-bold uppercase tracking-wider text-slate-600">Article Metal *</label>
+                    <select
+                      id="assay-recv-form-metal"
+                      onchange="handleAssayRecvMetalChange(this.value)"
+                      class="w-full px-3 py-2 text-xs font-bold rounded-xl bg-surface-container-low border border-surface-container text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="Gold">Gold</option>
+                      <option value="Silver">Silver</option>
+                      <option value="Platinum">Platinum</option>
+                      <option value="Palladium">Palladium</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
+
+                <!-- Types of Articles (Infinite Repeatable Rows) -->
+                <div class="flex flex-col gap-2 p-3 rounded-xl bg-surface-container-low/60 border border-surface-container">
+                  <div class="flex items-center justify-between">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-700">Types of Articles & Pieces *</label>
+                    <button
+                      type="button"
+                      id="btn-assay-recv-add-article-row"
+                      onclick="addAssayRecvArticleRow()"
+                      class="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-all"
+                    >
+                      <span class="material-symbols-outlined text-[14px]">add</span>
+                      <span>Add Article Type</span>
+                    </button>
+                  </div>
+
+                  <div id="assay-recv-article-rows" class="flex flex-col gap-2 max-h-[240px] overflow-y-auto pr-0.5">
+                    <!-- Dynamic rows populated by JS -->
+                  </div>
+                  <datalist id="assay-recv-article-type-datalist">
+                    <option value="Ring"></option>
+                    <option value="Chain"></option>
+                    <option value="Bangle"></option>
+                    <option value="Tops"></option>
+                    <option value="Necklace"></option>
+                    <option value="Bracelet"></option>
+                    <option value="Pendant"></option>
+                    <option value="Ear Ring"></option>
+                    <option value="Mangalsutra"></option>
+                    <option value="Coin"></option>
+                    <option value="Anklet"></option>
+                    <option value="Mixed Ornaments"></option>
+                  </datalist>
+
+                  <div id="assay-recv-article-tally" class="text-[11px] font-mono font-bold text-slate-600 flex items-center justify-between pt-1.5 border-t border-surface-container">
+                    <span>Article Pieces Sum:</span>
+                    <span id="assay-recv-article-tally-val" class="text-emerald-700">1 / 1 PCS</span>
+                  </div>
+                </div>
+
+                <!-- Declared Purity & Weight of Articles -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="flex flex-col gap-1">
+                    <label for="assay-recv-form-purity" class="text-[10px] font-bold uppercase tracking-wider text-slate-600">Declared Purity *</label>
+                    <select
+                      id="assay-recv-form-purity"
+                      class="w-full px-3 py-2 text-xs font-bold rounded-xl bg-surface-container-low border border-surface-container text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="22K 916">22K 916</option>
+                      <option value="24K 999">24K 999</option>
+                      <option value="24K 995">24K 995</option>
+                      <option value="20K 833">20K 833</option>
+                      <option value="18K 750">18K 750</option>
+                      <option value="14K 585">14K 585</option>
+                    </select>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label for="assay-recv-form-weight" class="text-[10px] font-bold uppercase tracking-wider text-slate-600">Weight of Articles (g) *</label>
+                    <input
+                      type="number"
+                      id="assay-recv-form-weight"
+                      step="0.001"
+                      min="0.001"
+                      placeholder="e.g. 125.500"
+                      required
+                      class="w-full px-3 py-2 text-xs font-mono font-bold rounded-xl bg-surface-container-low border border-surface-container text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+              </form>
             </div>
 
-            <!-- Right: Customer Metadata Card + Sequential Photo Intake Workstation -->
-            <div class="lg:col-span-8 flex flex-col gap-5">
-              <!-- Customer & Batch Metadata Card -->
-              <div class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-xs">
-                <div class="flex items-center justify-between pb-3.5 mb-3.5 border-b border-surface-container">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-primary-container text-secondary-fixed flex items-center justify-center font-bold">
-                      <span class="material-symbols-outlined text-[18px]">badge</span>
-                    </div>
-                    <div>
-                      <h3 class="font-headline font-bold text-sm text-on-surface" id="assay-recv-detail-customer">ROYCO JEWELLERS (CHINSURAH)</h3>
-                      <span class="text-[11px] text-on-surface-variant font-mono" id="assay-recv-detail-job">JOB-2026-2369</span>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span id="assay-recv-detail-status" class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
-                      STAGE 1: PENDING INTAKE
-                    </span>
-                  </div>
-                </div>
-
-                <!-- 6 Metadata Pill Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 text-xs">
-                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
-                    <span class="text-[10px] uppercase font-bold text-slate-500 block">REQUEST #</span>
-                    <span class="font-mono font-bold text-slate-800 text-xs mt-0.5 block truncate" id="assay-recv-detail-req">119813505</span>
-                  </div>
-                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
-                    <span class="text-[10px] uppercase font-bold text-slate-500 block">TOTAL PIECES</span>
-                    <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block" id="assay-recv-detail-pcs">94 PCS</span>
-                  </div>
-                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
-                    <span class="text-[10px] uppercase font-bold text-slate-500 block">METAL & PURITY</span>
-                    <span class="font-mono font-bold text-amber-700 text-xs mt-0.5 block" id="assay-recv-detail-metal-purity">Gold 22K 916</span>
-                  </div>
-                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
-                    <span class="text-[10px] uppercase font-bold text-slate-500 block">GROSS WEIGHT</span>
-                    <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block" id="assay-recv-detail-gross">375.000 g</span>
-                  </div>
-                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
-                    <span class="text-[10px] uppercase font-bold text-slate-500 block">NET WEIGHT</span>
-                    <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block" id="assay-recv-detail-net">375.000 g</span>
-                  </div>
-                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
-                    <span class="text-[10px] uppercase font-bold text-slate-500 block">OPERATOR</span>
-                    <span class="font-mono font-bold text-slate-700 text-xs mt-0.5 block truncate" id="assay-recv-detail-operator">User A (Sarah)</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Sequential Photo Capture Workstation -->
+            <!-- Right: Direct Camera Photo Capture Workstation (7 cols) -->
+            <div class="lg:col-span-7 flex flex-col gap-5">
               <div class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-xs flex flex-col gap-5">
                 <!-- Piece Progress Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-low p-3.5 rounded-xl border border-surface-container">
@@ -1934,17 +1978,17 @@
                     </div>
                     <div>
                       <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold uppercase tracking-wide text-slate-900" id="assay-recv-piece-indicator">Capturing Piece 1 of 94</span>
+                        <span class="text-xs font-bold uppercase tracking-wide text-slate-900" id="assay-recv-piece-indicator">Capturing Piece 1 of 1</span>
                         <span id="assay-recv-progress-pct" class="text-[11px] font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">0%</span>
                       </div>
-                      <p class="text-[11px] text-slate-500 mt-0.5">Instant Snap or 5s Auto-Capture for sequential intake. Visual embeddings auto-computed.</p>
+                      <p class="text-[11px] text-slate-500 mt-0.5">Direct camera capture only (max equal to Total Pieces). File upload disabled.</p>
                     </div>
                   </div>
                   <div class="w-full sm:w-48 flex flex-col gap-1">
                     <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
                       <div id="assay-recv-progress-bar" class="h-full bg-primary rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
-                    <span class="text-[10px] text-right font-mono text-slate-500" id="assay-recv-progress-count">0 / 94 pieces captured</span>
+                    <span class="text-[10px] text-right font-mono text-slate-500" id="assay-recv-progress-count">0 / 1 pieces captured</span>
                   </div>
                 </div>
 
@@ -1986,7 +2030,7 @@
                       </div>
                     </div>
 
-                    <!-- Camera Control Toolbar -->
+                    <!-- Camera Control Toolbar (NO UPLOAD BUTTON) -->
                     <div class="flex flex-wrap items-center justify-between gap-2.5">
                       <div class="flex items-center gap-2">
                         <button
@@ -2010,15 +2054,10 @@
                       </div>
 
                       <div class="flex items-center gap-2">
-                        <label class="px-3 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container border border-surface-container text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all">
-                          <span class="material-symbols-outlined text-[18px]">upload</span>
-                          <span>UPLOAD</span>
-                          <input type="file" id="assay-recv-photo-upload-input" accept="image/*" class="hidden" onchange="handleAssayCenterPhotoFileUpload(event)" />
-                        </label>
                         <select
                           id="assay-recv-camera-select"
                           onchange="switchAssayCenterCameraDevice(this.value)"
-                          class="text-xs py-2 px-2.5 rounded-xl bg-surface-container-low border border-surface-container text-slate-700 focus:outline-none max-w-[130px]"
+                          class="text-xs py-2 px-2.5 rounded-xl bg-surface-container-low border border-surface-container text-slate-700 focus:outline-none max-w-[140px]"
                         >
                           <option value="">Default Cam</option>
                         </select>
@@ -2029,7 +2068,7 @@
                   <!-- Last Captured Thumbnail & Feature Embedding Card (5 cols) -->
                   <div class="md:col-span-5 flex flex-col justify-between bg-surface-container-low/70 rounded-2xl p-4 border border-surface-container gap-3">
                     <div class="flex items-center justify-between pb-2 border-b border-surface-container">
-                      <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700">LATEST CAPTURED BASELINE</span>
+                      <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700">LATEST CAPTURED PHOTO</span>
                       <span id="assay-recv-thumb-time" class="text-[10px] font-mono text-slate-500">Awaiting capture</span>
                     </div>
 
@@ -2040,7 +2079,7 @@
 
                     <div class="flex flex-col gap-1.5 text-xs">
                       <div class="flex items-center justify-between text-[11px]">
-                        <span class="text-slate-500 font-medium">Piece & Tag:</span>
+                        <span class="text-slate-500 font-medium">Piece:</span>
                         <span class="font-mono font-bold text-slate-800 truncate" id="assay-recv-thumb-info">—</span>
                       </div>
                       <div class="flex items-center justify-between text-[11px]">
@@ -2055,24 +2094,131 @@
                   </div>
                 </div>
 
-                <!-- Piece Checklist Grid / Table -->
+                <!-- Captured Pieces Grid -->
                 <div class="flex flex-col gap-3 pt-4 border-t border-surface-container">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                       <span class="material-symbols-outlined text-[18px] text-primary">checklist</span>
-                      <h4 class="font-headline font-bold text-xs uppercase tracking-wider text-slate-900">Piece Intake Checklist</h4>
+                      <h4 class="font-headline font-bold text-xs uppercase tracking-wider text-slate-900">Captured Piece Photos</h4>
                     </div>
-                    <span class="text-[11px] text-slate-500">Click any captured piece thumbnail to view 4-stage filmstrip</span>
+                    <span class="text-[11px] text-slate-500" id="assay-recv-cap-limit-hint">Max photos allowed: 1</span>
                   </div>
 
-                  <div id="assay-recv-pieces-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5 max-h-[360px] overflow-y-auto p-1">
+                  <div id="assay-recv-pieces-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 max-h-[300px] overflow-y-auto p-1">
                     <!-- Populated by JS -->
                   </div>
+                </div>
+
+                <!-- SAVE BUTTON -->
+                <div class="pt-3 border-t border-surface-container flex items-center justify-end">
+                  <button
+                    type="button"
+                    id="btn-assay-recv-save"
+                    onclick="openAssayRecvConfirmationPage()"
+                    class="w-full sm:w-auto px-6 py-3 rounded-xl bg-primary-container text-secondary-fixed hover:bg-slate-800 border border-[#c5a059]/40 font-bold text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-amber-400">save</span>
+                    <span>SAVE INTAKE &amp; PROCEED TO CONFIRMATION</span>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </section>
+
+        <!-- ========================================== -->
+        <!-- CONFIRMATION PAGE: ASSAY CENTER RECEIVE -->
+        <!-- ========================================== -->
+        <div id="assay-recv-confirmation-page" class="fixed inset-0 z-50 hidden bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div class="bg-surface-container-lowest w-full max-w-4xl rounded-2xl border border-surface-container shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+            <!-- Header -->
+            <div class="px-6 py-4 bg-primary-container text-secondary-fixed flex items-center justify-between border-b border-[#c5a059]/30">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-amber-400 text-2xl">fact_check</span>
+                <div>
+                  <h2 class="font-headline font-bold text-base uppercase tracking-wider">Confirm Assay Center Receive Intake</h2>
+                  <p class="text-[11px] text-slate-300">Review all entered details and captured piece photos before final submission</p>
+                </div>
+              </div>
+              <button type="button" onclick="closeAssayRecvConfirmationPage()" class="text-slate-300 hover:text-white cursor-pointer">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6 overflow-y-auto flex flex-col gap-5">
+              <!-- Summary Pills -->
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <div class="p-3 rounded-xl bg-surface-container-low border border-surface-container">
+                  <span class="text-[10px] font-bold uppercase text-slate-500 block">DATE</span>
+                  <span class="font-mono font-bold text-xs text-slate-900 mt-0.5 block" id="assay-recv-confirm-date">—</span>
+                </div>
+                <div class="p-3 rounded-xl bg-surface-container-low border border-surface-container">
+                  <span class="text-[10px] font-bold uppercase text-slate-500 block">TIME (AM/PM)</span>
+                  <span class="font-mono font-bold text-xs text-slate-900 mt-0.5 block" id="assay-recv-confirm-time">—</span>
+                </div>
+                <div class="p-3 rounded-xl bg-surface-container-low border border-surface-container col-span-2">
+                  <span class="text-[10px] font-bold uppercase text-slate-500 block">CUSTOMER NAME</span>
+                  <span class="font-bold text-xs text-slate-900 mt-0.5 block truncate" id="assay-recv-confirm-customer">—</span>
+                </div>
+                <div class="p-3 rounded-xl bg-surface-container-low border border-surface-container">
+                  <span class="text-[10px] font-bold uppercase text-slate-500 block">TOTAL PIECES</span>
+                  <span class="font-mono font-bold text-xs text-slate-900 mt-0.5 block" id="assay-recv-confirm-pieces">—</span>
+                </div>
+                <div class="p-3 rounded-xl bg-surface-container-low border border-surface-container">
+                  <span class="text-[10px] font-bold uppercase text-slate-500 block">ARTICLE METAL</span>
+                  <span class="font-bold text-xs text-amber-700 mt-0.5 block" id="assay-recv-confirm-metal">—</span>
+                </div>
+                <div class="p-3 rounded-xl bg-surface-container-low border border-surface-container">
+                  <span class="text-[10px] font-bold uppercase text-slate-500 block">DECLARED PURITY</span>
+                  <span class="font-mono font-bold text-xs text-slate-900 mt-0.5 block" id="assay-recv-confirm-purity">—</span>
+                </div>
+                <div class="p-3 rounded-xl bg-surface-container-low border border-surface-container">
+                  <span class="text-[10px] font-bold uppercase text-slate-500 block">WEIGHT OF ARTICLES</span>
+                  <span class="font-mono font-bold text-xs text-slate-900 mt-0.5 block" id="assay-recv-confirm-weight">—</span>
+                </div>
+              </div>
+
+              <!-- Article Types Breakdown -->
+              <div class="flex flex-col gap-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Types of Articles Breakdown</h3>
+                <div id="assay-recv-confirm-articles" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+
+              <!-- Captured Photos Grid -->
+              <div class="flex flex-col gap-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Captured Piece Photos (<span id="assay-recv-confirm-photo-count">0</span>)</h3>
+                <div id="assay-recv-confirm-photos-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-2.5">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="px-6 py-4 bg-surface-container-low border-t border-surface-container flex items-center justify-between gap-3">
+              <button
+                type="button"
+                id="btn-assay-recv-confirm-back"
+                onclick="closeAssayRecvConfirmationPage()"
+                class="px-5 py-2.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs uppercase tracking-wider cursor-pointer transition-all flex items-center gap-1.5"
+              >
+                <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                <span>Edit / Back</span>
+              </button>
+              <button
+                type="button"
+                id="btn-assay-recv-confirm-submit"
+                onclick="confirmAndSubmitAssayRecvIntake()"
+                class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider shadow-md cursor-pointer transition-all flex items-center gap-2"
+              >
+                <span class="material-symbols-outlined text-[18px]">verified</span>
+                <span>Confirm &amp; Submit</span>
+              </button>
+            </div>
+          </div>
+        </div>
 
 
         <!-- ========================================== -->

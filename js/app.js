@@ -12037,283 +12037,435 @@
   // STAGE 1 (USER A): ASSAY CENTER RECEIVE CONTROLLER
   // -------------------------------------------------------------------------
 
+  let assayRecvDateFilter = '';
+  let assayRecvDraftPhotos = [];
+
+  function normalizeAssayRecvDateToISO(batch) {
+    if (!batch) return '';
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const raw = (batch.date || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(raw)) {
+      const parts = raw.split(/[-/]/);
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    const timeStr = (batch.time || '').trim();
+    if (timeStr.toLowerCase().includes('today')) return todayIso;
+    const match = timeStr.match(/(\d{2})[-/](\d{2})[-/](\d{4})/);
+    if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+    return '';
+  }
+
   function initAssayCenterReceiveView() {
-    if (!state.intakeBatches || !state.intakeBatches.length) return;
-    state.intakeBatches.forEach(b => ensureBatchVisualCustody(b));
-
-    if (!activeAssayCenterReceiveBatch) {
-      activeAssayCenterReceiveBatch = state.intakeBatches.find(b => b.assayCenterReceiveStatus === 'PENDING') || state.intakeBatches[0];
+    if (state.intakeBatches && state.intakeBatches.length) {
+      state.intakeBatches.forEach(b => ensureBatchVisualCustody(b));
     }
 
+    // Initialize default form date & time if empty
+    const dateInput = document.getElementById('assay-recv-form-date');
+    if (dateInput && !dateInput.value) {
+      dateInput.value = new Date().toISOString().slice(0, 10);
+    }
+    const minSelect = document.getElementById('assay-recv-form-minute');
+    if (minSelect && minSelect.options && minSelect.options.length <= 12) {
+      let opts = '';
+      for (let m = 0; m < 60; m++) {
+        const mm = String(m).padStart(2, '0');
+        opts += `<option value="${mm}">${mm}</option>`;
+      }
+      minSelect.innerHTML = opts;
+      setAssayRecvFormTimeNow();
+    }
+
+    // Initialize at least 1 article type row if empty
+    const artContainer = document.getElementById('assay-recv-article-rows');
+    if (artContainer && artContainer.children && artContainer.children.length === 0) {
+      addAssayRecvArticleRow('Ring', 1);
+    }
+
+    populateAssayRecvCustomerDatalist();
     updateAssayCenterReceiveStats();
-    renderAssayCenterReceiveQueue();
-    if (activeAssayCenterReceiveBatch) {
-      selectAssayCenterReceiveBatch(activeAssayCenterReceiveBatch.jobDocket);
-    }
+    updateAssayCenterReceiveProgress();
+    renderAssayCenterReceivePiecesGrid();
+    updateAssayRecvArticleTally();
     populateAssayCenterCameraDevices();
     populateNewBatchCustomerDatalist();
   }
 
+  function populateAssayRecvCustomerDatalist() {
+    const datalist = document.getElementById('assay-recv-customer-datalist');
+    if (!datalist) return;
+    const custNames = new Set();
+    if (Array.isArray(state.customers)) {
+      state.customers.forEach(c => { if (c.name) custNames.add(c.name); });
+    }
+    if (Array.isArray(state.intakeBatches)) {
+      state.intakeBatches.forEach(b => { if (b.customer) custNames.add(b.customer); });
+    }
+    datalist.innerHTML = Array.from(custNames)
+      .map(name => `<option value="${escapeHtmlStr(name)}"></option>`)
+      .join('');
+  }
+
+  function setAssayRecvFormTimeNow() {
+    const now = new Date();
+    let h = now.getHours();
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+    const hh = String(h).padStart(2, '0');
+
+    const elH = document.getElementById('assay-recv-form-hour');
+    const elM = document.getElementById('assay-recv-form-minute');
+    const elA = document.getElementById('assay-recv-form-ampm');
+    if (elH) elH.value = hh;
+    if (elM) {
+      if (elM.options && !Array.from(elM.options).some(o => o.value === m)) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        elM.appendChild(opt);
+      }
+      elM.value = m;
+    }
+    if (elA) elA.value = ampm;
+  }
+
+  function handleAssayRecvMetalChange(metal) {
+    const puritySelect = document.getElementById('assay-recv-form-purity');
+    if (!puritySelect) return;
+    if (metal === 'Silver') {
+      puritySelect.innerHTML = [
+        '<option value="92.5 Silver">92.5 Silver</option>',
+        '<option value="99.9 Silver">99.9 Silver</option>',
+        '<option value="90.0 Silver">90.0 Silver</option>',
+        '<option value="80.0 Silver">80.0 Silver</option>'
+      ].join('');
+    } else if (metal === 'Platinum') {
+      puritySelect.innerHTML = [
+        '<option value="950 Platinum">950 Platinum</option>',
+        '<option value="900 Platinum">900 Platinum</option>',
+        '<option value="850 Platinum">850 Platinum</option>'
+      ].join('');
+    } else {
+      puritySelect.innerHTML = [
+        '<option value="22K 916">22K 916</option>',
+        '<option value="24K 999">24K 999</option>',
+        '<option value="24K 995">24K 995</option>',
+        '<option value="20K 833">20K 833</option>',
+        '<option value="18K 750">18K 750</option>',
+        '<option value="14K 585">14K 585</option>'
+      ].join('');
+    }
+  }
+
+  function addAssayRecvArticleRow(defaultType = '', defaultPieces = 1) {
+    const container = document.getElementById('assay-recv-article-rows');
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'assay-recv-article-row grid grid-cols-12 gap-2 items-center';
+    row.innerHTML = `
+      <div class="col-span-7">
+        <input
+          type="text"
+          list="assay-recv-article-type-datalist"
+          value="${escapeHtmlStr(defaultType)}"
+          placeholder="Article type (e.g. Ring, Chain)"
+          class="assay-recv-art-type w-full px-2.5 py-1.5 text-xs rounded-lg bg-white border border-surface-container text-slate-900 focus:outline-none focus:ring-1 focus:ring-primary"
+          required
+        />
+      </div>
+      <div class="col-span-3">
+        <input
+          type="number"
+          min="1"
+          value="${Math.max(1, parseInt(defaultPieces, 10) || 1)}"
+          oninput="updateAssayRecvArticleTally()"
+          placeholder="Pcs"
+          class="assay-recv-art-pieces w-full px-2.5 py-1.5 text-xs font-mono font-bold rounded-lg bg-white border border-surface-container text-slate-900 focus:outline-none focus:ring-1 focus:ring-primary"
+          required
+        />
+      </div>
+      <div class="col-span-2 flex justify-end">
+        <button
+          type="button"
+          onclick="removeAssayRecvArticleRow(this)"
+          class="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+          title="Remove article type"
+        >
+          <span class="material-symbols-outlined text-[16px]">delete</span>
+        </button>
+      </div>
+    `;
+    container.appendChild(row);
+    updateAssayRecvArticleTally();
+  }
+
+  function removeAssayRecvArticleRow(btn) {
+    const container = document.getElementById('assay-recv-article-rows');
+    if (!container) return;
+    if (container.children.length <= 1) {
+      showToast('At least one article type row is required.', 'warning');
+      return;
+    }
+    const row = btn && btn.closest ? btn.closest('.assay-recv-article-row') : null;
+    if (row) row.remove();
+    updateAssayRecvArticleTally();
+  }
+
+  function getAssayRecvArticleRowsData() {
+    const container = document.getElementById('assay-recv-article-rows');
+    if (!container || typeof container.querySelectorAll !== 'function') return [];
+    const rows = Array.from(container.querySelectorAll('.assay-recv-article-row'));
+    return rows.map(r => {
+      const typeEl = r.querySelector('.assay-recv-art-type');
+      const pcsEl = r.querySelector('.assay-recv-art-pieces');
+      return {
+        type: (typeEl ? typeEl.value : '').trim(),
+        pieces: parseInt(pcsEl ? pcsEl.value : '0', 10) || 0
+      };
+    });
+  }
+
+  function updateAssayRecvArticleTally() {
+    const totalEl = document.getElementById('assay-recv-form-total-pieces');
+    const tallyEl = document.getElementById('assay-recv-article-tally-val');
+    const totalPieces = Math.max(1, parseInt(totalEl ? totalEl.value : '1', 10) || 1);
+    const rows = getAssayRecvArticleRowsData();
+    const sum = rows.reduce((acc, r) => acc + (r.pieces > 0 ? r.pieces : 0), 0);
+
+    if (tallyEl) {
+      tallyEl.textContent = `${sum} / ${totalPieces} PCS`;
+      if (sum === totalPieces) {
+        tallyEl.className = 'text-emerald-700 font-mono font-bold';
+      } else {
+        tallyEl.className = 'text-rose-600 font-mono font-bold';
+      }
+    }
+  }
+
+  function handleAssayRecvTotalPiecesChange(val) {
+    const totalPieces = Math.max(1, parseInt(val, 10) || 1);
+    if (assayRecvDraftPhotos.length > totalPieces) {
+      assayRecvDraftPhotos = assayRecvDraftPhotos.slice(0, totalPieces);
+      assayRecvDraftPhotos.forEach((p, idx) => { p.pieceIndex = idx + 1; });
+      showToast(`Captured photos trimmed to match Total Pieces (${totalPieces}).`, 'warning');
+    }
+    updateAssayRecvArticleTally();
+    updateAssayCenterReceiveProgress();
+    renderAssayCenterReceivePiecesGrid();
+  }
+
+  function resetAssayRecvForm() {
+    const dateInput = document.getElementById('assay-recv-form-date');
+    if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+    setAssayRecvFormTimeNow();
+    const custInput = document.getElementById('assay-recv-form-customer');
+    if (custInput) custInput.value = '';
+    const pcsInput = document.getElementById('assay-recv-form-total-pieces');
+    if (pcsInput) pcsInput.value = '1';
+    const metalSelect = document.getElementById('assay-recv-form-metal');
+    if (metalSelect) {
+      metalSelect.value = 'Gold';
+      handleAssayRecvMetalChange('Gold');
+    }
+    const wtInput = document.getElementById('assay-recv-form-weight');
+    if (wtInput) wtInput.value = '';
+
+    const artContainer = document.getElementById('assay-recv-article-rows');
+    if (artContainer) {
+      artContainer.innerHTML = '';
+      addAssayRecvArticleRow('Ring', 1);
+    }
+
+    assayRecvDraftPhotos = [];
+    const thumbBox = document.getElementById('assay-recv-thumb-box');
+    const thumbTime = document.getElementById('assay-recv-thumb-time');
+    const thumbInfo = document.getElementById('assay-recv-thumb-info');
+    const thumbEmb = document.getElementById('assay-recv-thumb-embedding');
+    if (thumbBox) thumbBox.innerHTML = '<span class="material-symbols-outlined text-4xl text-slate-600">image</span><span class="text-[11px] text-slate-400 absolute bottom-3">No photo yet</span>';
+    if (thumbTime) thumbTime.textContent = 'Awaiting capture';
+    if (thumbInfo) thumbInfo.textContent = '—';
+    if (thumbEmb) thumbEmb.textContent = '—';
+
+    updateAssayRecvArticleTally();
+    updateAssayCenterReceiveProgress();
+    renderAssayCenterReceivePiecesGrid();
+  }
+
   function updateAssayCenterReceiveStats() {
     if (!state.intakeBatches) return;
-    const total = state.intakeBatches.length;
-    const pending = state.intakeBatches.filter(b => b.assayCenterReceiveStatus !== 'COMPLETED').length;
-    const completed = state.intakeBatches.filter(b => b.assayCenterReceiveStatus === 'COMPLETED').length;
-
-    let capturedPhotos = 0;
-    state.intakeBatches.forEach(b => {
-      if (Array.isArray(b.visualCustody)) {
-        capturedPhotos += b.visualCustody.filter(p => p.stageA && p.stageA.captured).length;
-      }
-    });
-
     const elTotal = document.getElementById('assay-recv-stat-total');
-    const elPending = document.getElementById('assay-recv-stat-pending');
-    const elCompleted = document.getElementById('assay-recv-stat-completed');
-    const elPhotos = document.getElementById('assay-recv-stat-photos');
-    const countAll = document.getElementById('assay-recv-count-all');
-    const countPending = document.getElementById('assay-recv-count-pending');
-    const countCompleted = document.getElementById('assay-recv-count-completed');
-    const badge = document.getElementById('assay-recv-queue-badge');
+    const elSub = document.getElementById('assay-recv-stat-subtitle');
 
-    if (elTotal) elTotal.textContent = `${total} BATCHES`;
-    if (elPending) elPending.textContent = `${pending} BATCHES`;
-    if (elCompleted) elCompleted.textContent = `${completed} BATCH${completed === 1 ? '' : 'ES'}`;
-    if (elPhotos) elPhotos.textContent = `${capturedPhotos} PIECES`;
-    if (countAll) countAll.textContent = total;
-    if (countPending) countPending.textContent = pending;
-    if (countCompleted) countCompleted.textContent = completed;
-    if (badge) badge.textContent = `${total} Total`;
+    if (assayRecvDateFilter) {
+      const matching = state.intakeBatches.filter(b => normalizeAssayRecvDateToISO(b) === assayRecvDateFilter);
+      if (elTotal) elTotal.textContent = `${matching.length} BATCH${matching.length === 1 ? '' : 'ES'}`;
+      if (elSub) elSub.textContent = `FILTERED FOR ${assayRecvDateFilter}`;
+    } else {
+      const total = state.intakeBatches.length;
+      if (elTotal) elTotal.textContent = `${total} BATCH${total === 1 ? '' : 'ES'}`;
+      if (elSub) elSub.textContent = 'ALL REGISTERED BATCHES';
+    }
   }
 
-  function filterAssayCenterReceiveQueue(filter) {
-    assayCenterReceiveFilter = filter || 'ALL';
-
-    const tabAll = document.getElementById('assay-recv-tab-all');
-    const tabPending = document.getElementById('assay-recv-tab-pending');
-    const tabCompleted = document.getElementById('assay-recv-tab-completed');
-
-    [tabAll, tabPending, tabCompleted].forEach(tab => {
-      if (!tab) return;
-      tab.classList.remove('bg-surface-container-lowest', 'text-on-surface', 'shadow-xs', 'font-bold');
-      tab.classList.add('text-slate-600', 'hover:text-slate-900');
-    });
-
-    if (assayCenterReceiveFilter === 'ALL' && tabAll) {
-      tabAll.classList.add('bg-surface-container-lowest', 'text-on-surface', 'shadow-xs', 'font-bold');
-      tabAll.classList.remove('text-slate-600');
-    } else if (assayCenterReceiveFilter === 'PENDING' && tabPending) {
-      tabPending.classList.add('bg-surface-container-lowest', 'text-on-surface', 'shadow-xs', 'font-bold');
-      tabPending.classList.remove('text-slate-600');
-    } else if (assayCenterReceiveFilter === 'COMPLETED' && tabCompleted) {
-      tabCompleted.classList.add('bg-surface-container-lowest', 'text-on-surface', 'shadow-xs', 'font-bold');
-      tabCompleted.classList.remove('text-slate-600');
+  function handleAssayRecvDateFilter(dateStr) {
+    assayRecvDateFilter = (dateStr || '').trim();
+    const clearBtn = document.getElementById('btn-assay-recv-date-clear');
+    const resultsBox = document.getElementById('assay-recv-date-results');
+    if (clearBtn && clearBtn.classList) {
+      if (assayRecvDateFilter) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
     }
 
-    renderAssayCenterReceiveQueue(true);
-  }
+    updateAssayCenterReceiveStats();
 
-  function handleAssayCenterReceiveSearch(query) {
-    assayCenterReceiveSearchQuery = (query || '').toLowerCase().trim();
-    const clearBtn = document.getElementById('assay-recv-clear-search');
-    if (clearBtn) {
-      clearBtn.classList.toggle('hidden', !assayCenterReceiveSearchQuery);
-    }
-    renderAssayCenterReceiveQueue(true);
-  }
-
-  function clearAssayCenterReceiveSearch() {
-    const input = document.getElementById('assay-recv-search');
-    if (input) input.value = '';
-    handleAssayCenterReceiveSearch('');
-  }
-
-  function renderAssayCenterReceiveQueue(preserveSelection = false) {
-    const container = document.getElementById('assay-recv-queue-container');
-    if (!container || !state.intakeBatches) return;
-
-    let list = [...state.intakeBatches];
-    if (assayCenterReceiveFilter === 'PENDING') {
-      list = list.filter(b => b.assayCenterReceiveStatus !== 'COMPLETED');
-    } else if (assayCenterReceiveFilter === 'COMPLETED') {
-      list = list.filter(b => b.assayCenterReceiveStatus === 'COMPLETED');
+    if (!resultsBox) return;
+    if (!assayRecvDateFilter) {
+      resultsBox.classList.add('hidden');
+      resultsBox.innerHTML = '';
+      return;
     }
 
-    if (assayCenterReceiveSearchQuery) {
-      list = list.filter(b => {
-        const c = (b.customer || '').toLowerCase();
-        const j = (b.jobDocket || '').toLowerCase();
-        const r = (b.reqNo || '').toLowerCase();
-        return c.includes(assayCenterReceiveSearchQuery) || j.includes(assayCenterReceiveSearchQuery) || r.includes(assayCenterReceiveSearchQuery);
-      });
-    }
+    const matching = (state.intakeBatches || []).filter(b => normalizeAssayRecvDateToISO(b) === assayRecvDateFilter);
+    resultsBox.classList.remove('hidden');
 
-    if (list.length === 0) {
-      container.innerHTML = `
-        <div class="p-6 text-center text-xs text-slate-500 bg-surface-container-low/50 rounded-xl border border-dashed border-surface-container">
-          No batches found matching filter criteria.
+    if (matching.length === 0) {
+      resultsBox.innerHTML = `
+        <div class="p-3 text-center text-xs text-slate-500 bg-surface-container-low/60 rounded-xl border border-dashed border-surface-container">
+          No intake batches found for <span class="font-mono font-bold">${escapeHtmlStr(assayRecvDateFilter)}</span>.
         </div>
       `;
       return;
     }
 
-    container.innerHTML = list.map(b => {
-      const isSelected = activeAssayCenterReceiveBatch && activeAssayCenterReceiveBatch.jobDocket === b.jobDocket;
-      const isCompleted = b.assayCenterReceiveStatus === 'COMPLETED';
-      const capturedCount = (b.visualCustody || []).filter(p => p.stageA && p.stageA.captured).length;
-      const totalPieces = b.pcs || 0;
-
-      return `
-        <div
-          onclick="selectAssayCenterReceiveBatch('${escapeHtmlStr(b.jobDocket)}')"
-          class="p-3 rounded-xl border transition-all cursor-pointer ${
-            isSelected
-              ? 'bg-primary-container text-secondary-fixed border-[#c5a059]/40 shadow-sm'
-              : 'bg-surface-container-low/70 hover:bg-surface-container border-surface-container text-on-surface'
-          }"
-        >
-          <div class="flex items-center justify-between gap-2">
-            <span class="font-headline font-bold text-xs truncate">${escapeHtmlStr(b.customer || 'Unknown Jeweller')}</span>
-            <span class="text-[9.5px] font-mono px-2 py-0.5 rounded-full font-bold ${
-              isCompleted
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-            }">${isCompleted ? 'COMPLETED' : 'PENDING'}</span>
-          </div>
-          <div class="flex items-center justify-between text-[11px] mt-1 text-slate-400 font-mono">
-            <span>${escapeHtmlStr(b.jobDocket)}</span>
-            <span>${b.pcs || 0} PCS • ${(b.grossWt || 0).toFixed(3)}g</span>
-          </div>
-          <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1.5 pt-1.5 border-t border-white/10">
-            <span>Progress: ${capturedCount}/${totalPieces} pieces</span>
-            <span class="text-amber-300 font-bold">${totalPieces > 0 ? Math.round((capturedCount / totalPieces) * 100) : 0}%</span>
-          </div>
+    resultsBox.innerHTML = matching.map(b => `
+      <div class="p-2.5 rounded-xl bg-surface-container-low/80 border border-surface-container flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex flex-col">
+          <span class="font-bold text-slate-900">${escapeHtmlStr(b.customer || 'Unknown')}</span>
+          <span class="text-[10px] font-mono text-slate-500">${escapeHtmlStr(b.jobDocket)} • ${escapeHtmlStr(b.time || b.date || '')}</span>
         </div>
-      `;
-    }).join('');
-
-    if (!preserveSelection && list.length > 0 && (!activeAssayCenterReceiveBatch || !list.some(b => b.jobDocket === activeAssayCenterReceiveBatch.jobDocket))) {
-      selectAssayCenterReceiveBatch(list[0].jobDocket);
-    }
+        <div class="flex items-center gap-3 font-mono text-[11px]">
+          <span class="font-bold text-slate-800">${b.pcs || 0} PCS</span>
+          <span class="text-amber-700 font-bold">${escapeHtmlStr(b.metal || 'Gold')} ${escapeHtmlStr(b.purity || '')}</span>
+          <span class="font-bold text-slate-700">${(b.grossWt || 0).toFixed(3)} g</span>
+        </div>
+      </div>
+    `).join('');
   }
 
-  function selectAssayCenterReceiveBatch(jobDocket) {
-    if (!state.intakeBatches) return;
-    const batch = state.intakeBatches.find(b => b.jobDocket === jobDocket);
-    if (!batch) return;
-
-    activeAssayCenterReceiveBatch = batch;
-    ensureBatchVisualCustody(batch);
-
-    // Update Customer Metadata Card
-    const elCust = document.getElementById('assay-recv-detail-customer');
-    const elJob = document.getElementById('assay-recv-detail-job');
-    const elReq = document.getElementById('assay-recv-detail-req');
-    const elPcs = document.getElementById('assay-recv-detail-pcs');
-    const elMP = document.getElementById('assay-recv-detail-metal-purity');
-    const elGross = document.getElementById('assay-recv-detail-gross');
-    const elNet = document.getElementById('assay-recv-detail-net');
-    const elStatus = document.getElementById('assay-recv-detail-status');
-
-    if (elCust) elCust.textContent = batch.customer || 'Unknown';
-    if (elJob) elJob.textContent = batch.jobDocket || '—';
-    if (elReq) elReq.textContent = batch.reqNo || '—';
-    if (elPcs) elPcs.textContent = `${batch.pcs || 0} PCS`;
-    if (elMP) elMP.textContent = `${batch.metal || 'Gold'} ${batch.purity || '22K 916'}`;
-    if (elGross) elGross.textContent = `${(batch.grossWt || 0).toFixed(3)} g`;
-    if (elNet) elNet.textContent = `${(batch.netWt || 0).toFixed(3)} g`;
-
-    const isCompleted = batch.assayCenterReceiveStatus === 'COMPLETED';
-    if (elStatus) {
-      elStatus.textContent = isCompleted ? 'STAGE 1: INTAKE COMPLETED' : 'STAGE 1: PENDING INTAKE';
-      elStatus.className = isCompleted
-        ? 'px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200'
-        : 'px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200';
-    }
-
-    updateAssayCenterReceiveProgress(batch);
-    renderAssayCenterReceivePiecesGrid(batch);
-    renderAssayCenterReceiveQueue(true);
+  function setAssayRecvDateFilterToday() {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const input = document.getElementById('assay-recv-date-filter');
+    if (input) input.value = todayIso;
+    handleAssayRecvDateFilter(todayIso);
   }
 
-  function updateAssayCenterReceiveProgress(batch) {
-    if (!batch || !batch.visualCustody) return;
-    const total = batch.pcs || 0;
-    const captured = batch.visualCustody.filter(p => p.stageA && p.stageA.captured).length;
-    const pct = total > 0 ? Math.round((captured / total) * 100) : 0;
+  function clearAssayRecvDateFilter() {
+    const input = document.getElementById('assay-recv-date-filter');
+    if (input) input.value = '';
+    handleAssayRecvDateFilter('');
+  }
+
+  function updateAssayCenterReceiveProgress() {
+    const totalEl = document.getElementById('assay-recv-form-total-pieces');
+    const total = Math.max(1, parseInt(totalEl ? totalEl.value : '1', 10) || 1);
+    const captured = assayRecvDraftPhotos.length;
+    const pct = total > 0 ? Math.min(100, Math.round((captured / total) * 100)) : 0;
 
     const elIndicator = document.getElementById('assay-recv-piece-indicator');
     const elPct = document.getElementById('assay-recv-progress-pct');
     const elBar = document.getElementById('assay-recv-progress-bar');
     const elCount = document.getElementById('assay-recv-progress-count');
-    const btnComplete = document.getElementById('btn-complete-assay-receive');
-
-    // Find first uncaptured piece index
-    const nextPiece = batch.visualCustody.find(p => !p.stageA || !p.stageA.captured);
-    const nextIdx = nextPiece ? nextPiece.pieceIndex : total;
+    const elHint = document.getElementById('assay-recv-cap-limit-hint');
+    const snapBtn = document.getElementById('assay-recv-snap-btn');
+    const autoBtn = document.getElementById('assay-recv-autocapture-btn');
 
     if (elIndicator) {
       elIndicator.textContent = captured >= total
-        ? `All ${total} Pieces Captured & Locked`
-        : `Capturing Piece ${nextIdx} of ${total}`;
+        ? `ALL ${total} / ${total} PIECES CAPTURED`
+        : `Capturing Piece ${captured + 1} of ${total}`;
     }
     if (elPct) elPct.textContent = `${pct}%`;
     if (elBar) elBar.style.width = `${pct}%`;
     if (elCount) elCount.textContent = `${captured} / ${total} pieces captured`;
+    if (elHint) elHint.textContent = `Max photos allowed: ${total} (${captured} captured)`;
 
-    if (btnComplete) {
-      if (captured >= total && total > 0) {
-        btnComplete.disabled = false;
-        btnComplete.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
-        btnComplete.classList.add('bg-primary-container', 'text-secondary-fixed', 'hover:bg-slate-800', 'cursor-pointer', 'border-[#c5a059]/40', 'shadow-sm');
-      } else {
-        btnComplete.disabled = true;
-        btnComplete.classList.add('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
-        btnComplete.classList.remove('bg-primary-container', 'text-secondary-fixed', 'hover:bg-slate-800', 'cursor-pointer', 'border-[#c5a059]/40', 'shadow-sm');
+    const limitReached = captured >= total;
+    if (snapBtn) {
+      snapBtn.disabled = limitReached;
+      if (snapBtn.classList) {
+        if (limitReached) { snapBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
+        else { snapBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+      }
+    }
+    if (autoBtn) {
+      autoBtn.disabled = limitReached;
+      if (autoBtn.classList) {
+        if (limitReached) { autoBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
+        else { autoBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
       }
     }
   }
 
-  function renderAssayCenterReceivePiecesGrid(batch) {
+  function renderAssayCenterReceivePiecesGrid() {
     const grid = document.getElementById('assay-recv-pieces-grid');
-    if (!grid || !batch) return;
+    if (!grid) return;
 
-    const pieces = batch.visualCustody || [];
-    grid.innerHTML = pieces.map(p => {
-      const isCap = p.stageA && p.stageA.captured;
-      const photo = isCap ? p.stageA.photoUrl : '';
+    const totalEl = document.getElementById('assay-recv-form-total-pieces');
+    const total = Math.max(1, parseInt(totalEl ? totalEl.value : '1', 10) || 1);
 
-      return `
-        <div class="p-2 rounded-xl border flex flex-col justify-between gap-1.5 transition-all ${
-          isCap
-            ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950'
-            : 'bg-white border-dashed border-slate-200 text-slate-500'
-        }">
-          <div class="flex items-center justify-between text-[10px] font-bold">
-            <span class="font-mono text-slate-900">#${p.pieceIndex}</span>
-            <span class="text-[9px] font-bold uppercase ${isCap ? 'text-emerald-700 font-black' : 'text-slate-400'}">
-              ${isCap ? 'CAPTURED' : 'PENDING'}
-            </span>
-          </div>
-
-          <div
-            onclick="openVisualCustodyModal('${escapeHtmlStr(batch.jobDocket)}', ${p.pieceIndex})"
-            class="w-full aspect-square rounded-lg bg-slate-900 overflow-hidden border border-slate-200 flex items-center justify-center relative cursor-pointer group"
-            title="Click to view 4-stage custody filmstrip"
-          >
-            ${
-              photo
-                ? `<img src="${photo}" alt="Piece #${p.pieceIndex}" class="w-full h-full object-cover group-hover:scale-105 transition-transform"/>`
-                : `<span class="material-symbols-outlined text-[20px] text-slate-600">photo_camera</span>`
-            }
-          </div>
-
-          <div class="text-[9px] font-mono truncate text-slate-700" title="${escapeHtmlStr(p.tagCode)}">
-            ${escapeHtmlStr(p.tagCode)}
-          </div>
+    if (assayRecvDraftPhotos.length === 0) {
+      grid.innerHTML = `
+        <div class="col-span-full p-6 text-center text-xs text-slate-500 bg-surface-container-low/50 rounded-xl border border-dashed border-surface-container">
+          No photos captured yet. Use <strong>SNAP PHOTO NOW</strong> or <strong>5s AUTO</strong> to capture up to ${total} piece photo${total === 1 ? '' : 's'}.
         </div>
       `;
-    }).join('');
+      return;
+    }
+
+    grid.innerHTML = assayRecvDraftPhotos.map((p, idx) => `
+      <div class="p-2 rounded-xl border bg-emerald-50/70 border-emerald-300 text-emerald-950 flex flex-col justify-between gap-1.5">
+        <div class="flex items-center justify-between text-[10px] font-bold">
+          <span class="font-mono text-slate-900">#${p.pieceIndex}</span>
+          <button
+            type="button"
+            onclick="deleteAssayRecvDraftPhoto(${idx})"
+            class="text-rose-600 hover:text-rose-800 cursor-pointer"
+            title="Remove & Retake Photo"
+          >
+            <span class="material-symbols-outlined text-[14px]">delete</span>
+          </button>
+        </div>
+        <div class="w-full aspect-square rounded-lg bg-slate-900 overflow-hidden border border-slate-200 flex items-center justify-center">
+          <img src="${p.photoUrl}" alt="Piece #${p.pieceIndex}" class="w-full h-full object-cover" />
+        </div>
+        <div class="text-[9px] font-mono truncate text-emerald-800 font-bold">
+          ${escapeHtmlStr(p.timestamp || '')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function deleteAssayRecvDraftPhoto(index) {
+    if (index < 0 || index >= assayRecvDraftPhotos.length) return;
+    assayRecvDraftPhotos.splice(index, 1);
+    assayRecvDraftPhotos.forEach((p, i) => { p.pieceIndex = i + 1; });
+    updateAssayCenterReceiveProgress();
+    renderAssayCenterReceivePiecesGrid();
+    showToast('Photo removed. You can recapture.', 'info');
+  }
+
+  // Legacy stubs kept safe for any external callers
+  function filterAssayCenterReceiveQueue() {}
+  function handleAssayCenterReceiveSearch() {}
+  function clearAssayCenterReceiveSearch() {}
+  function renderAssayCenterReceiveQueue() {}
+  function selectAssayCenterReceiveBatch(jobDocket) {
+    if (!state.intakeBatches) return;
+    const batch = state.intakeBatches.find(b => b.jobDocket === jobDocket);
+    if (batch) activeAssayCenterReceiveBatch = batch;
   }
 
   // --- CAMERA & CAPTURE CONTROLS (STAGE 1) ---
@@ -12397,23 +12549,27 @@
   }
 
   function captureAssayCenterPiecePhoto(source = 'MANUAL') {
-    if (!activeAssayCenterReceiveBatch) {
-      showToast('SELECT AN INTAKE BATCH FIRST.', 'warning');
-      return;
-    }
-    const batch = activeAssayCenterReceiveBatch;
-    ensureBatchVisualCustody(batch);
-
-    // Find next uncaptured piece
-    const targetPiece = batch.visualCustody.find(p => !p.stageA || !p.stageA.captured);
-    if (!targetPiece) {
-      showToast('ALL PIECES IN THIS BATCH ARE ALREADY CAPTURED!', 'success');
+    const totalEl = document.getElementById('assay-recv-form-total-pieces');
+    const totalPieces = parseInt(totalEl ? totalEl.value : '0', 10) || 0;
+    if (totalPieces < 1) {
+      showToast('PLEASE ENTER VALID TOTAL PIECES FIRST.', 'warning');
       return;
     }
 
-    const pieceIdx = targetPiece.pieceIndex;
-    const tagCode = targetPiece.tagCode;
-    const articleType = targetPiece.articleType;
+    if (assayRecvDraftPhotos.length >= totalPieces) {
+      if (assayCenterAutoCaptureActive) {
+        toggleAssayCenterAutoCapture();
+      }
+      showToast(`MAXIMUM PHOTO LIMIT (${totalPieces} PIECES) REACHED!`, 'warning');
+      return;
+    }
+
+    const pieceIdx = assayRecvDraftPhotos.length + 1;
+    const customer = (document.getElementById('assay-recv-form-customer')?.value || 'Walk-in Customer').trim();
+    const metal = document.getElementById('assay-recv-form-metal')?.value || 'Gold';
+    const purity = document.getElementById('assay-recv-form-purity')?.value || '22K 916';
+    const artRows = getAssayRecvArticleRowsData();
+    const firstArt = (artRows[0] && artRows[0].type) ? artRows[0].type : 'Ring';
 
     // Trigger flash animation
     const flash = document.getElementById('assay-recv-flash-overlay');
@@ -12433,40 +12589,28 @@
       ctx.drawImage(video, 0, 0);
       photoUrl = canvas.toDataURL('image/jpeg', 0.92);
     } else {
-      photoUrl = generateCustodyArticlePhoto(batch.customer, pieceIdx, batch.metal, batch.purity, 'STAGE_A', {
-        articleType,
+      photoUrl = generateCustodyArticlePhoto(customer, pieceIdx, metal, purity, 'STAGE_A', {
+        articleType: firstArt,
         angle: 0
       });
     }
 
     const embedding = extractVisualEmbedding(photoUrl, {
-      articleType,
+      articleType: firstArt,
       pieceIndex: pieceIdx,
-      metal: batch.metal,
+      metal: metal,
       angle: 0
     });
 
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-    targetPiece.stageA = {
+    assayRecvDraftPhotos.push({
+      pieceIndex: pieceIdx,
       photoUrl: photoUrl,
       timestamp: timeStr,
       operator: 'User A (Sarah Jenkins - Assay Intake Master)',
-      embedding: embedding,
-      captured: true
-    };
-
-    // Supabase Storage Photo Upload Pipeline (Stage A Baseline)
-    if (typeof window !== 'undefined' && window.LabSupabase && typeof window.LabSupabase.uploadJewelleryPhoto === 'function') {
-      window.LabSupabase.uploadJewelleryPhoto(photoUrl, 'custody-photos', `${batch.jobDocket}/piece_${pieceIdx}_stage_a_${Date.now()}.jpg`).then(res => {
-        if (res && res.success && res.url) {
-          targetPiece.stageA.photoUrl = res.url;
-          if (window.LabSupabase.config && window.LabSupabase.config.autoSync) {
-            window.LabSupabase.syncBatch(batch);
-          }
-        }
-      }).catch(err => console.warn('Supabase Stage A photo upload background:', err));
-    }
+      embedding: embedding
+    });
 
     // Update Latest Captured Baseline Card
     const thumbBox = document.getElementById('assay-recv-thumb-box');
@@ -12476,24 +12620,29 @@
 
     if (thumbBox) thumbBox.innerHTML = `<img src="${photoUrl}" alt="Piece #${pieceIdx}" class="w-full h-full object-cover"/>`;
     if (thumbTime) thumbTime.textContent = `${timeStr} Today`;
-    if (thumbInfo) thumbInfo.textContent = `Piece #${pieceIdx} • ${tagCode}`;
+    if (thumbInfo) thumbInfo.textContent = `Piece #${pieceIdx} of ${totalPieces}`;
     if (thumbEmb) thumbEmb.textContent = `${embedding.hash} (16-Ring Invariant)`;
 
-    updateAssayCenterReceiveProgress(batch);
-    renderAssayCenterReceivePiecesGrid(batch);
-    updateAssayCenterReceiveStats();
+    updateAssayCenterReceiveProgress();
+    renderAssayCenterReceivePiecesGrid();
 
-    const remaining = batch.visualCustody.filter(p => !p.stageA || !p.stageA.captured).length;
-    if (remaining === 0) {
+    if (assayRecvDraftPhotos.length >= totalPieces) {
       if (assayCenterAutoCaptureActive) {
-        toggleAssayCenterAutoCapture(); // turn off auto capture
+        toggleAssayCenterAutoCapture();
       }
       playAssaySound('complete');
-      showToast(`ALL ${batch.pcs} PIECES CAPTURED! SUBMISSION READY.`, 'success');
+      showToast(`ALL ${totalPieces} PIECES CAPTURED! READY TO SAVE.`, 'success');
     }
   }
 
   function toggleAssayCenterAutoCapture() {
+    const totalEl = document.getElementById('assay-recv-form-total-pieces');
+    const totalPieces = parseInt(totalEl ? totalEl.value : '0', 10) || 0;
+    if (!assayCenterAutoCaptureActive && assayRecvDraftPhotos.length >= totalPieces) {
+      showToast(`MAXIMUM PHOTO LIMIT (${totalPieces} PIECES) REACHED!`, 'warning');
+      return;
+    }
+
     assayCenterAutoCaptureActive = !assayCenterAutoCaptureActive;
     const label = document.getElementById('assay-recv-autocapture-label');
     const badge = document.getElementById('assay-recv-countdown-badge');
@@ -12558,81 +12707,198 @@
     }, assayCenterIntervalDuration + 100);
   }
 
-  function handleAssayCenterPhotoFileUpload(event) {
-    const file = event && event.target && event.target.files && event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      if (!activeAssayCenterReceiveBatch) return;
-      const batch = activeAssayCenterReceiveBatch;
-      ensureBatchVisualCustody(batch);
-      const targetPiece = batch.visualCustody.find(p => !p.stageA || !p.stageA.captured);
-      if (!targetPiece) {
-        showToast('ALL PIECES ALREADY CAPTURED.', 'info');
-        if (event && event.target) event.target.value = '';
-        return;
-      }
-      const photoUrl = e.target.result;
-      const pieceIdx = targetPiece.pieceIndex;
-      const tagCode = targetPiece.tagCode;
-      const articleType = targetPiece.articleType;
+  function handleAssayCenterPhotoFileUpload() {
+    showToast('Direct camera capture only. File upload is disabled.', 'warning');
+  }
 
-      const embedding = extractVisualEmbedding(photoUrl, {
-        articleType: articleType,
-        pieceIndex: pieceIdx,
-        metal: batch.metal,
-        angle: 0
+  function openAssayRecvConfirmationPage() {
+    const dateVal = (document.getElementById('assay-recv-form-date')?.value || '').trim();
+    const customerVal = (document.getElementById('assay-recv-form-customer')?.value || '').trim();
+    const hourVal = document.getElementById('assay-recv-form-hour')?.value || '10';
+    const minVal = document.getElementById('assay-recv-form-minute')?.value || '00';
+    const ampmVal = document.getElementById('assay-recv-form-ampm')?.value || 'AM';
+    const totalPieces = parseInt(document.getElementById('assay-recv-form-total-pieces')?.value || '0', 10) || 0;
+    const metalVal = document.getElementById('assay-recv-form-metal')?.value || 'Gold';
+    const purityVal = document.getElementById('assay-recv-form-purity')?.value || '22K 916';
+    const weightVal = parseFloat(document.getElementById('assay-recv-form-weight')?.value || '0') || 0;
+    const articles = getAssayRecvArticleRowsData();
+
+    if (!dateVal) {
+      showToast('Please select the intake Date.', 'warning');
+      return;
+    }
+    if (!customerVal) {
+      showToast('Please enter the Customer Name.', 'warning');
+      return;
+    }
+    if (totalPieces < 1) {
+      showToast('Total Pieces must be at least 1.', 'warning');
+      return;
+    }
+    if (articles.length === 0 || articles.some(a => !a.type || a.pieces < 1)) {
+      showToast('Please fill in all Article Types and Piece counts (min 1).', 'warning');
+      return;
+    }
+    const artSum = articles.reduce((acc, a) => acc + a.pieces, 0);
+    if (artSum !== totalPieces) {
+      showToast(`Sum of Article Type pieces (${artSum}) must equal Total Pieces (${totalPieces}).`, 'warning');
+      return;
+    }
+    if (weightVal <= 0) {
+      showToast('Please enter a valid Weight of Articles (in grams).', 'warning');
+      return;
+    }
+    if (assayRecvDraftPhotos.length === 0) {
+      showToast('Please capture at least 1 piece photo using the camera.', 'warning');
+      return;
+    }
+    if (assayRecvDraftPhotos.length > totalPieces) {
+      showToast(`Captured photos (${assayRecvDraftPhotos.length}) cannot exceed Total Pieces (${totalPieces}).`, 'warning');
+      return;
+    }
+
+    const timeFormatted = `${hourVal}:${minVal} ${ampmVal}`;
+    const setEl = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+
+    setEl('assay-recv-confirm-date', dateVal);
+    setEl('assay-recv-confirm-time', timeFormatted);
+    setEl('assay-recv-confirm-customer', customerVal);
+    setEl('assay-recv-confirm-pieces', `${totalPieces} PCS`);
+    setEl('assay-recv-confirm-metal', metalVal);
+    setEl('assay-recv-confirm-purity', purityVal);
+    setEl('assay-recv-confirm-weight', `${weightVal.toFixed(3)} g`);
+    setEl('assay-recv-confirm-photo-count', String(assayRecvDraftPhotos.length));
+
+    const artBox = document.getElementById('assay-recv-confirm-articles');
+    if (artBox) {
+      artBox.innerHTML = articles.map(a => `
+        <div class="p-2.5 rounded-xl bg-surface-container-low border border-surface-container flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-800 truncate">${escapeHtmlStr(a.type)}</span>
+          <span class="font-mono font-bold text-primary ml-2">${a.pieces} PCS</span>
+        </div>
+      `).join('');
+    }
+
+    const photosGrid = document.getElementById('assay-recv-confirm-photos-grid');
+    if (photosGrid) {
+      photosGrid.innerHTML = assayRecvDraftPhotos.map(p => `
+        <div class="p-1.5 rounded-xl border border-emerald-300 bg-emerald-50/50 flex flex-col gap-1">
+          <div class="text-[10px] font-mono font-bold text-slate-800">#${p.pieceIndex}</div>
+          <div class="w-full aspect-square rounded-lg overflow-hidden bg-slate-900">
+            <img src="${p.photoUrl}" alt="Piece #${p.pieceIndex}" class="w-full h-full object-cover" />
+          </div>
+        </div>
+      `).join('');
+    }
+
+    const page = document.getElementById('assay-recv-confirmation-page');
+    if (page) {
+      page.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function closeAssayRecvConfirmationPage() {
+    const page = document.getElementById('assay-recv-confirmation-page');
+    if (page) page.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  function confirmAndSubmitAssayRecvIntake() {
+    const dateVal = (document.getElementById('assay-recv-form-date')?.value || '').trim();
+    const customerVal = (document.getElementById('assay-recv-form-customer')?.value || '').trim();
+    const hourVal = document.getElementById('assay-recv-form-hour')?.value || '10';
+    const minVal = document.getElementById('assay-recv-form-minute')?.value || '00';
+    const ampmVal = document.getElementById('assay-recv-form-ampm')?.value || 'AM';
+    const totalPieces = parseInt(document.getElementById('assay-recv-form-total-pieces')?.value || '1', 10) || 1;
+    const metalVal = document.getElementById('assay-recv-form-metal')?.value || 'Gold';
+    const purityVal = document.getElementById('assay-recv-form-purity')?.value || '22K 916';
+    const weightVal = parseFloat(document.getElementById('assay-recv-form-weight')?.value || '0') || 0;
+    const articles = getAssayRecvArticleRowsData();
+    const timeFormatted = `${hourVal}:${minVal} ${ampmVal}`;
+
+    const year = new Date().getFullYear();
+    const count = (state.intakeBatches ? state.intakeBatches.length : 0) + 1;
+    const jobDocket = `JOB-${year}-${2370 + count}`;
+    const reqNo = String(119810000 + Math.floor(1000 + Math.random() * 9000));
+
+    // Register customer if new
+    if (Array.isArray(state.customers) && !state.customers.some(c => c.name && c.name.toLowerCase() === customerVal.toLowerCase())) {
+      state.customers.unshift({
+        name: customerVal,
+        bis: '',
+        gst: '',
+        address: '',
+        contact: ''
       });
+    }
 
-      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    // Build visualCustody slots from captured draft photos
+    const visualCustody = [];
+    for (let i = 1; i <= totalPieces; i++) {
+      const draft = assayRecvDraftPhotos[i - 1];
+      const artType = (articles[0] && articles[0].type) ? articles[0].type : 'Ornament';
+      visualCustody.push({
+        pieceIndex: i,
+        tagCode: `${jobDocket}-P${String(i).padStart(2, '0')}`,
+        articleType: artType,
+        stageA: draft ? {
+          photoUrl: draft.photoUrl,
+          timestamp: draft.timestamp,
+          operator: draft.operator,
+          embedding: draft.embedding,
+          captured: true
+        } : { captured: false },
+        stageB: { verified: false },
+        stageC: { confirmed: false },
+        stageD: { delivered: false }
+      });
+    }
 
-      targetPiece.stageA = {
-        photoUrl: photoUrl,
-        timestamp: timeStr,
-        operator: 'User A (Sarah Jenkins - Assay Intake Master)',
-        embedding: embedding,
-        captured: true
-      };
-
-      // Supabase Storage Photo Upload Pipeline (Stage A Baseline via File Upload)
-      if (typeof window !== 'undefined' && window.LabSupabase && typeof window.LabSupabase.uploadJewelleryPhoto === 'function') {
-        window.LabSupabase.uploadJewelleryPhoto(photoUrl, 'custody-photos', `${batch.jobDocket}/piece_${pieceIdx}_stage_a_${Date.now()}.jpg`).then(res => {
-          if (res && res.success && res.url) {
-            targetPiece.stageA.photoUrl = res.url;
-            if (window.LabSupabase.config && window.LabSupabase.config.autoSync) {
-              window.LabSupabase.syncBatch(batch);
-            }
-          }
-        }).catch(err => console.warn('Supabase Stage A file upload background:', err));
-      }
-
-      // Update Latest Captured Baseline Card
-      const thumbBox = document.getElementById('assay-recv-thumb-box');
-      const thumbTime = document.getElementById('assay-recv-thumb-time');
-      const thumbInfo = document.getElementById('assay-recv-thumb-info');
-      const thumbEmb = document.getElementById('assay-recv-thumb-embedding');
-
-      if (thumbBox) thumbBox.innerHTML = `<img src="${photoUrl}" alt="Piece #${pieceIdx}" class="w-full h-full object-cover"/>`;
-      if (thumbTime) thumbTime.textContent = `${timeStr} Today`;
-      if (thumbInfo) thumbInfo.textContent = `Piece #${pieceIdx} • ${tagCode}`;
-      if (thumbEmb) thumbEmb.textContent = `${embedding.hash} (16-Ring Invariant)`;
-
-      updateAssayCenterReceiveProgress(batch);
-      renderAssayCenterReceivePiecesGrid(batch);
-      updateAssayCenterReceiveStats();
-
-      const remaining = batch.visualCustody.filter(p => !p.stageA || !p.stageA.captured).length;
-      if (remaining === 0) {
-        playAssaySound('complete');
-        showToast(`ALL ${batch.pcs} PIECES CAPTURED! SUBMISSION READY.`, 'success');
-      } else {
-        playAssaySound('photo');
-        showToast(`PIECE #${pieceIdx} PHOTO UPLOADED & EMBEDDING EXTRACTED!`, 'success');
-      }
-
-      if (event && event.target) event.target.value = '';
+    const newBatch = {
+      jobDocket: jobDocket,
+      receiptNo: 'REC-' + reqNo.slice(-5),
+      customer: customerVal,
+      reqNo: reqNo,
+      metal: metalVal,
+      purity: purityVal,
+      pcs: totalPieces,
+      grossWt: weightVal,
+      netWt: weightVal,
+      date: dateVal,
+      time: `${dateVal} / ${timeFormatted}`,
+      articleType: articles.map(a => a.type.toUpperCase()).join(', '),
+      productBreakdown: ',' + articles.map(a => `${a.type.toUpperCase()}-${a.pieces}`).join(','),
+      articleTypes: articles,
+      receiver: 'Sarah Jenkins',
+      status: 'Stage 1 Intake Completed',
+      assayCenterReceiveStatus: 'COMPLETED',
+      tagStatus: 'PENDING',
+      tagData: [],
+      deliveryStatus: 'READY',
+      visualCustody: visualCustody
     };
-    reader.readAsDataURL(file);
+
+    if (!Array.isArray(state.intakeBatches)) state.intakeBatches = [];
+    state.intakeBatches.unshift(newBatch);
+    activeAssayCenterReceiveBatch = newBatch;
+
+    // Supabase sync if connected
+    if (typeof window !== 'undefined' && window.LabSupabase && typeof window.LabSupabase.syncBatch === 'function') {
+      try { window.LabSupabase.syncBatch(newBatch); } catch (e) {}
+    }
+
+    closeAssayRecvConfirmationPage();
+    resetAssayRecvForm();
+    populateAssayRecvCustomerDatalist();
+    updateAssayCenterReceiveStats();
+    if (assayRecvDateFilter) {
+      handleAssayRecvDateFilter(assayRecvDateFilter);
+    }
+
+    playAssaySound('complete');
+    showToast(`INTAKE SAVED & SUBMITTED: ${jobDocket} (${totalPieces} PCS)!`, 'success');
+    return newBatch;
   }
 
   function simulateAssayCenterReceiveAllDemo() {
@@ -12661,12 +12927,8 @@
         };
       }
     });
-
-    updateAssayCenterReceiveProgress(batch);
-    renderAssayCenterReceivePiecesGrid(batch);
     updateAssayCenterReceiveStats();
     playAssaySound('complete');
-    showToast(`DEMO: ALL ${batch.pcs} PIECES CAPTURED & VISUAL EMBEDDINGS REGISTERED!`, 'success');
   }
 
   function completeAssayCenterReceiveSubmission() {
@@ -12674,20 +12936,9 @@
     const batch = activeAssayCenterReceiveBatch;
     batch.assayCenterReceiveStatus = 'COMPLETED';
     batch.status = 'Stage 1 Intake Completed';
-
     updateAssayCenterReceiveStats();
-    renderAssayCenterReceiveQueue(true);
-    selectAssayCenterReceiveBatch(batch.jobDocket);
-
     playAssaySound('complete');
-    showToast(`ASSAY CENTER RECEIVE COMPLETED FOR ${batch.jobDocket}! BASELINE LOCKED.`, 'success');
-
-    // Automatically suggest navigation to Center Image Receive
-    if (typeof window !== 'undefined' && window.location && window.location.href) {
-      setTimeout(() => {
-        try { if (typeof navigateTo === 'function') navigateTo('receive'); } catch (e) {}
-      }, 1200);
-    }
+    showToast(`ASSAY CENTER RECEIVE COMPLETED FOR ${batch.jobDocket}!`, 'success');
   }
 
     // -------------------------------------------------------------------------
@@ -14422,6 +14673,22 @@
   // Stage 1 (User A) Visual Custody exports
   window.initAssayCenterReceiveView = initAssayCenterReceiveView;
   window.updateAssayCenterReceiveStats = updateAssayCenterReceiveStats;
+  window.handleAssayRecvDateFilter = handleAssayRecvDateFilter;
+  window.setAssayRecvDateFilterToday = setAssayRecvDateFilterToday;
+  window.clearAssayRecvDateFilter = clearAssayRecvDateFilter;
+  window.setAssayRecvFormTimeNow = setAssayRecvFormTimeNow;
+  window.handleAssayRecvMetalChange = handleAssayRecvMetalChange;
+  window.addAssayRecvArticleRow = addAssayRecvArticleRow;
+  window.removeAssayRecvArticleRow = removeAssayRecvArticleRow;
+  window.getAssayRecvArticleRowsData = getAssayRecvArticleRowsData;
+  window.updateAssayRecvArticleTally = updateAssayRecvArticleTally;
+  window.handleAssayRecvTotalPiecesChange = handleAssayRecvTotalPiecesChange;
+  window.resetAssayRecvForm = resetAssayRecvForm;
+  window.deleteAssayRecvDraftPhoto = deleteAssayRecvDraftPhoto;
+  window.openAssayRecvConfirmationPage = openAssayRecvConfirmationPage;
+  window.closeAssayRecvConfirmationPage = closeAssayRecvConfirmationPage;
+  window.confirmAndSubmitAssayRecvIntake = confirmAndSubmitAssayRecvIntake;
+  window.getAssayRecvDraftPhotos = () => assayRecvDraftPhotos;
   window.filterAssayCenterReceiveQueue = filterAssayCenterReceiveQueue;
   window.handleAssayCenterReceiveSearch = handleAssayCenterReceiveSearch;
   window.clearAssayCenterReceiveSearch = clearAssayCenterReceiveSearch;

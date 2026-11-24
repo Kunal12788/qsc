@@ -131,8 +131,9 @@ assert.strictEqual(indexHtml.includes('<section id="view-delivery-assay"'), true
 assert.strictEqual(indexHtml.includes('id="modal-new-intake-batch"'), true, 'FAIL: #modal-new-intake-batch modal missing');
 assert.strictEqual(indexHtml.includes('id="btn-open-new-intake-batch"'), true, 'FAIL: #btn-open-new-intake-batch button missing');
 assert.strictEqual(indexHtml.includes('id="modal-add-customer-name"'), true, 'FAIL: #modal-add-customer-name modal missing');
-assert.strictEqual(indexHtml.includes('id="btn-open-quick-add-customer"'), true, 'FAIL: #btn-open-quick-add-customer button missing');
-assert.strictEqual(indexHtml.includes('id="btn-add-customer-inline"'), true, 'FAIL: #btn-add-customer-inline button missing');
+assert.strictEqual(indexHtml.includes('id="btn-open-quick-add-customer"'), false, 'FAIL: #btn-open-quick-add-customer must be removed');
+assert.strictEqual(indexHtml.includes('id="btn-assay-recv-verify-all"'), false, 'FAIL: #btn-assay-recv-verify-all must be removed');
+assert.strictEqual(indexHtml.includes('id="btn-complete-assay-receive"'), false, 'FAIL: #btn-complete-assay-receive must be removed');
 assert.strictEqual(indexHtml.includes('id="visual-custody-modal"'), true, 'FAIL: #visual-custody-modal missing');
 
 // 5. Verify validRoutes in js/app.js
@@ -150,43 +151,55 @@ console.log('  ✓ Views, modals, and routes verified.');
 
 
 // -------------------------------------------------------------
-// SUITE 2: Stage 1 (User A) DOM Components & Queue Controls
+// SUITE 2: Stage 1 (User A) DOM Components & Intake Form Controls
 // -------------------------------------------------------------
-console.log('\n[Suite 2] Stage 1 (User A) DOM Components & Queue Verification:');
+console.log('\n[Suite 2] Stage 1 (User A) DOM Components, Date Filter & Intake Form Verification:');
 
-// Metric cards
+// 1. Only TOTAL INTAKE BATCHES metric card kept; 3 old cards removed
 assert.strictEqual(indexHtml.includes('id="assay-recv-stat-total"'), true, 'FAIL: #assay-recv-stat-total missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-stat-pending"'), true, 'FAIL: #assay-recv-stat-pending missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-stat-completed"'), true, 'FAIL: #assay-recv-stat-completed missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-stat-photos"'), true, 'FAIL: #assay-recv-stat-photos missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-stat-pending"'), false, 'FAIL: #assay-recv-stat-pending must be removed');
+assert.strictEqual(indexHtml.includes('id="assay-recv-stat-completed"'), false, 'FAIL: #assay-recv-stat-completed must be removed');
+assert.strictEqual(indexHtml.includes('id="assay-recv-stat-photos"'), false, 'FAIL: #assay-recv-stat-photos must be removed');
 
-// Queue tabs & Search
-assert.strictEqual(indexHtml.includes('id="assay-recv-tab-all"'), true, 'FAIL: #assay-recv-tab-all missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-tab-pending"'), true, 'FAIL: #assay-recv-tab-pending missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-tab-completed"'), true, 'FAIL: #assay-recv-tab-completed missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-search"'), true, 'FAIL: #assay-recv-search missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-queue-container"'), true, 'FAIL: #assay-recv-queue-container missing');
+// 2. Search by date controls
+assert.strictEqual(indexHtml.includes('id="assay-recv-date-filter"'), true, 'FAIL: #assay-recv-date-filter missing');
+assert.strictEqual(indexHtml.includes('id="btn-assay-recv-date-today"'), true, 'FAIL: #btn-assay-recv-date-today missing');
+assert.strictEqual(indexHtml.includes('id="btn-assay-recv-date-clear"'), true, 'FAIL: #btn-assay-recv-date-clear missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-date-results"'), true, 'FAIL: #assay-recv-date-results missing');
 
-// Customer metadata card
-assert.strictEqual(indexHtml.includes('id="assay-recv-detail-customer"'), true, 'FAIL: #assay-recv-detail-customer missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-detail-job"'), true, 'FAIL: #assay-recv-detail-job missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-detail-req"'), true, 'FAIL: #assay-recv-detail-req missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-detail-pcs"'), true, 'FAIL: #assay-recv-detail-pcs missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-detail-metal-purity"'), true, 'FAIL: #assay-recv-detail-metal-purity missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-detail-gross"'), true, 'FAIL: #assay-recv-detail-gross missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-detail-net"'), true, 'FAIL: #assay-recv-detail-net missing');
+// 3. Old Intake Batches Queue removed
+assert.strictEqual(indexHtml.includes('id="assay-recv-queue-container"'), false, 'FAIL: #assay-recv-queue-container must be removed');
+assert.strictEqual(indexHtml.includes('id="assay-recv-tab-all"'), false, 'FAIL: #assay-recv-tab-all must be removed');
+assert.strictEqual(indexHtml.includes('id="assay-recv-search"'), false, 'FAIL: #assay-recv-search must be removed');
 
-// Piece intake HUD, camera controls & checklist
-assert.strictEqual(indexHtml.includes('id="assay-recv-piece-indicator"'), true, 'FAIL: #assay-recv-piece-indicator missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-progress-bar"'), true, 'FAIL: #assay-recv-progress-bar missing');
+// 4. New Intake Form fields
+assert.strictEqual(indexHtml.includes('id="assay-recv-intake-form"'), true, 'FAIL: #assay-recv-intake-form missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-form-date"'), true, 'FAIL: #assay-recv-form-date missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-form-customer"'), true, 'FAIL: #assay-recv-form-customer missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-form-hour"'), true, 'FAIL: #assay-recv-form-hour missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-form-minute"'), true, 'FAIL: #assay-recv-form-minute missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-form-ampm"'), true, 'FAIL: #assay-recv-form-ampm missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-form-total-pieces"'), true, 'FAIL: #assay-recv-form-total-pieces missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-form-metal"'), true, 'FAIL: #assay-recv-form-metal missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-article-rows"'), true, 'FAIL: #assay-recv-article-rows missing');
+assert.strictEqual(indexHtml.includes('id="btn-assay-recv-add-article-row"'), true, 'FAIL: #btn-assay-recv-add-article-row missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-form-purity"'), true, 'FAIL: #assay-recv-form-purity missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-form-weight"'), true, 'FAIL: #assay-recv-form-weight missing');
+
+// 5. Direct camera capture ONLY (no file upload) + Save button
+assert.strictEqual(indexHtml.includes('id="assay-recv-photo-upload-input"'), false, 'FAIL: #assay-recv-photo-upload-input must be removed');
 assert.strictEqual(indexHtml.includes('id="assay-recv-snap-btn"'), true, 'FAIL: #assay-recv-snap-btn missing');
 assert.strictEqual(indexHtml.includes('id="assay-recv-autocapture-btn"'), true, 'FAIL: #assay-recv-autocapture-btn missing');
 assert.strictEqual(indexHtml.includes('id="assay-recv-pieces-grid"'), true, 'FAIL: #assay-recv-pieces-grid missing');
-assert.strictEqual(indexHtml.includes('id="btn-complete-assay-receive"'), true, 'FAIL: #btn-complete-assay-receive missing');
+assert.strictEqual(indexHtml.includes('id="btn-assay-recv-save"'), true, 'FAIL: #btn-assay-recv-save missing');
 
-console.log('  ✓ Stage 1 metric cards and queue filter tabs verified.');
-console.log('  ✓ Customer metadata fields (Customer, Job, Req, Pcs, Metal/Purity, Gross/Net) verified.');
-console.log('  ✓ Sequential piece indicator, camera snap, 5s auto-capture toggle, and pieces checklist verified.');
+// 6. Confirmation Page
+assert.strictEqual(indexHtml.includes('id="assay-recv-confirmation-page"'), true, 'FAIL: #assay-recv-confirmation-page missing');
+assert.strictEqual(indexHtml.includes('id="btn-assay-recv-confirm-back"'), true, 'FAIL: #btn-assay-recv-confirm-back missing');
+assert.strictEqual(indexHtml.includes('id="btn-assay-recv-confirm-submit"'), true, 'FAIL: #btn-assay-recv-confirm-submit missing');
+
+console.log('  ✓ Removed 3 header buttons, 3 metric cards, Intake Batches Queue, and file upload verified.');
+console.log('  ✓ Date filter, full Intake Form, infinite article types, camera capture, Save, and Confirmation Page verified.');
 
 
 // -------------------------------------------------------------
