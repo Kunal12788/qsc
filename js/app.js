@@ -1676,14 +1676,14 @@
   let currentGeneratedTags = [];
   let tagConfig = {
     wMm: 50,
-    hMm: 10,
+    hMm: 15,
     layout: 'split',
-    topCal: 0.3,
-    leftCal: 0.5,
-    bottomCal: 0.3,
-    bridgeGap: 0.5,
+    topCal: 0,
+    leftCal: 0,
+    bottomCal: 0,
+    bridgeGap: 0,
     fontScale: 100,
-    preset: '50-10'
+    preset: '50-15'
   };
 
   function getExcelColName(n) {
@@ -1779,10 +1779,10 @@
     renderTagStatusQueue();
     selectTagBatch(activeTagBatch.jobDocket);
 
-    // Ensure 50x10mm default preset is active on tag view load if not already customized
+    // Ensure 50x15mm default preset is active on tag view load if not already customized
     if (typeof onTagPresetChanged === 'function') {
-      if (!tagConfig || !tagConfig.preset || tagConfig.preset === '50-10') {
-        onTagPresetChanged('50-10');
+      if (!tagConfig || !tagConfig.preset || tagConfig.preset === '50-15') {
+        onTagPresetChanged('50-15');
       }
     }
   }
@@ -2568,22 +2568,40 @@
       if (printHeightInput) printHeightInput.value = val;
     };
 
-    if (preset === '50-10' || preset === '50x10' || preset === '50x10mm' || preset === 'default') {
+    if (preset === '50-15' || preset === '50x15' || preset === '50x15mm' || preset === 'default') {
+      setWidthVal(50);
+      setHeightVal(15);
+      if (layoutSelect) layoutSelect.value = 'split';
+      if (topCal) topCal.value = 0;
+      if (leftCal) leftCal.value = 0;
+      if (botCal) botCal.value = 0;
+      if (gapCal) gapCal.value = 0;
+      if (fontZoom) fontZoom.value = 100;
+      tagConfig.wMm = 50;
+      tagConfig.hMm = 15;
+      tagConfig.layout = 'split';
+      tagConfig.topCal = 0;
+      tagConfig.leftCal = 0;
+      tagConfig.bottomCal = 0;
+      tagConfig.bridgeGap = 0;
+      tagConfig.fontScale = 100;
+      tagConfig.preset = '50-15';
+    } else if (preset === '50-10' || preset === '50x10' || preset === '50x10mm') {
       setWidthVal(50);
       setHeightVal(10);
       if (layoutSelect) layoutSelect.value = 'split';
-      if (topCal) topCal.value = 0.3;
-      if (leftCal) leftCal.value = 0.5;
-      if (botCal) botCal.value = 0.3;
-      if (gapCal) gapCal.value = 0.5;
+      if (topCal) topCal.value = 0;
+      if (leftCal) leftCal.value = 0;
+      if (botCal) botCal.value = 0;
+      if (gapCal) gapCal.value = 0;
       if (fontZoom) fontZoom.value = 100;
       tagConfig.wMm = 50;
       tagConfig.hMm = 10;
       tagConfig.layout = 'split';
-      tagConfig.topCal = 0.3;
-      tagConfig.leftCal = 0.5;
-      tagConfig.bottomCal = 0.3;
-      tagConfig.bridgeGap = 0.5;
+      tagConfig.topCal = 0;
+      tagConfig.leftCal = 0;
+      tagConfig.bottomCal = 0;
+      tagConfig.bridgeGap = 0;
       tagConfig.fontScale = 100;
       tagConfig.preset = '50-10';
     } else if (preset === 'butterfly-84') {
@@ -2746,8 +2764,8 @@
     const printWidthInput = document.getElementById('tag-print-width');
     const printHeightInput = document.getElementById('tag-print-height');
 
-    let w = 50;
-    let h = 10;
+    let w = parseFloat((customWidthInput || printWidthInput)?.value || 50);
+    let h = parseFloat((customHeightInput || printHeightInput)?.value || 15);
 
     if (e && e.target) {
       if (e.target === customWidthInput || e.target.id === 'tag-custom-width') {
@@ -2758,17 +2776,17 @@
         if (customWidthInput) customWidthInput.value = printWidthInput.value;
       }
       if (e.target === customHeightInput || e.target.id === 'tag-custom-height') {
-        h = parseFloat(customHeightInput.value) || 10;
+        h = parseFloat(customHeightInput.value) || 15;
         if (printHeightInput) printHeightInput.value = customHeightInput.value;
       } else if (e.target === printHeightInput || e.target.id === 'tag-print-height') {
-        h = parseFloat(printHeightInput.value) || 10;
+        h = parseFloat(printHeightInput.value) || 15;
         if (customHeightInput) customHeightInput.value = printHeightInput.value;
       }
     } else {
       const wEl = customWidthInput || printWidthInput;
       const hEl = customHeightInput || printHeightInput;
       w = parseFloat(wEl?.value || 50);
-      h = parseFloat(hEl?.value || 10);
+      h = parseFloat(hEl?.value || 15);
       if (customWidthInput && printWidthInput) {
         if (typeof document !== 'undefined' && document.activeElement === customWidthInput) {
           printWidthInput.value = customWidthInput.value;
@@ -2791,7 +2809,9 @@
       }
     }
 
-    if (w === 50 && h === 10) {
+    if (w === 50 && h === 15) {
+      onTagPresetChanged('50-15');
+    } else if (w === 50 && h === 10) {
       onTagPresetChanged('50-10');
     } else {
       onTagPresetChanged('custom');
@@ -2907,19 +2927,19 @@
       miniPreview.style.alignItems = 'stretch';
       miniPreview.style.justifyContent = 'space-between';
 
-      // Enlarged font sizes for 50x10mm preview (customer: 10-11px, data: 7.5-8.5px)
-      const previewTitlePx = Math.max(9.5, Math.min(11.5, targetH * 0.18 * fontZoom)).toFixed(1);
-      const previewDataPx = Math.max(7.2, Math.min(8.8, targetH * 0.135 * fontZoom)).toFixed(1);
-      const previewQrDim = Math.max(26, Math.min(targetH - 16, 50));
+      // Equal 50/50 split preview
+      const previewTitlePx = Math.max(9.0, Math.min(12.0, targetH * 0.16 * fontZoom)).toFixed(1);
+      const previewDataPx = Math.max(7.2, Math.min(9.5, targetH * 0.13 * fontZoom)).toFixed(1);
+      const previewQrDim = Math.max(30, Math.min(targetH - 12, 68));
 
       const hasBridge = gapMm > 0 && width > gapMm + 15;
-      const tailPct = Math.max(20, Math.min(26, Math.round((11.5 / width) * 100)));
-      const gapPct = hasBridge ? Math.max(1, Math.min(4, Math.round((gapMm / width) * 100))) : 0;
-      const headPct = 100 - tailPct - gapPct;
+      const gapPct = hasBridge ? Math.max(1, Math.min(18, Math.round((gapMm / width) * 100))) : 0;
+      const headPct = Math.floor((100 - gapPct) / 2);
+      const tailPct = 100 - headPct - gapPct;
 
       miniPreview.innerHTML = `
-        <!-- Left Head Zone (${headPct}%) -->
-        <div style="width: ${headPct}%; max-width: ${headPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: 2px 4px 2px 4px; overflow: hidden; background: #ffffff;">
+        <!-- Left Half (${headPct}%) -->
+        <div style="width: ${headPct}%; max-width: ${headPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: 1px 2px; overflow: hidden; background: #ffffff; border-right: 1px dashed #e2e8f0;">
           ${optCust ? `
             <div style="text-align: center; width: 100%;">
               <div style="font-family: 'Cinzel', -apple-system, BlinkMacSystemFont, 'Segoe UI', serif; font-size: ${previewTitlePx}px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12px; line-height: 1.02; word-break: break-word; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -3076,14 +3096,14 @@
     const widthInput = customWidthInput || printWidthInput || document.getElementById('tag-cfg-width');
     const heightInput = customHeightInput || printHeightInput || document.getElementById('tag-cfg-height');
     const width = parseFloat(widthInput?.value || tagConfig.wMm || 50);
-    const height = parseFloat(heightInput?.value || tagConfig.hMm || 10);
+    const height = parseFloat(heightInput?.value || tagConfig.hMm || 15);
     const unit = (document.getElementById('tag-print-unit') || document.getElementById('tag-cfg-unit'))?.value || 'mm';
     const layout = document.getElementById('tag-print-layout')?.value || (width >= 45 ? 'split' : 'compact');
 
-    const topOffsetMm = parseFloat(document.getElementById('tag-cal-top')?.value ?? tagConfig.topCal ?? 0.3);
-    const leftOffsetMm = parseFloat(document.getElementById('tag-cal-left')?.value ?? tagConfig.leftCal ?? 0.5);
-    const botOffsetMm = parseFloat(document.getElementById('tag-cal-bottom')?.value ?? tagConfig.bottomCal ?? 0.3);
-    const gapMm = Math.max(0, parseFloat(document.getElementById('tag-cal-gap')?.value ?? tagConfig.bridgeGap ?? 0.5));
+    const topOffsetMm = parseFloat(document.getElementById('tag-cal-top')?.value ?? tagConfig.topCal ?? 0);
+    const leftOffsetMm = parseFloat(document.getElementById('tag-cal-left')?.value ?? tagConfig.leftCal ?? 0);
+    const botOffsetMm = parseFloat(document.getElementById('tag-cal-bottom')?.value ?? tagConfig.bottomCal ?? 0);
+    const gapMm = Math.max(0, parseFloat(document.getElementById('tag-cal-gap')?.value ?? tagConfig.bridgeGap ?? 0));
     const fontScaleFactor = (parseFloat(document.getElementById('tag-cal-font-scale')?.value || 100)) / 100;
 
     const incCust = document.getElementById('tag-opt-cust')?.checked !== false;
@@ -3100,11 +3120,11 @@
     const hMm = unit === 'in' ? height * 25.4 : height;
     const wMm = unit === 'in' ? width * 25.4 : width;
 
-    // Margins calibrated for thermal barcode printers: very little margin on all sides
-    const padTopMm = Math.max(0.1, topOffsetMm).toFixed(2);
-    const padBotMm = Math.max(0.1, botOffsetMm).toFixed(2);
-    const padLeftMm = Math.max(0.2, leftOffsetMm).toFixed(2);
-    const padRightMm = Math.max(0.2, Math.min(leftOffsetMm, 1.0)).toFixed(2);
+    // Zero margins by default (0mm when calibration offsets are 0)
+    const padTopMm = Math.max(0, topOffsetMm).toFixed(2);
+    const padBotMm = Math.max(0, botOffsetMm).toFixed(2);
+    const padLeftMm = Math.max(0, leftOffsetMm).toFixed(2);
+    const padRightMm = Math.max(0, leftOffsetMm).toFixed(2);
 
     const usableH = Math.max(5.0, hMm - (parseFloat(padTopMm) + parseFloat(padBotMm)));
     const usableW = Math.max(12.0, wMm - (parseFloat(padLeftMm) + parseFloat(padRightMm)));
@@ -3150,25 +3170,26 @@
       if (layout === 'split') {
         const hasBridge = gapMm > 0 && usableW > gapMm + 15;
         const bridgeWMm = hasBridge ? gapMm : 0;
-        const tailWMm = Math.max(9.5, Math.min(13.0, Math.round(usableW * 0.23 * 10) / 10));
-        const headWMm = Math.round((usableW - bridgeWMm - tailWMm) * 10) / 10;
+        const halfWMm = Math.round(((usableW - bridgeWMm) / 2) * 100) / 100;
+        const headWMm = halfWMm;
+        const tailWMm = Math.round((usableW - bridgeWMm - headWMm) * 100) / 100;
 
-        // Enlarged prominent fonts: customer 7.5-8.5pt, metadata 5.5-6.5pt
-        const baseTitlePt = (usableH <= 10.5) ? 7.8 : Math.min(8.5, (usableH / 12.0) * 8.0);
-        const baseDataPt = (usableH <= 10.5) ? 5.8 : Math.min(6.5, (usableH / 12.0) * 6.0);
+        // Prominent fonts scaled cleanly for 50x15mm (25mm x 15mm per equal half)
+        const baseTitlePt = (usableH <= 10.5) ? 6.8 : Math.min(8.2, (usableH / 15.0) * 7.2);
+        const baseDataPt = (usableH <= 10.5) ? 5.2 : Math.min(6.4, (usableH / 15.0) * 5.8);
         const titlePt = (baseTitlePt * fontScaleFactor).toFixed(2);
         const dataPt = (baseDataPt * fontScaleFactor).toFixed(2);
-        const dividerPt = (usableH <= 10.5) ? '2.60' : (Math.max(2.8, baseDataPt * 0.85 * fontScaleFactor)).toFixed(2);
-        const dividerMarginMm = (usableH <= 10.5) ? '0.04mm' : '0.08mm';
+        const dividerPt = (usableH <= 10.5) ? '2.50' : (Math.max(2.8, baseDataPt * 0.75 * fontScaleFactor)).toFixed(2);
+        const dividerMarginMm = (usableH <= 10.5) ? '0.04mm' : '0.12mm';
 
-        // Tail QR sizing: dynamically scale to fill 10mm height with bold HUID underneath
-        const qrHeaderPt = (usableH <= 10.5) ? '2.4' : (Math.max(2.8, Math.min(4.2, usableH * 0.32)) * fontScaleFactor).toFixed(1);
-        const qrFooterPt = (usableH <= 10.5) ? '4.8' : (Math.max(4.8, Math.min(6.2, usableH * 0.50)) * fontScaleFactor).toFixed(1);
-        const headerHMm = parseFloat(qrHeaderPt) * 0.3527 * 1.02;
-        const footerHMm = parseFloat(qrFooterPt) * 0.3527 * 1.02;
-        const qrGapMm = (usableH <= 10.5) ? 0.06 : 0.12;
+        // Tail QR sizing: dynamically scale to fill the 50% right half cleanly
+        const qrHeaderPt = (usableH <= 10.5) ? '2.4' : (Math.max(3.2, Math.min(4.6, usableH * 0.28)) * fontScaleFactor).toFixed(1);
+        const qrFooterPt = (usableH <= 10.5) ? '4.8' : (Math.max(5.0, Math.min(6.8, usableH * 0.42)) * fontScaleFactor).toFixed(1);
+        const headerHMm = parseFloat(qrHeaderPt) * 0.3527 * 1.05;
+        const footerHMm = parseFloat(qrFooterPt) * 0.3527 * 1.05;
+        const qrGapMm = (usableH <= 10.5) ? 0.06 : 0.15;
         const maxQrDim = usableH - headerHMm - footerHMm - (qrGapMm * 2);
-        const qrBoxDimMm = Math.max(5.5, Math.min(maxQrDim, tailWMm - 1.0, 9.2)).toFixed(2);
+        const qrBoxDimMm = Math.max(5.5, Math.min(maxQrDim, tailWMm - 1.5, 13.0)).toFixed(2);
         const qrPixelDim = Math.max(28, Math.round(parseFloat(qrBoxDimMm) * 3.78));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
@@ -3177,8 +3198,8 @@
         return `
           <div class="print-tag tag-split-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:flex; flex-direction:row; align-items:stretch; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,Helvetica,sans-serif;">
             
-            <!-- LEFT ZONE (PRINTABLE HEAD): ${headWMm}mm -->
-            <div class="tag-head" style="width:${headWMm}mm; max-width:${headWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:0.6mm; overflow:hidden;">
+            <!-- LEFT HALF (50% DETAILS): ${headWMm}mm -->
+            <div class="tag-head" style="width:${headWMm}mm; max-width:${headWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:0.4mm; overflow:hidden;">
               
               ${incCust ? `
                 <!-- Customer Jeweller Header -->
