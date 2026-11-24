@@ -1743,7 +1743,7 @@
           qr.make();
         }
         const svgTag = qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true });
-        return svgTag.replace('<svg ', `<svg width="${size}" height="${size}" style="max-width:100%;max-height:100%;display:block;" `);
+        return svgTag.replace('<svg ', `<svg width="${size}" height="${size}" shape-rendering="crispEdges" style="width:100%;height:100%;max-width:100%;max-height:100%;display:block;shape-rendering:crispEdges;image-rendering:pixelated;" `);
       } catch (err) {
         console.error('qrcode-generator error:', err);
       }
@@ -2927,10 +2927,10 @@
       miniPreview.style.alignItems = 'stretch';
       miniPreview.style.justifyContent = 'space-between';
 
-      // Equal 50/50 split preview
-      const previewTitlePx = Math.max(9.0, Math.min(12.0, targetH * 0.16 * fontZoom)).toFixed(1);
-      const previewDataPx = Math.max(7.2, Math.min(9.5, targetH * 0.13 * fontZoom)).toFixed(1);
-      const previewQrDim = Math.max(30, Math.min(targetH - 12, 68));
+      // Equal 50/50 split preview (No shortcuts, no cut-off, crystal clear font)
+      const previewTitlePx = Math.max(7.0, Math.min(9.5, targetH * 0.115 * fontZoom)).toFixed(1);
+      const previewDataPx = Math.max(5.5, Math.min(7.5, targetH * 0.088 * fontZoom)).toFixed(1);
+      const previewQrDim = Math.max(36, Math.min(targetH - 14, 72));
 
       const hasBridge = gapMm > 0 && width > gapMm + 15;
       const gapPct = hasBridge ? Math.max(1, Math.min(18, Math.round((gapMm / width) * 100))) : 0;
@@ -2939,38 +2939,26 @@
 
       miniPreview.innerHTML = `
         <!-- Left Half (${headPct}%) -->
-        <div style="width: ${headPct}%; max-width: ${headPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: 1px 2px; overflow: hidden; background: #ffffff; border-right: 1px dashed #e2e8f0;">
+        <div style="width: ${headPct}%; max-width: ${headPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: 1px 2px; overflow: hidden; background: #ffffff; border-right: 1px dashed #e2e8f0; color: #000000;">
           ${optCust ? `
-            <div style="text-align: center; width: 100%;">
-              <div style="font-family: 'Cinzel', -apple-system, BlinkMacSystemFont, 'Segoe UI', serif; font-size: ${previewTitlePx}px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12px; line-height: 1.02; word-break: break-word; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            <div style="text-align: left; width: 100%; border-bottom: 1px solid #000; padding-bottom: 1px; margin-bottom: 1px;">
+              <div style="font-family: Arial, Helvetica, sans-serif; font-size: ${previewTitlePx}px; font-weight: 800; text-transform: uppercase; line-height: 1.04; word-break: break-word;">
                 ${escapeHtmlStr(custName)}
-              </div>
-              <div style="display: flex; align-items: center; justify-content: center; width: 100%; margin: 0.5px 0;">
-                <div style="flex: 1; height: 0.5px; background: #000;"></div>
-                <div style="margin: 0 2px; font-size: 5px; line-height: 1;">◆</div>
-                <div style="flex: 1; height: 0.5px; background: #000;"></div>
               </div>
             </div>
           ` : ''}
-          <div style="display: flex; flex-direction: column; justify-content: space-between; flex: 1; font-size: ${previewDataPx}px; font-weight: 800; line-height: 1.08; overflow: hidden; font-family: 'Montserrat', sans-serif;">
+          <div style="display: flex; flex-direction: column; justify-content: space-between; flex: 1; font-size: ${previewDataPx}px; font-weight: 700; line-height: 1.05; font-family: Arial, Helvetica, sans-serif; color: #000000;">
             ${optCust ? `
-              <div style="display: flex; justify-content: space-between; align-items: baseline; overflow: hidden; white-space: nowrap;">
-                <span class="truncate">DATE: ${escapeHtmlStr(dateStr)}</span>
-                <span class="text-right truncate pl-1 font-bold">BOX: ${escapeHtmlStr(boxVal)}</span>
-              </div>
+              <div style="word-break: break-word;">DATE: ${escapeHtmlStr(dateStr)}</div>
+              <div style="word-break: break-word;">BOX NUMBER: ${escapeHtmlStr(boxVal)}</div>
             ` : ''}
             ${optOrnament ? `
-              <div style="display: flex; justify-content: space-between; align-items: baseline; overflow: hidden; white-space: nowrap;">
-                <span class="truncate">ART: ${escapeHtmlStr(cleanArticle)}</span>
-                <span class="text-right truncate pl-1">ORN: ${escapeHtmlStr(ornamentVal)}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: baseline; overflow: hidden; white-space: nowrap;">
-                <span class="truncate">GW: ${escapeHtmlStr(grossVal)}</span>
-                <span class="text-right truncate pl-1">NW: ${escapeHtmlStr(netVal)}</span>
-                ${optHuid ? `<span class="text-right truncate pl-1 font-black" style="font-weight: 900;">HUID: ${escapeHtmlStr(huidVal)}</span>` : ''}
-              </div>
+              <div style="word-break: break-word;">ARTICLE: ${escapeHtmlStr(cleanArticle)}</div>
+              <div style="word-break: break-word;">ORNAMENT: ${escapeHtmlStr(ornamentVal)}</div>
+              <div style="word-break: break-word;">GROSS WEIGHT: ${escapeHtmlStr(grossVal)}</div>
+              <div style="word-break: break-word;">NET WEIGHT: ${escapeHtmlStr(netVal)}</div>
             ` : ''}
-            ${(optHuid && !optOrnament) ? `<div class="truncate font-black" style="font-weight: 900;">HUID: ${escapeHtmlStr(huidVal)}</div>` : ''}
+            ${optHuid ? `<div style="word-break: break-word; font-weight: 900;">HUID NUMBER: ${escapeHtmlStr(huidVal)}</div>` : ''}
           </div>
         </div>
 
@@ -3174,73 +3162,54 @@
         const headWMm = halfWMm;
         const tailWMm = Math.round((usableW - bridgeWMm - headWMm) * 100) / 100;
 
-        // Prominent fonts scaled cleanly for 50x15mm (25mm x 15mm per equal half)
-        const baseTitlePt = (usableH <= 10.5) ? 6.8 : Math.min(8.2, (usableH / 15.0) * 7.2);
-        const baseDataPt = (usableH <= 10.5) ? 5.2 : Math.min(6.4, (usableH / 15.0) * 5.8);
+        // Crisp monochrome thermal sans-serif typography (no shortcuts, no cut-off, no blur)
+        const baseTitlePt = (usableH <= 11.0) ? 4.4 : Math.min(6.0, (usableH / 15.0) * 5.2);
+        const baseDataPt = (usableH <= 11.0) ? 3.5 : Math.min(4.8, (usableH / 15.0) * 4.2);
         const titlePt = (baseTitlePt * fontScaleFactor).toFixed(2);
         const dataPt = (baseDataPt * fontScaleFactor).toFixed(2);
-        const dividerPt = (usableH <= 10.5) ? '2.50' : (Math.max(2.8, baseDataPt * 0.75 * fontScaleFactor)).toFixed(2);
-        const dividerMarginMm = (usableH <= 10.5) ? '0.04mm' : '0.12mm';
 
         // Tail QR sizing: dynamically scale to fill the 50% right half cleanly
-        const qrHeaderPt = (usableH <= 10.5) ? '2.4' : (Math.max(3.2, Math.min(4.6, usableH * 0.28)) * fontScaleFactor).toFixed(1);
-        const qrFooterPt = (usableH <= 10.5) ? '4.8' : (Math.max(5.0, Math.min(6.8, usableH * 0.42)) * fontScaleFactor).toFixed(1);
+        const qrHeaderPt = (usableH <= 11.0) ? '2.6' : (Math.max(3.4, Math.min(4.8, usableH * 0.28)) * fontScaleFactor).toFixed(1);
+        const qrFooterPt = (usableH <= 11.0) ? '4.2' : (Math.max(4.8, Math.min(6.4, usableH * 0.38)) * fontScaleFactor).toFixed(1);
         const headerHMm = parseFloat(qrHeaderPt) * 0.3527 * 1.05;
         const footerHMm = parseFloat(qrFooterPt) * 0.3527 * 1.05;
-        const qrGapMm = (usableH <= 10.5) ? 0.06 : 0.15;
+        const qrGapMm = (usableH <= 11.0) ? 0.08 : 0.15;
         const maxQrDim = usableH - headerHMm - footerHMm - (qrGapMm * 2);
         const qrBoxDimMm = Math.max(5.5, Math.min(maxQrDim, tailWMm - 1.5, 13.0)).toFixed(2);
-        const qrPixelDim = Math.max(28, Math.round(parseFloat(qrBoxDimMm) * 3.78));
+        const qrPixelDim = Math.max(48, Math.round(parseFloat(qrBoxDimMm) * 8));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
         const pageBreakCss = isLastTag ? '' : 'page-break-after:always; break-after:page;';
 
         return `
-          <div class="print-tag tag-split-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:flex; flex-direction:row; align-items:stretch; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,Helvetica,sans-serif;">
+          <div class="print-tag tag-split-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:flex; flex-direction:row; align-items:stretch; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:Arial,Helvetica,sans-serif; -webkit-font-smoothing:none;">
             
-            <!-- LEFT HALF (50% DETAILS): ${headWMm}mm -->
-            <div class="tag-head" style="width:${headWMm}mm; max-width:${headWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:0.4mm; overflow:hidden;">
+            <!-- LEFT HALF (50% DETAILS - NO SHORTCUTS, NO CUT-OFF): ${headWMm}mm -->
+            <div class="tag-head" style="width:${headWMm}mm; max-width:${headWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:0.5mm; overflow:hidden;">
               
               ${incCust ? `
                 <!-- Customer Jeweller Header -->
-                <div style="width:100%; text-align:center; flex-shrink:0;">
-                  <div style="font-family:'Cinzel',-apple-system,BlinkMacSystemFont,'Segoe UI',Georgia,serif; font-size:${titlePt}pt; font-weight:900; text-transform:uppercase; letter-spacing:0.12px; line-height:1.02; word-break:break-word; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center;">
+                <div style="width:100%; text-align:left; flex-shrink:0; border-bottom:0.6px solid #000000; padding-bottom:0.25mm; margin-bottom:0.2mm;">
+                  <div style="font-family:Arial,Helvetica,sans-serif; font-size:${titlePt}pt; font-weight:800; text-transform:uppercase; line-height:1.03; word-break:break-word; color:#000000;">
                     ${escapeHtmlStr(customerName)}
-                  </div>
-                  <!-- Divider -->
-                  <div style="display:flex; align-items:center; justify-content:center; width:100%; margin:${dividerMarginMm} 0;">
-                    <div style="flex:1; height:0.5px; background:#000000;"></div>
-                    <div style="margin:0 0.6mm; font-size:${dividerPt}pt; line-height:1; color:#000000;">◆</div>
-                    <div style="flex:1; height:0.5px; background:#000000;"></div>
                   </div>
                 </div>
               ` : ''}
 
-              <!-- Structured Metadata Rows -->
-              <div style="display:flex; flex-direction:column; justify-content:space-between; flex:1; min-height:0; font-size:${dataPt}pt; font-weight:800; line-height:1.06; overflow:hidden;">
+              <!-- Full Structured Metadata Rows (No Abbreviations, No Truncation) -->
+              <div style="display:flex; flex-direction:column; justify-content:space-between; flex:1; min-height:0; font-family:Arial,Helvetica,sans-serif; font-size:${dataPt}pt; font-weight:700; line-height:1.05; color:#000000;">
                 ${incCust ? `
-                  <div style="display:flex; justify-content:space-between; align-items:baseline; white-space:nowrap; overflow:hidden;">
-                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">DATE: ${escapeHtmlStr(dateStr)}</span>
-                    <span style="white-space:nowrap; flex-shrink:0; padding-left:0.6mm; text-align:right;">BOX: ${escapeHtmlStr(boxNoStr)}</span>
-                  </div>
+                  <div style="word-break:break-word;">DATE: ${escapeHtmlStr(dateStr)}</div>
+                  <div style="word-break:break-word;">BOX NUMBER: ${escapeHtmlStr(boxNoStr)}</div>
                 ` : ''}
                 ${incOrnament ? `
-                  <div style="display:flex; justify-content:space-between; align-items:baseline; white-space:nowrap; overflow:hidden;">
-                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;">ART: ${escapeHtmlStr(articleVal)}</span>
-                    <span style="white-space:nowrap; flex-shrink:0; padding-left:0.6mm; text-align:right;">ORN: ${escapeHtmlStr(ornamentsType)}</span>
-                  </div>
-                  <div style="display:flex; justify-content:space-between; align-items:baseline; white-space:nowrap; overflow:hidden;">
-                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">GW: ${escapeHtmlStr(grossVal)}</span>
-                    <span style="white-space:nowrap; flex-shrink:0; padding-left:0.6mm; text-align:right;">NW: ${escapeHtmlStr(netVal)}</span>
-                    ${(incHuid && usableH <= 10.5) ? `
-                      <span style="white-space:nowrap; flex-shrink:0; padding-left:0.8mm; font-weight:900; text-align:right;">HUID: ${escapeHtmlStr(huidStr)}</span>
-                    ` : ''}
-                  </div>
+                  <div style="word-break:break-word;">ARTICLE: ${escapeHtmlStr(articleVal)}</div>
+                  <div style="word-break:break-word;">ORNAMENT: ${escapeHtmlStr(ornamentsType)}</div>
+                  <div style="word-break:break-word;">GROSS WEIGHT: ${escapeHtmlStr(grossVal)}</div>
+                  <div style="word-break:break-word;">NET WEIGHT: ${escapeHtmlStr(netVal)}</div>
                 ` : ''}
-                ${(incHuid && (!incOrnament || usableH > 10.5)) ? `
-                  <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:900;">
-                    HUID NUMBER: ${escapeHtmlStr(huidStr)}
-                  </div>
+                ${incHuid ? `
+                  <div style="word-break:break-word; font-weight:800;">HUID NUMBER: ${escapeHtmlStr(huidStr)}</div>
                 ` : ''}
               </div>
 
@@ -3251,16 +3220,16 @@
               <div class="tag-bridge" style="width:${bridgeWMm}mm; max-width:${bridgeWMm}mm; height:100%; box-sizing:border-box; flex-shrink:0;"></div>
             ` : ''}
 
-            <!-- RIGHT ZONE (TAIL): ${tailWMm}mm, Centered QR & HUID -->
+            <!-- RIGHT HALF (50% QR CODE & HUID): ${tailWMm}mm -->
             ${incQr ? `
-              <div class="tag-tail" style="width:${tailWMm}mm; max-width:${tailWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:0.5mm; padding-right:${padRightMm}mm; overflow:hidden;">
-                <div style="font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; font-size:${qrHeaderPt}pt; font-weight:900; letter-spacing:0.4px; text-transform:uppercase; line-height:1; margin-bottom:${qrGapMm}mm; text-align:center;">
+              <div class="tag-tail" style="width:${tailWMm}mm; max-width:${tailWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:0.4mm; padding-right:${padRightMm}mm; overflow:hidden; color:#000000;">
+                <div style="font-family:Arial,Helvetica,sans-serif; font-size:${qrHeaderPt}pt; font-weight:800; letter-spacing:0.3px; text-transform:uppercase; line-height:1; margin-bottom:${qrGapMm}mm; text-align:center; color:#000000;">
                   SCAN QR
                 </div>
                 <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0;">
                   ${qrSvg}
                 </div>
-                <div style="font-family:'Montserrat','JetBrains Mono',monospace; font-size:${qrFooterPt}pt; font-weight:900; letter-spacing:0.6px; line-height:1; margin-top:${qrGapMm}mm; text-align:center;">
+                <div style="font-family:Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:800; letter-spacing:0.4px; line-height:1; margin-top:${qrGapMm}mm; text-align:center; color:#000000;">
                   ${escapeHtmlStr(huidStr)}
                 </div>
               </div>
