@@ -12040,17 +12040,26 @@
   let assayRecvDateFilter = '';
   let assayRecvDraftPhotos = [];
 
+  function getAssayRecvLocalDateISO(d = new Date()) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   function normalizeAssayRecvDateToISO(batch) {
     if (!batch) return '';
-    const todayIso = new Date().toISOString().slice(0, 10);
+    const todayIso = getAssayRecvLocalDateISO();
     const raw = (batch.date || '').trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
     if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(raw)) {
       const parts = raw.split(/[-/]/);
       return `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
     const timeStr = (batch.time || '').trim();
     if (timeStr.toLowerCase().includes('today')) return todayIso;
+    const isoMatch = timeStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
     const match = timeStr.match(/(\d{2})[-/](\d{2})[-/](\d{4})/);
     if (match) return `${match[3]}-${match[2]}-${match[1]}`;
     return '';
@@ -12064,7 +12073,7 @@
     // Initialize default form date & time if empty
     const dateInput = document.getElementById('assay-recv-form-date');
     if (dateInput && !dateInput.value) {
-      dateInput.value = new Date().toISOString().slice(0, 10);
+      dateInput.value = getAssayRecvLocalDateISO();
     }
     const minSelect = document.getElementById('assay-recv-form-minute');
     if (minSelect && minSelect.options && minSelect.options.length <= 12) {
@@ -12147,6 +12156,12 @@
         '<option value="950 Platinum">950 Platinum</option>',
         '<option value="900 Platinum">900 Platinum</option>',
         '<option value="850 Platinum">850 Platinum</option>'
+      ].join('');
+    } else if (metal === 'Palladium') {
+      puritySelect.innerHTML = [
+        '<option value="950 Palladium">950 Palladium</option>',
+        '<option value="900 Palladium">900 Palladium</option>',
+        '<option value="850 Palladium">850 Palladium</option>'
       ].join('');
     } else {
       puritySelect.innerHTML = [
@@ -12259,7 +12274,7 @@
 
   function resetAssayRecvForm() {
     const dateInput = document.getElementById('assay-recv-form-date');
-    if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+    if (dateInput) dateInput.value = getAssayRecvLocalDateISO();
     setAssayRecvFormTimeNow();
     const custInput = document.getElementById('assay-recv-form-customer');
     if (custInput) custInput.value = '';
@@ -12349,14 +12364,14 @@
         <div class="flex items-center gap-3 font-mono text-[11px]">
           <span class="font-bold text-slate-800">${b.pcs || 0} PCS</span>
           <span class="text-amber-700 font-bold">${escapeHtmlStr(b.metal || 'Gold')} ${escapeHtmlStr(b.purity || '')}</span>
-          <span class="font-bold text-slate-700">${(b.grossWt || 0).toFixed(3)} g</span>
+          <span class="font-bold text-slate-700">${Number(b.grossWt || 0).toFixed(3)} g</span>
         </div>
       </div>
     `).join('');
   }
 
   function setAssayRecvDateFilterToday() {
-    const todayIso = new Date().toISOString().slice(0, 10);
+    const todayIso = getAssayRecvLocalDateISO();
     const input = document.getElementById('assay-recv-date-filter');
     if (input) input.value = todayIso;
     handleAssayRecvDateFilter(todayIso);
@@ -12818,8 +12833,13 @@
     const timeFormatted = `${hourVal}:${minVal} ${ampmVal}`;
 
     const year = new Date().getFullYear();
-    const count = (state.intakeBatches ? state.intakeBatches.length : 0) + 1;
-    const jobDocket = `JOB-${year}-${2370 + count}`;
+    let seqNum = 2370 + (state.intakeBatches ? state.intakeBatches.length : 0) + 1;
+    let jobDocket = `JOB-${year}-${seqNum}`;
+    const existingDockets = new Set((state.intakeBatches || []).map(b => b.jobDocket));
+    while (existingDockets.has(jobDocket)) {
+      seqNum++;
+      jobDocket = `JOB-${year}-${seqNum}`;
+    }
     const reqNo = String(119810000 + Math.floor(1000 + Math.random() * 9000));
 
     // Register customer if new
@@ -12833,11 +12853,20 @@
       });
     }
 
+    // Build expanded per-piece article type list from breakdown rows
+    const expandedArticleTypes = [];
+    articles.forEach(a => {
+      const cnt = Math.max(1, parseInt(a.pieces, 10) || 1);
+      for (let k = 0; k < cnt; k++) {
+        expandedArticleTypes.push(a.type || 'Ornament');
+      }
+    });
+
     // Build visualCustody slots from captured draft photos
     const visualCustody = [];
     for (let i = 1; i <= totalPieces; i++) {
       const draft = assayRecvDraftPhotos[i - 1];
-      const artType = (articles[0] && articles[0].type) ? articles[0].type : 'Ornament';
+      const artType = expandedArticleTypes[i - 1] || (articles[0] && articles[0].type) || 'Ornament';
       visualCustody.push({
         pieceIndex: i,
         tagCode: `${jobDocket}-P${String(i).padStart(2, '0')}`,

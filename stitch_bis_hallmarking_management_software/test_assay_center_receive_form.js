@@ -215,8 +215,28 @@ assert.strictEqual(state.intakeBatches.length, initialTotal + 1, 'FAIL: Batch co
 assert.strictEqual(created.customer, 'TEST GOLD PALACE');
 assert.strictEqual(created.pcs, 2);
 assert.strictEqual(created.visualCustody.filter(p => p.stageA && p.stageA.captured).length, 2);
+// Verify per-piece articleType mapping across multiple article rows (Ring: 1, Chain: 1)
+assert.strictEqual(created.visualCustody[0].articleType, 'Ring', 'FAIL: Piece 1 should be Ring');
+assert.strictEqual(created.visualCustody[1].articleType, 'Chain', 'FAIL: Piece 2 should be Chain');
 assert.strictEqual(getOrCreateEl('assay-recv-confirmation-page').classList.contains('hidden'), true, 'FAIL: Confirmation page must close after submit');
 assert.strictEqual(window.getAssayRecvDraftPhotos().length, 0, 'FAIL: Draft photos must reset after submit');
 console.log('  ✓ Confirmation page, Edit/Back preservation, and Confirm & Submit verified.');
+
+// 5. Edge-case Regressions: String grossWt in date filter, ISO/time date normalization, Palladium purities, unique jobDocket
+state.intakeBatches.unshift({
+  jobDocket: 'JOB-2026-9999',
+  customer: 'STRING WT JEWELLERS',
+  pcs: 1,
+  grossWt: '77.250',
+  date: '',
+  time: '2026-11-25 / 01:05 AM'
+});
+window.handleAssayRecvDateFilter('2026-11-25');
+assert.strictEqual(getOrCreateEl('assay-recv-date-results').innerHTML.includes('77.250 g'), true, 'FAIL: Date filter must handle string grossWt and YYYY-MM-DD in batch.time');
+window.clearAssayRecvDateFilter();
+
+window.handleAssayRecvMetalChange('Palladium');
+assert.strictEqual(getOrCreateEl('assay-recv-form-purity').innerHTML.includes('950 Palladium'), true, 'FAIL: Palladium metal must populate Palladium purities');
+console.log('  ✓ Edge-case regressions (string grossWt, ISO time normalization, Palladium purities, multi-article visualCustody) verified.');
 
 console.log('\n=== ALL ASSAY CENTER RECEIVE FORM & CONFIRMATION TESTS PASSED! ===');
