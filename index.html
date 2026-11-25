@@ -207,6 +207,10 @@
           <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">photo_camera_front</span>
           <span class="font-label-md text-sm font-medium">Assay Center Receive</span>
         </a>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="center_image_receive" href="#/center_image_receive">
+          <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">photo_library</span>
+          <span class="font-label-md text-sm font-medium">Center Image</span>
+        </a>
         <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="receive" href="#/receive">
           <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">move_to_inbox</span>
           <span class="font-label-md text-sm font-medium">Receive Batch</span>
@@ -317,6 +321,10 @@
         <a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="assay_center_receive" href="#/assay_center_receive" title="Assay Center Receive">
           <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim shrink-0">photo_camera_front</span>
           <span class="font-label-md text-label-md sidebar-text">Assay Center Receive</span>
+        </a>
+        <a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="center_image_receive" href="#/center_image_receive" title="Center Image">
+          <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim shrink-0">photo_library</span>
+          <span class="font-label-md text-label-md sidebar-text">Center Image</span>
         </a>
         <a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-inverse-surface hover:text-on-primary transition-colors" data-path="receive" href="#/receive" title="Receive Batch">
           <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim shrink-0">move_to_inbox</span>
@@ -1047,14 +1055,45 @@
                 STEP 2: RECEIVE BATCH
               </span>
             </div>
-            <div class="flex items-center justify-between gap-space-md mt-1">
-              <div class="flex items-center gap-3">
+            <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mt-1">
+              <div class="flex items-center gap-3 shrink-0">
                 <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-primary-container text-secondary-fixed shadow-sm border border-secondary-fixed/20 shrink-0">
                   <span class="material-symbols-outlined text-[22px]">assignment_add</span>
                 </div>
                 <div>
                   <h1 class="font-headline-lg text-2xl lg:text-[26px] font-bold text-on-surface tracking-tight font-sans">RECEIVE NEW JOB BATCH</h1>
                   <span class="text-xs text-on-surface-variant font-medium">VERIFY INTAKE PARTICULARS, WEIGH ARTICLES & ENROLL IN LABORATORY LEDGER</span>
+                </div>
+              </div>
+
+              <!-- Right Side of RECEIVE NEW JOB BATCH: Receive Status (Not Done vs Done) -->
+              <div id="receive-batch-status-panel" class="flex-1 max-w-2xl bg-surface-container-lowest border border-surface-container rounded-2xl p-3 shadow-xs flex flex-col gap-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px] text-primary">fact_check</span>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-800">Center Image Receive Status</span>
+                  </div>
+                  <div class="inline-flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      id="btn-recv-status-pending"
+                      onclick="filterReceiveBatchStatusPanel('PENDING')"
+                      class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 cursor-pointer transition-all"
+                    >
+                      Not Done (<span id="recv-status-pending-count">0</span>)
+                    </button>
+                    <button
+                      type="button"
+                      id="btn-recv-status-done"
+                      onclick="filterReceiveBatchStatusPanel('DONE')"
+                      class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold uppercase tracking-wider bg-surface-container-low text-slate-600 border border-surface-container hover:text-slate-900 cursor-pointer transition-all"
+                    >
+                      Done (<span id="recv-status-done-count">0</span>)
+                    </button>
+                  </div>
+                </div>
+                <div id="recv-batch-status-list" class="flex items-center gap-2 overflow-x-auto pb-0.5 max-w-full">
+                  <!-- Populated dynamically by JS -->
                 </div>
               </div>
             </div>
@@ -2363,17 +2402,21 @@
                 </div>
 
                 <!-- Metadata Pill Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 text-xs">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-xs">
                   <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
                     <span class="text-[10px] uppercase font-bold text-slate-500 block">REQUEST #</span>
                     <span class="font-mono font-bold text-slate-800 text-xs mt-0.5 block truncate" id="center-img-detail-req">119813505</span>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">DATE &amp; TIME</span>
+                    <span class="font-mono font-bold text-slate-800 text-xs mt-0.5 block truncate" id="center-img-detail-datetime">—</span>
                   </div>
                   <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
                     <span class="text-[10px] uppercase font-bold text-slate-500 block">PIECES</span>
                     <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block" id="center-img-detail-pcs">94 PCS</span>
                   </div>
                   <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
-                    <span class="text-[10px] uppercase font-bold text-slate-500 block">METAL & PURITY</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">METAL &amp; PURITY</span>
                     <span class="font-mono font-bold text-amber-700 text-xs mt-0.5 block" id="center-img-detail-metal-purity">Gold 22K 916</span>
                   </div>
                   <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
@@ -2384,9 +2427,23 @@
                     <span class="text-[10px] uppercase font-bold text-slate-500 block">NET WEIGHT</span>
                     <span class="font-mono font-bold text-slate-900 text-xs mt-0.5 block" id="center-img-detail-net">375.000 g</span>
                   </div>
-                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container">
-                    <span class="text-[10px] uppercase font-bold text-slate-500 block">OPERATOR</span>
-                    <span class="font-mono font-bold text-slate-700 text-xs mt-0.5 block truncate" id="center-img-detail-operator">User B (Vikram)</span>
+                  <div class="p-2.5 rounded-xl bg-surface-container-low/70 border border-surface-container sm:col-span-2">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">TYPES OF ARTICLES BREAKDOWN</span>
+                    <span class="font-mono font-bold text-slate-800 text-xs mt-0.5 block truncate" id="center-img-detail-articles">—</span>
+                  </div>
+                </div>
+
+                <!-- Assay Center Receive Captured Images Gallery -->
+                <div class="mt-4 pt-3.5 border-t border-surface-container">
+                  <div class="flex items-center justify-between mb-2.5">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-[16px] text-primary">photo_library</span>
+                      ASSAY CENTER RECEIVE CAPTURED IMAGES
+                    </span>
+                    <span class="text-[10.5px] font-mono text-slate-500" id="center-img-assay-gallery-count">0 photos</span>
+                  </div>
+                  <div id="center-img-assay-gallery" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5 max-h-[260px] overflow-y-auto">
+                    <!-- Populated by JS with Stage 1 Assay Center Receive images -->
                   </div>
                 </div>
               </div>

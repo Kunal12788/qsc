@@ -52,11 +52,12 @@ assert.strictEqual(billGenDesktopIdx !== -1, true, 'FAIL: Desktop Bill Generatio
 assert.strictEqual(deliveryDesktopIdx !== -1, true, 'FAIL: Desktop Delivery link missing');
 assert.strictEqual(deliveryAssayDesktopIdx !== -1, true, 'FAIL: Desktop Delivery (Assay Center) link missing');
 
-// Verify Center Image Receive is REMOVED from desktop sidebar navigation
+// Verify Center Image IS present in desktop sidebar navigation between Assay Center Receive and Receive Batch
+const centerImgDesktopIdx = desktopNavHtml.indexOf('data-path="center_image_receive"');
 assert.strictEqual(
-  desktopNavHtml.includes('center_image_receive'),
-  false,
-  'FAIL: Center Image Receive must be removed from desktop sidebar navigation'
+  centerImgDesktopIdx !== -1 && assayRecvDesktopIdx < centerImgDesktopIdx && centerImgDesktopIdx < receiveDesktopIdx,
+  true,
+  'FAIL: Center Image must be present in desktop sidebar navigation between Assay Center Receive and Receive Batch'
 );
 
 assert.strictEqual(
@@ -88,12 +89,19 @@ assert.strictEqual(billGenMobileIdx !== -1, true, 'FAIL: Mobile Bill Generation 
 assert.strictEqual(deliveryMobileIdx !== -1, true, 'FAIL: Mobile Delivery link missing');
 assert.strictEqual(deliveryAssayMobileIdx !== -1, true, 'FAIL: Mobile Delivery (Assay Center) link missing');
 
-// Verify Center Image Receive is REMOVED from mobile drawer navigation
+// Verify Center Image IS present in mobile drawer navigation between Assay Center Receive and Receive Batch
+const centerImgMobileIdx = mobileNavHtml.indexOf('data-path="center_image_receive"');
 assert.strictEqual(
-  mobileNavHtml.includes('center_image_receive'),
-  false,
-  'FAIL: Center Image Receive must be removed from mobile drawer navigation'
+  centerImgMobileIdx !== -1 && assayRecvMobileIdx < centerImgMobileIdx && centerImgMobileIdx < receiveMobileIdx,
+  true,
+  'FAIL: Center Image must be present in mobile drawer navigation between Assay Center Receive and Receive Batch'
 );
+
+// Verify Receive Batch Status Panel & Center Image Assay Gallery exist
+assert.strictEqual(indexHtml.includes('id="receive-batch-status-panel"'), true, 'FAIL: #receive-batch-status-panel missing');
+assert.strictEqual(indexHtml.includes('id="btn-recv-status-pending"'), true, 'FAIL: #btn-recv-status-pending missing');
+assert.strictEqual(indexHtml.includes('id="btn-recv-status-done"'), true, 'FAIL: #btn-recv-status-done missing');
+assert.strictEqual(indexHtml.includes('id="center-img-assay-gallery"'), true, 'FAIL: #center-img-assay-gallery missing');
 
 assert.strictEqual(
   assayRecvMobileIdx < receiveMobileIdx &&

@@ -29,8 +29,8 @@
       label: 'SUPER ADMIN',
       workstationTitle: 'MASTER LABORATORY CONTROL TERMINAL • SUPER ADMIN MODE',
       workstationSubtitle: 'Unrestricted master control across all 6 operational steps, dashboard analytics, records, and system settings.',
-      allowedRoutes: ['dashboard', 'assay_center_receive', 'assay-center-receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings', 'customer-information', 'sign-in'],
-      visibleNav: ['dashboard', 'assay_center_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'],
+      allowedRoutes: ['dashboard', 'assay_center_receive', 'assay-center-receive', 'center_image_receive', 'center-image-receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings', 'customer-information', 'sign-in'],
+      visibleNav: ['dashboard', 'assay_center_receive', 'center_image_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'],
       defaultRoute: 'dashboard'
     },
     'ADMIN': {
@@ -41,8 +41,8 @@
       label: 'ADMIN',
       workstationTitle: 'OPERATIONS MANAGEMENT TERMINAL • ADMIN MODE',
       workstationSubtitle: 'Operations Manager control across all 6 operational steps, analytical dashboard, and audit records.',
-      allowedRoutes: ['dashboard', 'assay_center_receive', 'assay-center-receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings', 'customer-information', 'sign-in'],
-      visibleNav: ['dashboard', 'assay_center_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'],
+      allowedRoutes: ['dashboard', 'assay_center_receive', 'assay-center-receive', 'center_image_receive', 'center-image-receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings', 'customer-information', 'sign-in'],
+      visibleNav: ['dashboard', 'assay_center_receive', 'center_image_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'],
       defaultRoute: 'dashboard'
     },
     'ASSAY CENTER RECEIVE': {

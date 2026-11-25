@@ -720,6 +720,9 @@
       setTimeout(() => toggleCustomerDrawer(true), 150);
     }
     if (route === 'receive') {
+      if (typeof renderReceiveBatchStatusPanel === 'function') {
+        renderReceiveBatchStatusPanel();
+      }
       renderVaultBoxes();
       if (typeof renderIntakeBatchesTable === 'function') {
         renderIntakeBatchesTable();
@@ -7788,6 +7791,15 @@
     activeDraftBatch.tagDimensions = { width: 84, height: 12, unit: 'mm', preset: 'rattail-84', layout: 'split' };
     activeDraftBatch.articlePhoto = null;
     activeDraftBatch.deliveryStatus = 'READY';
+    activeDraftBatch.receiveBatchDone = true;
+
+    if (activeReceiveSourceDocket) {
+      const srcBatch = (state.intakeBatches || []).find(b => b.jobDocket === activeReceiveSourceDocket);
+      if (srcBatch) {
+        srcBatch.receiveBatchDone = true;
+      }
+      activeReceiveSourceDocket = null;
+    }
 
     ensureBatchVisualCustody(activeDraftBatch);
 
@@ -7817,6 +7829,9 @@
     }
     if (typeof renderAssayCenterReceiveQueue === 'function') {
       renderAssayCenterReceiveQueue();
+    }
+    if (typeof renderReceiveBatchStatusPanel === 'function') {
+      renderReceiveBatchStatusPanel();
     }
 
     const modal = document.getElementById('intakeConfirmationModal');
@@ -13232,6 +13247,8 @@
       receiver: 'Sarah Jenkins',
       status: 'Stage 1 Intake Completed',
       assayCenterReceiveStatus: 'COMPLETED',
+      centerImageReceiveStatus: 'PENDING',
+      receiveBatchDone: false,
       tagStatus: 'PENDING',
       tagData: [],
       deliveryStatus: 'READY',
@@ -13570,6 +13587,9 @@
     if (typeof renderAssayCenterReceiveQueue === 'function') {
       renderAssayCenterReceiveQueue();
     }
+    if (typeof renderReceiveBatchStatusPanel === 'function') {
+      renderReceiveBatchStatusPanel();
+    }
     if (typeof renderDeliveryAssayQueue === 'function') {
       renderDeliveryAssayQueue();
     }
@@ -13879,14 +13899,47 @@
     if (elCust) elCust.textContent = batch.customer || 'Unknown';
     if (elJob) elJob.textContent = batch.jobDocket || '—';
     if (elReq) elReq.textContent = batch.reqNo || '—';
+    const elDt = document.getElementById('center-img-detail-datetime');
+    if (elDt) elDt.textContent = batch.time || batch.date || '—';
     if (elPcs) elPcs.textContent = `${batch.pcs || 0} PCS`;
     if (elMP) elMP.textContent = `${batch.metal || 'Gold'} ${batch.purity || '22K 916'}`;
-    if (elGross) elGross.textContent = `${(batch.grossWt || 0).toFixed(3)} g`;
-    if (elNet) elNet.textContent = `${(batch.netWt || 0).toFixed(3)} g`;
+    if (elGross) elGross.textContent = `${Number(batch.grossWt || 0).toFixed(3)} g`;
+    if (elNet) elNet.textContent = `${Number(batch.netWt || 0).toFixed(3)} g`;
+    const elArts = document.getElementById('center-img-detail-articles');
+    if (elArts) {
+      const breakdown = Array.isArray(batch.articleTypes) && batch.articleTypes.length > 0
+        ? batch.articleTypes.map(a => `${a.type || 'Item'} (${a.pieces || 1})`).join(', ')
+        : (batch.articleType || 'Ornament');
+      elArts.textContent = breakdown;
+    }
+
+    // Render all Assay Center Receive captured images in Center Image gallery
+    const galleryEl = document.getElementById('center-img-assay-gallery');
+    const galleryCountEl = document.getElementById('center-img-assay-gallery-count');
+    if (galleryEl) {
+      const pieces = batch.visualCustody || [];
+      const capturedPieces = pieces.filter(p => p.stageA && p.stageA.captured && p.stageA.photoUrl);
+      if (galleryCountEl) galleryCountEl.textContent = `${capturedPieces.length} / ${batch.pcs || pieces.length} photos`;
+      if (capturedPieces.length === 0) {
+        galleryEl.innerHTML = `<div class="col-span-full p-4 text-center text-xs text-slate-500 bg-surface-container-low/60 rounded-xl border border-dashed border-surface-container">No Assay Center Receive photos captured yet for this batch.</div>`;
+      } else {
+        galleryEl.innerHTML = capturedPieces.map(p => `
+          <div onclick="openVisualCustodyModal('${escapeHtmlStr(batch.jobDocket)}', ${p.pieceIndex})" class="rounded-xl border border-surface-container bg-surface-container-low/60 overflow-hidden cursor-pointer hover:border-primary transition-all flex flex-col">
+            <div class="aspect-square bg-slate-900 overflow-hidden">
+              <img src="${p.stageA.photoUrl}" alt="Piece #${p.pieceIndex}" class="w-full h-full object-cover" />
+            </div>
+            <div class="p-1.5 text-[10px] font-mono flex items-center justify-between bg-white">
+              <span class="font-bold text-slate-800">#${p.pieceIndex} ${escapeHtmlStr(p.articleType || '')}</span>
+              <span class="text-slate-500">${escapeHtmlStr(p.stageA.timestamp || '')}</span>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
 
     const isCompleted = batch.centerImageReceiveStatus === 'COMPLETED';
     if (elStatus) {
-      elStatus.textContent = isCompleted ? 'STAGE 2: CENTER VERIFIED' : 'STAGE 2: MATCHING ACTIVE';
+      elStatus.textContent = isCompleted ? 'CONFIRMED • READY FOR RECEIVE BATCH' : 'AWAITING CENTER IMAGE CONFIRMATION';
       elStatus.className = isCompleted
         ? 'px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200'
         : 'px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200';
@@ -13986,7 +14039,8 @@
     if (elCount) elCount.textContent = `${verified} / ${total} pieces matched`;
 
     if (btnComplete) {
-      if (verified >= total && total > 0) {
+      const canConfirm = Boolean(batch);
+      if (canConfirm) {
         btnComplete.disabled = false;
         btnComplete.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
         btnComplete.classList.add('bg-primary-container', 'text-secondary-fixed', 'hover:bg-slate-800', 'cursor-pointer', 'border-[#c5a059]/40', 'shadow-sm');
@@ -14483,13 +14537,145 @@
     if (!activeCenterImageReceiveBatch) return;
     const batch = activeCenterImageReceiveBatch;
     batch.centerImageReceiveStatus = 'COMPLETED';
+    if (typeof batch.receiveBatchDone !== 'boolean') {
+      batch.receiveBatchDone = false;
+    }
 
     updateCenterImageReceiveStats();
     renderCenterImageReceiveQueue(true);
     selectCenterImageReceiveBatch(batch.jobDocket);
+    if (typeof renderReceiveBatchStatusPanel === 'function') {
+      renderReceiveBatchStatusPanel();
+    }
 
     playAssaySound('complete');
-    showToast(`CENTER IMAGE RECEIPT COMPLETE FOR ${batch.jobDocket}! CUSTODY CHAIN ADVANCED.`, 'success');
+    showToast(`CENTER IMAGE CONFIRMED FOR ${batch.jobDocket}! READY FOR RECEIVE BATCH.`, 'success');
+  }
+
+  // -------------------------------------------------------------------------
+  // RECEIVE BATCH STATUS PANEL (RIGHT SIDE OF "RECEIVE NEW JOB BATCH")
+  // -------------------------------------------------------------------------
+  let receiveBatchStatusFilter = 'PENDING';
+  let activeReceiveSourceDocket = null;
+
+  function isBatchReadyForReceivePending(b) {
+    return b && b.centerImageReceiveStatus === 'COMPLETED' && !b.receiveBatchDone;
+  }
+
+  function isBatchReceiveDone(b) {
+    if (!b) return false;
+    if (b.receiveBatchDone === true) return true;
+    // Legacy/pre-existing batches not created via Stage 1 Assay Center Receive
+    if (!b.assayCenterReceiveStatus) return true;
+    return false;
+  }
+
+  function filterReceiveBatchStatusPanel(mode) {
+    receiveBatchStatusFilter = mode === 'DONE' ? 'DONE' : 'PENDING';
+    renderReceiveBatchStatusPanel();
+  }
+
+  function renderReceiveBatchStatusPanel() {
+    const listEl = document.getElementById('recv-batch-status-list');
+    const pendingCountEl = document.getElementById('recv-status-pending-count');
+    const doneCountEl = document.getElementById('recv-status-done-count');
+    const btnPending = document.getElementById('btn-recv-status-pending');
+    const btnDone = document.getElementById('btn-recv-status-done');
+
+    const batches = state.intakeBatches || [];
+    const pendingList = batches.filter(isBatchReadyForReceivePending);
+    const doneList = batches.filter(isBatchReceiveDone);
+
+    if (pendingCountEl) pendingCountEl.textContent = String(pendingList.length);
+    if (doneCountEl) doneCountEl.textContent = String(doneList.length);
+
+    if (btnPending && btnDone) {
+      if (receiveBatchStatusFilter === 'PENDING') {
+        btnPending.className = 'px-2.5 py-1 rounded-lg text-[10.5px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 cursor-pointer transition-all';
+        btnDone.className = 'px-2.5 py-1 rounded-lg text-[10.5px] font-bold uppercase tracking-wider bg-surface-container-low text-slate-600 border border-surface-container hover:text-slate-900 cursor-pointer transition-all';
+      } else {
+        btnDone.className = 'px-2.5 py-1 rounded-lg text-[10.5px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300 cursor-pointer transition-all';
+        btnPending.className = 'px-2.5 py-1 rounded-lg text-[10.5px] font-bold uppercase tracking-wider bg-surface-container-low text-slate-600 border border-surface-container hover:text-slate-900 cursor-pointer transition-all';
+      }
+    }
+
+    if (!listEl) return;
+    const activeList = receiveBatchStatusFilter === 'DONE' ? doneList : pendingList;
+
+    if (activeList.length === 0) {
+      listEl.innerHTML = receiveBatchStatusFilter === 'PENDING'
+        ? `<span class="text-[11px] text-slate-500 italic px-1">No pending batches from Center Image.</span>`
+        : `<span class="text-[11px] text-slate-500 italic px-1">No completed Receive batches yet.</span>`;
+      return;
+    }
+
+    listEl.innerHTML = activeList.map(b => {
+      const isPending = receiveBatchStatusFilter === 'PENDING';
+      const badgeCls = isPending
+        ? 'bg-amber-50 border-amber-200 hover:border-amber-400 text-slate-900 cursor-pointer'
+        : 'bg-emerald-50/70 border-emerald-200 text-slate-700';
+      const clickAttr = isPending ? `onclick="loadCenterImageBatchIntoReceiveForm('${escapeHtmlStr(b.jobDocket)}')"` : '';
+      return `
+        <button type="button" ${clickAttr} class="shrink-0 px-2.5 py-1.5 rounded-xl border ${badgeCls} flex items-center gap-2 text-left transition-all shadow-2xs">
+          <div class="flex flex-col leading-tight">
+            <span class="text-[11px] font-bold truncate max-w-[140px]">${escapeHtmlStr(b.customer || 'Unknown')}</span>
+            <span class="text-[9.5px] font-mono text-slate-500">${escapeHtmlStr(b.jobDocket)} • ${b.pcs || 0} PCS • ${Number(b.grossWt || 0).toFixed(2)}g</span>
+          </div>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${isPending ? 'bg-amber-200 text-amber-900' : 'bg-emerald-200 text-emerald-900'}">
+            ${isPending ? 'LOAD' : 'DONE'}
+          </span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  function loadCenterImageBatchIntoReceiveForm(jobDocket) {
+    const batch = (state.intakeBatches || []).find(b => b.jobDocket === jobDocket);
+    if (!batch) return;
+
+    activeReceiveSourceDocket = batch.jobDocket;
+
+    const receiptEl = document.getElementById('receipt-number');
+    const dateEl = document.getElementById('receive-date');
+    const custEl = document.getElementById('customer-name-input');
+    const pcsEl = document.getElementById('pieces-count');
+    const artEl = document.getElementById('article-type-input');
+    const reqEl = document.getElementById('req-number');
+    const jobEl = document.getElementById('job-number');
+    const netEl = document.getElementById('net-weight');
+    const grossEl = document.getElementById('gross-weight');
+
+    if (receiptEl && batch.receiptNo) receiptEl.value = batch.receiptNo;
+    if (dateEl && batch.date) dateEl.value = batch.date;
+    if (custEl) custEl.value = batch.customer || '';
+    if (pcsEl) pcsEl.value = String(batch.pcs || 1);
+    if (artEl) artEl.value = batch.articleType || '';
+    if (reqEl) reqEl.value = batch.reqNo || '';
+    if (jobEl) jobEl.value = batch.jobDocket || '';
+    if (netEl) netEl.value = Number(batch.netWt || batch.grossWt || 0).toFixed(3);
+    if (grossEl) grossEl.value = Number(batch.grossWt || 0).toFixed(3);
+
+    // Parse time (e.g. "2026-11-25 / 06:30 PM" or "06:30 PM")
+    const timeMatch = String(batch.time || '').match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (timeMatch) {
+      const hrEl = document.getElementById('intake-hour');
+      const minEl = document.getElementById('intake-minute');
+      if (hrEl) hrEl.value = timeMatch[1].padStart(2, '0');
+      if (minEl) minEl.value = timeMatch[2].padStart(2, '0');
+      if (typeof setIntakeAmPm === 'function') setIntakeAmPm(timeMatch[3].toUpperCase());
+    }
+
+    if (typeof setMetalType === 'function' && batch.metal) {
+      const mUpper = batch.metal.toUpperCase();
+      setMetalType(mUpper === 'SILVER' ? 'SILVER' : 'GOLD');
+    }
+    const puritySelect = document.getElementById('purity-select');
+    const purityDisplay = document.getElementById('purity-display-text');
+    if (puritySelect && batch.purity) puritySelect.value = batch.purity;
+    if (purityDisplay && batch.purity) purityDisplay.textContent = batch.purity;
+    if (typeof calculateTareWeight === 'function') calculateTareWeight();
+
+    showToast(`LOADED ${batch.customer} (${batch.jobDocket}) INTO RECEIVE BATCH FORM`, 'success');
   }
 
   // -------------------------------------------------------------------------
@@ -15092,6 +15278,9 @@
   window.handleCenterImagePhotoFileUpload = handleCenterImagePhotoFileUpload;
   window.simulateCenterImageReceiveAllDemo = simulateCenterImageReceiveAllDemo;
   window.completeCenterImageReceiveSubmission = completeCenterImageReceiveSubmission;
+  window.renderReceiveBatchStatusPanel = renderReceiveBatchStatusPanel;
+  window.filterReceiveBatchStatusPanel = filterReceiveBatchStatusPanel;
+  window.loadCenterImageBatchIntoReceiveForm = loadCenterImageBatchIntoReceiveForm;
 
 
   // ==========================================================================
@@ -15345,14 +15534,14 @@
   function applyRolePermissions(roleName) {
     const role = roleName || (window.LabSupabase && window.LabSupabase.getCurrentRole ? window.LabSupabase.getCurrentRole() : 'SUPER ADMIN');
     const roleConfig = (window.LabSupabase && window.LabSupabase.ROLE_CONFIGS && window.LabSupabase.ROLE_CONFIGS[role]) || {
-      visibleNav: ['dashboard', 'assay_center_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'],
-      allowedRoutes: ['dashboard', 'assay_center_receive', 'assay-center-receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings', 'customer-information', 'sign-in'],
+      visibleNav: ['dashboard', 'assay_center_receive', 'center_image_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'],
+      allowedRoutes: ['dashboard', 'assay_center_receive', 'assay-center-receive', 'center_image_receive', 'center-image-receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings', 'customer-information', 'sign-in'],
       badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
       bg: 'bg-amber-500'
     };
 
     // 1. Filter Desktop & Mobile Navigation Links
-    const allowedNav = roleConfig.visibleNav || ['dashboard', 'assay_center_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'];
+    const allowedNav = roleConfig.visibleNav || ['dashboard', 'assay_center_receive', 'center_image_receive', 'receive', 'tag-generation', 'bill-generation', 'delivery', 'delivery-assay', 'records-history', 'settings'];
     document.querySelectorAll('[data-path]').forEach(link => {
       const p = link.getAttribute('data-path');
       if (allowedNav.includes(p)) {
