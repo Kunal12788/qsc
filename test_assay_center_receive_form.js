@@ -146,29 +146,52 @@ assert.strictEqual(window.getAssayRecvArticleRowsData().length, 3, 'FAIL: Should
 assert.strictEqual(getOrCreateEl('assay-recv-article-tally-val').textContent, '3 / 3 PCS', 'FAIL: Tally should be 3 / 3 PCS');
 console.log('  ✓ Dynamic repeatable article type rows & live tally verified.');
 
-// 3. Direct Camera Capture Cap (<= Total Pieces)
-window.captureAssayCenterPiecePhoto('MANUAL');
-window.captureAssayCenterPiecePhoto('MANUAL');
-window.captureAssayCenterPiecePhoto('MANUAL');
-assert.strictEqual(window.getAssayRecvDraftPhotos().length, 3, 'FAIL: Should capture 3 photos');
-assert.strictEqual(getOrCreateEl('assay-recv-snap-btn').disabled, true, 'FAIL: Snap button must disable at max pieces');
+// 3. Camera Selection Gate & Direct Camera Capture Cap (<= Total Pieces, NO fake AI images)
+assert.strictEqual(getOrCreateEl('assay-recv-snap-btn').disabled, true, 'FAIL: Snap button must be disabled before selecting & starting camera');
+assert.strictEqual(getOrCreateEl('assay-recv-autocapture-btn').disabled, true, 'FAIL: Auto-capture button must be disabled before selecting & starting camera');
 
-// Attempt 4th capture - must be blocked!
+// Attempt capture before selecting camera -> MUST be blocked (no synthetic/AI image!)
 window.captureAssayCenterPiecePhoto('MANUAL');
-assert.strictEqual(window.getAssayRecvDraftPhotos().length, 3, 'FAIL: Must strictly block capturing > Total Pieces');
+assert.strictEqual(window.getAssayRecvDraftPhotos().length, 0, 'FAIL: Must NOT generate fake/AI images when camera is not selected/active');
 
-// Delete 1 photo & recapture
-window.deleteAssayRecvDraftPhoto(1);
-assert.strictEqual(window.getAssayRecvDraftPhotos().length, 2, 'FAIL: Should have 2 photos after delete');
-assert.strictEqual(getOrCreateEl('assay-recv-snap-btn').disabled, false, 'FAIL: Snap button must re-enable after delete');
+// Simulate user selecting a camera and starting live stream
+global.navigator.mediaDevices = {
+  getUserMedia: async () => ({ getTracks: () => [{ stop: () => {} }] })
+};
+const camVideoEl = getOrCreateEl('assay-recv-cam-video');
+camVideoEl.readyState = 4;
+camVideoEl.videoWidth = 640;
+camVideoEl.videoHeight = 480;
+camVideoEl.play = async () => {};
+getOrCreateEl('assay-recv-camera-select').value = 'usb-cam-1';
+window.switchAssayCenterCameraDevice('usb-cam-1');
 
-// Lower Total Pieces to 2 -> trims to 2
-window.captureAssayCenterPiecePhoto('MANUAL');
-assert.strictEqual(window.getAssayRecvDraftPhotos().length, 3);
-getOrCreateEl('assay-recv-form-total-pieces').value = '2';
-window.handleAssayRecvTotalPiecesChange('2');
-assert.strictEqual(window.getAssayRecvDraftPhotos().length, 2, 'FAIL: Lowering total pieces must trim captured photos');
-console.log('  ✓ Direct camera capture cap (<= Total Pieces), delete/retake, and auto-trim verified.');
+// Wait a tick for async startAssayCenterCamera promise
+setImmediate(() => {
+  assert.strictEqual(getOrCreateEl('assay-recv-snap-btn').disabled, false, 'FAIL: Snap button must enable once camera is selected and active');
+
+  window.captureAssayCenterPiecePhoto('MANUAL');
+  window.captureAssayCenterPiecePhoto('MANUAL');
+  window.captureAssayCenterPiecePhoto('MANUAL');
+  assert.strictEqual(window.getAssayRecvDraftPhotos().length, 3, 'FAIL: Should capture 3 real camera photos');
+  assert.strictEqual(getOrCreateEl('assay-recv-snap-btn').disabled, true, 'FAIL: Snap button must disable at max pieces');
+
+  // Attempt 4th capture - must be blocked!
+  window.captureAssayCenterPiecePhoto('MANUAL');
+  assert.strictEqual(window.getAssayRecvDraftPhotos().length, 3, 'FAIL: Must strictly block capturing > Total Pieces');
+
+  // Delete 1 photo & recapture
+  window.deleteAssayRecvDraftPhoto(1);
+  assert.strictEqual(window.getAssayRecvDraftPhotos().length, 2, 'FAIL: Should have 2 photos after delete');
+  assert.strictEqual(getOrCreateEl('assay-recv-snap-btn').disabled, false, 'FAIL: Snap button must re-enable after delete');
+
+  // Lower Total Pieces to 2 -> trims to 2
+  window.captureAssayCenterPiecePhoto('MANUAL');
+  assert.strictEqual(window.getAssayRecvDraftPhotos().length, 3);
+  getOrCreateEl('assay-recv-form-total-pieces').value = '2';
+  window.handleAssayRecvTotalPiecesChange('2');
+  assert.strictEqual(window.getAssayRecvDraftPhotos().length, 2, 'FAIL: Lowering total pieces must trim captured photos');
+  console.log('  ✓ Camera selection gate, zero AI-image fallback, capture cap (<= Total Pieces), delete/retake, and auto-trim verified.');
 
 // 4. Validation & Confirmation Page
 // Mismatched article sum (3 vs 2) should block confirmation page
@@ -240,3 +263,4 @@ assert.strictEqual(getOrCreateEl('assay-recv-form-purity').innerHTML.includes('9
 console.log('  ✓ Edge-case regressions (string grossWt, ISO time normalization, Palladium purities, multi-article visualCustody) verified.');
 
 console.log('\n=== ALL ASSAY CENTER RECEIVE FORM & CONFIRMATION TESTS PASSED! ===');
+});

@@ -1992,7 +1992,8 @@
                   <!-- Standby / Off State Overlay -->
                   <div id="assay-recv-cam-standby" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90 text-white gap-2 z-10">
                     <span class="material-symbols-outlined text-4xl text-slate-400">photo_camera</span>
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-200">CAMERA STANDBY</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-200">SELECT CAMERA TO START</span>
+                    <span class="text-[10px] text-slate-400">Choose your camera below, then click Start Camera</span>
                     <button type="button" onclick="startAssayCenterCamera()" class="mt-1 px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-slate-800 transition-all cursor-pointer shadow-sm">
                       START CAMERA
                     </button>
@@ -2025,8 +2026,9 @@
                   <button
                     id="assay-recv-snap-btn"
                     type="button"
+                    disabled
                     onclick="captureAssayCenterPiecePhoto('MANUAL')"
-                    class="flex-1 px-3.5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs uppercase tracking-wider hover:bg-slate-800 shadow-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all border border-amber-400/40 whitespace-nowrap"
+                    class="flex-1 px-3.5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs uppercase tracking-wider hover:bg-slate-800 shadow-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all border border-amber-400/40 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span class="material-symbols-outlined text-[17px] text-amber-400">camera</span>
                     <span>SNAP PHOTO NOW</span>
@@ -2034,8 +2036,9 @@
                   <button
                     id="assay-recv-autocapture-btn"
                     type="button"
+                    disabled
                     onclick="toggleAssayCenterAutoCapture()"
-                    class="px-3 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-surface-container text-slate-700 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all shrink-0 whitespace-nowrap"
+                    class="px-3 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-surface-container text-slate-700 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all shrink-0 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span class="material-symbols-outlined text-[17px] text-amber-600">timer</span>
                     <span id="assay-recv-autocapture-label">5s AUTO: OFF</span>
@@ -2043,9 +2046,9 @@
                   <select
                     id="assay-recv-camera-select"
                     onchange="switchAssayCenterCameraDevice(this.value)"
-                    class="text-xs py-2.5 px-2.5 rounded-xl bg-surface-container-low border border-surface-container text-slate-700 focus:outline-none max-w-[130px] shrink-0"
+                    class="text-xs py-2.5 px-2.5 rounded-xl bg-surface-container-low border border-surface-container text-slate-700 font-semibold focus:outline-none max-w-[160px] shrink-0"
                   >
-                    <option value="">Default Cam</option>
+                    <option value="">-- Select Camera --</option>
                   </select>
                 </div>
 

@@ -12408,17 +12408,19 @@
     if (elHint) elHint.textContent = `Max photos allowed: ${total} (${captured} captured)`;
 
     const limitReached = captured >= total;
+    const camReady = isAssayCenterCameraReady();
+    const disableCapture = limitReached || !camReady;
     if (snapBtn) {
-      snapBtn.disabled = limitReached;
+      snapBtn.disabled = disableCapture;
       if (snapBtn.classList) {
-        if (limitReached) { snapBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
+        if (disableCapture) { snapBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
         else { snapBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
       }
     }
     if (autoBtn) {
-      autoBtn.disabled = limitReached;
+      autoBtn.disabled = disableCapture;
       if (autoBtn.classList) {
-        if (limitReached) { autoBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
+        if (disableCapture) { autoBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
         else { autoBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
       }
     }
@@ -12485,32 +12487,65 @@
 
   // --- CAMERA & CAPTURE CONTROLS (STAGE 1) ---
 
+  function isAssayCenterCameraReady() {
+    const select = document.getElementById('assay-recv-camera-select');
+    const selectedId = assayCenterSelectedDeviceId || (select ? select.value : '');
+    const video = document.getElementById('assay-recv-cam-video');
+    return Boolean(
+      selectedId &&
+      assayCenterCameraStream &&
+      video &&
+      video.readyState >= 2 &&
+      video.videoWidth > 0
+    );
+  }
+
   function startAssayCenterCamera() {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve) => {
       const video = document.getElementById('assay-recv-cam-video');
       const standby = document.getElementById('assay-recv-cam-standby');
+      const select = document.getElementById('assay-recv-camera-select');
+      const chosenDeviceId = assayCenterSelectedDeviceId || (select ? select.value : '');
+
+      if (!chosenDeviceId) {
+        showToast('PLEASE SELECT A CAMERA FROM THE DROPDOWN FIRST.', 'warning');
+        updateAssayCenterReceiveProgress();
+        resolve(null);
+        return;
+      }
+
+      assayCenterSelectedDeviceId = chosenDeviceId;
+
       try {
         if (assayCenterCameraStream) {
           stopAssayCenterCameraStream();
         }
         const constraints = {
-          video: assayCenterSelectedDeviceId ? { deviceId: { exact: assayCenterSelectedDeviceId } } : { facingMode: 'environment' },
+          video: { deviceId: { exact: chosenDeviceId } },
           audio: false
         };
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
           assayCenterCameraStream = await navigator.mediaDevices.getUserMedia(constraints);
           if (video) {
             video.srcObject = assayCenterCameraStream;
+            video.onloadeddata = () => updateAssayCenterReceiveProgress();
+            video.onplaying = () => updateAssayCenterReceiveProgress();
             video.play().catch(() => {});
           }
           if (standby) standby.classList.add('hidden');
+          updateAssayCenterReceiveProgress();
           resolve(assayCenterCameraStream);
         } else {
+          showToast('CAMERA API NOT AVAILABLE IN THIS BROWSER.', 'warning');
+          updateAssayCenterReceiveProgress();
           resolve(null);
         }
       } catch (err) {
-        console.warn('Assay center camera not accessible, using synthetic pipeline:', err);
-        if (standby) standby.classList.add('hidden');
+        console.warn('Assay center camera not accessible:', err);
+        assayCenterCameraStream = null;
+        if (standby) standby.classList.remove('hidden');
+        showToast('UNABLE TO ACCESS SELECTED CAMERA. CHECK PERMISSIONS.', 'error');
+        updateAssayCenterReceiveProgress();
         resolve(null);
       }
     });
@@ -12541,6 +12576,7 @@
     if (video) video.srcObject = null;
     const standby = document.getElementById('assay-recv-cam-standby');
     if (standby) standby.classList.remove('hidden');
+    updateAssayCenterReceiveProgress();
   }
 
   async function populateAssayCenterCameraDevices() {
@@ -12549,21 +12585,36 @@
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(d => d.kind === 'videoinput');
-      select.innerHTML = videoDevices.length > 0
-        ? videoDevices.map((d, i) => `<option value="${d.deviceId}">${d.label || 'Camera ' + (i + 1)}</option>`).join('')
-        : '<option value="">Default Camera</option>';
-      if (videoDevices.length > 0) {
-        assayCenterSelectedDeviceId = videoDevices[0].deviceId;
-      }
+      const prevVal = assayCenterSelectedDeviceId || select.value || '';
+      const opts = ['<option value="">-- Select Camera --</option>'];
+      videoDevices.forEach((d, i) => {
+        const selectedAttr = (prevVal && d.deviceId === prevVal) ? ' selected' : '';
+        opts.push(`<option value="${d.deviceId}"${selectedAttr}>${d.label || 'Camera ' + (i + 1)}</option>`);
+      });
+      select.innerHTML = opts.join('');
     } catch (e) {}
   }
 
   function switchAssayCenterCameraDevice(deviceId) {
-    assayCenterSelectedDeviceId = deviceId;
+    assayCenterSelectedDeviceId = deviceId || '';
+    if (!assayCenterSelectedDeviceId) {
+      stopAssayCenterCameraStream();
+      return;
+    }
     startAssayCenterCamera();
   }
 
   function captureAssayCenterPiecePhoto(source = 'MANUAL') {
+    const video = document.getElementById('assay-recv-cam-video');
+    if (!isAssayCenterCameraReady()) {
+      if (assayCenterAutoCaptureActive) {
+        toggleAssayCenterAutoCapture();
+      }
+      showToast('PLEASE SELECT AND START A CAMERA FIRST BEFORE CAPTURING.', 'warning');
+      updateAssayCenterReceiveProgress();
+      return;
+    }
+
     const totalEl = document.getElementById('assay-recv-form-total-pieces');
     const totalPieces = parseInt(totalEl ? totalEl.value : '0', 10) || 0;
     if (totalPieces < 1) {
@@ -12580,11 +12631,17 @@
     }
 
     const pieceIdx = assayRecvDraftPhotos.length + 1;
-    const customer = (document.getElementById('assay-recv-form-customer')?.value || 'Walk-in Customer').trim();
     const metal = document.getElementById('assay-recv-form-metal')?.value || 'Gold';
-    const purity = document.getElementById('assay-recv-form-purity')?.value || '22K 916';
     const artRows = getAssayRecvArticleRowsData();
     const firstArt = (artRows[0] && artRows[0].type) ? artRows[0].type : 'Ring';
+
+    // Capture exclusively from the live selected camera video frame (no synthetic/AI images)
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    const photoUrl = canvas.toDataURL('image/jpeg', 0.92);
 
     // Trigger flash animation
     const flash = document.getElementById('assay-recv-flash-overlay');
@@ -12593,22 +12650,6 @@
       setTimeout(() => { flash.style.opacity = '0'; }, 100);
     }
     playAssaySound('photo');
-
-    let photoUrl = '';
-    const video = document.getElementById('assay-recv-cam-video');
-    if (video && video.readyState === 4 && video.videoWidth > 0) {
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0);
-      photoUrl = canvas.toDataURL('image/jpeg', 0.92);
-    } else {
-      photoUrl = generateCustodyArticlePhoto(customer, pieceIdx, metal, purity, 'STAGE_A', {
-        articleType: firstArt,
-        angle: 0
-      });
-    }
 
     const embedding = extractVisualEmbedding(photoUrl, {
       articleType: firstArt,
@@ -12651,6 +12692,10 @@
   }
 
   function toggleAssayCenterAutoCapture() {
+    if (!assayCenterAutoCaptureActive && !isAssayCenterCameraReady()) {
+      showToast('PLEASE SELECT AND START A CAMERA FIRST.', 'warning');
+      return;
+    }
     const totalEl = document.getElementById('assay-recv-form-total-pieces');
     const totalPieces = parseInt(totalEl ? totalEl.value : '0', 10) || 0;
     if (!assayCenterAutoCaptureActive && assayRecvDraftPhotos.length >= totalPieces) {
