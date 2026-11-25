@@ -162,11 +162,13 @@ assert.strictEqual(indexHtml.includes('id="assay-recv-stat-pending"'), false, 'F
 assert.strictEqual(indexHtml.includes('id="assay-recv-stat-completed"'), false, 'FAIL: #assay-recv-stat-completed must be removed');
 assert.strictEqual(indexHtml.includes('id="assay-recv-stat-photos"'), false, 'FAIL: #assay-recv-stat-photos must be removed');
 
-// 2. Search by date controls
-assert.strictEqual(indexHtml.includes('id="assay-recv-date-filter"'), true, 'FAIL: #assay-recv-date-filter missing');
-assert.strictEqual(indexHtml.includes('id="btn-assay-recv-date-today"'), true, 'FAIL: #btn-assay-recv-date-today missing');
-assert.strictEqual(indexHtml.includes('id="btn-assay-recv-date-clear"'), true, 'FAIL: #btn-assay-recv-date-clear missing');
-assert.strictEqual(indexHtml.includes('id="assay-recv-date-results"'), true, 'FAIL: #assay-recv-date-results missing');
+// 2. Bottom History & Date / From-Till Date filter controls
+assert.strictEqual(indexHtml.includes('id="assay-recv-history-section"'), true, 'FAIL: #assay-recv-history-section missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-hist-single-date"'), true, 'FAIL: #assay-recv-hist-single-date missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-hist-from-date"'), true, 'FAIL: #assay-recv-hist-from-date missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-hist-to-date"'), true, 'FAIL: #assay-recv-hist-to-date missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-history-list"'), true, 'FAIL: #assay-recv-history-list missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-date-filter"'), false, 'FAIL: Old top #assay-recv-date-filter must be removed');
 
 // 3. Old Intake Batches Queue removed
 assert.strictEqual(indexHtml.includes('id="assay-recv-queue-container"'), false, 'FAIL: #assay-recv-queue-container must be removed');
@@ -187,9 +189,9 @@ assert.strictEqual(indexHtml.includes('id="btn-assay-recv-add-article-row"'), tr
 assert.strictEqual(indexHtml.includes('id="assay-recv-form-purity"'), true, 'FAIL: #assay-recv-form-purity missing');
 assert.strictEqual(indexHtml.includes('id="assay-recv-form-weight"'), true, 'FAIL: #assay-recv-form-weight missing');
 
-// 5. Direct camera capture ONLY (no file upload) + Save button
+// 5. Direct camera capture ONLY (no file upload, no snap button, 3s auto button) + Save button
 assert.strictEqual(indexHtml.includes('id="assay-recv-photo-upload-input"'), false, 'FAIL: #assay-recv-photo-upload-input must be removed');
-assert.strictEqual(indexHtml.includes('id="assay-recv-snap-btn"'), true, 'FAIL: #assay-recv-snap-btn missing');
+assert.strictEqual(indexHtml.includes('id="assay-recv-snap-btn"'), false, 'FAIL: #assay-recv-snap-btn must be removed');
 assert.strictEqual(indexHtml.includes('id="assay-recv-autocapture-btn"'), true, 'FAIL: #assay-recv-autocapture-btn missing');
 assert.strictEqual(indexHtml.includes('id="assay-recv-pieces-grid"'), true, 'FAIL: #assay-recv-pieces-grid missing');
 assert.strictEqual(indexHtml.includes('id="btn-assay-recv-save"'), true, 'FAIL: #btn-assay-recv-save missing');

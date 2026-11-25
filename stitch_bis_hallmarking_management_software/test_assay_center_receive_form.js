@@ -126,20 +126,28 @@ vm.runInThisContext(appJs);
 // Initialize view
 window.initAssayCenterReceiveView();
 
-// 1. Date Filter Test
+// 1. Bottom History & Date / From-Till Date Range Filter Test
 const initialTotal = state.intakeBatches.length;
 assert.strictEqual(getOrCreateEl('assay-recv-stat-total').textContent, `${initialTotal} BATCHES`, 'FAIL: Initial total batches mismatch');
 
 window.handleAssayRecvDateFilter('2026-11-14');
 assert.strictEqual(getOrCreateEl('assay-recv-stat-total').textContent, '1 BATCH', 'FAIL: Date filter 2026-11-14 should match 1 batch');
-assert.strictEqual(getOrCreateEl('assay-recv-date-results').innerHTML.includes('ROYCO JEWELLERS'), true, 'FAIL: Date results should show ROYCO JEWELLERS');
+assert.strictEqual(getOrCreateEl('assay-recv-history-list').innerHTML.includes('ROYCO JEWELLERS'), true, 'FAIL: History list should show ROYCO JEWELLERS');
 
 window.handleAssayRecvDateFilter('2020-01-01');
 assert.strictEqual(getOrCreateEl('assay-recv-stat-total').textContent, '0 BATCHES', 'FAIL: Empty date should show 0 BATCHES');
 
+// Test From - Till Date range filter
+window.setAssayRecvHistoryMode('range');
+getOrCreateEl('assay-recv-hist-from-date').value = '2026-11-10';
+getOrCreateEl('assay-recv-hist-to-date').value = '2026-11-15';
+window.handleAssayRecvHistoryFilter();
+assert.strictEqual(getOrCreateEl('assay-recv-stat-total').textContent.includes('BATCH'), true, 'FAIL: Range filter should update total batches');
+
+window.setAssayRecvHistoryMode('single');
 window.clearAssayRecvDateFilter();
 assert.strictEqual(getOrCreateEl('assay-recv-stat-total').textContent, `${initialTotal} BATCHES`, 'FAIL: Clearing date filter should restore total');
-console.log('  ✓ Date filter & TOTAL INTAKE BATCHES verified.');
+console.log('  ✓ Bottom History, Single Date & From-Till Date Range filter verified.');
 
 // 2. Empty Default Article Row & Infinite Article Types Tally
 const initialArtRows = artRowsEl.children;
@@ -158,9 +166,8 @@ assert.strictEqual(window.getAssayRecvArticleRowsData().length, 3, 'FAIL: Should
 assert.strictEqual(getOrCreateEl('assay-recv-article-tally-val').textContent, '3 / 3 PCS', 'FAIL: Tally should be 3 / 3 PCS');
 console.log('  ✓ Empty default article row, dynamic repeatable article rows & live tally verified.');
 
-// 3. Camera Selection Gate & Direct Camera Capture Cap (<= Total Pieces, NO fake AI images)
-assert.strictEqual(getOrCreateEl('assay-recv-snap-btn').disabled, true, 'FAIL: Snap button must be disabled before selecting & starting camera');
-assert.strictEqual(getOrCreateEl('assay-recv-autocapture-btn').disabled, true, 'FAIL: Auto-capture button must be disabled before selecting & starting camera');
+// 3. Camera Selection Gate & 3s Auto-Capture Default ON (<= Total Pieces, NO fake AI images)
+assert.strictEqual(getOrCreateEl('assay-recv-autocapture-btn').disabled, true, 'FAIL: 3s Auto-capture button must be disabled before selecting & starting camera');
 
 // Attempt capture before selecting camera -> MUST be blocked (no synthetic/AI image!)
 window.captureAssayCenterPiecePhoto('MANUAL');
@@ -180,30 +187,32 @@ window.switchAssayCenterCameraDevice('usb-cam-1');
 
 // Wait a tick for async startAssayCenterCamera promise
 setImmediate(() => {
-  assert.strictEqual(getOrCreateEl('assay-recv-snap-btn').disabled, false, 'FAIL: Snap button must enable once camera is selected and active');
+  assert.strictEqual(getOrCreateEl('assay-recv-autocapture-btn').disabled, false, 'FAIL: 3s Auto-capture button must enable once camera is selected and active');
+  assert.strictEqual(getOrCreateEl('assay-recv-autocapture-label').textContent, '3s AUTO: ON', 'FAIL: 3s Auto-capture must turn ON by default once camera starts');
 
-  window.captureAssayCenterPiecePhoto('MANUAL');
-  window.captureAssayCenterPiecePhoto('MANUAL');
-  window.captureAssayCenterPiecePhoto('MANUAL');
+  window.captureAssayCenterPiecePhoto('AUTO (3s)');
+  window.captureAssayCenterPiecePhoto('AUTO (3s)');
+  window.captureAssayCenterPiecePhoto('AUTO (3s)');
   assert.strictEqual(window.getAssayRecvDraftPhotos().length, 3, 'FAIL: Should capture 3 real camera photos');
-  assert.strictEqual(getOrCreateEl('assay-recv-snap-btn').disabled, true, 'FAIL: Snap button must disable at max pieces');
+  assert.strictEqual(getOrCreateEl('assay-recv-autocapture-btn').disabled, true, 'FAIL: 3s Auto-capture button must disable at max pieces');
 
   // Attempt 4th capture - must be blocked!
-  window.captureAssayCenterPiecePhoto('MANUAL');
+  window.captureAssayCenterPiecePhoto('AUTO (3s)');
   assert.strictEqual(window.getAssayRecvDraftPhotos().length, 3, 'FAIL: Must strictly block capturing > Total Pieces');
 
   // Delete 1 photo & recapture
   window.deleteAssayRecvDraftPhoto(1);
   assert.strictEqual(window.getAssayRecvDraftPhotos().length, 2, 'FAIL: Should have 2 photos after delete');
-  assert.strictEqual(getOrCreateEl('assay-recv-snap-btn').disabled, false, 'FAIL: Snap button must re-enable after delete');
+  assert.strictEqual(getOrCreateEl('assay-recv-autocapture-btn').disabled, false, 'FAIL: 3s Auto-capture button must re-enable after delete');
 
   // Lower Total Pieces to 2 -> trims to 2
-  window.captureAssayCenterPiecePhoto('MANUAL');
+  window.captureAssayCenterPiecePhoto('AUTO (3s)');
   assert.strictEqual(window.getAssayRecvDraftPhotos().length, 3);
   getOrCreateEl('assay-recv-form-total-pieces').value = '2';
   window.handleAssayRecvTotalPiecesChange('2');
   assert.strictEqual(window.getAssayRecvDraftPhotos().length, 2, 'FAIL: Lowering total pieces must trim captured photos');
-  console.log('  ✓ Camera selection gate, zero AI-image fallback, capture cap (<= Total Pieces), delete/retake, and auto-trim verified.');
+  window.stopAssayCenterCameraStream();
+  console.log('  ✓ Camera selection gate, 3s AUTO default ON, zero AI-image fallback, capture cap (<= Total Pieces), delete/retake, and auto-trim verified.');
 
 // 4. Validation & Confirmation Page
 // Mismatched article sum (3 vs 2) should block confirmation page
@@ -267,7 +276,7 @@ state.intakeBatches.unshift({
   time: '2026-11-25 / 01:05 AM'
 });
 window.handleAssayRecvDateFilter('2026-11-25');
-assert.strictEqual(getOrCreateEl('assay-recv-date-results').innerHTML.includes('77.250 g'), true, 'FAIL: Date filter must handle string grossWt and YYYY-MM-DD in batch.time');
+assert.strictEqual(getOrCreateEl('assay-recv-history-list').innerHTML.includes('77.250 g'), true, 'FAIL: Date filter must handle string grossWt and YYYY-MM-DD in batch.time');
 window.clearAssayRecvDateFilter();
 
 window.handleAssayRecvMetalChange('Palladium');

@@ -11678,7 +11678,7 @@
   let assayCenterReceiveSearchQuery = '';
   let assayCenterCameraStream = null;
   let assayCenterAutoCaptureActive = false;
-  let assayCenterIntervalDuration = 5000;
+  let assayCenterIntervalDuration = 3000;
   let assayCenterIntervalTargetTime = 0;
   let assayCenterIntervalAnimationId = null;
   let assayCenterIntervalTimeoutId = null;
@@ -12348,14 +12348,14 @@
         return;
       }
 
-      // 4. Weight -> Camera / Snap / Save
+      // 4. Weight -> Auto-Capture / Camera / Save
       if (target.id === 'assay-recv-form-weight') {
         const totalEl = document.getElementById('assay-recv-form-total-pieces');
         const totalPieces = Math.max(1, parseInt(totalEl ? totalEl.value : '1', 10) || 1);
         if (assayRecvDraftPhotos.length >= totalPieces) {
           focusNext(document.getElementById('btn-assay-recv-save'));
         } else if (isAssayCenterCameraReady()) {
-          focusNext(document.getElementById('assay-recv-snap-btn'));
+          focusNext(document.getElementById('assay-recv-autocapture-btn'));
         } else {
           const camSelect = document.getElementById('assay-recv-camera-select');
           focusNext(camSelect || document.getElementById('btn-assay-recv-save'));
@@ -12363,13 +12363,13 @@
         return;
       }
 
-      // 5. Camera Select -> Snap Photo Now (if ready) or Start Camera
+      // 5. Camera Select -> Auto-Capture Button (if ready) or Start Camera
       if (target.id === 'assay-recv-camera-select') {
         if (isAssayCenterCameraReady()) {
-          focusNext(document.getElementById('assay-recv-snap-btn'));
+          focusNext(document.getElementById('assay-recv-autocapture-btn'));
         } else if (target.value) {
           startAssayCenterCamera().then(() => {
-            if (isAssayCenterCameraReady()) focusNext(document.getElementById('assay-recv-snap-btn'));
+            if (isAssayCenterCameraReady()) focusNext(document.getElementById('assay-recv-autocapture-btn'));
           });
         }
       }
@@ -12422,78 +12422,149 @@
     renderAssayCenterReceivePiecesGrid();
   }
 
+  let assayRecvHistoryMode = 'single';
+
+  function getAssayRecvFilteredBatches() {
+    const batches = state.intakeBatches || [];
+    if (assayRecvHistoryMode === 'range') {
+      const fromEl = document.getElementById('assay-recv-hist-from-date');
+      const toEl = document.getElementById('assay-recv-hist-to-date');
+      const fromVal = (fromEl ? fromEl.value : '').trim();
+      const toVal = (toEl ? toEl.value : '').trim();
+      if (!fromVal && !toVal) return { batches, label: 'ALL REGISTERED BATCHES' };
+      const filtered = batches.filter(b => {
+        const iso = normalizeAssayRecvDateToISO(b);
+        if (!iso) return false;
+        if (fromVal && iso < fromVal) return false;
+        if (toVal && iso > toVal) return false;
+        return true;
+      });
+      const label = fromVal && toVal
+        ? `FROM ${fromVal} TILL ${toVal}`
+        : fromVal
+          ? `FROM ${fromVal}`
+          : `TILL ${toVal}`;
+      return { batches: filtered, label };
+    }
+    const singleEl = document.getElementById('assay-recv-hist-single-date');
+    const singleVal = ((singleEl ? singleEl.value : '') || assayRecvDateFilter || '').trim();
+    if (!singleVal) return { batches, label: 'ALL REGISTERED BATCHES' };
+    const filtered = batches.filter(b => normalizeAssayRecvDateToISO(b) === singleVal);
+    return { batches: filtered, label: `FILTERED FOR ${singleVal}` };
+  }
+
   function updateAssayCenterReceiveStats() {
     if (!state.intakeBatches) return;
     const elTotal = document.getElementById('assay-recv-stat-total');
     const elSub = document.getElementById('assay-recv-stat-subtitle');
+    const { batches: matching, label } = getAssayRecvFilteredBatches();
 
-    if (assayRecvDateFilter) {
-      const matching = state.intakeBatches.filter(b => normalizeAssayRecvDateToISO(b) === assayRecvDateFilter);
-      if (elTotal) elTotal.textContent = `${matching.length} BATCH${matching.length === 1 ? '' : 'ES'}`;
-      if (elSub) elSub.textContent = `FILTERED FOR ${assayRecvDateFilter}`;
-    } else {
-      const total = state.intakeBatches.length;
-      if (elTotal) elTotal.textContent = `${total} BATCH${total === 1 ? '' : 'ES'}`;
-      if (elSub) elSub.textContent = 'ALL REGISTERED BATCHES';
-    }
+    if (elTotal) elTotal.textContent = `${matching.length} BATCH${matching.length === 1 ? '' : 'ES'}`;
+    if (elSub) elSub.textContent = label;
+    renderAssayRecvHistoryList(matching, label);
   }
 
-  function handleAssayRecvDateFilter(dateStr) {
-    assayRecvDateFilter = (dateStr || '').trim();
-    const clearBtn = document.getElementById('btn-assay-recv-date-clear');
-    const resultsBox = document.getElementById('assay-recv-date-results');
-    if (clearBtn && clearBtn.classList) {
-      if (assayRecvDateFilter) clearBtn.classList.remove('hidden');
-      else clearBtn.classList.add('hidden');
-    }
+  function renderAssayRecvHistoryList(matching, label) {
+    const listEl = document.getElementById('assay-recv-history-list');
+    if (!listEl) return;
 
-    updateAssayCenterReceiveStats();
-
-    if (!resultsBox) return;
-    if (!assayRecvDateFilter) {
-      resultsBox.classList.add('hidden');
-      resultsBox.innerHTML = '';
-      return;
-    }
-
-    const matching = (state.intakeBatches || []).filter(b => normalizeAssayRecvDateToISO(b) === assayRecvDateFilter);
-    resultsBox.classList.remove('hidden');
-
-    if (matching.length === 0) {
-      resultsBox.innerHTML = `
-        <div class="p-3 text-center text-xs text-slate-500 bg-surface-container-low/60 rounded-xl border border-dashed border-surface-container">
-          No intake batches found for <span class="font-mono font-bold">${escapeHtmlStr(assayRecvDateFilter)}</span>.
+    if (!matching || matching.length === 0) {
+      listEl.innerHTML = `
+        <div class="col-span-full p-4 text-center text-xs text-slate-500 bg-surface-container-low/60 rounded-xl border border-dashed border-surface-container">
+          No intake batches found for <span class="font-mono font-bold">${escapeHtmlStr(label || 'selected dates')}</span>.
         </div>
       `;
       return;
     }
 
-    resultsBox.innerHTML = matching.map(b => `
-      <div class="p-2.5 rounded-xl bg-surface-container-low/80 border border-surface-container flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div class="flex flex-col">
-          <span class="font-bold text-slate-900">${escapeHtmlStr(b.customer || 'Unknown')}</span>
-          <span class="text-[10px] font-mono text-slate-500">${escapeHtmlStr(b.jobDocket)} • ${escapeHtmlStr(b.time || b.date || '')}</span>
+    listEl.innerHTML = matching.map(b => {
+      const photosCount = Array.isArray(b.baselinePhotos) ? b.baselinePhotos.length : (b.pcs || 0);
+      return `
+        <div class="p-3 rounded-xl bg-surface-container-low/80 border border-surface-container flex flex-wrap items-center justify-between gap-2 text-xs hover:bg-white transition-colors">
+          <div class="flex flex-col">
+            <span class="font-bold text-slate-900">${escapeHtmlStr(b.customer || 'Unknown')}</span>
+            <span class="text-[10px] font-mono text-slate-500">${escapeHtmlStr(b.jobDocket || '')} • ${escapeHtmlStr(b.date || '')} ${escapeHtmlStr(b.time || '')}</span>
+          </div>
+          <div class="flex items-center gap-3 font-mono text-[11px]">
+            <span class="font-bold text-slate-800">${b.pcs || 0} PCS</span>
+            <span class="text-amber-700 font-bold">${escapeHtmlStr(b.metal || 'Gold')} ${escapeHtmlStr(b.purity || '')}</span>
+            <span class="font-bold text-slate-700">${Number(b.grossWt || 0).toFixed(3)} g</span>
+            <span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px]">${photosCount} PHOTOS</span>
+          </div>
         </div>
-        <div class="flex items-center gap-3 font-mono text-[11px]">
-          <span class="font-bold text-slate-800">${b.pcs || 0} PCS</span>
-          <span class="text-amber-700 font-bold">${escapeHtmlStr(b.metal || 'Gold')} ${escapeHtmlStr(b.purity || '')}</span>
-          <span class="font-bold text-slate-700">${Number(b.grossWt || 0).toFixed(3)} g</span>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
+  }
+
+  function setAssayRecvHistoryMode(mode) {
+    assayRecvHistoryMode = mode === 'range' ? 'range' : 'single';
+    const singleBtn = document.getElementById('btn-assay-recv-hist-mode-single');
+    const rangeBtn = document.getElementById('btn-assay-recv-hist-mode-range');
+    const singleWrap = document.getElementById('assay-recv-hist-single-wrap');
+    const rangeWrap = document.getElementById('assay-recv-hist-range-wrap');
+
+    if (assayRecvHistoryMode === 'range') {
+      if (singleWrap) singleWrap.classList.add('hidden');
+      if (rangeWrap) rangeWrap.classList.remove('hidden');
+      if (singleBtn) singleBtn.className = 'px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider text-slate-600 hover:text-slate-900 cursor-pointer transition-all';
+      if (rangeBtn) rangeBtn.className = 'px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider bg-primary text-white cursor-pointer transition-all';
+    } else {
+      if (rangeWrap) rangeWrap.classList.add('hidden');
+      if (singleWrap) singleWrap.classList.remove('hidden');
+      if (rangeBtn) rangeBtn.className = 'px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider text-slate-600 hover:text-slate-900 cursor-pointer transition-all';
+      if (singleBtn) singleBtn.className = 'px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider bg-primary text-white cursor-pointer transition-all';
+    }
+    updateAssayCenterReceiveStats();
+  }
+
+  function handleAssayRecvHistoryFilter() {
+    const singleEl = document.getElementById('assay-recv-hist-single-date');
+    if (assayRecvHistoryMode === 'single' && singleEl) {
+      assayRecvDateFilter = (singleEl.value || '').trim();
+    }
+    updateAssayCenterReceiveStats();
+  }
+
+  function setAssayRecvHistoryToday() {
+    const todayIso = getAssayRecvLocalDateISO();
+    if (assayRecvHistoryMode === 'range') {
+      const fromEl = document.getElementById('assay-recv-hist-from-date');
+      const toEl = document.getElementById('assay-recv-hist-to-date');
+      if (fromEl) fromEl.value = todayIso;
+      if (toEl) toEl.value = todayIso;
+    } else {
+      const singleEl = document.getElementById('assay-recv-hist-single-date');
+      if (singleEl) singleEl.value = todayIso;
+      assayRecvDateFilter = todayIso;
+    }
+    updateAssayCenterReceiveStats();
+  }
+
+  function clearAssayRecvHistoryFilter() {
+    const singleEl = document.getElementById('assay-recv-hist-single-date');
+    const fromEl = document.getElementById('assay-recv-hist-from-date');
+    const toEl = document.getElementById('assay-recv-hist-to-date');
+    if (singleEl) singleEl.value = '';
+    if (fromEl) fromEl.value = '';
+    if (toEl) toEl.value = '';
+    assayRecvDateFilter = '';
+    updateAssayCenterReceiveStats();
+  }
+
+  function handleAssayRecvDateFilter(dateStr) {
+    assayRecvHistoryMode = 'single';
+    assayRecvDateFilter = (dateStr || '').trim();
+    const singleEl = document.getElementById('assay-recv-hist-single-date');
+    if (singleEl) singleEl.value = assayRecvDateFilter;
+    updateAssayCenterReceiveStats();
   }
 
   function setAssayRecvDateFilterToday() {
-    const todayIso = getAssayRecvLocalDateISO();
-    const input = document.getElementById('assay-recv-date-filter');
-    if (input) input.value = todayIso;
-    handleAssayRecvDateFilter(todayIso);
+    setAssayRecvHistoryToday();
   }
 
   function clearAssayRecvDateFilter() {
-    const input = document.getElementById('assay-recv-date-filter');
-    if (input) input.value = '';
-    handleAssayRecvDateFilter('');
+    clearAssayRecvHistoryFilter();
   }
 
   function updateAssayCenterReceiveProgress() {
@@ -12507,7 +12578,6 @@
     const elBar = document.getElementById('assay-recv-progress-bar');
     const elCount = document.getElementById('assay-recv-progress-count');
     const elHint = document.getElementById('assay-recv-cap-limit-hint');
-    const snapBtn = document.getElementById('assay-recv-snap-btn');
     const autoBtn = document.getElementById('assay-recv-autocapture-btn');
 
     if (elIndicator) {
@@ -12523,13 +12593,6 @@
     const limitReached = captured >= total;
     const camReady = isAssayCenterCameraReady();
     const disableCapture = limitReached || !camReady;
-    if (snapBtn) {
-      snapBtn.disabled = disableCapture;
-      if (snapBtn.classList) {
-        if (disableCapture) { snapBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
-        else { snapBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
-      }
-    }
     if (autoBtn) {
       autoBtn.disabled = disableCapture;
       if (autoBtn.classList) {
@@ -12549,7 +12612,7 @@
     if (assayRecvDraftPhotos.length === 0) {
       grid.innerHTML = `
         <div class="col-span-full p-6 text-center text-xs text-slate-500 bg-surface-container-low/50 rounded-xl border border-dashed border-surface-container">
-          No photos captured yet. Use <strong>SNAP PHOTO NOW</strong> or <strong>5s AUTO</strong> to capture up to ${total} piece photo${total === 1 ? '' : 's'}.
+          No photos captured yet. <strong>3s AUTO</strong> starts automatically once camera is ready to capture up to ${total} piece photo${total === 1 ? '' : 's'}.
         </div>
       `;
       return;
@@ -12647,6 +12710,11 @@
           }
           if (standby) standby.classList.add('hidden');
           updateAssayCenterReceiveProgress();
+          const totalEl = document.getElementById('assay-recv-form-total-pieces');
+          const totalPieces = parseInt(totalEl ? totalEl.value : '1', 10) || 1;
+          if (!assayCenterAutoCaptureActive && assayRecvDraftPhotos.length < totalPieces) {
+            toggleAssayCenterAutoCapture();
+          }
           resolve(assayCenterCameraStream);
         } else {
           showToast('CAMERA API NOT AVAILABLE IN THIS BROWSER.', 'warning');
@@ -12675,7 +12743,7 @@
     }
     assayCenterAutoCaptureActive = false;
     const autoLabel = document.getElementById('assay-recv-autocapture-label');
-    if (autoLabel) autoLabel.textContent = '5s AUTO: OFF';
+    if (autoLabel) autoLabel.textContent = '3s AUTO: OFF';
     const countdownBadge = document.getElementById('assay-recv-countdown-badge');
     if (countdownBadge) countdownBadge.classList.add('hidden');
     const autoBox = document.getElementById('assay-recv-progress-bar-auto-box');
@@ -12847,9 +12915,9 @@
         saveBtn.focus();
       }
     } else {
-      const snapBtn = document.getElementById('assay-recv-snap-btn');
-      if (snapBtn && !snapBtn.disabled && typeof snapBtn.focus === 'function') {
-        snapBtn.focus();
+      const autoBtn = document.getElementById('assay-recv-autocapture-btn');
+      if (autoBtn && !autoBtn.disabled && typeof autoBtn.focus === 'function') {
+        autoBtn.focus();
       }
     }
   }
@@ -12876,13 +12944,13 @@
       if (assayCenterIntervalAnimationId) cancelAnimationFrame(assayCenterIntervalAnimationId);
       assayCenterIntervalTimeoutId = null;
       assayCenterIntervalAnimationId = null;
-      if (label) label.textContent = '5s AUTO: OFF';
+      if (label) label.textContent = '3s AUTO: OFF';
       if (badge) badge.classList.add('hidden');
       if (autoBox) autoBox.classList.add('hidden');
       return;
     }
 
-    if (label) label.textContent = '5s AUTO: ON';
+    if (label) label.textContent = '3s AUTO: ON';
     if (badge) badge.classList.remove('hidden');
     if (autoBox) autoBox.classList.remove('hidden');
 
@@ -12912,7 +12980,7 @@
       }
 
       if (remMs <= 0) {
-        captureAssayCenterPiecePhoto('AUTO (5s)');
+        captureAssayCenterPiecePhoto('AUTO (3s)');
         if (assayCenterAutoCaptureActive) {
           scheduleNextAssayCenterAutoSnap();
         }
@@ -12924,7 +12992,7 @@
     assayCenterIntervalAnimationId = requestAnimationFrame(step);
     assayCenterIntervalTimeoutId = setTimeout(() => {
       if (assayCenterAutoCaptureActive) {
-        captureAssayCenterPiecePhoto('AUTO (5s)');
+        captureAssayCenterPiecePhoto('AUTO (3s)');
         scheduleNextAssayCenterAutoSnap();
       }
     }, assayCenterIntervalDuration + 100);
@@ -14914,6 +14982,10 @@
   // Stage 1 (User A) Visual Custody exports
   window.initAssayCenterReceiveView = initAssayCenterReceiveView;
   window.updateAssayCenterReceiveStats = updateAssayCenterReceiveStats;
+  window.setAssayRecvHistoryMode = setAssayRecvHistoryMode;
+  window.handleAssayRecvHistoryFilter = handleAssayRecvHistoryFilter;
+  window.setAssayRecvHistoryToday = setAssayRecvHistoryToday;
+  window.clearAssayRecvHistoryFilter = clearAssayRecvHistoryFilter;
   window.handleAssayRecvDateFilter = handleAssayRecvDateFilter;
   window.setAssayRecvDateFilterToday = setAssayRecvDateFilterToday;
   window.clearAssayRecvDateFilter = clearAssayRecvDateFilter;
