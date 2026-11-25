@@ -89,7 +89,12 @@ artRowsEl.appendChild = (rowObj) => {
 global.window = global;
 global.window.addEventListener = () => {};
 global.location = { hash: '#/assay_center_receive', href: 'http://localhost/' };
-global.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+const lsStore = {};
+global.localStorage = {
+  getItem: (k) => (k in lsStore ? lsStore[k] : null),
+  setItem: (k, v) => { lsStore[k] = String(v); },
+  removeItem: (k) => { delete lsStore[k]; }
+};
 global.navigator = { mediaDevices: null };
 global.performance = { now: () => Date.now() };
 global.requestAnimationFrame = () => 1;
@@ -276,7 +281,8 @@ assert.strictEqual(getOrCreateEl('assay-recv-form-customer').value, '', 'FAIL: s
 assert.strictEqual(getOrCreateEl('assay-recv-form-weight').value, '', 'FAIL: startNewAssayRecvIntake must clear weight');
 assert.strictEqual(window.getAssayRecvDraftPhotos().length, 0, 'FAIL: startNewAssayRecvIntake must clear draft photos');
 assert.strictEqual(typeof window.bindAssayRecvEnterNavigation, 'function', 'FAIL: bindAssayRecvEnterNavigation must be exported');
-console.log('  ✓ Edge-case regressions and + NEW INTAKE reset flow (empty article row) verified.');
+assert.strictEqual(lsStore['assay_recv_saved_camera_id'], 'usb-cam-1', 'FAIL: Selected camera ID must be remembered in localStorage');
+console.log('  ✓ Edge-case regressions, remembered camera persistence, and + NEW INTAKE reset flow verified.');
 
 console.log('\n=== ALL ASSAY CENTER RECEIVE FORM & CONFIRMATION TESTS PASSED! ===');
 });

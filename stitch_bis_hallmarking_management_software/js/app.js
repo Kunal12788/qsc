@@ -12698,18 +12698,59 @@
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(d => d.kind === 'videoinput');
-      const prevVal = assayCenterSelectedDeviceId || select.value || '';
+      let savedId = '';
+      let savedLabel = '';
+      try {
+        if (typeof localStorage !== 'undefined') {
+          savedId = localStorage.getItem('assay_recv_saved_camera_id') || '';
+          savedLabel = localStorage.getItem('assay_recv_saved_camera_label') || '';
+        }
+      } catch (err) {}
+
+      let matchedDevice = null;
+      const targetId = assayCenterSelectedDeviceId || select.value || savedId;
+      if (targetId) {
+        matchedDevice = videoDevices.find(d => d.deviceId === targetId) || null;
+      }
+      if (!matchedDevice && savedLabel) {
+        matchedDevice = videoDevices.find(d => d.label && d.label === savedLabel) || null;
+      }
+
+      const prevVal = matchedDevice ? matchedDevice.deviceId : '';
       const opts = ['<option value="">-- Select Camera --</option>'];
       videoDevices.forEach((d, i) => {
         const selectedAttr = (prevVal && d.deviceId === prevVal) ? ' selected' : '';
         opts.push(`<option value="${d.deviceId}"${selectedAttr}>${d.label || 'Camera ' + (i + 1)}</option>`);
       });
       select.innerHTML = opts.join('');
+
+      if (matchedDevice && !assayCenterCameraStream) {
+        assayCenterSelectedDeviceId = matchedDevice.deviceId;
+        select.value = matchedDevice.deviceId;
+        startAssayCenterCamera();
+      }
     } catch (e) {}
   }
 
   function switchAssayCenterCameraDevice(deviceId) {
     assayCenterSelectedDeviceId = deviceId || '';
+    const select = document.getElementById('assay-recv-camera-select');
+    const selectedLabel = (select && select.options && select.selectedIndex >= 0 && select.options[select.selectedIndex])
+      ? (select.options[select.selectedIndex].text || '')
+      : '';
+    try {
+      if (typeof localStorage !== 'undefined') {
+        if (assayCenterSelectedDeviceId) {
+          localStorage.setItem('assay_recv_saved_camera_id', assayCenterSelectedDeviceId);
+          if (selectedLabel && selectedLabel !== '-- Select Camera --') {
+            localStorage.setItem('assay_recv_saved_camera_label', selectedLabel);
+          }
+        } else {
+          localStorage.removeItem('assay_recv_saved_camera_id');
+          localStorage.removeItem('assay_recv_saved_camera_label');
+        }
+      }
+    } catch (err) {}
     if (!assayCenterSelectedDeviceId) {
       stopAssayCenterCameraStream();
       return;
