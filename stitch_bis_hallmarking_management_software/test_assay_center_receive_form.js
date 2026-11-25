@@ -291,7 +291,30 @@ assert.strictEqual(getOrCreateEl('assay-recv-form-weight').value, '', 'FAIL: sta
 assert.strictEqual(window.getAssayRecvDraftPhotos().length, 0, 'FAIL: startNewAssayRecvIntake must clear draft photos');
 assert.strictEqual(typeof window.bindAssayRecvEnterNavigation, 'function', 'FAIL: bindAssayRecvEnterNavigation must be exported');
 assert.strictEqual(lsStore['assay_recv_saved_camera_id'], 'usb-cam-1', 'FAIL: Selected camera ID must be remembered in localStorage');
-console.log('  ✓ Edge-case regressions, remembered camera persistence, and + NEW INTAKE reset flow verified.');
+
+// Verify 200 KB max photo size enforcement
+const origCreateElement = global.document.createElement;
+global.document.createElement = (tag) => {
+  if (tag === 'canvas') {
+    return {
+      width: 0,
+      height: 0,
+      getContext: () => ({ drawImage: () => {} }),
+      toDataURL: (_mime, q) => {
+        // Simulate oversized (>200KB) at high quality, and <=150KB at lower quality
+        const byteCount = q >= 0.7 ? 260 * 1024 : 150 * 1024;
+        const b64Len = Math.ceil((byteCount * 4) / 3);
+        return 'data:image/jpeg;base64,' + 'A'.repeat(b64Len);
+      }
+    };
+  }
+  return origCreateElement(tag);
+};
+const compressed = window.compressVideoFrameToMaxBytes({ videoWidth: 1920, videoHeight: 1080 }, 200 * 1024);
+global.document.createElement = origCreateElement;
+assert.strictEqual(compressed.sizeBytes <= 200 * 1024, true, 'FAIL: Compressed photo must be <= 200 KB');
+assert.strictEqual(window.getDataUrlByteSize(compressed.photoUrl) <= 200 * 1024, true, 'FAIL: Data URL byte size must be <= 200 KB');
+console.log('  ✓ Edge-case regressions, remembered camera persistence, 200KB photo cap, and + NEW INTAKE reset flow verified.');
 
 console.log('\n=== ALL ASSAY CENTER RECEIVE FORM & CONFIRMATION TESTS PASSED! ===');
 });

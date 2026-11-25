@@ -12826,6 +12826,60 @@
     startAssayCenterCamera();
   }
 
+  const ASSAY_RECV_MAX_PHOTO_BYTES = 200 * 1024; // 200 KB strict cap per photo
+
+  function getDataUrlByteSize(dataUrl) {
+    if (!dataUrl || typeof dataUrl !== 'string') return 0;
+    const commaIdx = dataUrl.indexOf(',');
+    if (commaIdx === -1) return dataUrl.length;
+    const b64 = dataUrl.slice(commaIdx + 1);
+    const padding = b64.endsWith('==') ? 2 : (b64.endsWith('=') ? 1 : 0);
+    return Math.floor((b64.length * 3) / 4) - padding;
+  }
+
+  function compressVideoFrameToMaxBytes(video, maxBytes = ASSAY_RECV_MAX_PHOTO_BYTES) {
+    let targetW = Math.max(1, video.videoWidth || 640);
+    let targetH = Math.max(1, video.videoHeight || 480);
+
+    // Cap initial max dimension to 1280px so 1080p/4K feeds compress fast
+    const maxInitDim = 1280;
+    if (targetW > maxInitDim || targetH > maxInitDim) {
+      const ratio = Math.min(maxInitDim / targetW, maxInitDim / targetH);
+      targetW = Math.max(1, Math.round(targetW * ratio));
+      targetH = Math.max(1, Math.round(targetH * ratio));
+    }
+
+    const canvas = document.createElement('canvas');
+    const qualitySteps = [0.90, 0.80, 0.70, 0.60, 0.50, 0.40];
+    let bestUrl = '';
+    let bestBytes = Infinity;
+
+    for (let scalePass = 0; scalePass < 4; scalePass++) {
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, targetW, targetH);
+
+      for (const q of qualitySteps) {
+        const candidateUrl = canvas.toDataURL('image/jpeg', q);
+        const candidateBytes = getDataUrlByteSize(candidateUrl);
+        if (candidateBytes < bestBytes) {
+          bestUrl = candidateUrl;
+          bestBytes = candidateBytes;
+        }
+        if (candidateBytes <= maxBytes) {
+          return { photoUrl: candidateUrl, sizeBytes: candidateBytes };
+        }
+      }
+
+      // Scale down by 75% and retry if still > 200 KB
+      targetW = Math.max(160, Math.round(targetW * 0.75));
+      targetH = Math.max(120, Math.round(targetH * 0.75));
+    }
+
+    return { photoUrl: bestUrl, sizeBytes: bestBytes };
+  }
+
   function captureAssayCenterPiecePhoto(source = 'MANUAL') {
     const video = document.getElementById('assay-recv-cam-video');
     if (!isAssayCenterCameraReady()) {
@@ -12857,13 +12911,8 @@
     const artRows = getAssayRecvArticleRowsData();
     const firstArt = (artRows[0] && artRows[0].type) ? artRows[0].type : 'Ring';
 
-    // Capture exclusively from the live selected camera video frame (no synthetic/AI images)
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
-    const photoUrl = canvas.toDataURL('image/jpeg', 0.92);
+    // Capture exclusively from the live selected camera video frame, capped at 200 KB max
+    const { photoUrl, sizeBytes } = compressVideoFrameToMaxBytes(video, ASSAY_RECV_MAX_PHOTO_BYTES);
 
     // Trigger flash animation
     const flash = document.getElementById('assay-recv-flash-overlay');
@@ -12885,6 +12934,7 @@
     assayRecvDraftPhotos.push({
       pieceIndex: pieceIdx,
       photoUrl: photoUrl,
+      sizeBytes: sizeBytes,
       timestamp: timeStr,
       operator: 'User A (Sarah Jenkins - Assay Intake Master)',
       embedding: embedding
@@ -15016,6 +15066,8 @@
   window.populateAssayCenterCameraDevices = populateAssayCenterCameraDevices;
   window.switchAssayCenterCameraDevice = switchAssayCenterCameraDevice;
   window.captureAssayCenterPiecePhoto = captureAssayCenterPiecePhoto;
+  window.compressVideoFrameToMaxBytes = compressVideoFrameToMaxBytes;
+  window.getDataUrlByteSize = getDataUrlByteSize;
   window.toggleAssayCenterAutoCapture = toggleAssayCenterAutoCapture;
   window.handleAssayCenterPhotoFileUpload = handleAssayCenterPhotoFileUpload;
   window.simulateAssayCenterReceiveAllDemo = simulateAssayCenterReceiveAllDemo;
