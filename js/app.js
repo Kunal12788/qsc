@@ -12086,12 +12086,13 @@
       setAssayRecvFormTimeNow();
     }
 
-    // Initialize at least 1 article type row if empty
+    // Initialize at least 1 empty article type row if empty
     const artContainer = document.getElementById('assay-recv-article-rows');
     if (artContainer && artContainer.children && artContainer.children.length === 0) {
-      addAssayRecvArticleRow('Ring', 1);
+      addAssayRecvArticleRow('', '');
     }
 
+    bindAssayRecvEnterNavigation();
     populateAssayRecvCustomerDatalist();
     updateAssayCenterReceiveStats();
     updateAssayCenterReceiveProgress();
@@ -12175,9 +12176,12 @@
     }
   }
 
-  function addAssayRecvArticleRow(defaultType = '', defaultPieces = 1) {
+  function addAssayRecvArticleRow(defaultType = '', defaultPieces = '') {
     const container = document.getElementById('assay-recv-article-rows');
     if (!container) return;
+    const pcsVal = (defaultPieces !== '' && defaultPieces !== null && defaultPieces !== undefined && parseInt(defaultPieces, 10) > 0)
+      ? parseInt(defaultPieces, 10)
+      : '';
     const row = document.createElement('div');
     row.className = 'assay-recv-article-row grid grid-cols-12 gap-2 items-center';
     row.innerHTML = `
@@ -12195,7 +12199,7 @@
         <input
           type="number"
           min="1"
-          value="${Math.max(1, parseInt(defaultPieces, 10) || 1)}"
+          value="${pcsVal}"
           oninput="updateAssayRecvArticleTally()"
           placeholder="Pcs"
           class="assay-recv-art-pieces w-full px-2.5 py-1.5 text-xs font-mono font-bold rounded-lg bg-white border border-surface-container text-slate-900 focus:outline-none focus:ring-1 focus:ring-primary"
@@ -12272,6 +12276,106 @@
     renderAssayCenterReceivePiecesGrid();
   }
 
+  let assayRecvEnterBound = false;
+  function bindAssayRecvEnterNavigation() {
+    if (assayRecvEnterBound || typeof document === 'undefined') return;
+    const viewEl = document.getElementById('view-assay-center-receive');
+    if (!viewEl || typeof viewEl.addEventListener !== 'function') return;
+    assayRecvEnterBound = true;
+
+    const focusNext = (el) => {
+      if (el && typeof el.focus === 'function') {
+        el.focus();
+        if (typeof el.select === 'function' && el.tagName === 'INPUT' && el.type !== 'date') {
+          try { el.select(); } catch (err) {}
+        }
+      }
+    };
+
+    const orderedIds = [
+      'assay-recv-form-date',
+      'assay-recv-form-hour',
+      'assay-recv-form-minute',
+      'assay-recv-form-ampm',
+      'assay-recv-form-customer',
+      'assay-recv-form-total-pieces',
+      'assay-recv-form-metal'
+    ];
+
+    viewEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const target = e.target;
+      if (!target) return;
+
+      // Let buttons execute normally on Enter
+      if (target.tagName === 'BUTTON') return;
+
+      e.preventDefault();
+
+      // 1. Fixed top fields up to Metal
+      const idx = orderedIds.indexOf(target.id);
+      if (idx !== -1) {
+        if (idx < orderedIds.length - 1) {
+          focusNext(document.getElementById(orderedIds[idx + 1]));
+        } else {
+          // After Metal -> first Article Type input
+          const artContainer = document.getElementById('assay-recv-article-rows');
+          const firstArtType = artContainer ? artContainer.querySelector('.assay-recv-art-type') : null;
+          focusNext(firstArtType || document.getElementById('assay-recv-form-purity'));
+        }
+        return;
+      }
+
+      // 2. Inside dynamic Article Type rows
+      if (target.classList && target.classList.contains('assay-recv-art-type')) {
+        const row = target.closest('.assay-recv-article-row');
+        const pcsInput = row ? row.querySelector('.assay-recv-art-pieces') : null;
+        focusNext(pcsInput || document.getElementById('assay-recv-form-purity'));
+        return;
+      }
+
+      if (target.classList && target.classList.contains('assay-recv-art-pieces')) {
+        const row = target.closest('.assay-recv-article-row');
+        const nextRow = row ? row.nextElementSibling : null;
+        const nextArtType = nextRow ? nextRow.querySelector('.assay-recv-art-type') : null;
+        focusNext(nextArtType || document.getElementById('assay-recv-form-purity'));
+        return;
+      }
+
+      // 3. Purity -> Weight
+      if (target.id === 'assay-recv-form-purity') {
+        focusNext(document.getElementById('assay-recv-form-weight'));
+        return;
+      }
+
+      // 4. Weight -> Camera / Snap / Save
+      if (target.id === 'assay-recv-form-weight') {
+        const totalEl = document.getElementById('assay-recv-form-total-pieces');
+        const totalPieces = Math.max(1, parseInt(totalEl ? totalEl.value : '1', 10) || 1);
+        if (assayRecvDraftPhotos.length >= totalPieces) {
+          focusNext(document.getElementById('btn-assay-recv-save'));
+        } else if (isAssayCenterCameraReady()) {
+          focusNext(document.getElementById('assay-recv-snap-btn'));
+        } else {
+          const camSelect = document.getElementById('assay-recv-camera-select');
+          focusNext(camSelect || document.getElementById('btn-assay-recv-save'));
+        }
+        return;
+      }
+
+      // 5. Camera Select -> Snap Photo Now (if ready) or Start Camera
+      if (target.id === 'assay-recv-camera-select') {
+        if (isAssayCenterCameraReady()) {
+          focusNext(document.getElementById('assay-recv-snap-btn'));
+        } else if (target.value) {
+          startAssayCenterCamera().then(() => {
+            if (isAssayCenterCameraReady()) focusNext(document.getElementById('assay-recv-snap-btn'));
+          });
+        }
+      }
+    });
+  }
+
   function startNewAssayRecvIntake() {
     resetAssayRecvForm();
     const custInput = document.getElementById('assay-recv-form-customer');
@@ -12300,7 +12404,7 @@
     const artContainer = document.getElementById('assay-recv-article-rows');
     if (artContainer) {
       artContainer.innerHTML = '';
-      addAssayRecvArticleRow('Ring', 1);
+      addAssayRecvArticleRow('', '');
     }
 
     assayRecvDraftPhotos = [];
@@ -12697,6 +12801,15 @@
       }
       playAssaySound('complete');
       showToast(`ALL ${totalPieces} PIECES CAPTURED! READY TO SAVE.`, 'success');
+      const saveBtn = document.getElementById('btn-assay-recv-save');
+      if (saveBtn && typeof saveBtn.focus === 'function') {
+        saveBtn.focus();
+      }
+    } else {
+      const snapBtn = document.getElementById('assay-recv-snap-btn');
+      if (snapBtn && !snapBtn.disabled && typeof snapBtn.focus === 'function') {
+        snapBtn.focus();
+      }
     }
   }
 
@@ -12864,6 +12977,10 @@
     if (page) {
       page.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
+      const confirmBtn = document.getElementById('btn-assay-recv-confirm-submit');
+      if (confirmBtn && typeof confirmBtn.focus === 'function') {
+        setTimeout(() => confirmBtn.focus(), 50);
+      }
     }
   }
 
@@ -14768,6 +14885,7 @@
   window.handleAssayRecvTotalPiecesChange = handleAssayRecvTotalPiecesChange;
   window.resetAssayRecvForm = resetAssayRecvForm;
   window.startNewAssayRecvIntake = startNewAssayRecvIntake;
+  window.bindAssayRecvEnterNavigation = bindAssayRecvEnterNavigation;
   window.deleteAssayRecvDraftPhoto = deleteAssayRecvDraftPhoto;
   window.openAssayRecvConfirmationPage = openAssayRecvConfirmationPage;
   window.closeAssayRecvConfirmationPage = closeAssayRecvConfirmationPage;

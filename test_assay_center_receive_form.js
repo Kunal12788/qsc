@@ -70,7 +70,7 @@ artRowsEl.appendChild = (rowObj) => {
   const typeMatch = html.match(/value="([^"]*)"[\s\S]*?assay-recv-art-type/);
   const pcsMatch = html.match(/value="(\d+)"[\s\S]*?assay-recv-art-pieces/);
   const typeInput = { value: typeMatch ? typeMatch[1] : '' };
-  const pcsInput = { value: pcsMatch ? pcsMatch[1] : '1' };
+  const pcsInput = { value: pcsMatch ? pcsMatch[1] : '' };
   const rowMock = {
     _typeInput: typeInput,
     _pcsInput: pcsInput,
@@ -136,15 +136,22 @@ window.clearAssayRecvDateFilter();
 assert.strictEqual(getOrCreateEl('assay-recv-stat-total').textContent, `${initialTotal} BATCHES`, 'FAIL: Clearing date filter should restore total');
 console.log('  ✓ Date filter & TOTAL INTAKE BATCHES verified.');
 
-// 2. Infinite Article Types & Tally
+// 2. Empty Default Article Row & Infinite Article Types Tally
+const initialArtRows = artRowsEl.children;
+assert.strictEqual(initialArtRows.length, 1, 'FAIL: Should start with 1 empty article row');
+assert.strictEqual(initialArtRows[0].querySelector('.assay-recv-art-type').value, '', 'FAIL: Default article type must be empty (not Ring)');
+assert.strictEqual(initialArtRows[0].querySelector('.assay-recv-art-pieces').value, '', 'FAIL: Default article pieces must be empty');
+
+// Fill first row as Ring = 1, then add Chain = 1, Bangle = 1
+initialArtRows[0].querySelector('.assay-recv-art-type').value = 'Ring';
+initialArtRows[0].querySelector('.assay-recv-art-pieces').value = '1';
 getOrCreateEl('assay-recv-form-total-pieces').value = '3';
 window.handleAssayRecvTotalPiecesChange('3');
-// Currently 1 row ('Ring', 1). Add 2 more rows: 'Chain' (1), 'Bangle' (1)
 window.addAssayRecvArticleRow('Chain', 1);
 window.addAssayRecvArticleRow('Bangle', 1);
 assert.strictEqual(window.getAssayRecvArticleRowsData().length, 3, 'FAIL: Should have 3 article type rows');
 assert.strictEqual(getOrCreateEl('assay-recv-article-tally-val').textContent, '3 / 3 PCS', 'FAIL: Tally should be 3 / 3 PCS');
-console.log('  ✓ Dynamic repeatable article type rows & live tally verified.');
+console.log('  ✓ Empty default article row, dynamic repeatable article rows & live tally verified.');
 
 // 3. Camera Selection Gate & Direct Camera Capture Cap (<= Total Pieces, NO fake AI images)
 assert.strictEqual(getOrCreateEl('assay-recv-snap-btn').disabled, true, 'FAIL: Snap button must be disabled before selecting & starting camera');
@@ -268,7 +275,8 @@ window.startNewAssayRecvIntake();
 assert.strictEqual(getOrCreateEl('assay-recv-form-customer').value, '', 'FAIL: startNewAssayRecvIntake must clear customer');
 assert.strictEqual(getOrCreateEl('assay-recv-form-weight').value, '', 'FAIL: startNewAssayRecvIntake must clear weight');
 assert.strictEqual(window.getAssayRecvDraftPhotos().length, 0, 'FAIL: startNewAssayRecvIntake must clear draft photos');
-console.log('  ✓ Edge-case regressions and + NEW INTAKE reset flow verified.');
+assert.strictEqual(typeof window.bindAssayRecvEnterNavigation, 'function', 'FAIL: bindAssayRecvEnterNavigation must be exported');
+console.log('  ✓ Edge-case regressions and + NEW INTAKE reset flow (empty article row) verified.');
 
 console.log('\n=== ALL ASSAY CENTER RECEIVE FORM & CONFIRMATION TESTS PASSED! ===');
 });
