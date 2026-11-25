@@ -12272,6 +12272,15 @@
     renderAssayCenterReceivePiecesGrid();
   }
 
+  function startNewAssayRecvIntake() {
+    resetAssayRecvForm();
+    const custInput = document.getElementById('assay-recv-form-customer');
+    if (custInput && typeof custInput.focus === 'function') {
+      custInput.focus();
+    }
+    showToast('READY FOR NEW INTAKE REGISTRATION.', 'info');
+  }
+
   function resetAssayRecvForm() {
     const dateInput = document.getElementById('assay-recv-form-date');
     if (dateInput) dateInput.value = getAssayRecvLocalDateISO();
@@ -14758,6 +14767,7 @@
   window.updateAssayRecvArticleTally = updateAssayRecvArticleTally;
   window.handleAssayRecvTotalPiecesChange = handleAssayRecvTotalPiecesChange;
   window.resetAssayRecvForm = resetAssayRecvForm;
+  window.startNewAssayRecvIntake = startNewAssayRecvIntake;
   window.deleteAssayRecvDraftPhoto = deleteAssayRecvDraftPhoto;
   window.openAssayRecvConfirmationPage = openAssayRecvConfirmationPage;
   window.closeAssayRecvConfirmationPage = closeAssayRecvConfirmationPage;

@@ -260,7 +260,15 @@ window.clearAssayRecvDateFilter();
 
 window.handleAssayRecvMetalChange('Palladium');
 assert.strictEqual(getOrCreateEl('assay-recv-form-purity').innerHTML.includes('950 Palladium'), true, 'FAIL: Palladium metal must populate Palladium purities');
-console.log('  ✓ Edge-case regressions (string grossWt, ISO time normalization, Palladium purities, multi-article visualCustody) verified.');
+
+// Verify + NEW INTAKE button resets form and prepares for new intake
+getOrCreateEl('assay-recv-form-customer').value = 'OLD CUSTOMER';
+getOrCreateEl('assay-recv-form-weight').value = '99.999';
+window.startNewAssayRecvIntake();
+assert.strictEqual(getOrCreateEl('assay-recv-form-customer').value, '', 'FAIL: startNewAssayRecvIntake must clear customer');
+assert.strictEqual(getOrCreateEl('assay-recv-form-weight').value, '', 'FAIL: startNewAssayRecvIntake must clear weight');
+assert.strictEqual(window.getAssayRecvDraftPhotos().length, 0, 'FAIL: startNewAssayRecvIntake must clear draft photos');
+console.log('  ✓ Edge-case regressions and + NEW INTAKE reset flow verified.');
 
 console.log('\n=== ALL ASSAY CENTER RECEIVE FORM & CONFIRMATION TESTS PASSED! ===');
 });

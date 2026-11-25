@@ -1736,18 +1736,6 @@
               <h1 class="font-headline-lg text-2xl lg:text-[26px] font-bold text-on-surface tracking-tight mt-0.5">ASSAY CENTER RECEIVE & PIECE INTAKE</h1>
               <span class="text-xs text-on-surface-variant font-medium">USER A INTAKE WORKSTATION • COUNTER INTAKE REGISTRATION & DIRECT CAMERA PHOTO CAPTURE</span>
             </div>
-            <div class="flex flex-wrap items-center gap-2.5">
-              <button
-                id="btn-open-new-intake-batch"
-                type="button"
-                onclick="openNewIntakeBatchModal()"
-                class="px-4 py-2.5 rounded-lg bg-primary-container text-secondary-fixed hover:bg-slate-800 border border-[#c5a059]/40 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-sm"
-                title="Create and register a new customer intake batch"
-              >
-                <span class="material-symbols-outlined text-[18px] text-amber-400">add_circle</span>
-                <span>+ NEW INTAKE BATCH</span>
-              </button>
-            </div>
           </div>
 
           <!-- Top Metric Card (TOTAL INTAKE BATCHES ONLY) + Search by Date -->
@@ -1808,13 +1796,25 @@
                     <span class="material-symbols-outlined text-[20px] text-primary">assignment_add</span>
                     <h2 class="font-headline font-bold text-sm text-on-surface uppercase tracking-wide">Intake Registration Details</h2>
                   </div>
-                  <button
-                    type="button"
-                    onclick="resetAssayRecvForm()"
-                    class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800 cursor-pointer"
-                  >
-                    Reset Form
-                  </button>
+                  <div class="flex items-center gap-2">
+                    <button
+                      type="button"
+                      id="btn-assay-recv-new-intake"
+                      onclick="startNewAssayRecvIntake()"
+                      class="px-3 py-1.5 rounded-lg bg-primary-container text-secondary-fixed hover:bg-slate-800 border border-[#c5a059]/40 font-bold text-[10.5px] uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+                      title="Prepare form and camera for a new intake registration"
+                    >
+                      <span class="material-symbols-outlined text-[14px] text-amber-400">add_circle</span>
+                      <span>+ NEW INTAKE</span>
+                    </button>
+                    <button
+                      type="button"
+                      onclick="resetAssayRecvForm()"
+                      class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800 cursor-pointer px-1.5"
+                    >
+                      Reset
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Date & Time with AM/PM -->
