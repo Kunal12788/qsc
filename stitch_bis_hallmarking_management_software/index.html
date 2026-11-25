@@ -1798,10 +1798,10 @@
             </div>
           </div>
 
-          <!-- Main Layout Grid: Intake Form (Left) & Direct Camera Capture Workstation (Right) -->
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <!-- Left: Assay Center Receive Intake Form (5 cols) -->
-            <div class="lg:col-span-5 flex flex-col gap-4">
+          <!-- Main Vertical Stack: Intake Form (Top) & Direct Camera Capture Workstation (Below) -->
+          <div class="flex flex-col gap-6">
+            <!-- Top: Assay Center Receive Intake Form -->
+            <div class="w-full flex flex-col gap-4">
               <form id="assay-recv-intake-form" onsubmit="event.preventDefault(); openAssayRecvConfirmationPage();" class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-xs flex flex-col gap-4">
                 <div class="flex items-center justify-between pb-3 border-b border-surface-container">
                   <div class="flex items-center gap-2">
@@ -1967,8 +1967,8 @@
               </form>
             </div>
 
-            <!-- Right: Direct Camera Photo Capture Workstation (7 cols) -->
-            <div class="lg:col-span-7 flex flex-col gap-5">
+            <!-- Below: Direct Camera Photo Capture Workstation -->
+            <div class="w-full flex flex-col gap-5">
               <div class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-xs flex flex-col gap-5">
                 <!-- Piece Progress Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-low p-3.5 rounded-xl border border-surface-container">
