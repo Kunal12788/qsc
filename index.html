@@ -2947,7 +2947,7 @@
                       </span>
                       <span class="text-[9.5px] font-mono font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">TSPL2 READY</span>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
                       <div>
                         <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-dpi">TSC PRINTER DPI</label>
                         <select id="tag-tspl-dpi" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container cursor-pointer">
@@ -2966,6 +2966,15 @@
                       <div>
                         <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-gap">LABEL GAP (MM)</label>
                         <input type="number" id="tag-tspl-gap" value="2" min="0" max="10" step="0.5" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-baud">SERIAL BAUD RATE</label>
+                        <select id="tag-tspl-baud" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container cursor-pointer">
+                          <option value="9600" selected>9600 (TSC Default)</option>
+                          <option value="19200">19200</option>
+                          <option value="38400">38400</option>
+                          <option value="115200">115200</option>
+                        </select>
                       </div>
                     </div>
                   </div>
@@ -6506,20 +6515,20 @@
             </div>
           </div>
 
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center">— OR BROWSER PRINT DIALOG (WITH / WITHOUT TAG NO) —</div>
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">— WINDOWS TSC DRIVER 1-CLICK (PURE 1-BIT MONOCHROME, ZERO GRAIN) —</div>
 
           <button type="button" id="btn-confirm-print-with-tag" onclick="confirmTagPrintWithMode('with')" class="w-full p-3.5 rounded-xl border-2 border-amber-500/60 bg-amber-50/70 hover:bg-amber-100/80 text-left transition-all cursor-pointer flex items-center justify-between group">
             <div>
-              <div class="font-extrabold text-sm text-slate-900 uppercase">Browser Print WITH Tag No</div>
-              <div class="text-[11px] text-slate-600 font-mono mt-0.5">Shows: ARTICLE: Gold &nbsp; TAG NO : Q1</div>
+              <div class="font-extrabold text-sm text-slate-900 uppercase">Print WITH Tag No (1-Bit Crisp Bitmap)</div>
+              <div class="text-[11px] text-slate-600 font-mono mt-0.5">Shows: ARTICLE: Gold &nbsp; TAG NO : Q1 • Native 203/300 DPI Black/White</div>
             </div>
             <span class="material-symbols-outlined text-amber-700 group-hover:translate-x-1 transition-transform">arrow_forward</span>
           </button>
 
           <button type="button" id="btn-confirm-print-without-tag" onclick="confirmTagPrintWithMode('without')" class="w-full p-3.5 rounded-xl border-2 border-slate-300 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-center justify-between group">
             <div>
-              <div class="font-extrabold text-sm text-slate-900 uppercase">Browser Print WITHOUT Tag No</div>
-              <div class="text-[11px] text-slate-600 font-mono mt-0.5">Shows: ARTICLE: Gold (No Tag No)</div>
+              <div class="font-extrabold text-sm text-slate-900 uppercase">Print WITHOUT Tag No (1-Bit Crisp Bitmap)</div>
+              <div class="text-[11px] text-slate-600 font-mono mt-0.5">Shows: ARTICLE: Gold (No Tag No) • Native 203/300 DPI Black/White</div>
             </div>
             <span class="material-symbols-outlined text-slate-600 group-hover:translate-x-1 transition-transform">arrow_forward</span>
           </button>

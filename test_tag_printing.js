@@ -79,6 +79,7 @@ const mockElements = {
   'tag-tspl-density': { value: '12' },
   'tag-tspl-speed': { value: '3' },
   'tag-tspl-gap': { value: '2' },
+  'tag-tspl-baud': { value: '9600' },
   'tag-opt-cust': { checked: true },
   'tag-opt-ornament': { checked: true },
   'tag-opt-huid': { checked: true },

@@ -3229,6 +3229,23 @@
       ].join('\n');
 
       if (layout === 'split') {
+        const pageBreakCss = isLastTag ? '' : 'page-break-after:always; break-after:page;';
+        // On real browsers printing directly to Windows TSC thermal driver, render 1-bit pure #000/#FFF bitmap at native DPI to eliminate halftone grain
+        if (!forNewTab) {
+          const monoUrl = renderMonochromeThermalTagDataUrl({
+            wMm, hMm, padTopMm: parseFloat(padTopMm), padLeftMm: parseFloat(padLeftMm),
+            padBotMm: parseFloat(padBotMm), gapMm, fontScaleFactor,
+            incCust, incOrnament, incHuid, incQr, showNetWt, showTagNo,
+            customerName, dateStr, articleVal, ornamentsType, grossVal, netVal, huidStr, tagNoStr, qrPayload
+          });
+          if (monoUrl) {
+            return `
+              <div class="print-tag tag-split-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; margin:0; padding:0; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; overflow:hidden;">
+                <img src="${monoUrl}" alt="${escapeHtmlStr(huidStr)}" style="width:${wMm}mm; height:${hMm}mm; display:block; image-rendering:pixelated; -ms-interpolation-mode:nearest-neighbor;" />
+              </div>
+            `;
+          }
+        }
         const hasBridge = gapMm > 0 && usableW > gapMm + 15;
         const bridgeWMm = hasBridge ? gapMm : 0;
         const halfWMm = Math.round(((usableW - bridgeWMm) / 2) * 100) / 100;
@@ -3254,7 +3271,6 @@
         const qrPixelDim = Math.max(48, Math.round(parseFloat(qrBoxDimMm) * 8));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
-        const pageBreakCss = isLastTag ? '' : 'page-break-after:always; break-after:page;';
 
         return `
           <div class="print-tag tag-split-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:Arial,Helvetica,sans-serif; -webkit-font-smoothing:none;">
@@ -3533,6 +3549,122 @@
     }
   }
 
+  // Render pure 1-bit (#000000 / #FFFFFF) bitmap at native printer DPI so Windows TSC drivers never halftone/grain text or QR codes
+  function renderMonochromeThermalTagDataUrl(opts) {
+    try {
+      if (typeof document === 'undefined' || typeof document.createElement !== 'function') return null;
+      const canvas = document.createElement('canvas');
+      if (!canvas || typeof canvas.getContext !== 'function') return null;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      const { dpm } = getTsplPrinterConfig();
+      const wDots = Math.max(80, Math.round(opts.wMm * dpm));
+      const hDots = Math.max(40, Math.round(opts.hMm * dpm));
+      canvas.width = wDots;
+      canvas.height = hDots;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, wDots, hDots);
+      ctx.fillStyle = '#000000';
+      ctx.textBaseline = 'top';
+
+      const x0 = Math.round((opts.padLeftMm || 0) * dpm);
+      const y0 = Math.round((opts.padTopMm || 0) * dpm);
+      const usableW = Math.max(12, opts.wMm - ((opts.padLeftMm || 0) * 2));
+      const usableH = Math.max(5, opts.hMm - ((opts.padTopMm || 0) + (opts.padBotMm || 0)));
+      const usableWDots = Math.round(usableW * dpm);
+      const usableHDots = Math.round(usableH * dpm);
+      const hasBridge = opts.gapMm > 0 && usableW > opts.gapMm + 15;
+      const bridgeDots = hasBridge ? Math.round(opts.gapMm * dpm) : 0;
+      const headDots = Math.round((usableWDots - bridgeDots) * 0.5);
+      const tailX = x0 + headDots + bridgeDots + Math.round(0.4 * dpm);
+      const tailDots = Math.max(24, usableWDots - headDots - bridgeDots - Math.round(0.4 * dpm));
+
+      let yCur = y0;
+      if (opts.incCust) {
+        const titlePx = Math.max(10, Math.round(Math.min(18, usableHDots * 0.16) * (opts.fontScaleFactor || 1)));
+        ctx.font = `900 ${titlePx}px Arial, Helvetica, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(String(opts.customerName || '').toUpperCase(), x0 + Math.floor(usableWDots / 2), yCur, usableWDots);
+        yCur += titlePx + 2;
+        ctx.fillRect(x0, yCur, usableWDots, dpm === 12 ? 2 : 1);
+        yCur += dpm === 12 ? 4 : 3;
+      }
+
+      const bottomY = y0 + usableHDots;
+      const dataLines = [];
+      if (opts.incCust) dataLines.push(`DATE: ${opts.dateStr}`);
+      if (opts.incOrnament) {
+        dataLines.push(opts.showTagNo ? `ARTICLE: ${opts.articleVal}  TAG NO: ${opts.tagNoStr}` : `ARTICLE: ${opts.articleVal}`);
+        dataLines.push(`ORNAMENT: ${opts.ornamentsType}`);
+        dataLines.push(`GROSS WEIGHT: ${opts.grossVal}`);
+        if (opts.showNetWt) dataLines.push(`NET WEIGHT: ${opts.netVal}`);
+      }
+      if (opts.incHuid) dataLines.push(`HUID NUMBER: ${opts.huidStr}`);
+
+      const availH = Math.max(10, bottomY - yCur);
+      const lineStep = Math.floor(availH / Math.max(1, dataLines.length));
+      const dataPx = Math.max(8, Math.min(13, Math.round((lineStep - 1) * (opts.fontScaleFactor || 1))));
+      ctx.font = `700 ${dataPx}px Arial, Helvetica, sans-serif`;
+      ctx.textAlign = 'left';
+
+      let dy = yCur;
+      dataLines.forEach((txt, i) => {
+        if (i === dataLines.length - 1 && opts.incHuid) {
+          ctx.font = `900 ${dataPx}px Arial, Helvetica, sans-serif`;
+        }
+        ctx.fillText(txt, x0, dy, headDots - 2);
+        dy += lineStep;
+      });
+
+      // Pixel-exact 1-bit QR modules (ZERO anti-aliasing or SVG scaling blur!)
+      if (opts.incQr && typeof qrcode === 'function') {
+        try {
+          const qr = qrcode(0, 'L');
+          qr.addData(String(opts.qrPayload || opts.huidStr || 'TAG'));
+          qr.make();
+          const modCount = qr.getModuleCount();
+          const footerPx = Math.max(9, Math.min(13, Math.round(availH * 0.14)));
+          const maxQrPx = Math.max(20, Math.min(tailDots - 4, availH - footerPx - 4));
+          const cellPx = Math.max(1, Math.floor(maxQrPx / modCount));
+          const qrSizePx = cellPx * modCount;
+          const qrX = tailX + Math.max(0, Math.floor((tailDots - qrSizePx) / 2));
+          const qrY = yCur + Math.max(0, Math.floor((availH - footerPx - 3 - qrSizePx) / 2));
+
+          for (let r = 0; r < modCount; r++) {
+            for (let c = 0; c < modCount; c++) {
+              if (qr.isDark(r, c)) {
+                ctx.fillRect(qrX + c * cellPx, qrY + r * cellPx, cellPx, cellPx);
+              }
+            }
+          }
+
+          ctx.font = `900 ${footerPx}px Arial, Helvetica, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillText(String(opts.huidStr || ''), tailX + Math.floor(tailDots / 2), qrY + qrSizePx + 2, tailDots);
+        } catch (eQr) {}
+      }
+
+      // Strict 1-bit binary threshold pass: force every pixel to pure #000000 or #FFFFFF (ZERO grey dithering!)
+      const imgData = ctx.getImageData(0, 0, wDots, hDots);
+      const px = imgData.data;
+      for (let i = 0; i < px.length; i += 4) {
+        const lum = (px[i] * 0.299) + (px[i + 1] * 0.587) + (px[i + 2] * 0.114);
+        const bin = lum < 170 ? 0 : 255;
+        px[i] = bin;
+        px[i + 1] = bin;
+        px[i + 2] = bin;
+        px[i + 3] = 255;
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      return canvas.toDataURL('image/png');
+    } catch (e) {
+      return null;
+    }
+  }
+
   // ========================================================
   // TSC BRAND NATIVE TSPL / TSPL2 THERMAL PRINTING ENGINE
   // ========================================================
@@ -3629,7 +3761,6 @@
       'REFERENCE 0,0',
       `SPEED ${speed}`,
       `DENSITY ${density}`,
-      'CODEPAGE UTF-8',
       'SET TEAR ON'
     ];
 
@@ -3723,7 +3854,7 @@
         const qrX = Math.max(tailX, tailX + Math.floor((tailDots - approxQrSize) / 2));
         const qrY = Math.max(qrTopY, qrTopY + Math.floor((qrAvailH - approxQrSize) / 2));
 
-        lines.push(`QRCODE ${qrX},${qrY},L,${cellSize},A,0,M2,S3,"${escapeTsplString(qrStr)}"`);
+        lines.push(`QRCODE ${qrX},${qrY},L,${cellSize},A,0,"${escapeTsplString(qrStr)}"`);
 
         // HUID caption right underneath QR code
         const capW = huidStr.length * dataCharW;
@@ -3758,18 +3889,26 @@
         return;
       }
       try {
+        const baudRate = parseInt(document.getElementById('tag-tspl-baud')?.value || '9600', 10) || 9600;
         const port = await navigator.serial.requestPort();
-        await port.open({ baudRate: 9600 });
+        await port.open({ baudRate, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+        if (typeof port.setSignals === 'function') {
+          try { await port.setSignals({ dataTerminalReady: true, requestToSend: true }); } catch (sigErr) {}
+        }
         const writer = port.writable.getWriter();
-        await writer.write(bytes);
+        const chunkSize = 512;
+        for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+          await writer.write(bytes.slice(offset, offset + chunkSize));
+        }
         writer.releaseLock();
+        await new Promise(r => setTimeout(r, 350));
         await port.close();
         closeTagPrintOptionsModal();
-        showToast(`SENT ${rows.length} TAGS VIA TSPL2 SERIAL PORT TO TSC PRINTER!`, 'success');
+        showToast(`SENT ${rows.length} TAGS VIA TSPL2 SERIAL (${baudRate} BAUD) TO TSC PRINTER!`, 'success');
       } catch (err) {
         if (err && err.name === 'NotFoundError') return;
         console.error('TSC Serial print error:', err);
-        showToast('SERIAL PRINT ERROR: CHECK PORT OR USE DOWNLOAD .PRN FOR TSC DIAGTOOL.', 'error');
+        showToast('SERIAL PORT DID NOT ACCEPT DATA. TRY "Print WITH/WITHOUT Tag No (1-Bit Crisp)" BELOW OR "DOWNLOAD .PRN"!', 'warning');
       }
       return;
     }
@@ -3812,7 +3951,7 @@
     } catch (err) {
       if (err && err.name === 'NotFoundError') return;
       console.error('TSC WebUSB error:', err);
-      showToast('WINDOWS PRINTER DRIVER BLOCKED WEBUSB. USE "TSC SERIAL / COM" OR "DOWNLOAD .PRN" -> TSC DIAGTOOL!', 'warning');
+      showToast('WINDOWS PRINTER DRIVER BLOCKS WEBUSB. USE "Print WITH/WITHOUT Tag No (1-Bit Crisp)" BELOW OR "DOWNLOAD .PRN" -> TSC DIAGTOOL!', 'warning');
     }
   }
 
