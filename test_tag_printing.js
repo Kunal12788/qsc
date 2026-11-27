@@ -53,7 +53,11 @@ assert(htmlContent.includes('id="tag-no-without"'), 'Missing tag-no-without radi
 assert(htmlContent.includes('id="modal-tag-print-options"'), 'Missing modal-tag-print-options modal');
 assert(htmlContent.includes('id="btn-confirm-print-with-tag"'), 'Missing btn-confirm-print-with-tag');
 assert(htmlContent.includes('id="btn-confirm-print-without-tag"'), 'Missing btn-confirm-print-without-tag');
-console.log('  ✓ Print Tags, Weight Display Mode, Tag No Display Mode (With vs Without), and Print Prompt Modal verified.');
+assert(htmlContent.includes('id="tag-tspl-dpi"'), 'Missing tag-tspl-dpi');
+assert(htmlContent.includes('id="tag-tspl-density"'), 'Missing tag-tspl-density');
+assert(htmlContent.includes('id="btn-tspl-print-usb"'), 'Missing btn-tspl-print-usb');
+assert(htmlContent.includes('id="btn-tspl-download-prn"'), 'Missing btn-tspl-download-prn');
+console.log('  ✓ Print Tags, Weight Display Mode, Tag No Display Mode (With vs Without), Print Prompt Modal & TSC TSPL2 controls verified.');
 
 // Test Suite 2: Mock DOM Execution of Tag Engine & Real app.js Loading
 console.log('\n[Suite 2] JS Tag Engine Execution & Calibration Logic:');
@@ -71,6 +75,10 @@ const mockElements = {
   'tag-cal-bottom': { value: '0.5' },
   'tag-cal-gap': { value: '0' },
   'tag-cal-font-scale': { value: '100' },
+  'tag-tspl-dpi': { value: '203' },
+  'tag-tspl-density': { value: '12' },
+  'tag-tspl-speed': { value: '3' },
+  'tag-tspl-gap': { value: '2' },
   'tag-opt-cust': { checked: true },
   'tag-opt-ornament': { checked: true },
   'tag-opt-huid': { checked: true },
@@ -270,5 +278,26 @@ assert.strictEqual(window.tagConfig.wMm, 50);
 assert.strictEqual(window.tagConfig.hMm, 15);
 assert.strictEqual(window.tagConfig.preset, '50-15');
 console.log('  ✓ Bidirectional dimension synchronization and auto-preset toggling verified.');
+
+// Case 6: TSC Brand Native TSPL2 Command Generation
+assert(typeof window.buildTsplTagCommands === 'function', 'Missing window.buildTsplTagCommands');
+mockElements['tag-cal-gap'].value = '0';
+const tsplWithTag = window.buildTsplTagCommands('with');
+assert(tsplWithTag.includes('SIZE 50.0 mm, 15.0 mm\r\n'), 'TSPL missing SIZE command with CRLF');
+assert(tsplWithTag.includes('GAP 2.0 mm, 0 mm\r\n'), 'TSPL missing GAP command');
+assert(tsplWithTag.includes('DENSITY 12\r\n'), 'TSPL missing DENSITY 12 command');
+assert(tsplWithTag.includes('CLS\r\n'), 'TSPL missing CLS command');
+assert(tsplWithTag.includes('TEXT '), 'TSPL missing TEXT command');
+assert(tsplWithTag.includes('QRCODE '), 'TSPL missing hardware QRCODE command');
+assert(tsplWithTag.includes('TAG:Q'), 'TSPL WITH tag mode must include TAG:Q...');
+assert(tsplWithTag.includes('PRINT 1,1\r\n'), 'TSPL missing PRINT 1,1 command');
+
+const tsplWithoutTag = window.buildTsplTagCommands('without');
+assert(!tsplWithoutTag.includes('TAG:Q'), 'TSPL WITHOUT tag mode must omit TAG:');
+
+mockElements['tag-tspl-dpi'].value = '300';
+const cfg300 = window.getTsplPrinterConfig();
+assert.strictEqual(cfg300.dpm, 12, '300 DPI must map to 12 dots/mm');
+console.log('  ✓ TSC Brand TSPL2 generation (203/300 DPI, SIZE, GAP, DENSITY, TEXT, QRCODE, WITH/WITHOUT Tag No) verified.');
 
 console.log('\n=== ALL JEWELLERY TAG PRINTING & CALIBRATION TESTS PASSED SUCCESSFULLY! ===');

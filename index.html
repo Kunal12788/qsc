@@ -2937,6 +2937,38 @@
                       <span class="text-[9px] text-slate-400">Text density scale</span>
                     </div>
                   </div>
+
+                  <!-- TSC Brand Native TSPL2 Thermal Settings -->
+                  <div id="tag-tspl-settings-bar" class="mt-3 pt-2.5 border-t border-amber-200/80">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <span class="text-[10.5px] font-extrabold text-amber-950 uppercase flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[15px] text-amber-700">memory</span>
+                        <span>TSC TSPL2 Native Thermal Settings (Zero Grain / Crisp Monochrome)</span>
+                      </span>
+                      <span class="text-[9.5px] font-mono font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">TSPL2 READY</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-dpi">TSC PRINTER DPI</label>
+                        <select id="tag-tspl-dpi" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container cursor-pointer">
+                          <option value="203" selected>203 DPI (8 dots/mm)</option>
+                          <option value="300">300 DPI (12 dots/mm)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-density">DARKNESS (DENSITY 1-15)</label>
+                        <input type="number" id="tag-tspl-density" value="12" min="1" max="15" step="1" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-speed">PRINT SPEED (1-6)</label>
+                        <input type="number" id="tag-tspl-speed" value="3" min="1" max="6" step="1" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-gap">LABEL GAP (MM)</label>
+                        <input type="number" id="tag-tspl-gap" value="2" min="0" max="10" step="0.5" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Weight Display Mode & Tag No Display Mode Options -->
@@ -6439,9 +6471,46 @@
         </div>
 
         <div class="grid grid-cols-1 gap-3">
+          <!-- TSC Native TSPL2 Direct Print Section (Solves Grainy / Hazy Thermal Output) -->
+          <div class="p-3.5 rounded-xl border-2 border-emerald-500/70 bg-emerald-50/70 space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <div class="font-extrabold text-xs text-emerald-950 uppercase flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[17px] text-emerald-700">precision_manufacturing</span>
+                  <span>TSC Printer Native TSPL2 (Crisp, Zero Grain)</span>
+                </div>
+                <p class="text-[10.5px] text-emerald-900 mt-0.5">Sends vector TSPL2 commands directly to your TSC printer instead of blurry browser rasterization.</p>
+              </div>
+              <select id="modal-tspl-tag-no-mode" class="px-2 py-1 rounded-lg border border-emerald-400 bg-white text-[11px] font-bold text-slate-800 cursor-pointer">
+                <option value="with">WITH Tag No</option>
+                <option value="without">WITHOUT Tag No</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="btn-tspl-print-usb" onclick="printTagsTsplDirect('usb')" class="px-3 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs">
+                <span class="material-symbols-outlined text-[15px]">usb</span>
+                <span>TSC USB Direct</span>
+              </button>
+              <button type="button" id="btn-tspl-print-serial" onclick="printTagsTsplDirect('serial')" class="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs">
+                <span class="material-symbols-outlined text-[15px]">cable</span>
+                <span>TSC Serial / COM</span>
+              </button>
+              <button type="button" id="btn-tspl-download-prn" onclick="downloadTsplPrintFile()" class="px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all">
+                <span class="material-symbols-outlined text-[15px] text-emerald-700">download</span>
+                <span>Download .PRN / TSPL</span>
+              </button>
+              <button type="button" id="btn-tspl-copy-code" onclick="copyTsplToClipboard()" class="px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all">
+                <span class="material-symbols-outlined text-[15px] text-primary">content_copy</span>
+                <span>Copy TSPL Code</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center">— OR BROWSER PRINT DIALOG (WITH / WITHOUT TAG NO) —</div>
+
           <button type="button" id="btn-confirm-print-with-tag" onclick="confirmTagPrintWithMode('with')" class="w-full p-3.5 rounded-xl border-2 border-amber-500/60 bg-amber-50/70 hover:bg-amber-100/80 text-left transition-all cursor-pointer flex items-center justify-between group">
             <div>
-              <div class="font-extrabold text-sm text-slate-900 uppercase">Print WITH Tag No</div>
+              <div class="font-extrabold text-sm text-slate-900 uppercase">Browser Print WITH Tag No</div>
               <div class="text-[11px] text-slate-600 font-mono mt-0.5">Shows: ARTICLE: Gold &nbsp; TAG NO : Q1</div>
             </div>
             <span class="material-symbols-outlined text-amber-700 group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -6449,7 +6518,7 @@
 
           <button type="button" id="btn-confirm-print-without-tag" onclick="confirmTagPrintWithMode('without')" class="w-full p-3.5 rounded-xl border-2 border-slate-300 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-center justify-between group">
             <div>
-              <div class="font-extrabold text-sm text-slate-900 uppercase">Print WITHOUT Tag No</div>
+              <div class="font-extrabold text-sm text-slate-900 uppercase">Browser Print WITHOUT Tag No</div>
               <div class="text-[11px] text-slate-600 font-mono mt-0.5">Shows: ARTICLE: Gold (No Tag No)</div>
             </div>
             <span class="material-symbols-outlined text-slate-600 group-hover:translate-x-1 transition-transform">arrow_forward</span>

@@ -3504,6 +3504,10 @@
     const modal = document.getElementById('modal-tag-print-options');
     if (modal) {
       updateTagPrintModalWeightBadges();
+      const modalTsplSelect = document.getElementById('modal-tspl-tag-no-mode');
+      if (modalTsplSelect) {
+        modalTsplSelect.value = document.getElementById('tag-no-without')?.checked ? 'without' : 'with';
+      }
       modal.classList.remove('hidden');
     } else {
       printCustomTags();
@@ -3526,6 +3530,324 @@
       grossBtn.className = isGrossOnly
         ? 'px-2.5 py-1 rounded-lg font-bold border border-amber-500 bg-amber-100 text-amber-900 text-[11px] transition-all cursor-pointer'
         : 'px-2.5 py-1 rounded-lg font-bold border border-slate-300 bg-white text-slate-600 text-[11px] transition-all cursor-pointer';
+    }
+  }
+
+  // ========================================================
+  // TSC BRAND NATIVE TSPL / TSPL2 THERMAL PRINTING ENGINE
+  // ========================================================
+  function escapeTsplString(str) {
+    return String(str || '')
+      .replace(/[\r\n\t]+/g, ' ')
+      .replace(/\\/g, '')
+      .replace(/"/g, '\\["]')
+      .trim();
+  }
+
+  function getTsplPrinterConfig() {
+    const dpiVal = parseInt(document.getElementById('tag-tspl-dpi')?.value || '203', 10);
+    const dpi = dpiVal === 300 ? 300 : 203;
+    const dpm = dpi === 300 ? 12 : 8; // TSC firmware standard: 8 dots/mm (203 DPI), 12 dots/mm (300 DPI)
+    const density = Math.min(15, Math.max(1, parseInt(document.getElementById('tag-tspl-density')?.value || '12', 10) || 12));
+    const speed = Math.min(6, Math.max(1, parseInt(document.getElementById('tag-tspl-speed')?.value || '3', 10) || 3));
+    const gapSensorMm = Math.max(0, parseFloat(document.getElementById('tag-tspl-gap')?.value ?? '2') || 0);
+    return { dpi, dpm, density, speed, gapSensorMm };
+  }
+
+  function getActiveRowsForTagOutput() {
+    if (activeTagRows && activeTagRows.length > 0) return activeTagRows;
+    const converted = convertExcelSheetToRows(excelSheetData);
+    if (converted && converted.length > 0) {
+      activeTagRows = converted;
+      if (activeTagBatch) {
+        activeTagBatch.tagData = converted;
+        activeTagBatch.tagStatus = 'DONE';
+      }
+      return converted;
+    }
+    return [];
+  }
+
+  function buildTsplTagCommands(tagNoModeOverride = null) {
+    const widthInput = document.getElementById('tag-custom-width') || document.getElementById('tag-print-width');
+    const heightInput = document.getElementById('tag-custom-height') || document.getElementById('tag-print-height');
+    const rawW = parseFloat(widthInput?.value || tagConfig.wMm || 50);
+    const rawH = parseFloat(heightInput?.value || tagConfig.hMm || 15);
+    const unit = (document.getElementById('tag-print-unit') || document.getElementById('tag-cfg-unit'))?.value || 'mm';
+    const layout = document.getElementById('tag-print-layout')?.value || (rawW >= 45 ? 'split' : 'compact');
+
+    const wMm = unit === 'in' ? rawW * 25.4 : rawW;
+    const hMm = unit === 'in' ? rawH * 25.4 : rawH;
+
+    const topOffsetMm = Math.max(0, parseFloat(document.getElementById('tag-cal-top')?.value ?? tagConfig.topCal ?? 0.5) || 0);
+    const leftOffsetMm = Math.max(0, parseFloat(document.getElementById('tag-cal-left')?.value ?? tagConfig.leftCal ?? 0.5) || 0);
+    const botOffsetMm = Math.max(0, parseFloat(document.getElementById('tag-cal-bottom')?.value ?? tagConfig.bottomCal ?? 0.5) || 0);
+    const bridgeGapMm = Math.max(0, parseFloat(document.getElementById('tag-cal-gap')?.value ?? tagConfig.bridgeGap ?? 0) || 0);
+
+    const incCust = document.getElementById('tag-opt-cust')?.checked !== false;
+    const incOrnament = document.getElementById('tag-opt-ornament')?.checked !== false;
+    const incHuid = document.getElementById('tag-opt-huid')?.checked !== false;
+    const incQr = document.getElementById('tag-opt-qr')?.checked !== false;
+    const showNetWt = !(document.getElementById('tag-weight-gross-only')?.checked);
+    const showTagNo = tagNoModeOverride
+      ? (tagNoModeOverride !== 'without')
+      : !(document.getElementById('tag-no-without')?.checked);
+
+    const { dpm, density, speed, gapSensorMm } = getTsplPrinterConfig();
+    const x0 = Math.round(leftOffsetMm * dpm);
+    const y0 = Math.round(topOffsetMm * dpm);
+    const usableW = Math.max(12, wMm - (leftOffsetMm * 2));
+    const usableH = Math.max(5, hMm - (topOffsetMm + botOffsetMm));
+    const usableWDots = Math.round(usableW * dpm);
+    const usableHDots = Math.round(usableH * dpm);
+
+    const defaultCustomer = (activeTagBatch ? activeTagBatch.customer : '') || 'ROYCO JEWELLERS';
+    const defaultMetal = (activeTagBatch ? activeTagBatch.metal : '') || 'Gold';
+    const defaultPurity = (activeTagBatch ? activeTagBatch.purity : '') || '22K 916';
+    const defaultBox = (activeTagBatch ? (activeTagBatch.tray || activeTagBatch.boxNo) : '') || 'BOX-TR-05';
+    const batchDateStr = formatTagDateStr(activeTagBatch ? (activeTagBatch.receivedDate || activeTagBatch.date) : null);
+
+    const rowsToPrint = getActiveRowsForTagOutput();
+    const effectiveRows = rowsToPrint.length > 0
+      ? rowsToPrint
+      : [{
+          customer: defaultCustomer,
+          date: batchDateStr,
+          purity: defaultPurity,
+          articleType: defaultMetal,
+          ornamentsType: 'MIX ORNAMENTS',
+          grossWt: '11.990g',
+          netWt: '11.990g',
+          huid: '45GNA3',
+          boxNo: defaultBox
+        }];
+
+    const lines = [
+      `SIZE ${wMm.toFixed(1)} mm, ${hMm.toFixed(1)} mm`,
+      `GAP ${gapSensorMm.toFixed(1)} mm, 0 mm`,
+      'DIRECTION 1,0',
+      'REFERENCE 0,0',
+      `SPEED ${speed}`,
+      `DENSITY ${density}`,
+      'CODEPAGE UTF-8',
+      'SET TEAR ON'
+    ];
+
+    effectiveRows.forEach((row, idx) => {
+      const customerName = String(row.customer || defaultCustomer).toUpperCase();
+      const dateStr = String(row.date || batchDateStr);
+      const purityVal = String(row.purity || defaultPurity);
+      const articleVal = String((row.articleType || defaultMetal).replace(purityVal, '').trim() || defaultMetal);
+      const ornamentsType = String(row.ornamentsType || row.itemDesc || 'MIX ORNAMENTS').toUpperCase();
+      const grossVal = String(row.grossWt || row.weight || '11.990') + (String(row.grossWt || '').includes('g') ? '' : 'g');
+      const netVal = String(row.netWt || row.weight || row.grossWt || '11.990') + (String(row.netWt || '').includes('g') ? '' : 'g');
+      const huidStr = String(row.huid || ('45GNA' + (idx > 0 ? (idx + 1) : '3'))).toUpperCase();
+      const tagNoStr = String(row.tagNo || row.tagNumber || (row.slNo ? ('Q' + row.slNo) : ('Q' + (idx + 1)))).toUpperCase();
+
+      const hasBridge = bridgeGapMm > 0 && usableW > bridgeGapMm + 15;
+      const bridgeDots = hasBridge ? Math.round(bridgeGapMm * dpm) : 0;
+      const headDots = layout === 'split'
+        ? Math.round((usableWDots - bridgeDots) * 0.5)
+        : Math.round(usableWDots * 0.54);
+      const tailX = x0 + headDots + bridgeDots + Math.round(0.8 * dpm);
+      const tailDots = Math.max(32, usableWDots - headDots - bridgeDots - Math.round(0.8 * dpm));
+
+      lines.push('CLS');
+
+      let yCur = y0;
+      // Title font size tuned to 203 DPI (8 dots/mm) vs 300 DPI (12 dots/mm)
+      const useLargeFonts = dpm === 12 || usableH >= 18;
+      const titleFont = useLargeFonts ? '3' : '2';
+      const titleCharW = titleFont === '3' ? 16 : 12;
+      const titleStepY = titleFont === '3' ? 28 : 20;
+      const dataFont = dpm === 12 ? '2' : '1';
+      const dataCharW = dataFont === '2' ? 12 : 8;
+      const dataRowH = dpm === 12 ? 22 : (usableH <= 11 ? 11 : 13);
+
+      // Customer Header spanning top in split mode, or left column in compact mode
+      if (incCust) {
+        const headerSpanDots = layout === 'split' ? usableWDots : headDots;
+        const maxTitleChars = Math.max(8, Math.floor(headerSpanDots / titleCharW));
+        const clippedTitle = customerName.slice(0, maxTitleChars);
+        const titlePixelW = clippedTitle.length * titleCharW;
+        const titleX = Math.max(x0, x0 + Math.floor((headerSpanDots - titlePixelW) / 2));
+        lines.push(`TEXT ${titleX},${yCur},"${titleFont}",0,1,1,"${escapeTsplString(clippedTitle)}"`);
+        yCur += titleStepY;
+        lines.push(`BAR ${x0},${yCur},${headerSpanDots},${dpm === 12 ? 3 : 2}`);
+        yCur += dpm === 12 ? 5 : 4;
+      }
+
+      // Data Rows on Left Half
+      const maxDataChars = Math.max(8, Math.floor(headDots / dataCharW));
+      const detailLines = [];
+      if (incCust) detailLines.push(`DATE: ${dateStr}`);
+      if (incOrnament) {
+        detailLines.push(showTagNo ? `ART:${articleVal} TAG:${tagNoStr}` : `ARTICLE: ${articleVal}`);
+        detailLines.push(`ORN: ${ornamentsType}`);
+        detailLines.push(showNetWt ? `GW:${grossVal}` : `WEIGHT: ${grossVal}`);
+        if (showNetWt) detailLines.push(`NW:${netVal}`);
+      }
+      if (incHuid) detailLines.push(`HUID: ${huidStr}`);
+
+      const bottomYLimit = y0 + usableHDots;
+      const availDetailDots = Math.max(dataRowH, bottomYLimit - yCur);
+      const stepY = Math.max(dpm === 12 ? 18 : 11, Math.min(dataRowH, Math.floor(availDetailDots / Math.max(1, detailLines.length))));
+
+      let dy = (layout === 'compact' && incCust) ? yCur : yCur;
+      detailLines.forEach((lineText) => {
+        if (dy + 10 <= bottomYLimit) {
+          lines.push(`TEXT ${x0},${dy},"${dataFont}",0,1,1,"${escapeTsplString(lineText.slice(0, maxDataChars))}"`);
+          dy += stepY;
+        }
+      });
+
+      // Hardware QRCODE on Right Half (100% native 1-bit monochrome thermal print, zero grain!)
+      if (incQr) {
+        const qrPayloadParts = [
+          `CUST:${customerName}`,
+          `DT:${dateStr}`,
+          `ART:${articleVal}`,
+          ...(showTagNo ? [`TAG:${tagNoStr}`] : []),
+          `ORN:${ornamentsType}`,
+          `GW:${grossVal}`,
+          ...(showNetWt ? [`NW:${netVal}`] : []),
+          `HUID:${huidStr}`
+        ];
+        const qrStr = qrPayloadParts.join('; ');
+        const qrTopY = layout === 'split' && incCust ? yCur : y0;
+        const qrAvailH = Math.max(36, bottomYLimit - qrTopY - (dpm === 12 ? 22 : 15));
+        const qrBoxDots = Math.min(tailDots, qrAvailH);
+        // Estimate module count (~33-37 modules for typical payload) -> cell width 2 or 3 dots
+        const cellSize = Math.max(2, Math.min(dpm === 12 ? 4 : 3, Math.floor(qrBoxDots / 35)));
+        const approxQrSize = cellSize * 33;
+        const qrX = Math.max(tailX, tailX + Math.floor((tailDots - approxQrSize) / 2));
+        const qrY = Math.max(qrTopY, qrTopY + Math.floor((qrAvailH - approxQrSize) / 2));
+
+        lines.push(`QRCODE ${qrX},${qrY},L,${cellSize},A,0,M2,S3,"${escapeTsplString(qrStr)}"`);
+
+        // HUID caption right underneath QR code
+        const capW = huidStr.length * dataCharW;
+        const capX = Math.max(tailX, tailX + Math.floor((tailDots - capW) / 2));
+        const capY = Math.min(bottomYLimit - (dpm === 12 ? 18 : 12), qrY + approxQrSize + 2);
+        lines.push(`TEXT ${capX},${capY},"${dataFont}",0,1,1,"${escapeTsplString(huidStr)}"`);
+      }
+
+      lines.push('PRINT 1,1');
+    });
+
+    return lines.join('\r\n') + '\r\n';
+  }
+
+  let rememberedTscUsbDevice = null;
+
+  async function printTagsTsplDirect(transport = 'usb') {
+    const rows = getActiveRowsForTagOutput();
+    if (!rows.length) {
+      showToast('NO TAG DATA AVAILABLE TO PRINT. PLEASE PASTE OR SUBMIT DATA FIRST.', 'warning');
+      return;
+    }
+
+    const modalMode = document.getElementById('modal-tspl-tag-no-mode')?.value || (document.getElementById('tag-no-without')?.checked ? 'without' : 'with');
+    const tsplScript = buildTsplTagCommands(modalMode);
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(tsplScript);
+
+    if (transport === 'serial') {
+      if (typeof navigator === 'undefined' || !navigator.serial || typeof navigator.serial.requestPort !== 'function') {
+        showToast('WEB SERIAL NOT SUPPORTED IN THIS BROWSER. USE CHROME/EDGE OR DOWNLOAD .PRN.', 'warning');
+        return;
+      }
+      try {
+        const port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 9600 });
+        const writer = port.writable.getWriter();
+        await writer.write(bytes);
+        writer.releaseLock();
+        await port.close();
+        closeTagPrintOptionsModal();
+        showToast(`SENT ${rows.length} TAGS VIA TSPL2 SERIAL PORT TO TSC PRINTER!`, 'success');
+      } catch (err) {
+        if (err && err.name === 'NotFoundError') return;
+        console.error('TSC Serial print error:', err);
+        showToast('SERIAL PRINT ERROR: CHECK PORT OR USE DOWNLOAD .PRN FOR TSC DIAGTOOL.', 'error');
+      }
+      return;
+    }
+
+    // WebUSB direct transfer to TSC printer (Vendor ID 0x1203 = TSC Auto ID Technology)
+    if (typeof navigator === 'undefined' || !navigator.usb || typeof navigator.usb.requestDevice !== 'function') {
+      showToast('WEBUSB NOT AVAILABLE HERE. DOWNLOAD .PRN OR USE CHROME/EDGE OVER HTTPS.', 'warning');
+      return;
+    }
+    try {
+      let device = rememberedTscUsbDevice;
+      if (!device || !device.opened) {
+        device = await navigator.usb.requestDevice({
+          filters: [{ vendorId: 0x1203 }, { classCode: 7 }]
+        });
+      }
+      await device.open();
+      if (!device.configuration) {
+        await device.selectConfiguration(1);
+      }
+      const cfg = device.configuration;
+      let ifaceNum = 0;
+      let epOut = null;
+      for (const iface of cfg.interfaces) {
+        const alt = iface.alternate || (iface.alternates && iface.alternates[0]);
+        if (!alt) continue;
+        const outEp = (alt.endpoints || []).find(ep => ep.direction === 'out');
+        if (outEp) {
+          ifaceNum = iface.interfaceNumber;
+          epOut = outEp.endpointNumber;
+          break;
+        }
+      }
+      await device.claimInterface(ifaceNum);
+      if (!epOut) epOut = 1;
+      await device.transferOut(epOut, bytes);
+      rememberedTscUsbDevice = device;
+      closeTagPrintOptionsModal();
+      showToast(`PRINTED ${rows.length} CRISP TSPL2 TAGS DIRECTLY TO TSC USB PRINTER!`, 'success');
+    } catch (err) {
+      if (err && err.name === 'NotFoundError') return;
+      console.error('TSC WebUSB error:', err);
+      showToast('WINDOWS PRINTER DRIVER BLOCKED WEBUSB. USE "TSC SERIAL / COM" OR "DOWNLOAD .PRN" -> TSC DIAGTOOL!', 'warning');
+    }
+  }
+
+  function downloadTsplPrintFile() {
+    const rows = getActiveRowsForTagOutput();
+    if (!rows.length) {
+      showToast('NO TAG DATA AVAILABLE TO EXPORT TSPL.', 'warning');
+      return;
+    }
+    const modalMode = document.getElementById('modal-tspl-tag-no-mode')?.value || (document.getElementById('tag-no-without')?.checked ? 'without' : 'with');
+    const tsplScript = buildTsplTagCommands(modalMode);
+    const blob = new Blob([tsplScript], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const docketClean = (activeTagBatch ? activeTagBatch.jobDocket : 'TAGS').replace(/[^a-zA-Z0-9_-]/g, '_');
+    link.href = url;
+    link.download = `TSC_${docketClean}_TSPL.prn`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast(`DOWNLOADED TSC_${docketClean}_TSPL.prn (${rows.length} TAGS). SEND DIRECTLY VIA TSC DIAGTOOL OR COPY /B!`, 'success');
+  }
+
+  function copyTsplToClipboard() {
+    const modalMode = document.getElementById('modal-tspl-tag-no-mode')?.value || (document.getElementById('tag-no-without')?.checked ? 'without' : 'with');
+    const tsplScript = buildTsplTagCommands(modalMode);
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      navigator.clipboard.writeText(tsplScript).then(() => {
+        showToast('TSPL2 COMMANDS COPIED TO CLIPBOARD!', 'success');
+      }).catch(() => {
+        showToast('TSPL2 GENERATED. USE DOWNLOAD .PRN TO SAVE FILE.', 'info');
+      });
+    } else {
+      showToast('CLIPBOARD UNAVAILABLE. USE DOWNLOAD .PRN FILE INSTEAD.', 'info');
     }
   }
 
@@ -15078,6 +15400,11 @@
   window.closeTagPrintOptionsModal = closeTagPrintOptionsModal;
   window.setTagWeightModeFromModal = setTagWeightModeFromModal;
   window.confirmTagPrintWithMode = confirmTagPrintWithMode;
+  window.buildTsplTagCommands = buildTsplTagCommands;
+  window.getTsplPrinterConfig = getTsplPrinterConfig;
+  window.printTagsTsplDirect = printTagsTsplDirect;
+  window.downloadTsplPrintFile = downloadTsplPrintFile;
+  window.copyTsplToClipboard = copyTsplToClipboard;
   window.convertExcelSheetToRows = convertExcelSheetToRows;
   window.openTagPrintTab = openTagPrintTab;
   window.syncTagPrintButtonState = syncTagPrintButtonState;
