@@ -3211,17 +3211,18 @@
       const boxNoStr = row.boxNo || defaultBox;
       const tagNoStr = row.tagNo || row.tagNumber || (row.slNo ? ('Q' + row.slNo) : ('Q' + (idx + 1)));
 
-      // QR Code payload
+      // Compact high-scan QR Code payload (stays within Version 4/5 so modules print large ~13.8mm at 203/300 DPI)
       const qrPayload = [
-        'CUSTOMER: ' + customerName,
-        'DATE: ' + dateStr,
-        'ARTICLE: ' + articleVal,
-        ...(showTagNo ? ['TAG NO: ' + tagNoStr] : []),
-        'ORNAMENT: ' + ornamentsType,
-        'GROSS WEIGHT: ' + grossVal,
-        ...(showNetWt ? ['NET WEIGHT: ' + netVal] : []),
-        'HUID NUMBER: ' + huidStr
-      ].join('\n');
+        huidStr,
+        ...(showTagNo ? [tagNoStr] : []),
+        dateStr,
+        articleVal,
+        purityVal,
+        ornamentsType,
+        `GW:${grossVal}`,
+        ...(showNetWt ? [`NW:${netVal}`] : []),
+        customerName.slice(0, 26)
+      ].filter(Boolean).join('|');
 
       if (layout === 'split') {
         const pageBreakCss = isLastTag ? '' : 'page-break-after:always; break-after:page;';
@@ -3265,9 +3266,9 @@
         const qrFooterPt = !showNetWt
           ? dataPt
           : ((usableH <= 10.0) ? '4.0' : (Math.max(4.4, Math.min(5.8, usableH * 0.30)) * fontScaleFactor).toFixed(1));
-        // With HUID moved vertically beside (before) QR, QR expands to use nearly the full tag height
-        const maxQrDim = Math.max(6.0, usableH - 0.35);
-        const qrBoxDimMm = Math.max(6.0, Math.min(maxQrDim, tailWMm - 3.0, 14.0)).toFixed(2);
+        // With HUID moved vertically beside (before) QR, QR expands to ~92% of total tag height matching illustration
+        const maxQrDim = Math.max(6.5, hMm - 1.1);
+        const qrBoxDimMm = Math.max(6.5, Math.min(maxQrDim, tailWMm - 3.0, 14.2)).toFixed(2);
         const qrPixelDim = Math.max(64, Math.round(parseFloat(qrBoxDimMm) * 10));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
@@ -3321,8 +3322,8 @@
         const qrFooterPt = !showNetWt
           ? dataPt
           : (Math.max(4.5, Math.min(5.8, usableH * 0.36)) * fontScaleFactor).toFixed(1);
-        const maxQrDim = Math.max(6.0, usableH - 0.3);
-        const qrBoxDimMm = Math.max(6.0, Math.min(maxQrDim, (usableW * 0.49) - 2.8, 13.7)).toFixed(2);
+        const maxQrDim = Math.max(6.5, hMm - 1.1);
+        const qrBoxDimMm = Math.max(6.5, Math.min(maxQrDim, (usableW * 0.49) - 2.6, 14.0)).toFixed(2);
         const qrPixelDim = Math.max(48, Math.round(parseFloat(qrBoxDimMm) * 8));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
@@ -3591,22 +3592,32 @@
       // Pixel-exact 1-bit QR modules placed on the right side with very little margin
       if (opts.incQr && typeof qrcode === 'function') {
         try {
-          const qr = qrcode(0, 'L');
-          qr.addData(String(opts.qrPayload || opts.huidStr || 'TAG'));
+          // Expand QR vertically across full sticker height (~0.3mm top/bottom edge clearance) to match illustration size
+          const vertEdgePad = Math.max(2, Math.round(0.28 * dpm));
+          const qrAreaTop = vertEdgePad;
+          const qrAvailH = Math.max(24, hDots - (vertEdgePad * 2));
+          let qrText = String(opts.qrPayload || opts.huidStr || 'TAG');
+          let qr = qrcode(0, 'L');
+          qr.addData(qrText);
           qr.make();
+          // Ensure low-DPI (203 DPI) never drops from cellPx 3 -> 2 due to overly long text
+          if (dpm <= 9 && qr.getModuleCount() > 37 && qrText.length > 96) {
+            qrText = [opts.huidStr, opts.tagNoStr, opts.dateStr, opts.articleVal, opts.purityVal, `GW:${opts.grossVal}`, String(opts.customerName || '').slice(0, 18)].filter(Boolean).join('|');
+            qr = qrcode(0, 'L');
+            qr.addData(qrText);
+            qr.make();
+          }
           const modCount = qr.getModuleCount();
           const huidVertPx = !opts.showNetWt
             ? dataPx
             : Math.max(Math.round(9 * dpiScale), Math.min(Math.round(13 * dpiScale), Math.round(availH * 0.14)));
-          const huidReserveW = huidVertPx + Math.max(4, Math.round(0.6 * dpm));
-          const qrAreaTop = y0;
-          const qrAvailH = Math.max(24, bottomY - qrAreaTop - Math.max(2, Math.round(0.25 * dpm)));
-          const maxQrPx = Math.max(28, Math.min(tailDots - huidReserveW - Math.round(0.35 * dpm), qrAvailH));
+          const huidReserveW = huidVertPx + Math.max(3, Math.round(0.45 * dpm));
+          const maxQrPx = Math.max(28, Math.min(tailDots - huidReserveW - Math.round(0.25 * dpm), qrAvailH));
           const cellPx = Math.max(1, Math.floor(maxQrPx / modCount));
           const qrSizePx = cellPx * modCount;
           const rightMarginPx = Math.max(1, Math.round(0.35 * dpm));
           const qrX = Math.max(tailX + huidReserveW, (x0 + usableWDots) - qrSizePx - rightMarginPx);
-          const qrY = qrAreaTop + Math.max(0, Math.floor((qrAvailH - qrSizePx) / 2));
+          const qrY = Math.max(vertEdgePad, Math.floor((hDots - qrSizePx) / 2));
 
           for (let r = 0; r < modCount; r++) {
             for (let c = 0; c < modCount; c++) {
@@ -3690,16 +3701,18 @@
       const netVal = (row.netWt || row.weight || row.grossWt || '11.990') + (String(row.netWt || '').includes('g') ? '' : 'g');
       const huidStr = row.huid || ('45GNA' + (idx > 0 ? (idx + 1) : '3'));
       const tagNoStr = row.tagNo || row.tagNumber || (row.slNo ? ('Q' + row.slNo) : ('Q' + (idx + 1)));
+      // Compact high-scan QR Code payload (stays in Version 4/5 so modules print large ~13.8mm matching illustration)
       const qrPayload = [
-        'CUSTOMER: ' + customerName,
-        'DATE: ' + dateStr,
-        'ARTICLE: ' + articleVal,
-        ...(showTagNo ? ['TAG NO: ' + tagNoStr] : []),
-        'ORNAMENT: ' + ornamentsType,
-        'GROSS WEIGHT: ' + grossVal,
-        ...(showNetWt ? ['NET WEIGHT: ' + netVal] : []),
-        'HUID NUMBER: ' + huidStr
-      ].join('\n');
+        huidStr,
+        ...(showTagNo ? [tagNoStr] : []),
+        dateStr,
+        articleVal,
+        purityVal,
+        ornamentsType,
+        `GW:${grossVal}`,
+        ...(showNetWt ? [`NW:${netVal}`] : []),
+        customerName.slice(0, 26)
+      ].filter(Boolean).join('|');
 
       return {
         wMm, hMm, padTopMm, padLeftMm, padBotMm, gapMm, fontScaleFactor, layout,
@@ -4114,48 +4127,67 @@
         }
       });
 
-      // Larger Hardware QRCODE on Right Half using FULL usable height (100% native 1-bit monochrome)
+      // Larger Hardware QRCODE on Right Half using FULL sticker height (~13.8mm on 15mm tag, matching illustration)
       if (incQr) {
-        const qrPayloadParts = [
-          `CUST:${customerName}`,
-          `DT:${dateStr}`,
-          `ART:${articleVal}`,
-          ...(showTagNo ? [`TAG:${tagNoStr}`] : []),
-          `ORN:${ornamentsType}`,
-          `GW:${grossVal}`,
-          ...(showNetWt ? [`NW:${netVal}`] : []),
-          `HUID:${huidStr}`
-        ];
-        const qrStr = qrPayloadParts.join('; ');
-        const qrTopY = y0;
+        const totalTagHDots = Math.round(hMm * dpm);
+        const qrVertPadDots = Math.max(2, Math.round(0.28 * dpm));
         const capFontPt = !showNetWt ? tsplFontPt : Math.max(5, Math.min(8, tsplFontPt));
         const huidGlyphThick = Math.round(capFontPt * dotsPerPt * 0.85);
-        const huidGapDots = Math.max(4, Math.round(0.6 * dpm));
+        const huidGapDots = Math.max(3, Math.round(0.45 * dpm));
         const huidReserveDots = huidGlyphThick + huidGapDots;
-        // Without bottom HUID caption, QR expands to fill the full usable height!
-        const qrAvailH = Math.max(40, bottomYLimit - qrTopY - 2);
+        const qrAvailH = Math.max(40, totalTagHDots - (qrVertPadDots * 2));
         const qrBoxDots = Math.min(Math.max(40, tailDots - huidReserveDots), qrAvailH);
+
+        // Keep QR version <= 5 (<= 37 modules, or <= 33 at 300 DPI) so cellSize stays large & crisp (~13.5-14mm!)
+        let qrStr = [
+          `HUID:${huidStr}`,
+          ...(showTagNo ? [`TAG:${tagNoStr}`] : []),
+          dateStr,
+          articleVal,
+          purityVal,
+          `GW:${grossVal}`,
+          ...(showNetWt ? [`NW:${netVal}`] : []),
+          ornamentsType.slice(0, 12),
+          customerName.slice(0, 22)
+        ].filter(Boolean).join('|');
+
         let modCount = 33;
         if (typeof qrcode === 'function') {
           try {
-            const qrProbe = qrcode(0, 'L');
+            let qrProbe = qrcode(0, 'L');
             qrProbe.addData(qrStr);
             qrProbe.make();
             modCount = Math.max(21, qrProbe.getModuleCount());
+            const maxAllowedMod = dpm === 12 ? 33 : 37;
+            if (modCount > maxAllowedMod) {
+              qrStr = [
+                huidStr,
+                ...(showTagNo ? [tagNoStr] : []),
+                dateStr,
+                articleVal,
+                purityVal,
+                `GW:${grossVal}`,
+                customerName.slice(0, 16)
+              ].filter(Boolean).join('|');
+              qrProbe = qrcode(0, 'L');
+              qrProbe.addData(qrStr);
+              qrProbe.make();
+              modCount = Math.max(21, qrProbe.getModuleCount());
+            }
           } catch (eM) {}
         }
         const cellSize = Math.max(2, Math.min(dpm === 12 ? 5 : 4, Math.floor(qrBoxDots / modCount)));
         const approxQrSize = cellSize * modCount;
         const rightMarginDots = Math.max(1, Math.round(0.35 * dpm));
         const qrX = Math.max(tailX + huidReserveDots, (x0 + usableWDots) - approxQrSize - rightMarginDots);
-        const qrY = Math.max(qrTopY, qrTopY + Math.floor((qrAvailH - approxQrSize) / 2));
+        const qrY = Math.max(qrVertPadDots, Math.floor((totalTagHDots - approxQrSize) / 2));
 
         lines.push(`QRCODE ${qrX},${qrY},L,${cellSize},A,0,"${escapeTsplString(qrStr)}"`);
 
         // Vertical HUID immediately BEFORE (to the left of) the larger QR code (270 deg = bottom-to-top)
         const estHuidLen = Math.round(huidStr.length * capFontPt * charDotsPerPt);
         const capX = Math.max(tailX, qrX - huidGlyphThick - huidGapDots);
-        const capY = Math.min(bottomYLimit - 1, Math.round(qrY + (approxQrSize + estHuidLen) / 2));
+        const capY = Math.min(totalTagHDots - 1, Math.round(qrY + (approxQrSize + estHuidLen) / 2));
         lines.push(`TEXT ${capX},${capY},"0",270,${capFontPt},${capFontPt},"${escapeTsplString(huidStr)}"`);
       }
 

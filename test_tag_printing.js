@@ -320,6 +320,7 @@ assert(tsplWithTag.includes('DENSITY 12\r\n'), 'TSPL missing DENSITY 12 command'
 assert(tsplWithTag.includes('CLS\r\n'), 'TSPL missing CLS command');
 assert(tsplWithTag.includes('TEXT '), 'TSPL missing TEXT command');
 assert(tsplWithTag.includes('QRCODE '), 'TSPL missing hardware QRCODE command');
+assert(/QRCODE \d+,\d+,L,[345],A,0,/.test(tsplWithTag), 'TSPL 203 DPI QR code must use large cellSize >= 3 (matching full-height illustration)');
 assert(tsplWithTag.includes('"0",270,'), 'TSPL HUID must be rotated 270 deg vertically before QR code');
 assert(tsplWithTag.includes('Gold  Q'), 'TSPL WITH tag mode must include Date  Metal  Q... on same line');
 assert(tsplWithTag.includes('PRINT 1,1\r\n'), 'TSPL missing PRINT 1,1 command');
