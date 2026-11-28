@@ -3013,7 +3013,7 @@
 
       // Customer Name on Left Half (larger font matching details) + Full-Height Larger QR + HUID on Right Half
       const previewDataPx = Math.max(6.8, Math.min(9.5, (showNetWtPreview ? targetH * 0.105 : targetH * 0.118) * fontZoom)).toFixed(1);
-      const previewQrDim = Math.max(40, Math.min(targetH - 14, 78));
+      const previewQrDim = Math.max(46, Math.min(targetH - 4, 88));
 
       const hasBridge = gapMm > 0 && width > gapMm + 15;
       const gapPct = hasBridge ? Math.max(1, Math.min(18, Math.round((gapMm / width) * 100))) : 0;
@@ -3053,16 +3053,14 @@
             </div>
           ` : ''}
 
-          <!-- Right Half (${tailPct}%): Larger QR Code on Right Side with Very Little Margin -->
-          <div style="width: ${tailPct}%; max-width: ${tailPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding: 1px 1px 1px 2px; ${hasBridge ? '' : 'border-left: 1px dashed #cbd5e1;'} background: #ffffff; overflow: hidden;">
+          <!-- Right Half (${tailPct}% / 25-50mm): Vertical HUID Before Larger Full-Height QR -->
+          <div style="width: ${tailPct}%; max-width: ${tailPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: row; align-items: center; justify-content: flex-end; gap: 3px; padding: 1px 1px 1px 2px; ${hasBridge ? '' : 'border-left: 1px dashed #cbd5e1;'} background: #ffffff; overflow: hidden;">
             ${optQr ? `
-              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <div style="display: flex; align-items: center; justify-content: center; overflow: hidden; width: ${previewQrDim}px; height: ${previewQrDim}px;">
-                  ${generateQrCodeSvg(samplePayload, previewQrDim)}
-                </div>
-                <span style="font-family: Arial, Helvetica, sans-serif; font-size: 7.5px; font-weight: 800; letter-spacing: 0.4px; line-height: 1; margin-top: 2px; text-align: center;">
-                  ${escapeHtmlStr(huidVal)}
-                </span>
+              <span style="writing-mode: vertical-rl; transform: rotate(180deg); font-family: Arial, Helvetica, sans-serif; font-size: 7.5px; font-weight: 800; letter-spacing: 0.4px; line-height: 1; text-align: center; white-space: nowrap;">
+                ${escapeHtmlStr(huidVal)}
+              </span>
+              <div style="display: flex; align-items: center; justify-content: center; overflow: hidden; width: ${previewQrDim}px; height: ${previewQrDim}px; flex-shrink: 0;">
+                ${generateQrCodeSvg(samplePayload, previewQrDim)}
               </div>
             ` : '<span class="text-[9px] text-slate-400 font-mono">TAIL</span>'}
           </div>
@@ -3078,7 +3076,7 @@
 
       const previewDataPx = Math.max(7.0, Math.min(9.2, targetH * 0.135 * fontZoom)).toFixed(1);
       const compactMetaPx = Math.max(5.6, parseFloat(previewDataPx) * 0.85).toFixed(1);
-      const previewQrDim = Math.max(34, Math.min(targetH - 14, 64));
+      const previewQrDim = Math.max(40, Math.min(targetH - 4, 72));
 
       miniPreview.innerHTML = `
         <!-- Left Half (50% / 0-25mm): Customer Name + Date+Metal+TagNo+Purity + GW + NW -->
@@ -3094,16 +3092,14 @@
           ` : ''}
         </div>
 
-        <!-- Right Half (49% / 25-50mm): Larger Full-Height QR on Right Side -->
-        <div style="width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; overflow: hidden;">
+        <!-- Right Half (49% / 25-50mm): Vertical HUID Before Larger Full-Height QR on Right Side -->
+        <div style="width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: row; align-items: center; justify-content: flex-end; gap: 3px; overflow: hidden;">
           ${optQr ? `
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-              <div style="display: flex; align-items: center; justify-content: center; overflow: hidden; width: ${previewQrDim}px; height: ${previewQrDim}px;">
-                ${generateQrCodeSvg(samplePayload, previewQrDim)}
-              </div>
-              <span style="font-family: Arial, Helvetica, sans-serif; font-size: 7.5px; font-weight: 900; letter-spacing: 0.5px; line-height: 1; margin-top: 1px; text-align: center;">
-                ${escapeHtmlStr(huidVal)}
-              </span>
+            <span style="writing-mode: vertical-rl; transform: rotate(180deg); font-family: Arial, Helvetica, sans-serif; font-size: 7.5px; font-weight: 900; letter-spacing: 0.4px; line-height: 1; text-align: center; white-space: nowrap;">
+              ${escapeHtmlStr(huidVal)}
+            </span>
+            <div style="display: flex; align-items: center; justify-content: center; overflow: hidden; width: ${previewQrDim}px; height: ${previewQrDim}px; flex-shrink: 0;">
+              ${generateQrCodeSvg(samplePayload, previewQrDim)}
             </div>
           ` : ''}
         </div>
@@ -3265,11 +3261,10 @@
         const dataPt = (baseDataPt * fontScaleFactor).toFixed(2);
         const metaPt = Math.max(3.6, parseFloat(dataPt) * 0.86).toFixed(2);
 
-        const qrFooterPt = (usableH <= 10.0) ? '4.0' : (Math.max(4.2, Math.min(5.6, usableH * 0.28)) * fontScaleFactor).toFixed(1);
-        const footerHMm = parseFloat(qrFooterPt) * 0.3527 * 1.05;
-        const qrGapMm = 0.25;
-        const maxQrDim = usableH - footerHMm - qrGapMm;
-        const qrBoxDimMm = Math.max(5.5, Math.min(maxQrDim, tailWMm - 1.0, 13.5)).toFixed(2);
+        const qrFooterPt = (usableH <= 10.0) ? '4.0' : (Math.max(4.4, Math.min(5.8, usableH * 0.30)) * fontScaleFactor).toFixed(1);
+        // With HUID moved vertically beside (before) QR, QR expands to use nearly the full tag height
+        const maxQrDim = Math.max(6.0, usableH - 0.35);
+        const qrBoxDimMm = Math.max(6.0, Math.min(maxQrDim, tailWMm - 3.0, 14.0)).toFixed(2);
         const qrPixelDim = Math.max(64, Math.round(parseFloat(qrBoxDimMm) * 10));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
@@ -3296,16 +3291,14 @@
                 <div class="tag-bridge" style="width:${bridgeWMm}mm; max-width:${bridgeWMm}mm; height:100%; box-sizing:border-box; flex-shrink:0;"></div>
               ` : ''}
 
-              <!-- RIGHT HALF (50% LARGER QR CODE ON RIGHT SIDE WITH VERY LITTLE MARGIN): ${tailWMm}mm -->
+              <!-- RIGHT HALF (${tailWMm}mm / 25-50mm): VERTICAL HUID BEFORE LARGER FULL-HEIGHT QR CODE -->
               ${incQr ? `
-                <div class="tag-tail" style="width:${tailWMm}mm; max-width:${tailWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:flex-end; justify-content:center; padding-left:0.2mm; padding-right:0.2mm; overflow:hidden; color:#000000;">
-                  <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                    <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0;">
-                      ${qrSvg}
-                    </div>
-                    <div style="font-family:Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:800; letter-spacing:0.4px; line-height:1; margin-top:${qrGapMm}mm; text-align:center; color:#000000;">
-                      ${escapeHtmlStr(huidStr)}
-                    </div>
+                <div class="tag-tail" style="width:${tailWMm}mm; max-width:${tailWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:0.45mm; padding-left:0.2mm; padding-right:0.2mm; overflow:hidden; color:#000000;">
+                  <div style="writing-mode:vertical-rl; transform:rotate(180deg); font-family:Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:800; letter-spacing:0.4px; line-height:1; text-align:center; white-space:nowrap; color:#000000;">
+                    ${escapeHtmlStr(huidStr)}
+                  </div>
+                  <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0;">
+                    ${qrSvg}
                   </div>
                 </div>
               ` : `<div style="width:${tailWMm}mm; height:100%;"></div>`}
@@ -3320,10 +3313,8 @@
         const dataPt = (baseDataPt * fontScaleFactor).toFixed(2);
 
         const qrFooterPt = (Math.max(4.5, Math.min(5.8, usableH * 0.36)) * fontScaleFactor).toFixed(1);
-        const footerHMm = parseFloat(qrFooterPt) * 0.3527 * 1.02;
-        const qrGapMm = 0.15;
-        const maxQrDim = usableH - footerHMm - qrGapMm;
-        const qrBoxDimMm = Math.max(5.5, Math.min(maxQrDim, (usableW * 0.45) - 0.8, 12.0)).toFixed(2);
+        const maxQrDim = Math.max(6.0, usableH - 0.3);
+        const qrBoxDimMm = Math.max(6.0, Math.min(maxQrDim, (usableW * 0.49) - 2.8, 13.7)).toFixed(2);
         const qrPixelDim = Math.max(48, Math.round(parseFloat(qrBoxDimMm) * 8));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
@@ -3343,16 +3334,14 @@
               ` : ''}
             </div>
 
-            <!-- Right Column: 47% (Larger QR Code on Right Side with Very Little Margin) -->
+            <!-- Right Half: 49% (25-50mm): Vertical HUID Before Larger Full-Height QR Code -->
             ${incQr ? `
-              <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:column; align-items:flex-end; justify-content:center; height:100%; box-sizing:border-box; overflow:hidden; padding-right:0.2mm;">
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                  <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0;">
-                    ${qrSvg}
-                  </div>
-                  <div style="font-family:Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:900; letter-spacing:0.5px; line-height:1; margin-top:${qrGapMm}mm; text-align:center;">
-                    ${escapeHtmlStr(huidStr)}
-                  </div>
+              <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:0.45mm; height:100%; box-sizing:border-box; overflow:hidden; padding-right:0.2mm;">
+                <div style="writing-mode:vertical-rl; transform:rotate(180deg); font-family:Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:900; letter-spacing:0.4px; line-height:1; text-align:center; white-space:nowrap;">
+                  ${escapeHtmlStr(huidStr)}
+                </div>
+                <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0;">
+                  ${qrSvg}
                 </div>
               </div>
             ` : '<div style="width:100%; height:100%;"></div>'}
@@ -3595,15 +3584,16 @@
           qr.addData(String(opts.qrPayload || opts.huidStr || 'TAG'));
           qr.make();
           const modCount = qr.getModuleCount();
-          const footerPx = Math.max(Math.round(9 * dpiScale), Math.min(Math.round(13 * dpiScale), Math.round(availH * 0.14)));
+          const huidVertPx = Math.max(Math.round(9 * dpiScale), Math.min(Math.round(13 * dpiScale), Math.round(availH * 0.14)));
+          const huidReserveW = huidVertPx + Math.max(4, Math.round(0.6 * dpm));
           const qrAreaTop = y0;
-          const qrAvailH = Math.max(20, bottomY - qrAreaTop);
-          const maxQrPx = Math.max(24, Math.min(tailDots - Math.round(0.3 * dpm), qrAvailH - footerPx - Math.round(0.4 * dpm)));
+          const qrAvailH = Math.max(24, bottomY - qrAreaTop - Math.max(2, Math.round(0.25 * dpm)));
+          const maxQrPx = Math.max(28, Math.min(tailDots - huidReserveW - Math.round(0.35 * dpm), qrAvailH));
           const cellPx = Math.max(1, Math.floor(maxQrPx / modCount));
           const qrSizePx = cellPx * modCount;
           const rightMarginPx = Math.max(1, Math.round(0.35 * dpm));
-          const qrX = Math.max(tailX, (x0 + usableWDots) - qrSizePx - rightMarginPx);
-          const qrY = qrAreaTop + Math.max(0, Math.floor((qrAvailH - footerPx - Math.round(0.35 * dpm) - qrSizePx) / 2));
+          const qrX = Math.max(tailX + huidReserveW, (x0 + usableWDots) - qrSizePx - rightMarginPx);
+          const qrY = qrAreaTop + Math.max(0, Math.floor((qrAvailH - qrSizePx) / 2));
 
           for (let r = 0; r < modCount; r++) {
             for (let c = 0; c < modCount; c++) {
@@ -3613,9 +3603,17 @@
             }
           }
 
-          ctx.font = `900 ${footerPx}px Arial, Helvetica, sans-serif`;
+          // Vertical HUID immediately before (to the left of) the larger QR code
+          ctx.save();
+          ctx.font = `900 ${huidVertPx}px Arial, Helvetica, sans-serif`;
           ctx.textAlign = 'center';
-          ctx.fillText(String(opts.huidStr || ''), qrX + Math.floor(qrSizePx / 2), qrY + qrSizePx + Math.max(2, Math.round(0.25 * dpm)), tailDots);
+          ctx.textBaseline = 'bottom';
+          const huidCenterY = qrY + Math.floor(qrSizePx / 2);
+          const huidX = Math.max(tailX + huidVertPx, qrX - Math.max(3, Math.round(0.5 * dpm)));
+          ctx.translate(huidX, huidCenterY);
+          ctx.rotate(-Math.PI / 2);
+          ctx.fillText(String(opts.huidStr || ''), 0, 0, qrSizePx);
+          ctx.restore();
         } catch (eQr) {}
       }
 
@@ -4115,9 +4113,13 @@
         ];
         const qrStr = qrPayloadParts.join('; ');
         const qrTopY = y0;
-        const captionH = dpm === 12 ? 20 : 13;
-        const qrAvailH = Math.max(36, bottomYLimit - qrTopY - captionH);
-        const qrBoxDots = Math.min(tailDots, qrAvailH);
+        const capFontPt = Math.max(5, Math.min(8, tsplFontPt));
+        const huidGlyphThick = Math.round(capFontPt * dotsPerPt * 0.85);
+        const huidGapDots = Math.max(4, Math.round(0.6 * dpm));
+        const huidReserveDots = huidGlyphThick + huidGapDots;
+        // Without bottom HUID caption, QR expands to fill the full usable height!
+        const qrAvailH = Math.max(40, bottomYLimit - qrTopY - 2);
+        const qrBoxDots = Math.min(Math.max(40, tailDots - huidReserveDots), qrAvailH);
         let modCount = 33;
         if (typeof qrcode === 'function') {
           try {
@@ -4130,17 +4132,16 @@
         const cellSize = Math.max(2, Math.min(dpm === 12 ? 5 : 4, Math.floor(qrBoxDots / modCount)));
         const approxQrSize = cellSize * modCount;
         const rightMarginDots = Math.max(1, Math.round(0.35 * dpm));
-        const qrX = Math.max(tailX, (x0 + usableWDots) - approxQrSize - rightMarginDots);
+        const qrX = Math.max(tailX + huidReserveDots, (x0 + usableWDots) - approxQrSize - rightMarginDots);
         const qrY = Math.max(qrTopY, qrTopY + Math.floor((qrAvailH - approxQrSize) / 2));
 
         lines.push(`QRCODE ${qrX},${qrY},L,${cellSize},A,0,"${escapeTsplString(qrStr)}"`);
 
-        // HUID caption centered directly underneath right-aligned QR code
-        const capFontPt = Math.max(5, Math.min(8, tsplFontPt));
-        const capW = huidStr.length * capFontPt * (dpm === 12 ? 2.1 : 1.45);
-        const capX = Math.max(tailX, Math.round(qrX + (approxQrSize - capW) / 2));
-        const capY = Math.min(bottomYLimit - captionH + 1, qrY + approxQrSize + 2);
-        lines.push(`TEXT ${capX},${capY},"0",0,${capFontPt},${capFontPt},"${escapeTsplString(huidStr)}"`);
+        // Vertical HUID immediately BEFORE (to the left of) the larger QR code (270 deg = bottom-to-top)
+        const estHuidLen = Math.round(huidStr.length * capFontPt * charDotsPerPt);
+        const capX = Math.max(tailX, qrX - huidGlyphThick - huidGapDots);
+        const capY = Math.min(bottomYLimit - 1, Math.round(qrY + (approxQrSize + estHuidLen) / 2));
+        lines.push(`TEXT ${capX},${capY},"0",270,${capFontPt},${capFontPt},"${escapeTsplString(huidStr)}"`);
       }
 
       lines.push('PRINT 1,1');

@@ -187,7 +187,8 @@ assert(defaultDoc.includes('NET WEIGHT:'), 'Missing NET WEIGHT in Both mode');
 assert(!defaultDoc.includes('DATE:'), 'DATE: text label must be removed from left details');
 assert(!defaultDoc.includes('ARTICLE:'), 'ARTICLE: text label must be removed from left details');
 assert(!defaultDoc.includes('HUID NUMBER:'), 'HUID NUMBER and its number must be removed from left details');
-assert(defaultDoc.includes('align-items:flex-end'), 'QR code container must align to right side with minimal margin');
+assert(defaultDoc.includes('justify-content:flex-end'), 'QR code container must align to right side with minimal margin');
+assert(defaultDoc.includes('writing-mode:vertical-rl'), 'HUID must render vertically before the QR code');
 assert(!defaultDoc.includes('SCAN QR'), 'SCAN QR should be removed from right half');
 
 // Test Gross Weight Only mode
@@ -318,6 +319,7 @@ assert(tsplWithTag.includes('DENSITY 12\r\n'), 'TSPL missing DENSITY 12 command'
 assert(tsplWithTag.includes('CLS\r\n'), 'TSPL missing CLS command');
 assert(tsplWithTag.includes('TEXT '), 'TSPL missing TEXT command');
 assert(tsplWithTag.includes('QRCODE '), 'TSPL missing hardware QRCODE command');
+assert(tsplWithTag.includes('"0",270,'), 'TSPL HUID must be rotated 270 deg vertically before QR code');
 assert(tsplWithTag.includes('Gold  Q'), 'TSPL WITH tag mode must include Date  Metal  Q... on same line');
 assert(tsplWithTag.includes('PRINT 1,1\r\n'), 'TSPL missing PRINT 1,1 command');
 
