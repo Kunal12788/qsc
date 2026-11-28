@@ -3011,10 +3011,9 @@
       miniPreview.style.alignItems = 'stretch';
       miniPreview.style.justifyContent = 'flex-start';
 
-      // Top 100% Customer Name + Bottom 50/50 Split with Even Spacing & QR + HUID (No SCAN QR)
-      const previewTitlePx = Math.max(7.5, Math.min(10.5, targetH * 0.12 * fontZoom)).toFixed(1);
+      // Customer Name on Left Half (same font size as details) + Full-Height Larger QR + HUID on Right Half
       const previewDataPx = Math.max(5.5, Math.min(7.5, targetH * 0.085 * fontZoom)).toFixed(1);
-      const previewQrDim = Math.max(28, Math.min(targetH - 26, 56));
+      const previewQrDim = Math.max(38, Math.min(targetH - 16, 76));
 
       const hasBridge = gapMm > 0 && width > gapMm + 15;
       const gapPct = hasBridge ? Math.max(1, Math.min(18, Math.round((gapMm / width) * 100))) : 0;
@@ -3022,19 +3021,14 @@
       const tailPct = 100 - headPct - gapPct;
 
       miniPreview.innerHTML = `
-        ${optCust ? `
-          <!-- Full 100% Width Customer Name Header -->
-          <div style="width: 100%; text-align: center; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 2px; flex-shrink: 0; background: #ffffff;">
-            <div style="font-family: Arial, Helvetica, sans-serif; font-size: ${previewTitlePx}px; font-weight: 800; text-transform: uppercase; line-height: 1.05; word-break: break-word; color: #000000;">
-              ${escapeHtmlStr(custName)}
-            </div>
-          </div>
-        ` : ''}
-        <!-- Bottom 50/50 Equal Split Row -->
+        <!-- FULL-HEIGHT 50/50 EQUAL SPLIT ROW -->
         <div style="display: flex; flex-direction: row; align-items: stretch; flex: 1; min-height: 0; width: 100%;">
-          <!-- Left Half (${headPct}%) -->
-          <div style="width: ${headPct}%; max-width: ${headPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-start; gap: 1.5px; padding-right: 2px; overflow: hidden; background: #ffffff; border-right: 1px dashed #e2e8f0; color: #000000; font-size: ${previewDataPx}px; font-weight: 700; line-height: 1.1; font-family: Arial, Helvetica, sans-serif;">
-            ${optCust ? `<div style="word-break: break-word;">DATE: ${escapeHtmlStr(dateStr)}</div>` : ''}
+          <!-- Left Half (${headPct}%): Customer Name (same size, left-aligned) + Details -->
+          <div style="width: ${headPct}%; max-width: ${headPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-start; gap: 1px; padding-right: 2px; overflow: hidden; background: #ffffff; border-right: 1px dashed #e2e8f0; color: #000000; font-size: ${previewDataPx}px; font-weight: 700; line-height: 1.08; font-family: Arial, Helvetica, sans-serif; text-align: left;">
+            ${optCust ? `
+              <div class="tag-customer-header" style="font-weight: 800; text-transform: uppercase; text-align: left; word-break: break-word;">${escapeHtmlStr(custName)}</div>
+              <div style="word-break: break-word;">DATE: ${escapeHtmlStr(dateStr)}</div>
+            ` : ''}
             ${optOrnament ? `
               <div style="word-break: break-word;">ARTICLE: ${escapeHtmlStr(cleanArticle)}${showTagNoPreview ? ` &nbsp; TAG NO : ${escapeHtmlStr(tagNoVal)}` : ''}</div>
               <div style="word-break: break-word;">ORNAMENT: ${escapeHtmlStr(ornamentVal)}</div>
@@ -3051,7 +3045,7 @@
             </div>
           ` : ''}
 
-          <!-- Right Half (${tailPct}%) -->
+          <!-- Right Half (${tailPct}%): Larger Full-Height QR Code & HUID -->
           <div style="width: ${tailPct}%; max-width: ${tailPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1px; ${hasBridge ? '' : 'border-left: 1px dashed #cbd5e1;'} background: #ffffff; overflow: hidden;">
             ${optQr ? `
               <div style="display: flex; align-items: center; justify-content: center; overflow: hidden; width: ${previewQrDim}px; height: ${previewQrDim}px;">
@@ -3072,50 +3066,35 @@
       miniPreview.style.alignItems = 'stretch';
       miniPreview.style.padding = '2px 4px';
 
-      const previewTitlePx = Math.max(8.5, Math.min(10.5, targetH * 0.16 * fontZoom)).toFixed(1);
-      const previewDataPx = Math.max(6.8, Math.min(8.2, targetH * 0.125 * fontZoom)).toFixed(1);
-      const previewQrDim = Math.max(24, Math.min(targetH - 18, 48));
+      const previewDataPx = Math.max(6.4, Math.min(8.0, targetH * 0.12 * fontZoom)).toFixed(1);
+      const previewQrDim = Math.max(32, Math.min(targetH - 14, 62));
 
       miniPreview.innerHTML = `
-        <!-- Left Column (52%) -->
-        <div style="width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; padding-right: 2px;">
+        <!-- Left Column (52%): Customer Name left-aligned at detail font size -->
+        <div style="width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; padding-right: 2px; font-size: ${previewDataPx}px; font-weight: 800; line-height: 1.06; font-family: Arial, Helvetica, sans-serif; text-align: left;">
           ${optCust ? `
-            <div style="text-align: center; width: 100%;">
-              <div style="font-family: 'Cinzel', -apple-system, BlinkMacSystemFont, 'Segoe UI', serif; font-size: ${previewTitlePx}px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12px; line-height: 1.02; word-break: break-word; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                ${escapeHtmlStr(custName)}
-              </div>
-              <div style="display: flex; align-items: center; justify-content: center; width: 100%; margin: 0.5px 0;">
-                <div style="flex: 1; height: 0.5px; background: #000;"></div>
-                <div style="margin: 0 2px; font-size: 5px; line-height: 1;">◆</div>
-                <div style="flex: 1; height: 0.5px; background: #000;"></div>
-              </div>
-            </div>
+            <div class="tag-customer-header truncate font-black uppercase text-left">${escapeHtmlStr(custName)}</div>
+            <div class="truncate">DATE: ${escapeHtmlStr(dateStr)}</div>
           ` : ''}
-          <div style="display: flex; flex-direction: column; justify-content: space-between; flex: 1; font-size: ${previewDataPx}px; font-weight: 800; line-height: 1.08; overflow: hidden; font-family: 'Montserrat', sans-serif;">
-            ${optCust ? `<div class="truncate">DATE: ${escapeHtmlStr(dateStr)}</div>` : ''}
-            ${optOrnament ? `
-              <div style="display: flex; justify-content: space-between; align-items: baseline; overflow: hidden; white-space: nowrap;">
-                <span class="truncate">ART: ${escapeHtmlStr(cleanArticle)}</span>
-                <span class="text-right truncate pl-1">BOX: ${escapeHtmlStr(boxVal)}</span>
-              </div>
-              <div class="truncate">ORN: ${escapeHtmlStr(ornamentVal)}</div>
-              <div class="truncate">GW: ${escapeHtmlStr(grossVal)}</div>
-              <div class="truncate">NW: ${escapeHtmlStr(netVal)}</div>
-            ` : ''}
-            ${optHuid ? `<div class="truncate font-black">HUID: ${escapeHtmlStr(huidVal)}</div>` : ''}
-          </div>
+          ${optOrnament ? `
+            <div style="display: flex; justify-content: space-between; align-items: baseline; overflow: hidden; white-space: nowrap;">
+              <span class="truncate">ART: ${escapeHtmlStr(cleanArticle)}</span>
+              <span class="text-right truncate pl-1">BOX: ${escapeHtmlStr(boxVal)}</span>
+            </div>
+            <div class="truncate">ORN: ${escapeHtmlStr(ornamentVal)}</div>
+            <div class="truncate">GW: ${escapeHtmlStr(grossVal)}</div>
+            <div class="truncate">NW: ${escapeHtmlStr(netVal)}</div>
+          ` : ''}
+          ${optHuid ? `<div class="truncate font-black">HUID: ${escapeHtmlStr(huidVal)}</div>` : ''}
         </div>
 
-        <!-- Right Column (46%) -->
+        <!-- Right Column (46%): Larger Full-Height QR -->
         <div style="width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden;">
           ${optQr ? `
-            <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 900; letter-spacing: 0.4px; text-transform: uppercase; line-height: 1; margin-bottom: 1px; text-align: center;">
-              SCAN QR
-            </span>
             <div style="display: flex; align-items: center; justify-content: center; overflow: hidden; width: ${previewQrDim}px; height: ${previewQrDim}px;">
               ${generateQrCodeSvg(samplePayload, previewQrDim)}
             </div>
-            <span style="font-family: 'Montserrat', monospace; font-size: 7.5px; font-weight: 900; letter-spacing: 0.5px; line-height: 1; margin-top: 1px; text-align: center;">
+            <span style="font-family: Arial, Helvetica, sans-serif; font-size: 7.5px; font-weight: 900; letter-spacing: 0.5px; line-height: 1; margin-top: 1px; text-align: center;">
               ${escapeHtmlStr(huidVal)}
             </span>
           ` : ''}
@@ -3263,43 +3242,29 @@
         const tailWMm = Math.round((usableW - bridgeWMm - headWMm) * 100) / 100;
 
         // Crisp monochrome thermal sans-serif typography
-        // Customer Name spans 100% full tag width; remaining height holds 50/50 Details & reduced QR
-        const baseTitlePt = (usableH <= 11.0) ? 4.8 : Math.min(6.2, (usableH / 14.0) * 5.6);
+        // Customer Name left-aligned at exact detail font size; Right Half gets full height for larger QR Code
         const baseDataPt = (usableH <= 11.0) ? 3.2 : Math.min(4.6, (usableH / 14.0) * 4.0);
-        const titlePt = (baseTitlePt * fontScaleFactor).toFixed(2);
         const dataPt = (baseDataPt * fontScaleFactor).toFixed(2);
 
-        const titleBlockHMm = incCust ? ((parseFloat(titlePt) * 0.3527 * 1.1) + 0.7) : 0;
-        const bottomAreaH = Math.max(4.5, usableH - titleBlockHMm);
-
-        // Reduced Tail QR sizing scaled precisely to bottomAreaH (without SCAN QR header)
-        const qrFooterPt = (bottomAreaH <= 8.0) ? '4.0' : (Math.max(4.2, Math.min(5.6, bottomAreaH * 0.36)) * fontScaleFactor).toFixed(1);
+        const qrFooterPt = (usableH <= 10.0) ? '4.0' : (Math.max(4.2, Math.min(5.6, usableH * 0.28)) * fontScaleFactor).toFixed(1);
         const footerHMm = parseFloat(qrFooterPt) * 0.3527 * 1.05;
         const qrGapMm = 0.25;
-        const maxQrDim = bottomAreaH - footerHMm - qrGapMm;
-        const qrBoxDimMm = Math.max(4.8, Math.min(maxQrDim, tailWMm - 2.0, 9.5)).toFixed(2);
-        const qrPixelDim = Math.max(48, Math.round(parseFloat(qrBoxDimMm) * 8));
+        const maxQrDim = usableH - footerHMm - qrGapMm;
+        const qrBoxDimMm = Math.max(5.5, Math.min(maxQrDim, tailWMm - 1.0, 13.5)).toFixed(2);
+        const qrPixelDim = Math.max(64, Math.round(parseFloat(qrBoxDimMm) * 10));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
 
         return `
           <div class="print-tag tag-split-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:Arial,Helvetica,sans-serif; -webkit-font-smoothing:none;">
-            
-            ${incCust ? `
-              <!-- FULL 100% WIDTH CUSTOMER NAME HEADER -->
-              <div class="tag-customer-header" style="width:100%; text-align:center; flex-shrink:0; border-bottom:0.5px solid #000000; padding-bottom:0.2mm; margin-bottom:0.25mm;">
-                <div style="font-family:Arial,Helvetica,sans-serif; font-size:${titlePt}pt; font-weight:800; text-transform:uppercase; line-height:1.05; word-break:break-word; color:#000000;">
-                  ${escapeHtmlStr(customerName)}
-                </div>
-              </div>
-            ` : ''}
 
-            <!-- BOTTOM 50/50 EQUAL SPLIT ROW -->
+            <!-- FULL-HEIGHT 50/50 EQUAL SPLIT ROW -->
             <div style="display:flex; flex-direction:row; align-items:stretch; flex:1; min-height:0; width:100%;">
               
-              <!-- LEFT HALF (50% DETAILS - UNIFORM EVEN LINE SPACING): ${headWMm}mm -->
-              <div class="tag-head" style="width:${headWMm}mm; max-width:${headWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:flex-start; gap:0.22mm; padding-right:0.4mm; overflow:hidden; font-family:Arial,Helvetica,sans-serif; font-size:${dataPt}pt; font-weight:700; line-height:1.12; color:#000000;">
+              <!-- LEFT HALF (50% CUSTOMER NAME + DETAILS, UNIFORM FONT SIZE, LEFT ALIGNED): ${headWMm}mm -->
+              <div class="tag-head" style="width:${headWMm}mm; max-width:${headWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:flex-start; gap:0.18mm; padding-right:0.4mm; overflow:hidden; font-family:Arial,Helvetica,sans-serif; font-size:${dataPt}pt; font-weight:700; line-height:1.1; color:#000000; text-align:left;">
                 ${incCust ? `
+                  <div class="tag-customer-header" style="font-size:${dataPt}pt; font-weight:800; text-transform:uppercase; text-align:left; word-break:break-word; color:#000000;">${escapeHtmlStr(customerName)}</div>
                   <div style="word-break:break-word;">DATE: ${escapeHtmlStr(dateStr)}</div>
                 ` : ''}
                 ${incOrnament ? `
@@ -3318,9 +3283,9 @@
                 <div class="tag-bridge" style="width:${bridgeWMm}mm; max-width:${bridgeWMm}mm; height:100%; box-sizing:border-box; flex-shrink:0;"></div>
               ` : ''}
 
-              <!-- RIGHT HALF (50% REDUCED QR CODE & HUID): ${tailWMm}mm -->
+              <!-- RIGHT HALF (50% FULL-HEIGHT LARGER QR CODE & HUID): ${tailWMm}mm -->
               ${incQr ? `
-                <div class="tag-tail" style="width:${tailWMm}mm; max-width:${tailWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-left:0.4mm; overflow:hidden; color:#000000;">
+                <div class="tag-tail" style="width:${tailWMm}mm; max-width:${tailWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-left:0.3mm; overflow:hidden; color:#000000;">
                   <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0;">
                     ${qrSvg}
                   </div>
@@ -3335,68 +3300,46 @@
           </div>
         `;
       } else {
-        // COMPACT: Side-by-side inside single head
-        const baseTitlePt = (usableH <= 10.5) ? 6.5 : Math.min(7.5, (usableH / 12.0) * 7.0);
-        const baseDataPt = (usableH <= 10.5) ? 5.2 : Math.min(6.0, (usableH / 12.0) * 5.6);
-        const titlePt = (baseTitlePt * fontScaleFactor).toFixed(2);
+        // COMPACT: Side-by-side inside single head (Customer Name left-aligned at detail font size + Larger QR)
+        const baseDataPt = (usableH <= 10.5) ? 4.8 : Math.min(5.8, (usableH / 12.0) * 5.4);
         const dataPt = (baseDataPt * fontScaleFactor).toFixed(2);
-        const dividerPt = (Math.max(2.5, baseDataPt * 0.85 * fontScaleFactor)).toFixed(2);
-        const dividerMarginMm = '0.08mm';
 
-        const qrHeaderPt = (Math.max(2.6, Math.min(4.0, usableH * 0.30)) * fontScaleFactor).toFixed(1);
-        const qrFooterPt = (Math.max(4.5, Math.min(5.8, usableH * 0.46)) * fontScaleFactor).toFixed(1);
-        const headerHMm = parseFloat(qrHeaderPt) * 0.3527 * 1.02;
+        const qrFooterPt = (Math.max(4.5, Math.min(5.8, usableH * 0.36)) * fontScaleFactor).toFixed(1);
         const footerHMm = parseFloat(qrFooterPt) * 0.3527 * 1.02;
-        const qrGapMm = 0.12;
-        const maxQrDim = usableH - headerHMm - footerHMm - (qrGapMm * 2);
-        const qrBoxDimMm = Math.max(5.0, Math.min(maxQrDim, (usableW * 0.44) - 1.0, 9.2)).toFixed(2);
-        const qrPixelDim = Math.max(26, Math.round(parseFloat(qrBoxDimMm) * 3.78));
+        const qrGapMm = 0.15;
+        const maxQrDim = usableH - footerHMm - qrGapMm;
+        const qrBoxDimMm = Math.max(5.5, Math.min(maxQrDim, (usableW * 0.45) - 0.8, 12.0)).toFixed(2);
+        const qrPixelDim = Math.max(48, Math.round(parseFloat(qrBoxDimMm) * 8));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
         const pageBreakCss = isLastTag ? '' : 'page-break-after:always; break-after:page;';
 
         return `
-          <div class="print-tag tag-compact-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:grid; grid-template-columns:52% 47%; justify-content:space-between; align-items:stretch; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm;">
+          <div class="print-tag tag-compact-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:grid; grid-template-columns:52% 47%; justify-content:space-between; align-items:stretch; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:Arial,Helvetica,sans-serif; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm;">
             
             <!-- Left Column: 52% -->
-            <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:column; justify-content:space-between; height:100%; box-sizing:border-box; overflow:hidden; padding-right:0.6mm;">
-              ${incCust ? `
-                <div style="width:100%; text-align:center; flex-shrink:0;">
-                  <div style="font-family:'Cinzel',-apple-system,BlinkMacSystemFont,'Segoe UI',Georgia,serif; font-size:${titlePt}pt; font-weight:900; text-transform:uppercase; letter-spacing:0.12px; line-height:1.02; word-break:break-word; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center;">
-                    ${escapeHtmlStr(customerName)}
-                  </div>
-                  <div style="display:flex; align-items:center; justify-content:center; width:100%; margin:${dividerMarginMm} 0;">
-                    <div style="flex:1; height:0.5px; background:#000000;"></div>
-                    <div style="margin:0 0.5mm; font-size:${dividerPt}pt; line-height:1; color:#000000;">◆</div>
-                    <div style="flex:1; height:0.5px; background:#000000;"></div>
-                  </div>
+            <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:column; justify-content:space-between; height:100%; box-sizing:border-box; overflow:hidden; padding-right:0.6mm; font-size:${dataPt}pt; font-weight:800; line-height:1.06; text-align:left;">
+              ${incCust ? `<div class="tag-customer-header" style="font-size:${dataPt}pt; font-weight:800; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left;">${escapeHtmlStr(customerName)}</div>` : ''}
+              ${incCust ? `<div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">DATE: ${escapeHtmlStr(dateStr)}</div>` : ''}
+              ${incOrnament ? `
+                <div style="display:flex; justify-content:space-between; align-items:baseline; white-space:nowrap; overflow:hidden;">
+                  <span style="white-space:nowrap; flex-shrink:0;">ART: ${escapeHtmlStr(articleVal)}</span>
+                  <span style="white-space:nowrap; flex-shrink:0; padding-left:0.5mm; text-align:right;">BOX: ${escapeHtmlStr(boxNoStr)}</span>
                 </div>
+                <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">ORN: ${escapeHtmlStr(ornamentsType)}</div>
+                <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">GW: ${escapeHtmlStr(grossVal)}</div>
+                <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">NW: ${escapeHtmlStr(netVal)}</div>
               ` : ''}
-              <div style="display:flex; flex-direction:column; justify-content:space-between; flex:1; min-height:0; font-size:${dataPt}pt; font-weight:800; line-height:1.08; overflow:hidden;">
-                ${incCust ? `<div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">DATE: ${escapeHtmlStr(dateStr)}</div>` : ''}
-                ${incOrnament ? `
-                  <div style="display:flex; justify-content:space-between; align-items:baseline; white-space:nowrap; overflow:hidden;">
-                    <span style="white-space:nowrap; flex-shrink:0;">ART: ${escapeHtmlStr(articleVal)}</span>
-                    <span style="white-space:nowrap; flex-shrink:0; padding-left:0.5mm; text-align:right;">BOX: ${escapeHtmlStr(boxNoStr)}</span>
-                  </div>
-                  <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">ORN: ${escapeHtmlStr(ornamentsType)}</div>
-                  <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">GW: ${escapeHtmlStr(grossVal)}</div>
-                  <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">NW: ${escapeHtmlStr(netVal)}</div>
-                ` : ''}
-                ${incHuid ? `<div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:900;">HUID: ${escapeHtmlStr(huidStr)}</div>` : ''}
-              </div>
+              ${incHuid ? `<div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:900;">HUID: ${escapeHtmlStr(huidStr)}</div>` : ''}
             </div>
 
-            <!-- Right Column: 47% -->
+            <!-- Right Column: 47% (Larger QR Code) -->
             ${incQr ? `
               <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; box-sizing:border-box; overflow:hidden;">
-                <div style="font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; font-size:${qrHeaderPt}pt; font-weight:900; letter-spacing:0.4px; text-transform:uppercase; line-height:1; margin-bottom:${qrGapMm}mm; text-align:center;">
-                  SCAN QR
-                </div>
                 <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0;">
                   ${qrSvg}
                 </div>
-                <div style="font-family:'Montserrat','JetBrains Mono',monospace; font-size:${qrFooterPt}pt; font-weight:900; letter-spacing:0.5px; line-height:1; margin-top:${qrGapMm}mm; text-align:center;">
+                <div style="font-family:Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:900; letter-spacing:0.5px; line-height:1; margin-top:${qrGapMm}mm; text-align:center;">
                   ${escapeHtmlStr(huidStr)}
                 </div>
               </div>
@@ -3601,20 +3544,12 @@
       const tailDots = Math.max(24, usableWDots - headDots - bridgeDots - Math.max(2, Math.round(0.4 * dpm)));
 
       let yCur = y0;
-      if (opts.incCust) {
-        const titleSpanDots = opts.layout === 'compact' ? headDots : usableWDots;
-        const titlePx = Math.max(Math.round(10 * dpiScale), Math.round(Math.min(18 * dpiScale, usableHDots * 0.16) * (opts.fontScaleFactor || 1)));
-        ctx.font = `900 ${titlePx}px Arial, Helvetica, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText(String(opts.customerName || '').toUpperCase(), x0 + Math.floor(titleSpanDots / 2), yCur, titleSpanDots);
-        yCur += titlePx + Math.max(2, Math.round(0.25 * dpm));
-        ctx.fillRect(x0, yCur, titleSpanDots, Math.max(1, Math.round(0.15 * dpm)));
-        yCur += Math.max(2, Math.round(0.35 * dpm));
-      }
-
       const bottomY = y0 + usableHDots;
       const dataLines = [];
-      if (opts.incCust) dataLines.push(`DATE: ${opts.dateStr}`);
+      if (opts.incCust) {
+        dataLines.push(String(opts.customerName || '').toUpperCase());
+        dataLines.push(`DATE: ${opts.dateStr}`);
+      }
       if (opts.incOrnament) {
         dataLines.push(opts.showTagNo ? `ARTICLE: ${opts.articleVal}  TAG NO: ${opts.tagNoStr}` : `ARTICLE: ${opts.articleVal}`);
         dataLines.push(`ORNAMENT: ${opts.ornamentsType}`);
@@ -3625,20 +3560,19 @@
 
       const availH = Math.max(10, bottomY - yCur);
       const lineStep = Math.floor(availH / Math.max(1, dataLines.length));
-      const dataPx = Math.max(Math.round(8 * dpiScale), Math.min(Math.round(13 * dpiScale), Math.round((lineStep - Math.max(1, dpiScale * 0.5)) * (opts.fontScaleFactor || 1))));
+      const dataPx = Math.max(Math.round(8 * dpiScale), Math.min(Math.round(13 * dpiScale), Math.round((lineStep - Math.max(1, dpiScale * 0.4)) * (opts.fontScaleFactor || 1))));
       ctx.font = `700 ${dataPx}px Arial, Helvetica, sans-serif`;
       ctx.textAlign = 'left';
 
       let dy = yCur;
       dataLines.forEach((txt, i) => {
-        if (i === dataLines.length - 1 && opts.incHuid) {
-          ctx.font = `900 ${dataPx}px Arial, Helvetica, sans-serif`;
-        }
+        const isBoldRow = (opts.incCust && i === 0) || (i === dataLines.length - 1 && opts.incHuid);
+        ctx.font = `${isBoldRow ? 900 : 700} ${dataPx}px Arial, Helvetica, sans-serif`;
         ctx.fillText(txt, x0, dy, headDots - Math.max(2, Math.round(0.25 * dpm)));
         dy += lineStep;
       });
 
-      // Pixel-exact 1-bit QR modules (ZERO anti-aliasing or SVG scaling blur!)
+      // Pixel-exact 1-bit QR modules using FULL usable height for larger, easy-to-scan QR
       if (opts.incQr && typeof qrcode === 'function') {
         try {
           const qr = qrcode(0, 'L');
@@ -3646,13 +3580,13 @@
           qr.make();
           const modCount = qr.getModuleCount();
           const footerPx = Math.max(Math.round(9 * dpiScale), Math.min(Math.round(13 * dpiScale), Math.round(availH * 0.14)));
-          const qrAreaTop = opts.layout === 'compact' ? y0 : yCur;
+          const qrAreaTop = y0;
           const qrAvailH = Math.max(20, bottomY - qrAreaTop);
-          const maxQrPx = Math.max(20, Math.min(tailDots - Math.round(0.5 * dpm), qrAvailH - footerPx - Math.round(0.6 * dpm)));
+          const maxQrPx = Math.max(24, Math.min(tailDots - Math.round(0.3 * dpm), qrAvailH - footerPx - Math.round(0.4 * dpm)));
           const cellPx = Math.max(1, Math.floor(maxQrPx / modCount));
           const qrSizePx = cellPx * modCount;
           const qrX = tailX + Math.max(0, Math.floor((tailDots - qrSizePx) / 2));
-          const qrY = qrAreaTop + Math.max(0, Math.floor((qrAvailH - footerPx - Math.round(0.4 * dpm) - qrSizePx) / 2));
+          const qrY = qrAreaTop + Math.max(0, Math.floor((qrAvailH - footerPx - Math.round(0.35 * dpm) - qrSizePx) / 2));
 
           for (let r = 0; r < modCount; r++) {
             for (let c = 0; c < modCount; c++) {
@@ -4106,33 +4040,17 @@
 
       lines.push('CLS');
 
-      let yCur = y0;
-      // Title font size tuned to 203 DPI (8 dots/mm) vs 300 DPI (12 dots/mm)
-      const useLargeFonts = dpm === 12 || usableH >= 18;
-      const titleFont = useLargeFonts ? '3' : '2';
-      const titleCharW = titleFont === '3' ? 16 : 12;
-      const titleStepY = titleFont === '3' ? 28 : 20;
       const dataFont = dpm === 12 ? '2' : '1';
       const dataCharW = dataFont === '2' ? 12 : 8;
-      const dataRowH = dpm === 12 ? 22 : (usableH <= 11 ? 11 : 13);
+      const dataRowH = dpm === 12 ? 22 : (usableH <= 11 ? 11 : 14);
 
-      // Customer Header spanning top in split mode, or left column in compact mode
-      if (incCust) {
-        const headerSpanDots = layout === 'split' ? usableWDots : headDots;
-        const maxTitleChars = Math.max(8, Math.floor(headerSpanDots / titleCharW));
-        const clippedTitle = customerName.slice(0, maxTitleChars);
-        const titlePixelW = clippedTitle.length * titleCharW;
-        const titleX = Math.max(x0, x0 + Math.floor((headerSpanDots - titlePixelW) / 2));
-        lines.push(`TEXT ${titleX},${yCur},"${titleFont}",0,1,1,"${escapeTsplString(clippedTitle)}"`);
-        yCur += titleStepY;
-        lines.push(`BAR ${x0},${yCur},${headerSpanDots},${dpm === 12 ? 3 : 2}`);
-        yCur += dpm === 12 ? 5 : 4;
-      }
-
-      // Data Rows on Left Half
+      // Customer Name on Left Side using the EXACT same font size as details rows
       const maxDataChars = Math.max(8, Math.floor(headDots / dataCharW));
       const detailLines = [];
-      if (incCust) detailLines.push(`DATE: ${dateStr}`);
+      if (incCust) {
+        detailLines.push(customerName);
+        detailLines.push(`DATE: ${dateStr}`);
+      }
       if (incOrnament) {
         detailLines.push(showTagNo ? `ART:${articleVal} TAG:${tagNoStr}` : `ARTICLE: ${articleVal}`);
         detailLines.push(`ORN: ${ornamentsType}`);
@@ -4142,18 +4060,18 @@
       if (incHuid) detailLines.push(`HUID: ${huidStr}`);
 
       const bottomYLimit = y0 + usableHDots;
-      const availDetailDots = Math.max(dataRowH, bottomYLimit - yCur);
+      const availDetailDots = Math.max(dataRowH, bottomYLimit - y0);
       const stepY = Math.max(dpm === 12 ? 18 : 11, Math.min(dataRowH, Math.floor(availDetailDots / Math.max(1, detailLines.length))));
 
-      let dy = (layout === 'compact' && incCust) ? yCur : yCur;
+      let dy = y0;
       detailLines.forEach((lineText) => {
-        if (dy + 10 <= bottomYLimit) {
+        if (dy + (dpm === 12 ? 14 : 10) <= bottomYLimit) {
           lines.push(`TEXT ${x0},${dy},"${dataFont}",0,1,1,"${escapeTsplString(lineText.slice(0, maxDataChars))}"`);
           dy += stepY;
         }
       });
 
-      // Hardware QRCODE on Right Half (100% native 1-bit monochrome thermal print, zero grain!)
+      // Larger Hardware QRCODE on Right Half using FULL usable height (100% native 1-bit monochrome)
       if (incQr) {
         const qrPayloadParts = [
           `CUST:${customerName}`,
@@ -4166,11 +4084,11 @@
           `HUID:${huidStr}`
         ];
         const qrStr = qrPayloadParts.join('; ');
-        const qrTopY = layout === 'split' && incCust ? yCur : y0;
+        const qrTopY = y0;
         const captionH = dpm === 12 ? 20 : 13;
-        const qrAvailH = Math.max(32, bottomYLimit - qrTopY - captionH);
+        const qrAvailH = Math.max(36, bottomYLimit - qrTopY - captionH);
         const qrBoxDots = Math.min(tailDots, qrAvailH);
-        let modCount = 35;
+        let modCount = 33;
         if (typeof qrcode === 'function') {
           try {
             const qrProbe = qrcode(0, 'L');
@@ -4179,7 +4097,7 @@
             modCount = Math.max(21, qrProbe.getModuleCount());
           } catch (eM) {}
         }
-        const cellSize = Math.max(1, Math.min(dpm === 12 ? 4 : 3, Math.floor(qrBoxDots / modCount)));
+        const cellSize = Math.max(2, Math.min(dpm === 12 ? 5 : 4, Math.floor(qrBoxDots / modCount)));
         const approxQrSize = cellSize * modCount;
         const qrX = Math.max(tailX, tailX + Math.floor((tailDots - approxQrSize) / 2));
         const qrY = Math.max(qrTopY, qrTopY + Math.floor((qrAvailH - approxQrSize) / 2));
