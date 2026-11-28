@@ -86,8 +86,8 @@ const mockElements = {
   'tag-cal-gap': { value: '0' },
   'tag-cal-font-scale': { value: '100' },
   'tag-tspl-dpi': { value: '203' },
-  'tag-tspl-density': { value: '5' },
-  'tag-tspl-speed': { value: '3' },
+  'tag-tspl-density': { value: '8' },
+  'tag-tspl-speed': { value: '2' },
   'tag-tspl-gap': { value: '2' },
   'tag-tspl-direction': { value: '1' },
   'tag-tspl-shift-x': { value: '-19' },
@@ -190,6 +190,7 @@ assert(!defaultDoc.includes('HUID NUMBER:'), 'HUID NUMBER and its number must be
 assert(defaultDoc.includes('font-size:8.00pt'), 'WITH Net Weight tag must use 8.00pt font size');
 assert(defaultDoc.includes('font-weight:400') && !defaultDoc.includes('font-weight:800') && !defaultDoc.includes('font-weight:900'), 'Tag text must NOT be bold (font-weight:400)');
 assert(!defaultDoc.includes('<img src="data:image/png'), 'Website print document must use pure native vector HTML+SVG rather than downscaled PNG');
+assert(defaultDoc.includes('width="12.5mm"') || defaultDoc.includes('12.5mm'), 'QR SVG must snap cleanly to exact 12.50mm (4 dots/mod @ 203 DPI)');
 assert(defaultDoc.includes('justify-content:flex-end'), 'QR code container must align to right side with minimal margin');
 assert(defaultDoc.includes('writing-mode:vertical-rl'), 'HUID must render vertically before the QR code');
 assert(!defaultDoc.includes('SCAN QR'), 'SCAN QR should be removed from right half');
@@ -319,11 +320,11 @@ assert(tsplWithTag.includes('GAP 2.0 mm, 0 mm\r\n'), 'TSPL missing GAP command')
 assert(tsplWithTag.includes('DIRECTION 1,0\r\n'), 'TSPL default must restore DIRECTION 1,0');
 assert(tsplWithTag.includes('OFFSET 0 mm\r\n'), 'TSPL must reset OFFSET 0 mm');
 assert(tsplWithTag.includes('SHIFT -152,28\r\n'), 'TSPL default calibrated shift (-19mm, +3.5mm) must emit SHIFT -152,28');
-assert(tsplWithTag.includes('DENSITY 5\r\n'), 'TSPL must use low DENSITY 5 to avoid bolding text and QR code');
+assert(tsplWithTag.includes('DENSITY 8\r\n'), 'TSPL must use crisp balanced DENSITY 8 for solid zero-grain QR & non-blobbed text');
 assert(tsplWithTag.includes('CLS\r\n'), 'TSPL missing CLS command');
 assert(tsplWithTag.includes('TEXT '), 'TSPL missing TEXT command');
 assert(tsplWithTag.includes('QRCODE '), 'TSPL missing hardware QRCODE command');
-assert(/QRCODE \d+,\d+,[LM],[345],A,0,/.test(tsplWithTag), 'TSPL QR code must use large cellSize >= 3 and high reliability ECC');
+assert(/QRCODE \d+,\d+,[LM],[456],A,0,/.test(tsplWithTag), 'TSPL 25x25 Version 2 QR must print at large cellSize >= 4 (12.50mm) for easy camera scan');
 assert(tsplWithTag.includes('"0",270,'), 'TSPL HUID must be rotated 270 deg vertically before QR code');
 assert(tsplWithTag.includes('Gold  Q'), 'TSPL WITH tag mode must include Date  Metal  Q... on same line');
 assert(tsplWithTag.includes('PRINT 1,1\r\n'), 'TSPL missing PRINT 1,1 command');

@@ -1731,23 +1731,68 @@
     `;
   }
 
-  function generateQrCodeSvg(text, size = 64) {
+  function createTagQrMatrix(text) {
+    const cleanText = String(text || '45GNA3/Q1').trim();
+    const isAlnum = /^[0-9A-Z $%*+\-./:]+$/.test(cleanText);
+    for (const ecc of ['M', 'L']) {
+      try {
+        const qr = qrcode(0, ecc);
+        if (isAlnum) {
+          qr.addData(cleanText, 'Alphanumeric');
+        } else {
+          qr.addData(cleanText);
+        }
+        qr.make();
+        return qr;
+      } catch (eTry) {}
+    }
+    const fallbackQr = qrcode(0, 'L');
+    fallbackQr.addData(cleanText);
+    fallbackQr.make();
+    return fallbackQr;
+  }
+
+  function buildCompactTagQrData(huidStr, tagNoStr, showTagNo, dateStr, articleVal, purityVal, grossVal) {
+    const cleanField = (v) => String(v || '').toUpperCase().replace(/[^0-9A-Z $%*+\-./:]/g, ' ').replace(/\s+/g, ' ').trim();
+    // Compact YY format & trailing 916/925 keeps payload <= 38 Alphanumeric chars -> large crisp 25x25 Version 2 ECC M grid
+    const shortDate = cleanField(dateStr).replace(/^(\d{2}-\d{2})-20(\d{2})$/, '$1-$2');
+    const shortPurity = cleanField(purityVal).replace(/^22K\s*/, '');
+    return [
+      cleanField(huidStr),
+      ...(showTagNo && tagNoStr ? [cleanField(tagNoStr)] : []),
+      shortDate,
+      cleanField(articleVal),
+      shortPurity,
+      cleanField(grossVal)
+    ].filter(Boolean).join('/');
+  }
+
+  function generateQrCodeSvg(text, size = 64, opts = {}) {
     const cleanText = String(text || 'HUID-PREVIEW').trim();
     if (typeof qrcode === 'function') {
       try {
-        let qr;
-        try {
-          qr = qrcode(0, 'M');
-          qr.addData(cleanText);
-          qr.make();
-        } catch (e1) {
-          qr = qrcode(0, 'L');
-          qr.addData(cleanText);
-          qr.make();
+        const qr = createTagQrMatrix(cleanText);
+        const modCount = qr.getModuleCount();
+        const quietMods = opts.quietMods !== undefined ? opts.quietMods : 2;
+        const totalView = modCount + (quietMods * 2);
+        // Merge consecutive horizontal dark modules into single unbroken vector bars (zero subpixel seams or halftoning)
+        const rects = [];
+        for (let r = 0; r < modCount; r++) {
+          let c = 0;
+          while (c < modCount) {
+            if (qr.isDark(r, c)) {
+              const startC = c;
+              while (c < modCount && qr.isDark(r, c)) c++;
+              rects.push(`<rect x="${startC + quietMods}" y="${r + quietMods}" width="${c - startC}" height="1" fill="#000000"/>`);
+            } else {
+              c++;
+            }
+          }
         }
-        // margin: 6 with cellSize: 2 guarantees a full 3-module white quiet zone around all 4 sides for instant Google Lens / phone camera detection
-        const svgTag = qr.createSvgTag({ cellSize: 2, margin: 6, scalable: true });
-        return svgTag.replace('<svg ', `<svg width="${size}" height="${size}" shape-rendering="crispEdges" style="width:100%;height:100%;max-width:100%;max-height:100%;display:block;shape-rendering:crispEdges;background:#ffffff;" `);
+        const dimAttr = opts.mmSize
+          ? `width="${opts.mmSize}mm" height="${opts.mmSize}mm" style="width:${opts.mmSize}mm;height:${opts.mmSize}mm;display:block;shape-rendering:crispEdges;background:#ffffff;"`
+          : `width="${size}" height="${size}" style="width:100%;height:100%;max-width:100%;max-height:100%;display:block;shape-rendering:crispEdges;background:#ffffff;"`;
+        return `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalView} ${totalView}" ${dimAttr} shape-rendering="crispEdges"><rect width="${totalView}" height="${totalView}" fill="#ffffff"/>${rects.join('')}</svg>`;
       } catch (err) {
         console.error('qrcode-generator error:', err);
       }
@@ -2993,15 +3038,8 @@
 
     const cleanArticle = articleVal.replace(purityVal, '').trim() || 'Gold';
 
-    // Concise camera-optimized QR payload matching printed output (ECC M, Version 3 open modules)
-    const samplePayload = [
-      huidVal,
-      ...(showTagNoPreview ? [tagNoVal] : []),
-      dateStr,
-      cleanArticle,
-      purityVal,
-      grossVal
-    ].filter(Boolean).join('|');
+    // Concise Alphanumeric QR payload matching printed output (25x25 ECC M open grid)
+    const samplePayload = buildCompactTagQrData(huidVal, tagNoVal, showTagNoPreview, dateStr, cleanArticle, purityVal, grossVal);
 
     if (layout === 'split') {
       miniPreview.style.display = 'flex';
@@ -3207,19 +3245,12 @@
       const boxNoStr = row.boxNo || defaultBox;
       const tagNoStr = row.tagNo || row.tagNumber || (row.slNo ? ('Q' + row.slNo) : ('Q' + (idx + 1)));
 
-      // Concise camera-friendly QR Code payload (Version 3: 29x29 wider gaps, never dark-blobbed!)
-      const qrPayload = [
-        huidStr,
-        ...(showTagNo ? [tagNoStr] : []),
-        dateStr,
-        articleVal,
-        purityVal,
-        grossVal
-      ].filter(Boolean).join('|');
+      // Concise uppercase Alphanumeric QR Code payload -> large 25x25 Version 2 ECC M grid (0.500mm integer dot modules)
+      const qrPayload = buildCompactTagQrData(huidStr, tagNoStr, showTagNo, dateStr, articleVal, purityVal, grossVal);
 
       if (layout === 'split') {
         const pageBreakCss = isLastTag ? '' : 'page-break-after:always; break-after:page;';
-        // Always output pure native Vector HTML + SVG QR so browser/thermal drivers print max-sharp text and distortion-free 1:1:3:1:1 QR modules
+        // Always output pure native Vector HTML + exact device-dot SVG QR so Windows thermal drivers never halftone grains/noise
         const hasBridge = gapMm > 0 && usableW > gapMm + 15;
         const bridgeWMm = hasBridge ? gapMm : 0;
         // Strict 50% / 50% split at the exact 25mm fold line on 50x15mm tags
@@ -3231,37 +3262,37 @@
           escapeHtmlStr(articleVal),
           ...(showTagNo ? [escapeHtmlStr(tagNoStr)] : []),
           escapeHtmlStr(purityVal)
-        ].filter(Boolean).join('&nbsp; ');
+        ].filter(Boolean).join('&nbsp;');
         const metaPlainText = [
           dateStr,
           articleVal,
           ...(showTagNo ? [tagNoStr] : []),
           purityVal
-        ].filter(Boolean).join('  ');
+        ].filter(Boolean).join(' ');
 
-        const renderVectorFitLine = (htmlText, plainLen, extraClass = '') => {
-          const sx = plainLen > 19 ? Math.max(0.62, Math.min(1.0, 20.5 / plainLen)) : 1.0;
+        // Pure TrueType vector text helper with ZERO CSS transform (prevents Chrome raster/bitmap compositing grains)
+        const renderVectorLine = (htmlText, plainLen, extraClass = '') => {
+          const tightCss = plainLen > 21 ? 'letter-spacing:-0.45px;' : 'letter-spacing:-0.1px;';
           const clsAttr = extraClass ? ` class="${extraClass}"` : '';
-          if (sx < 0.99) {
-            return `<div${clsAttr} style="white-space:nowrap; overflow:hidden; font-size:${dataPt}pt; font-weight:400; color:#000000;"><span style="display:inline-block; transform:scaleX(${sx.toFixed(2)}); transform-origin:left center; width:${(100 / sx).toFixed(1)}%;">${htmlText}</span></div>`;
-          }
-          return `<div${clsAttr} style="white-space:nowrap; overflow:hidden; font-size:${dataPt}pt; font-weight:400; color:#000000;">${htmlText}</div>`;
+          return `<div${clsAttr} style="white-space:nowrap; overflow:hidden; font-size:${dataPt}pt; font-weight:400; ${tightCss} color:#000000;">${htmlText}</div>`;
         };
 
-        // Uniform 8 pt non-bold sans-serif vector typography across BOTH With & Without Net Weight
+        // Uniform 8 pt non-bold TrueType typography across BOTH With & Without Net Weight
         const baseDataPt = (usableH <= 11.0)
           ? Math.min(8.0, (usableH / 11.0) * 6.5)
           : Math.min(8.0, (usableH / 14.0) * 8.0);
         const dataPt = (baseDataPt * fontScaleFactor).toFixed(2);
-        const metaPt = dataPt;
-
         const qrFooterPt = dataPt;
-        // Full-height QR with built-in 3-module vector quiet zone for instant Google Lens / phone camera detection
-        const maxQrDim = Math.max(6.5, hMm - 0.8);
-        const qrBoxDimMm = Math.max(6.5, Math.min(maxQrDim, tailWMm - 3.0, 14.2)).toFixed(2);
-        const qrPixelDim = Math.max(64, Math.round(parseFloat(qrBoxDimMm) * 10));
 
-        const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
+        // Snap inner QR matrix size to exact 0.125mm integer dot multiples (25 * 0.500mm = 12.500mm on 50x15mm tags)
+        let modCountHtml = 25;
+        if (typeof qrcode === 'function') {
+          try { modCountHtml = createTagQrMatrix(qrPayload).getModuleCount(); } catch (eM) {}
+        }
+        const availQrMm = Math.max(6.0, Math.min(hMm - 2.0, tailWMm - 4.0));
+        const dots203PerMod = Math.max(2, Math.floor(availQrMm / (modCountHtml * 0.125)));
+        const exactMatrixMm = Number((dots203PerMod * modCountHtml * 0.125).toFixed(3));
+        const qrSvg = incQr ? generateQrCodeSvg(qrPayload, 100, { quietMods: 0, mmSize: exactMatrixMm }) : '';
 
         return `
           <div class="print-tag tag-split-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:Arial,Helvetica,sans-serif; font-weight:400; text-rendering:geometricPrecision;">
@@ -3269,14 +3300,14 @@
             <!-- FULL-HEIGHT 50/50 EQUAL SPLIT ROW (EXACT 25mm HALF) -->
             <div style="display:flex; flex-direction:row; align-items:stretch; flex:1; min-height:0; width:100%;">
               
-              <!-- LEFT HALF (${headWMm}mm / 0-25mm): MAX-QUALITY VECTOR NON-BOLD 8pt REGULAR DETAILS -->
+              <!-- LEFT HALF (${headWMm}mm / 0-25mm): PURE VECTOR NON-BOLD 8pt DETAILS -->
               <div class="tag-head" style="width:${headWMm}mm; max-width:${headWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; gap:0mm; padding-right:0.3mm; overflow:hidden; font-family:Arial,Helvetica,sans-serif; font-size:${dataPt}pt; font-weight:400; line-height:1.0; color:#000000; text-align:left; text-rendering:geometricPrecision;">
-                ${incCust ? renderVectorFitLine(escapeHtmlStr(customerName).toUpperCase(), String(customerName).length, 'tag-customer-header') : ''}
-                ${(incCust || incOrnament) ? renderVectorFitLine(metaHtmlLine, metaPlainText.length) : ''}
+                ${incCust ? renderVectorLine(escapeHtmlStr(customerName).toUpperCase(), String(customerName).length, 'tag-customer-header') : ''}
+                ${(incCust || incOrnament) ? renderVectorLine(metaHtmlLine, metaPlainText.length) : ''}
                 ${incOrnament ? `
-                  ${renderVectorFitLine(`GROSS WEIGHT: ${escapeHtmlStr(grossVal)}`, `GROSS WEIGHT: ${grossVal}`.length)}
-                  ${showNetWt ? renderVectorFitLine(`NET WEIGHT: ${escapeHtmlStr(netVal)}`, `NET WEIGHT: ${netVal}`.length) : ''}
-                  ${renderVectorFitLine(`ORNAMENT: ${escapeHtmlStr(ornamentsType)}`, `ORNAMENT: ${ornamentsType}`.length)}
+                  ${renderVectorLine(`GROSS WEIGHT: ${escapeHtmlStr(grossVal)}`, `GROSS WEIGHT: ${grossVal}`.length)}
+                  ${showNetWt ? renderVectorLine(`NET WEIGHT: ${escapeHtmlStr(netVal)}`, `NET WEIGHT: ${netVal}`.length) : ''}
+                  ${renderVectorLine(`ORNAMENT: ${escapeHtmlStr(ornamentsType)}`, `ORNAMENT: ${ornamentsType}`.length)}
                 ` : ''}
               </div>
 
@@ -3285,13 +3316,13 @@
                 <div class="tag-bridge" style="width:${bridgeWMm}mm; max-width:${bridgeWMm}mm; height:100%; box-sizing:border-box; flex-shrink:0;"></div>
               ` : ''}
 
-              <!-- RIGHT HALF (${tailWMm}mm / 25-50mm): VERTICAL HUID (8pt NON-BOLD) BEFORE GOOGLE-LENS-READY QR -->
+              <!-- RIGHT HALF (${tailWMm}mm / 25-50mm): NATIVE VERTICAL HUID + INTEGER-DOT 12.50mm ZERO-NOISE QR -->
               ${incQr ? `
-                <div class="tag-tail" style="width:${tailWMm}mm; max-width:${tailWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:0.35mm; padding-left:0.2mm; padding-right:0.2mm; overflow:hidden; color:#000000;">
-                  <div style="writing-mode:vertical-rl; transform:rotate(180deg); font-family:Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:400; letter-spacing:0.25px; line-height:1; text-align:center; white-space:nowrap; color:#000000; text-rendering:geometricPrecision;">
+                <div class="tag-tail" style="width:${tailWMm}mm; max-width:${tailWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:1.1mm; padding-left:0.2mm; padding-right:0.6mm; overflow:hidden; color:#000000; background:#ffffff;">
+                  <div style="writing-mode:vertical-rl; font-family:Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:400; letter-spacing:0.2px; line-height:1; text-align:center; white-space:nowrap; color:#000000;">
                     ${escapeHtmlStr(huidStr)}
                   </div>
-                  <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0; background:#ffffff;">
+                  <div style="display:flex; align-items:center; justify-content:center; padding:0.5mm; flex-shrink:0; background:#ffffff;">
                     ${qrSvg}
                   </div>
                 </div>
@@ -3308,13 +3339,16 @@
           : Math.min(8.0, (usableH / 12.0) * 8.0);
         const dataPt = (baseDataPt * fontScaleFactor).toFixed(2);
         const compactMetaPt = dataPt;
-
         const qrFooterPt = dataPt;
-        const maxQrDim = Math.max(6.5, hMm - 0.8);
-        const qrBoxDimMm = Math.max(6.5, Math.min(maxQrDim, (usableW * 0.49) - 2.6, 14.0)).toFixed(2);
-        const qrPixelDim = Math.max(48, Math.round(parseFloat(qrBoxDimMm) * 8));
 
-        const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
+        let modCountCompact = 25;
+        if (typeof qrcode === 'function') {
+          try { modCountCompact = createTagQrMatrix(qrPayload).getModuleCount(); } catch (eM) {}
+        }
+        const availQrMm = Math.max(6.0, Math.min(hMm - 1.6, (usableW * 0.49) - 3.6));
+        const dots203PerMod = Math.max(2, Math.floor(availQrMm / (modCountCompact * 0.125)));
+        const exactMatrixMm = Number((dots203PerMod * modCountCompact * 0.125).toFixed(3));
+        const qrSvg = incQr ? generateQrCodeSvg(qrPayload, 100, { quietMods: 0, mmSize: exactMatrixMm }) : '';
         const pageBreakCss = isLastTag ? '' : 'page-break-after:always; break-after:page;';
 
         return `
@@ -3323,7 +3357,7 @@
             <!-- Left Half: 50% (0-25mm) Non-Bold 8pt -->
             <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:column; justify-content:space-between; height:100%; box-sizing:border-box; overflow:hidden; padding-right:0.35mm; font-size:${dataPt}pt; font-weight:400; line-height:1.0; text-align:left;">
               ${incCust ? `<div class="tag-customer-header" style="font-size:${dataPt}pt; font-weight:400; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left;">${escapeHtmlStr(customerName)}</div>` : ''}
-              ${(incCust || incOrnament) ? `<div style="white-space:nowrap; overflow:hidden; font-family:Arial,Helvetica,sans-serif; font-size:${compactMetaPt}pt; letter-spacing:-0.25px; font-weight:400;">${[escapeHtmlStr(dateStr), escapeHtmlStr(articleVal), ...(showTagNo ? [escapeHtmlStr(tagNoStr)] : []), escapeHtmlStr(purityVal)].filter(Boolean).join('&nbsp; ')}</div>` : ''}
+              ${(incCust || incOrnament) ? `<div style="white-space:nowrap; overflow:hidden; font-family:Arial,Helvetica,sans-serif; font-size:${compactMetaPt}pt; letter-spacing:-0.35px; font-weight:400;">${[escapeHtmlStr(dateStr), escapeHtmlStr(articleVal), ...(showTagNo ? [escapeHtmlStr(tagNoStr)] : []), escapeHtmlStr(purityVal)].filter(Boolean).join('&nbsp; ')}</div>` : ''}
               ${incOrnament ? `
                 <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:400;">GW: ${escapeHtmlStr(grossVal)}</div>
                 ${showNetWt ? `<div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:400;">NW: ${escapeHtmlStr(netVal)}</div>` : ''}
@@ -3331,13 +3365,13 @@
               ` : ''}
             </div>
 
-            <!-- Right Half: 49% (25-50mm): Vertical HUID Before Camera-Scannable QR Code -->
+            <!-- Right Half: 49% (25-50mm): Vertical HUID Before Integer-Dot QR Code -->
             ${incQr ? `
-              <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:0.4mm; height:100%; box-sizing:border-box; overflow:hidden; padding-right:0.2mm;">
-                <div style="writing-mode:vertical-rl; transform:rotate(180deg); font-family:Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:400; letter-spacing:0.25px; line-height:1; text-align:center; white-space:nowrap;">
+              <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:0.8mm; height:100%; box-sizing:border-box; overflow:hidden; padding-right:0.4mm; background:#ffffff;">
+                <div style="writing-mode:vertical-rl; font-family:Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:400; letter-spacing:0.2px; line-height:1; text-align:center; white-space:nowrap;">
                   ${escapeHtmlStr(huidStr)}
                 </div>
-                <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0; background:#ffffff;">
+                <div style="display:flex; align-items:center; justify-content:center; padding:0.4mm; flex-shrink:0; background:#ffffff;">
                   ${qrSvg}
                 </div>
               </div>
@@ -3574,19 +3608,10 @@
         dy += lineStep;
       });
 
-      // Exact ISO-proportion QR modules (1:1:3:1:1 undamaged finder ratio) + >= 2-module white quiet zone + ECC M for Google Lens & phones
+      // Exact ISO-proportion QR modules (1:1:3:1:1 undamaged finder ratio) + >= 2-module white quiet zone + ECC M Alphanumeric
       if (opts.incQr && typeof qrcode === 'function') {
         try {
-          let qrText = String(opts.qrPayload || opts.huidStr || 'TAG');
-          let qr = qrcode(0, 'M');
-          qr.addData(qrText);
-          qr.make();
-          if (qr.getModuleCount() > 29 && qrText.length > 42) {
-            qrText = [opts.huidStr, opts.tagNoStr, opts.dateStr, opts.purityVal, opts.grossVal].filter(Boolean).join('|');
-            qr = qrcode(0, 'M');
-            qr.addData(qrText);
-            qr.make();
-          }
+          const qr = createTagQrMatrix(String(opts.qrPayload || opts.huidStr || 'TAG'));
           const modCount = qr.getModuleCount();
           const huidVertPx = dataPx;
           const huidReserveW = huidVertPx + Math.max(6, Math.round(1.0 * dpm));
@@ -3687,15 +3712,8 @@
       const netVal = (row.netWt || row.weight || row.grossWt || '11.990') + (String(row.netWt || '').includes('g') ? '' : 'g');
       const huidStr = row.huid || ('45GNA' + (idx > 0 ? (idx + 1) : '3'));
       const tagNoStr = row.tagNo || row.tagNumber || (row.slNo ? ('Q' + row.slNo) : ('Q' + (idx + 1)));
-      // Concise camera-friendly QR Code payload (Version 3: 29x29 wider gaps, scans fast!)
-      const qrPayload = [
-        huidStr,
-        ...(showTagNo ? [tagNoStr] : []),
-        dateStr,
-        articleVal,
-        purityVal,
-        grossVal
-      ].filter(Boolean).join('|');
+      // Concise Alphanumeric QR Code payload -> large 25x25 Version 2 ECC M grid
+      const qrPayload = buildCompactTagQrData(huidStr, tagNoStr, showTagNo, dateStr, articleVal, purityVal, grossVal);
 
       return {
         wMm, hMm, padTopMm, padLeftMm, padBotMm, gapMm, fontScaleFactor, layout,
@@ -3837,17 +3855,67 @@
       if (idx > 0) {
         doc.addPage([wMm, hMm], orientation);
       }
-      const pngUrl = renderMonochromeThermalTagDataUrl({ ...opt, dpi });
-      if (pngUrl) {
-        doc.addImage(pngUrl, 'PNG', 0, 0, wMm, hMm, undefined, 'FAST');
+      // Pure Resolution-Independent Vector PDF (0 pixels/blur/noise) when jsPDF vector primitives exist
+      if (typeof doc.rect === 'function' && typeof doc.setFillColor === 'function' && typeof qrcode === 'function') {
+        doc.setFillColor(255, 255, 255);
+        doc.rect(0, 0, wMm, hMm, 'F');
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+        const fontPt = Number(Math.min(8.0, Math.max(5.5, (hMm / 15) * 8.0)).toFixed(2));
+        doc.setFontSize(fontPt);
+
+        const usableH = Math.max(5, hMm - (opt.padTopMm + opt.padBotMm));
+        const usableW = Math.max(12, wMm - (opt.padLeftMm * 2));
+        const headWMm = usableW * 0.5;
+        const lines = [];
+        if (opt.incCust) lines.push(String(opt.customerName || '').toUpperCase());
+        if (opt.incCust || opt.incOrnament) {
+          lines.push([opt.dateStr, opt.articleVal, ...(opt.showTagNo ? [opt.tagNoStr] : []), opt.purityVal].filter(Boolean).join('  '));
+        }
+        if (opt.incOrnament) {
+          lines.push(`GROSS WEIGHT: ${opt.grossVal}`);
+          if (opt.showNetWt) lines.push(`NET WEIGHT: ${opt.netVal}`);
+          lines.push(`ORNAMENT: ${opt.ornamentsType}`);
+        }
+        const stepMm = usableH / Math.max(1, lines.length);
+        lines.forEach((ln, li) => {
+          doc.text(ln, opt.padLeftMm, opt.padTopMm + (li + 0.72) * stepMm, { maxWidth: headWMm - 0.5 });
+        });
+
+        if (opt.incQr) {
+          const qr = createTagQrMatrix(opt.qrPayload);
+          const mods = qr.getModuleCount();
+          const availQrMm = Math.max(6.0, Math.min(hMm - 2.0, (usableW * 0.5) - 4.0));
+          const dotsPerMod = Math.max(2, Math.floor(availQrMm / (mods * 0.125)));
+          const modMm = dotsPerMod * 0.125;
+          const qrDimMm = mods * modMm;
+          const qrXMm = wMm - opt.padLeftMm - qrDimMm - 0.75;
+          const qrYMm = Math.max(0.75, (hMm - qrDimMm) / 2);
+
+          doc.setFillColor(0, 0, 0);
+          for (let r = 0; r < mods; r++) {
+            for (let c = 0; c < mods; c++) {
+              if (qr.isDark(r, c)) {
+                doc.rect(qrXMm + c * modMm, qrYMm + r * modMm, modMm, modMm, 'F');
+              }
+            }
+          }
+          doc.setFontSize(fontPt);
+          doc.text(String(opt.huidStr || ''), qrXMm - 1.2, qrYMm + (qrDimMm / 2) + 3.5, { angle: 90 });
+        }
         renderedCount++;
       } else {
-        // Vector fallback if canvas is unavailable
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.text(String(opt.customerName || '').toUpperCase(), wMm / 2, 3, { align: 'center' });
-        doc.setFontSize(5);
-        doc.text(`${opt.articleVal}${opt.showTagNo ? ' TAG:' + opt.tagNoStr : ''} | ${opt.huidStr}`, 1, 8);
+        const pngUrl = renderMonochromeThermalTagDataUrl({ ...opt, dpi });
+        if (pngUrl) {
+          doc.addImage(pngUrl, 'PNG', 0, 0, wMm, hMm, undefined, 'FAST');
+          renderedCount++;
+        } else {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.text(String(opt.customerName || '').toUpperCase(), wMm / 2, 3, { align: 'center' });
+          doc.setFontSize(8);
+          doc.text(`${opt.articleVal}${opt.showTagNo ? ' ' + opt.tagNoStr : ''} | ${opt.huidStr}`, 1, 8);
+        }
       }
     });
 
@@ -3875,34 +3943,35 @@
       if (typeof localStorage === 'undefined') return;
       const cfg = {
         dpi: document.getElementById('tag-tspl-dpi')?.value || '203',
-        density: document.getElementById('tag-tspl-density')?.value || '5',
-        speed: document.getElementById('tag-tspl-speed')?.value || '3',
+        density: document.getElementById('tag-tspl-density')?.value || '8',
+        speed: document.getElementById('tag-tspl-speed')?.value || '2',
         gap: document.getElementById('tag-tspl-gap')?.value ?? '2',
         direction: document.getElementById('tag-tspl-direction')?.value ?? '1',
         shiftX: document.getElementById('tag-tspl-shift-x')?.value ?? '-19',
         shiftY: document.getElementById('tag-tspl-shift-y')?.value ?? '3.5',
         baud: document.getElementById('tag-tspl-baud')?.value || '9600'
       };
-      localStorage.setItem('tsc_tspl_settings_v4', JSON.stringify(cfg));
+      localStorage.setItem('tsc_tspl_settings_v5', JSON.stringify(cfg));
     } catch (e) {}
   }
 
   function loadTsplSettings() {
     try {
       if (typeof localStorage === 'undefined') return;
-      let raw = localStorage.getItem('tsc_tspl_settings_v4');
-      let migratedFromOld = false;
+      let raw = localStorage.getItem('tsc_tspl_settings_v5');
+      let migrated = false;
       if (!raw) {
-        raw = localStorage.getItem('tsc_tspl_settings_v3');
-        migratedFromOld = Boolean(raw);
+        raw = localStorage.getItem('tsc_tspl_settings_v4') || localStorage.getItem('tsc_tspl_settings_v3');
+        migrated = Boolean(raw);
       }
       if (!raw) return;
       const cfg = JSON.parse(raw);
       if (!cfg) return;
-      // Reset previously over-dark DENSITY 12 down to crisp DENSITY 5 on first load so QR & text aren't bold
-      if (migratedFromOld && Number(cfg.density) >= 10) {
-        cfg.density = '5';
-        localStorage.setItem('tsc_tspl_settings_v4', JSON.stringify(cfg));
+      // Tune density from overly cold 5 (grainy pinholes) or overly dark 12 (blobbed QR) to crisp balanced DENSITY 8 & SPEED 2
+      if (migrated) {
+        cfg.density = '8';
+        cfg.speed = '2';
+        localStorage.setItem('tsc_tspl_settings_v5', JSON.stringify(cfg));
       }
       const map = {
         'tag-tspl-dpi': cfg.dpi,
@@ -3960,8 +4029,8 @@
     const dpiVal = parseInt(document.getElementById('tag-tspl-dpi')?.value || '203', 10);
     const dpi = dpiVal === 300 ? 300 : 203;
     const dpm = dpi === 300 ? 12 : 8; // TSC firmware standard: 8 dots/mm (203 DPI), 12 dots/mm (300 DPI)
-    const density = Math.min(15, Math.max(1, parseInt(document.getElementById('tag-tspl-density')?.value || '5', 10) || 5));
-    const speed = Math.min(6, Math.max(1, parseInt(document.getElementById('tag-tspl-speed')?.value || '3', 10) || 3));
+    const density = Math.min(15, Math.max(1, parseInt(document.getElementById('tag-tspl-density')?.value || '8', 10) || 8));
+    const speed = Math.min(6, Math.max(1, parseInt(document.getElementById('tag-tspl-speed')?.value || '2', 10) || 2));
     const gapSensorMm = Math.max(0, parseFloat(document.getElementById('tag-tspl-gap')?.value ?? '2') || 0);
     const direction = document.getElementById('tag-tspl-direction')?.value === '0' ? 0 : 1;
     const shiftXRaw = document.getElementById('tag-tspl-shift-x')?.value;
@@ -4120,7 +4189,7 @@
         }
       });
 
-      // Camera & Google-Lens-scannable Hardware QRCODE on Right Half (ECC M, Version 3 open modules + >=1.1mm 4-sided quiet zone)
+      // Large 12.50mm Hardware QRCODE on Right Half (25x25 Alphanumeric ECC M, 0.50mm solid modules + >=1.25mm quiet zone)
       if (incQr) {
         const totalTagHDots = Math.round(hMm * dpm);
         const qrQuietDots = Math.max(4, Math.round(1.1 * dpm));
@@ -4131,33 +4200,15 @@
         const qrAvailH = Math.max(40, totalTagHDots - (qrQuietDots * 2));
         const qrBoxDots = Math.min(Math.max(40, tailDots - huidReserveDots - qrQuietDots), qrAvailH);
 
-        // Concise <= 42 char QR string -> Version 3 (29x29 modules) at ECC M: 15% recovery + large scannable squares
-        let qrStr = [
-          huidStr,
-          ...(showTagNo ? [tagNoStr] : []),
-          dateStr,
-          articleVal,
-          purityVal,
-          grossVal
-        ].filter(Boolean).join('|');
-
-        let modCount = 29;
+        // Concise Alphanumeric string -> 25x25 Version 2 ECC M: larger 0.50mm modules (cellSize=4 @ 203 DPI -> 12.50mm!)
+        const qrStr = buildCompactTagQrData(huidStr, tagNoStr, showTagNo, dateStr, articleVal, purityVal, grossVal);
+        let modCount = 25;
         if (typeof qrcode === 'function') {
           try {
-            let qrProbe = qrcode(0, 'M');
-            qrProbe.addData(qrStr);
-            qrProbe.make();
-            modCount = Math.max(21, qrProbe.getModuleCount());
-            if (modCount > 29) {
-              qrStr = [huidStr, ...(showTagNo ? [tagNoStr] : []), dateStr, purityVal, grossVal].filter(Boolean).join('|');
-              qrProbe = qrcode(0, 'M');
-              qrProbe.addData(qrStr);
-              qrProbe.make();
-              modCount = Math.max(21, qrProbe.getModuleCount());
-            }
+            modCount = Math.max(21, createTagQrMatrix(qrStr).getModuleCount());
           } catch (eM) {}
         }
-        const cellSize = Math.max(2, Math.min(dpm === 12 ? 5 : 4, Math.floor(qrBoxDots / modCount)));
+        const cellSize = Math.max(2, Math.min(dpm === 12 ? 6 : 4, Math.floor(qrBoxDots / modCount)));
         const approxQrSize = cellSize * modCount;
         const qrX = Math.max(tailX + huidReserveDots, (x0 + usableWDots) - approxQrSize - qrQuietDots);
         const qrY = Math.max(qrQuietDots, Math.floor((totalTagHDots - approxQrSize) / 2));
