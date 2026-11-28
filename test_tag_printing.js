@@ -184,6 +184,10 @@ assert(defaultDoc.includes('ROYCO JEWELLERS'), 'Missing customer name');
 assert(defaultDoc.includes('TAG NO : Q1'), 'Missing TAG NO : Q1');
 assert(defaultDoc.includes('GROSS WEIGHT:'), 'Missing GROSS WEIGHT');
 assert(defaultDoc.includes('NET WEIGHT:'), 'Missing NET WEIGHT in Both mode');
+assert(!defaultDoc.includes('DATE:'), 'DATE: text label must be removed from left details');
+assert(!defaultDoc.includes('ARTICLE:'), 'ARTICLE: text label must be removed from left details');
+assert(!defaultDoc.includes('HUID NUMBER:'), 'HUID NUMBER and its number must be removed from left details');
+assert(defaultDoc.includes('align-items:flex-end'), 'QR code container must align to right side with minimal margin');
 assert(!defaultDoc.includes('SCAN QR'), 'SCAN QR should be removed from right half');
 
 // Test Gross Weight Only mode
@@ -199,7 +203,8 @@ mockElements['tag-no-with'].checked = false;
 mockElements['tag-no-without'].checked = true;
 const withoutTagDoc = window.buildTagPrintDocument(false);
 assert(!withoutTagDoc.includes('TAG NO'), 'TAG NO must not appear in Without Tag No mode');
-assert(withoutTagDoc.includes('ARTICLE: Gold'), 'ARTICLE: Gold must appear in Without Tag No mode');
+assert(!withoutTagDoc.includes('ARTICLE:'), 'ARTICLE: label must not appear');
+assert(withoutTagDoc.includes('>Gold<') || withoutTagDoc.includes('>Gold</div>'), 'Gold must appear without ARTICLE: label');
 mockElements['tag-no-with'].checked = true;
 mockElements['tag-no-without'].checked = false;
 
