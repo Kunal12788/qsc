@@ -86,7 +86,7 @@ const mockElements = {
   'tag-cal-gap': { value: '0' },
   'tag-cal-font-scale': { value: '100' },
   'tag-tspl-dpi': { value: '203' },
-  'tag-tspl-density': { value: '12' },
+  'tag-tspl-density': { value: '5' },
   'tag-tspl-speed': { value: '3' },
   'tag-tspl-gap': { value: '2' },
   'tag-tspl-direction': { value: '1' },
@@ -187,6 +187,8 @@ assert(defaultDoc.includes('NET WEIGHT:'), 'Missing NET WEIGHT in Both mode');
 assert(!defaultDoc.includes('DATE:'), 'DATE: text label must be removed from left details');
 assert(!defaultDoc.includes('ARTICLE:'), 'ARTICLE: text label must be removed from left details');
 assert(!defaultDoc.includes('HUID NUMBER:'), 'HUID NUMBER and its number must be removed from left details');
+assert(defaultDoc.includes('font-size:8.00pt'), 'WITH Net Weight tag must use 8.00pt font size');
+assert(defaultDoc.includes('font-weight:400') && !defaultDoc.includes('font-weight:800') && !defaultDoc.includes('font-weight:900'), 'Tag text must NOT be bold (font-weight:400)');
 assert(defaultDoc.includes('justify-content:flex-end'), 'QR code container must align to right side with minimal margin');
 assert(defaultDoc.includes('writing-mode:vertical-rl'), 'HUID must render vertically before the QR code');
 assert(!defaultDoc.includes('SCAN QR'), 'SCAN QR should be removed from right half');
@@ -197,7 +199,7 @@ mockElements['tag-weight-gross-only'].checked = true;
 const grossOnlyDoc = window.buildTagPrintDocument(false);
 assert(grossOnlyDoc.includes('GROSS WEIGHT:'), 'Missing GROSS WEIGHT in Gross Only mode');
 assert(!grossOnlyDoc.includes('NET WEIGHT:'), 'NET WEIGHT must not appear in Gross Weight Only mode');
-assert(grossOnlyDoc.includes('font-size:7.00pt'), 'WITHOUT Net Weight tag must set all text font size to 7.00pt');
+assert(grossOnlyDoc.includes('font-size:8.00pt'), 'WITHOUT Net Weight tag must set all text font size to 8.00pt');
 mockElements['tag-weight-both'].checked = true;
 mockElements['tag-weight-gross-only'].checked = false;
 // Test Without Tag No mode
@@ -316,7 +318,7 @@ assert(tsplWithTag.includes('GAP 2.0 mm, 0 mm\r\n'), 'TSPL missing GAP command')
 assert(tsplWithTag.includes('DIRECTION 1,0\r\n'), 'TSPL default must restore DIRECTION 1,0');
 assert(tsplWithTag.includes('OFFSET 0 mm\r\n'), 'TSPL must reset OFFSET 0 mm');
 assert(tsplWithTag.includes('SHIFT -152,28\r\n'), 'TSPL default calibrated shift (-19mm, +3.5mm) must emit SHIFT -152,28');
-assert(tsplWithTag.includes('DENSITY 12\r\n'), 'TSPL missing DENSITY 12 command');
+assert(tsplWithTag.includes('DENSITY 5\r\n'), 'TSPL must use low DENSITY 5 to avoid bolding text and QR code');
 assert(tsplWithTag.includes('CLS\r\n'), 'TSPL missing CLS command');
 assert(tsplWithTag.includes('TEXT '), 'TSPL missing TEXT command');
 assert(tsplWithTag.includes('QRCODE '), 'TSPL missing hardware QRCODE command');
@@ -371,7 +373,7 @@ global.qz = {
   mockElements['tag-weight-both'].checked = false;
   mockElements['tag-weight-gross-only'].checked = true;
   await window.printTagsViaQzTray('without');
-  assert(lastQzPrintData[0].data.includes(',7,"7SN') || lastQzPrintData[0].data.includes(',7,"45GNA3"') && lastQzPrintData[0].data.includes(',7,"ORN:RING"'), 'QZ Print WITHOUT Net Weight must use uniform 7pt Font 0 size');
+  assert(lastQzPrintData[0].data.includes(',8,"45GNA3"') && lastQzPrintData[0].data.includes(',8,"ORN:RING"'), 'QZ Print WITHOUT Net Weight must use uniform 8pt Font 0 size');
   mockElements['tag-weight-both'].checked = true;
   mockElements['tag-weight-gross-only'].checked = false;
   console.log('  ✓ QZ Tray integration (TSC printer discovery & TSPL2 raw printing WITH/WITHOUT Tag No) verified.');
