@@ -2624,7 +2624,15 @@
               <h1 class="font-headline-lg text-2xl lg:text-headline-lg font-bold text-on-surface tracking-tight mt-0.5">TAG GENERATION & BARCODE PRINTING</h1>
               <span class="text-xs text-on-surface-variant">GENERATE BIS HUID BARCODES, BUTTERFLY TAGS & POUCH LABELS FOR RECEIVED BATCHES</span>
             </div>
-            <div class="flex items-center gap-2.5">
+            <div class="flex flex-wrap items-center gap-2">
+              <button id="btn-export-tag-img-top" onclick="exportTagImages1200Dpi()" disabled="true" class="btn-print-disabled px-3.5 py-2.5 rounded-lg border border-sky-300 bg-sky-50 hover:bg-sky-100 text-sky-900 font-bold text-xs tracking-wider shadow-2xs transition-all flex items-center gap-1.5" type="button" title="Export 1200 DPI Ultra-HD lossless PNG tag image">
+                <span class="material-symbols-outlined text-[17px] text-sky-700">image</span>
+                <span>1200 DPI IMG</span>
+              </button>
+              <button id="btn-export-tag-pdf-top" onclick="exportTagPdf1200Dpi()" disabled="true" class="btn-print-disabled px-3.5 py-2.5 rounded-lg border border-indigo-300 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-xs tracking-wider shadow-2xs transition-all flex items-center gap-1.5" type="button" title="Export 1200 DPI directly-printable exact-size PDF">
+                <span class="material-symbols-outlined text-[17px] text-indigo-700">download</span>
+                <span>1200 DPI PDF</span>
+              </button>
               <button id="btn-open-tag-tab" onclick="openTagPrintTab()" disabled="true" class="btn-print-disabled px-4 py-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs tracking-wider shadow-2xs transition-all flex items-center gap-1.5" type="button" title="Open full print sheet in a new tab for preview & PDF download">
                 <span class="material-symbols-outlined text-[17px] text-primary">picture_as_pdf</span>
                 <span>PREVIEW & PDF</span>
@@ -3071,19 +3079,31 @@
                 </div>
 
                 <!-- Bottom Gated Action Buttons -->
-                <div class="mt-4 pt-3 border-t border-slate-200 flex items-center gap-2">
-                  <button type="button" id="btn-submit-tag-data" onclick="saveTagData()" class="flex-1 py-2.5 px-3 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                    <span class="material-symbols-outlined text-[17px]">save</span>
-                    <span>SUBMIT DATA</span>
-                  </button>
-                  <button type="button" id="btn-open-tag-tab-bottom" onclick="openTagPrintTab()" disabled="true" class="btn-print-disabled flex-1 py-2.5 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs uppercase tracking-wider shadow-2xs transition-all flex items-center justify-center gap-1.5" title="Preview & PDF Download">
-                    <span class="material-symbols-outlined text-[16px] text-primary">picture_as_pdf</span>
-                    <span>PDF / TAB</span>
-                  </button>
-                  <button type="button" id="btn-print-tags-bottom" onclick="openTagPrintOptionsModal()" disabled="true" class="btn-print-disabled flex-1 py-2.5 px-3 rounded-lg bg-primary-container text-secondary-fixed font-bold text-xs uppercase tracking-wider shadow-sm border border-[#c5a059]/40 transition-all flex items-center justify-center gap-1.5">
-                    <span class="material-symbols-outlined text-[17px] text-amber-400">print</span>
-                    <span>PRINT TAGS</span>
-                  </button>
+                <div class="mt-4 pt-3 border-t border-slate-200 flex flex-col gap-2">
+                  <div class="flex items-center gap-2">
+                    <button type="button" id="btn-submit-tag-data" onclick="saveTagData()" class="flex-1 py-2.5 px-3 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                      <span class="material-symbols-outlined text-[17px]">save</span>
+                      <span>SUBMIT DATA</span>
+                    </button>
+                    <button type="button" id="btn-open-tag-tab-bottom" onclick="openTagPrintTab()" disabled="true" class="btn-print-disabled flex-1 py-2.5 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs uppercase tracking-wider shadow-2xs transition-all flex items-center justify-center gap-1.5" title="Preview & PDF Download">
+                      <span class="material-symbols-outlined text-[16px] text-primary">picture_as_pdf</span>
+                      <span>PDF / TAB</span>
+                    </button>
+                    <button type="button" id="btn-print-tags-bottom" onclick="openTagPrintOptionsModal()" disabled="true" class="btn-print-disabled flex-1 py-2.5 px-3 rounded-lg bg-primary-container text-secondary-fixed font-bold text-xs uppercase tracking-wider shadow-sm border border-[#c5a059]/40 transition-all flex items-center justify-center gap-1.5">
+                      <span class="material-symbols-outlined text-[17px] text-amber-400">print</span>
+                      <span>PRINT TAGS</span>
+                    </button>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btn-export-tag-img-bottom" onclick="exportTagImages1200Dpi()" disabled="true" class="btn-print-disabled py-2 px-3 rounded-lg border border-sky-300 bg-sky-50 hover:bg-sky-100 text-sky-900 font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5" title="Export 1200 DPI lossless PNG tag image">
+                      <span class="material-symbols-outlined text-[15px] text-sky-700">image</span>
+                      <span>EXPORT 1200 DPI PNG</span>
+                    </button>
+                    <button type="button" id="btn-export-tag-pdf-bottom" onclick="exportTagPdf1200Dpi()" disabled="true" class="btn-print-disabled py-2 px-3 rounded-lg border border-indigo-300 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5" title="Export 1200 DPI direct-printable PDF">
+                      <span class="material-symbols-outlined text-[15px] text-indigo-700">download</span>
+                      <span>EXPORT 1200 DPI PDF</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -6587,6 +6607,33 @@
             </div>
             <span class="material-symbols-outlined text-slate-600 group-hover:translate-x-1 transition-transform">arrow_forward</span>
           </button>
+
+          <!-- 1200 DPI Ultra-HD Image & Direct-Printable PDF Export -->
+          <div id="modal-export-1200dpi-panel" class="p-3.5 rounded-xl border-2 border-indigo-400/70 bg-indigo-50/70 space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <div class="font-extrabold text-xs text-indigo-950 uppercase flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[17px] text-indigo-700">hd</span>
+                  <span>1200 DPI MAX QUALITY EXPORT (IMAGE &amp; PDF)</span>
+                </div>
+                <p class="text-[10.5px] text-indigo-900 mt-0.5">Lossless 1200 DPI PNG tag image &amp; exact-size printable PDF (1 tag per page).</p>
+              </div>
+              <select id="modal-export-1200-tag-no-mode" class="px-2 py-1 rounded-lg border border-indigo-400 bg-white text-[11px] font-bold text-slate-800 cursor-pointer">
+                <option value="with">WITH Tag No</option>
+                <option value="without">WITHOUT Tag No</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="btn-export-1200dpi-img" onclick="exportTagImages1200Dpi(document.getElementById('modal-export-1200-tag-no-mode')?.value)" class="px-3 py-2.5 rounded-lg bg-sky-700 hover:bg-sky-800 text-white font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs">
+                <span class="material-symbols-outlined text-[15px]">image</span>
+                <span>Export 1200 DPI PNG</span>
+              </button>
+              <button type="button" id="btn-export-1200dpi-pdf" onclick="exportTagPdf1200Dpi(document.getElementById('modal-export-1200-tag-no-mode')?.value)" class="px-3 py-2.5 rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs">
+                <span class="material-symbols-outlined text-[15px]">picture_as_pdf</span>
+                <span>Export 1200 DPI PDF</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -6598,6 +6645,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-client.js"></script>
   <!-- Application Engine Script -->
+  <script src="js/jspdf.umd.min.js"></script>
   <script src="js/qz-tray.js"></script>
   <script src="js/qrcode.min.js"></script>
   <script src="js/jsQR.js"></script>

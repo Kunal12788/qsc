@@ -58,6 +58,11 @@ assert(htmlContent.includes('id="tag-tspl-density"'), 'Missing tag-tspl-density'
 assert(htmlContent.includes('id="btn-tspl-print-usb"'), 'Missing btn-tspl-print-usb');
 assert(htmlContent.includes('id="btn-tspl-download-prn"'), 'Missing btn-tspl-download-prn');
 assert(htmlContent.includes('src="js/qz-tray.js"'), 'Missing js/qz-tray.js script tag');
+assert(htmlContent.includes('src="js/jspdf.umd.min.js"'), 'Missing js/jspdf.umd.min.js script tag');
+assert(htmlContent.includes('id="btn-export-tag-img-top"'), 'Missing btn-export-tag-img-top');
+assert(htmlContent.includes('id="btn-export-tag-pdf-top"'), 'Missing btn-export-tag-pdf-top');
+assert(htmlContent.includes('id="btn-export-1200dpi-img"'), 'Missing btn-export-1200dpi-img');
+assert(htmlContent.includes('id="btn-export-1200dpi-pdf"'), 'Missing btn-export-1200dpi-pdf');
 assert(htmlContent.includes('id="tag-qz-printer-select"'), 'Missing tag-qz-printer-select');
 assert(htmlContent.includes('id="modal-qz-printer-select"'), 'Missing modal-qz-printer-select');
 assert(htmlContent.includes('id="btn-qz-print-with-tag"'), 'Missing btn-qz-print-with-tag');
@@ -338,5 +343,29 @@ global.qz = {
   await window.printTagsViaQzTray('without');
   assert(!lastQzPrintData[0].data.includes('TAG:Q1'), 'QZ Print WITHOUT Tag No must omit TAG:');
   console.log('  ✓ QZ Tray integration (TSC printer discovery & TSPL2 raw printing WITH/WITHOUT Tag No) verified.');
+
+  // Case 8: 1200 DPI Ultra-HD Image & Direct-Printable Exact-mm PDF Export
+  assert(typeof window.exportTagImages1200Dpi === 'function', 'Missing window.exportTagImages1200Dpi');
+  assert(typeof window.exportTagPdf1200Dpi === 'function', 'Missing window.exportTagPdf1200Dpi');
+  let pdfSavedName = '';
+  let pdfAddedPages = 0;
+  let pdfFormat = null;
+  global.window.jspdf = {
+    jsPDF: function(opts) {
+      pdfFormat = opts.format;
+      return {
+        addPage() { pdfAddedPages++; },
+        save(name) { pdfSavedName = name; },
+        setFont() {},
+        setFontSize() {},
+        text() {}
+      };
+    }
+  };
+  window.exportTagPdf1200Dpi('with');
+  assert.deepStrictEqual(pdfFormat, [50, 15], '1200 DPI PDF page size must match exact 50x15 mm tag dimensions');
+  assert(pdfSavedName.endsWith('_TAGS_1200DPI.pdf'), '1200 DPI PDF must download with _1200DPI.pdf filename');
+  console.log('  ✓ 1200 DPI Tag Image & Printable PDF export verified.');
+
   console.log('\n=== ALL JEWELLERY TAG PRINTING & CALIBRATION TESTS PASSED SUCCESSFULLY! ===');
 })();

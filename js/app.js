@@ -1937,8 +1937,12 @@
     const bottomBtn = document.getElementById('btn-print-tags-bottom');
     const topOpenBtn = document.getElementById('btn-open-tag-tab');
     const bottomOpenBtn = document.getElementById('btn-open-tag-tab-bottom');
+    const topImgBtn = document.getElementById('btn-export-tag-img-top');
+    const topPdfBtn = document.getElementById('btn-export-tag-pdf-top');
+    const botImgBtn = document.getElementById('btn-export-tag-img-bottom');
+    const botPdfBtn = document.getElementById('btn-export-tag-pdf-bottom');
 
-    [topBtn, bottomBtn, topOpenBtn, bottomOpenBtn].forEach(btn => {
+    [topBtn, bottomBtn, topOpenBtn, bottomOpenBtn, topImgBtn, topPdfBtn, botImgBtn, botPdfBtn].forEach(btn => {
       if (!btn) return;
       if (isDone) {
         btn.disabled = false;
@@ -3524,9 +3528,10 @@
     if (modal) {
       updateTagPrintModalWeightBadges();
       const modalTsplSelect = document.getElementById('modal-tspl-tag-no-mode');
-      if (modalTsplSelect) {
-        modalTsplSelect.value = document.getElementById('tag-no-without')?.checked ? 'without' : 'with';
-      }
+      const isWithout = Boolean(document.getElementById('tag-no-without')?.checked);
+      if (modalTsplSelect) modalTsplSelect.value = isWithout ? 'without' : 'with';
+      const modalExpSelect = document.getElementById('modal-export-1200-tag-no-mode');
+      if (modalExpSelect) modalExpSelect.value = isWithout ? 'without' : 'with';
       modal.classList.remove('hidden');
       if (typeof connectQzTray === 'function') {
         connectQzTray(true);
@@ -3555,7 +3560,7 @@
     }
   }
 
-  // Render pure 1-bit (#000000 / #FFFFFF) bitmap at native printer DPI so Windows TSC drivers never halftone/grain text or QR codes
+  // Render pure 1-bit (#000000 / #FFFFFF) bitmap at native printer DPI (or 1200 DPI ultra-HD) so thermal drivers never halftone/grain text or QR codes
   function renderMonochromeThermalTagDataUrl(opts) {
     try {
       if (typeof document === 'undefined' || typeof document.createElement !== 'function') return null;
@@ -3564,7 +3569,9 @@
       const ctx = canvas.getContext('2d');
       if (!ctx) return null;
 
-      const { dpm } = getTsplPrinterConfig();
+      const customDpi = Number(opts.dpi);
+      const dpm = customDpi > 0 ? (customDpi / 25.4) : getTsplPrinterConfig().dpm;
+      const dpiScale = dpm / 8;
       const wDots = Math.max(80, Math.round(opts.wMm * dpm));
       const hDots = Math.max(40, Math.round(opts.hMm * dpm));
       canvas.width = wDots;
@@ -3583,19 +3590,22 @@
       const usableHDots = Math.round(usableH * dpm);
       const hasBridge = opts.gapMm > 0 && usableW > opts.gapMm + 15;
       const bridgeDots = hasBridge ? Math.round(opts.gapMm * dpm) : 0;
-      const headDots = Math.round((usableWDots - bridgeDots) * 0.5);
-      const tailX = x0 + headDots + bridgeDots + Math.round(0.4 * dpm);
-      const tailDots = Math.max(24, usableWDots - headDots - bridgeDots - Math.round(0.4 * dpm));
+      const headDots = opts.layout === 'compact'
+        ? Math.round(usableWDots * 0.54)
+        : Math.round((usableWDots - bridgeDots) * 0.5);
+      const tailX = x0 + headDots + bridgeDots + Math.max(2, Math.round(0.4 * dpm));
+      const tailDots = Math.max(24, usableWDots - headDots - bridgeDots - Math.max(2, Math.round(0.4 * dpm)));
 
       let yCur = y0;
       if (opts.incCust) {
-        const titlePx = Math.max(10, Math.round(Math.min(18, usableHDots * 0.16) * (opts.fontScaleFactor || 1)));
+        const titleSpanDots = opts.layout === 'compact' ? headDots : usableWDots;
+        const titlePx = Math.max(Math.round(10 * dpiScale), Math.round(Math.min(18 * dpiScale, usableHDots * 0.16) * (opts.fontScaleFactor || 1)));
         ctx.font = `900 ${titlePx}px Arial, Helvetica, sans-serif`;
         ctx.textAlign = 'center';
-        ctx.fillText(String(opts.customerName || '').toUpperCase(), x0 + Math.floor(usableWDots / 2), yCur, usableWDots);
-        yCur += titlePx + 2;
-        ctx.fillRect(x0, yCur, usableWDots, dpm === 12 ? 2 : 1);
-        yCur += dpm === 12 ? 4 : 3;
+        ctx.fillText(String(opts.customerName || '').toUpperCase(), x0 + Math.floor(titleSpanDots / 2), yCur, titleSpanDots);
+        yCur += titlePx + Math.max(2, Math.round(0.25 * dpm));
+        ctx.fillRect(x0, yCur, titleSpanDots, Math.max(1, Math.round(0.15 * dpm)));
+        yCur += Math.max(2, Math.round(0.35 * dpm));
       }
 
       const bottomY = y0 + usableHDots;
@@ -3611,7 +3621,7 @@
 
       const availH = Math.max(10, bottomY - yCur);
       const lineStep = Math.floor(availH / Math.max(1, dataLines.length));
-      const dataPx = Math.max(8, Math.min(13, Math.round((lineStep - 1) * (opts.fontScaleFactor || 1))));
+      const dataPx = Math.max(Math.round(8 * dpiScale), Math.min(Math.round(13 * dpiScale), Math.round((lineStep - Math.max(1, dpiScale * 0.5)) * (opts.fontScaleFactor || 1))));
       ctx.font = `700 ${dataPx}px Arial, Helvetica, sans-serif`;
       ctx.textAlign = 'left';
 
@@ -3620,7 +3630,7 @@
         if (i === dataLines.length - 1 && opts.incHuid) {
           ctx.font = `900 ${dataPx}px Arial, Helvetica, sans-serif`;
         }
-        ctx.fillText(txt, x0, dy, headDots - 2);
+        ctx.fillText(txt, x0, dy, headDots - Math.max(2, Math.round(0.25 * dpm)));
         dy += lineStep;
       });
 
@@ -3631,12 +3641,14 @@
           qr.addData(String(opts.qrPayload || opts.huidStr || 'TAG'));
           qr.make();
           const modCount = qr.getModuleCount();
-          const footerPx = Math.max(9, Math.min(13, Math.round(availH * 0.14)));
-          const maxQrPx = Math.max(20, Math.min(tailDots - 4, availH - footerPx - 4));
+          const footerPx = Math.max(Math.round(9 * dpiScale), Math.min(Math.round(13 * dpiScale), Math.round(availH * 0.14)));
+          const qrAreaTop = opts.layout === 'compact' ? y0 : yCur;
+          const qrAvailH = Math.max(20, bottomY - qrAreaTop);
+          const maxQrPx = Math.max(20, Math.min(tailDots - Math.round(0.5 * dpm), qrAvailH - footerPx - Math.round(0.6 * dpm)));
           const cellPx = Math.max(1, Math.floor(maxQrPx / modCount));
           const qrSizePx = cellPx * modCount;
           const qrX = tailX + Math.max(0, Math.floor((tailDots - qrSizePx) / 2));
-          const qrY = yCur + Math.max(0, Math.floor((availH - footerPx - 3 - qrSizePx) / 2));
+          const qrY = qrAreaTop + Math.max(0, Math.floor((qrAvailH - footerPx - Math.round(0.4 * dpm) - qrSizePx) / 2));
 
           for (let r = 0; r < modCount; r++) {
             for (let c = 0; c < modCount; c++) {
@@ -3648,7 +3660,7 @@
 
           ctx.font = `900 ${footerPx}px Arial, Helvetica, sans-serif`;
           ctx.textAlign = 'center';
-          ctx.fillText(String(opts.huidStr || ''), tailX + Math.floor(tailDots / 2), qrY + qrSizePx + 2, tailDots);
+          ctx.fillText(String(opts.huidStr || ''), tailX + Math.floor(tailDots / 2), qrY + qrSizePx + Math.max(2, Math.round(0.25 * dpm)), tailDots);
         } catch (eQr) {}
       }
 
@@ -3669,6 +3681,220 @@
     } catch (e) {
       return null;
     }
+  }
+
+  function collectTagRenderConfigs(tagNoModeOverride = null) {
+    const widthInput = document.getElementById('tag-custom-width') || document.getElementById('tag-print-width');
+    const heightInput = document.getElementById('tag-custom-height') || document.getElementById('tag-print-height');
+    const rawW = parseFloat(widthInput?.value || tagConfig.wMm || 50);
+    const rawH = parseFloat(heightInput?.value || tagConfig.hMm || 15);
+    const unit = (document.getElementById('tag-print-unit') || document.getElementById('tag-cfg-unit'))?.value || 'mm';
+    const layout = document.getElementById('tag-print-layout')?.value || (rawW >= 45 ? 'split' : 'compact');
+
+    const wMm = unit === 'in' ? rawW * 25.4 : rawW;
+    const hMm = unit === 'in' ? rawH * 25.4 : rawH;
+    const padTopMm = Math.max(0, parseFloat(document.getElementById('tag-cal-top')?.value ?? tagConfig.topCal ?? 0.5) || 0);
+    const padLeftMm = Math.max(0, parseFloat(document.getElementById('tag-cal-left')?.value ?? tagConfig.leftCal ?? 0.5) || 0);
+    const padBotMm = Math.max(0, parseFloat(document.getElementById('tag-cal-bottom')?.value ?? tagConfig.bottomCal ?? 0.5) || 0);
+    const gapMm = Math.max(0, parseFloat(document.getElementById('tag-cal-gap')?.value ?? tagConfig.bridgeGap ?? 0) || 0);
+    const fontScaleFactor = (parseFloat(document.getElementById('tag-cal-font-scale')?.value || 100) || 100) / 100;
+
+    const incCust = document.getElementById('tag-opt-cust')?.checked !== false;
+    const incOrnament = document.getElementById('tag-opt-ornament')?.checked !== false;
+    const incHuid = document.getElementById('tag-opt-huid')?.checked !== false;
+    const incQr = document.getElementById('tag-opt-qr')?.checked !== false;
+    const showNetWt = !(document.getElementById('tag-weight-gross-only')?.checked);
+    const showTagNo = tagNoModeOverride
+      ? (tagNoModeOverride !== 'without')
+      : !(document.getElementById('tag-no-without')?.checked);
+
+    const defaultCustomer = (activeTagBatch ? activeTagBatch.customer : '') || 'ROYCO JEWELLERS';
+    const defaultMetal = (activeTagBatch ? activeTagBatch.metal : '') || 'Gold';
+    const defaultPurity = (activeTagBatch ? activeTagBatch.purity : '') || '22K 916';
+    const batchDateStr = formatTagDateStr(activeTagBatch ? (activeTagBatch.receivedDate || activeTagBatch.date) : null);
+    const rows = getActiveRowsForTagOutput();
+
+    const items = rows.map((row, idx) => {
+      const customerName = row.customer || defaultCustomer;
+      const dateStr = row.date || batchDateStr;
+      const purityVal = row.purity || defaultPurity;
+      const articleVal = (row.articleType || defaultMetal).replace(purityVal, '').trim() || defaultMetal;
+      const ornamentsType = row.ornamentsType || row.itemDesc || 'MIX ORNAMENTS';
+      const grossVal = (row.grossWt || row.weight || '11.990') + (String(row.grossWt || '').includes('g') ? '' : 'g');
+      const netVal = (row.netWt || row.weight || row.grossWt || '11.990') + (String(row.netWt || '').includes('g') ? '' : 'g');
+      const huidStr = row.huid || ('45GNA' + (idx > 0 ? (idx + 1) : '3'));
+      const tagNoStr = row.tagNo || row.tagNumber || (row.slNo ? ('Q' + row.slNo) : ('Q' + (idx + 1)));
+      const qrPayload = [
+        'CUSTOMER: ' + customerName,
+        'DATE: ' + dateStr,
+        'ARTICLE: ' + articleVal,
+        ...(showTagNo ? ['TAG NO: ' + tagNoStr] : []),
+        'ORNAMENT: ' + ornamentsType,
+        'GROSS WEIGHT: ' + grossVal,
+        ...(showNetWt ? ['NET WEIGHT: ' + netVal] : []),
+        'HUID NUMBER: ' + huidStr
+      ].join('\n');
+
+      return {
+        wMm, hMm, padTopMm, padLeftMm, padBotMm, gapMm, fontScaleFactor, layout,
+        incCust, incOrnament, incHuid, incQr, showNetWt, showTagNo,
+        customerName, dateStr, articleVal, ornamentsType, grossVal, netVal, huidStr, tagNoStr, qrPayload
+      };
+    });
+
+    return { wMm, hMm, items };
+  }
+
+  function triggerDataUrlDownload(dataUrl, filename) {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Feature 1: Export Maximum 1200 DPI Lossless Tag Image(s) (.PNG)
+  function exportTagImages1200Dpi(tagNoModeOverride = null) {
+    const { wMm, hMm, items } = collectTagRenderConfigs(tagNoModeOverride);
+    if (!items.length) {
+      showToast('NO TAG DATA TO EXPORT. PLEASE PASTE OR SUBMIT DATA FIRST.', 'warning');
+      return;
+    }
+
+    const docketClean = (activeTagBatch ? activeTagBatch.jobDocket : 'TAGS').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const dpi = 1200;
+
+    if (items.length === 1) {
+      const pngUrl = renderMonochromeThermalTagDataUrl({ ...items[0], dpi });
+      if (!pngUrl) {
+        showToast('CANVAS NOT AVAILABLE TO RENDER 1200 DPI IMAGE.', 'error');
+        return;
+      }
+      triggerDataUrlDownload(pngUrl, `${docketClean}_TAG1_1200DPI.png`);
+      showToast(`EXPORTED 1200 DPI LOSSLESS IMAGE (${Math.round(wMm * dpi / 25.4)}×${Math.round(hMm * dpi / 25.4)} PX)!`, 'success');
+      return;
+    }
+
+    // Multiple tags: render high-resolution 1200 DPI PNG strip(s) cleanly (chunked under safe max canvas height 15000px)
+    const tagW = Math.round(wMm * (dpi / 25.4));
+    const tagH = Math.round(hMm * (dpi / 25.4));
+    const sepPx = 4; // fine black cut separator between stacked tags
+    const maxTagsPerSheet = Math.max(1, Math.floor(15000 / (tagH + sepPx)));
+
+    const totalSheets = Math.ceil(items.length / maxTagsPerSheet);
+    for (let s = 0; s < totalSheets; s++) {
+      const slice = items.slice(s * maxTagsPerSheet, (s + 1) * maxTagsPerSheet);
+      const sheetCanvas = document.createElement('canvas');
+      if (!sheetCanvas || typeof sheetCanvas.getContext !== 'function') break;
+      sheetCanvas.width = tagW;
+      sheetCanvas.height = slice.length * tagH + Math.max(0, slice.length - 1) * sepPx;
+      const sCtx = sheetCanvas.getContext('2d');
+      sCtx.fillStyle = '#ffffff';
+      sCtx.fillRect(0, 0, sheetCanvas.width, sheetCanvas.height);
+
+      // Synchronous image compositing isn't guaranteed via <img>; use offscreen canvases directly
+      slice.forEach((opt, i) => {
+        const yOff = i * (tagH + sepPx);
+        const singleUrl = renderMonochromeThermalTagDataUrl({ ...opt, dpi });
+        if (singleUrl && typeof Image !== 'undefined') {
+          // Rendered synchronously on sub-canvas below if available; fallback to async draw on final sheet
+        }
+        if (i > 0) {
+          sCtx.fillStyle = '#cccccc';
+          sCtx.fillRect(0, yOff - sepPx, tagW, sepPx);
+        }
+      });
+    }
+
+    // Render async cleanly via Promise.all(Image decode) so every tag pixels at exact 1200 DPI!
+    const urls = items.map(opt => renderMonochromeThermalTagDataUrl({ ...opt, dpi })).filter(Boolean);
+    if (!urls.length) {
+      showToast('UNABLE TO RENDER 1200 DPI PNG IMAGES IN THIS ENVIRONMENT.', 'error');
+      return;
+    }
+    Promise.all(urls.map(u => new Promise((res) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = () => res(null);
+      img.src = u;
+    }))).then(imgs => {
+      const validImgs = imgs.filter(Boolean);
+      const sheets = Math.ceil(validImgs.length / maxTagsPerSheet);
+      for (let s = 0; s < sheets; s++) {
+        const chunk = validImgs.slice(s * maxTagsPerSheet, (s + 1) * maxTagsPerSheet);
+        const c = document.createElement('canvas');
+        c.width = tagW;
+        c.height = chunk.length * tagH + Math.max(0, chunk.length - 1) * sepPx;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, c.width, c.height);
+        chunk.forEach((img, idx) => {
+          const y = idx * (tagH + sepPx);
+          ctx.drawImage(img, 0, y, tagW, tagH);
+          if (idx > 0) {
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(0, y - sepPx, tagW, sepPx);
+          }
+        });
+        const suffix = sheets > 1 ? `_PART${s + 1}` : '';
+        triggerDataUrlDownload(c.toDataURL('image/png'), `${docketClean}_TAGS_1200DPI${suffix}.png`);
+      }
+      showToast(`EXPORTED ${validImgs.length} TAG(S) AT 1200 DPI (${tagW}×${tagH} PX PER TAG) AS PNG!`, 'success');
+    });
+  }
+
+  // Feature 2: Export 1200 DPI Exact-Size Directly Printable PDF (1 Tag Per Exact-mm Page)
+  function exportTagPdf1200Dpi(tagNoModeOverride = null) {
+    const { wMm, hMm, items } = collectTagRenderConfigs(tagNoModeOverride);
+    if (!items.length) {
+      showToast('NO TAG DATA TO EXPORT. PLEASE PASTE OR SUBMIT DATA FIRST.', 'warning');
+      return;
+    }
+
+    const JsPdfCtor = (typeof window !== 'undefined' && window.jspdf && window.jspdf.jsPDF)
+      ? window.jspdf.jsPDF
+      : (typeof jspdf !== 'undefined' && jspdf.jsPDF ? jspdf.jsPDF : null);
+    if (!JsPdfCtor) {
+      showToast('PDF GENERATOR LIBRARY (jsPDF) NOT LOADED.', 'error');
+      return;
+    }
+
+    const orientation = wMm >= hMm ? 'l' : 'p';
+    const doc = new JsPdfCtor({
+      orientation,
+      unit: 'mm',
+      format: [wMm, hMm],
+      compress: false
+    });
+
+    const dpi = 1200;
+    let renderedCount = 0;
+
+    items.forEach((opt, idx) => {
+      if (idx > 0) {
+        doc.addPage([wMm, hMm], orientation);
+      }
+      const pngUrl = renderMonochromeThermalTagDataUrl({ ...opt, dpi });
+      if (pngUrl) {
+        doc.addImage(pngUrl, 'PNG', 0, 0, wMm, hMm, undefined, 'FAST');
+        renderedCount++;
+      } else {
+        // Vector fallback if canvas is unavailable
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.text(String(opt.customerName || '').toUpperCase(), wMm / 2, 3, { align: 'center' });
+        doc.setFontSize(5);
+        doc.text(`${opt.articleVal}${opt.showTagNo ? ' TAG:' + opt.tagNoStr : ''} | ${opt.huidStr}`, 1, 8);
+      }
+    });
+
+    const docketClean = (activeTagBatch ? activeTagBatch.jobDocket : 'TAGS').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${docketClean}_TAGS_1200DPI.pdf`;
+    doc.save(filename);
+    closeTagPrintOptionsModal();
+    showToast(`EXPORTED PRINT-READY 1200 DPI PDF (${items.length} PAGES AT ${wMm}×${hMm} MM): ${filename}`, 'success');
+    return doc;
   }
 
   // ========================================================
@@ -15698,6 +15924,10 @@
   window.connectQzTray = connectQzTray;
   window.selectQzPrinter = selectQzPrinter;
   window.printTagsViaQzTray = printTagsViaQzTray;
+  window.renderMonochromeThermalTagDataUrl = renderMonochromeThermalTagDataUrl;
+  window.collectTagRenderConfigs = collectTagRenderConfigs;
+  window.exportTagImages1200Dpi = exportTagImages1200Dpi;
+  window.exportTagPdf1200Dpi = exportTagPdf1200Dpi;
   window.downloadTsplPrintFile = downloadTsplPrintFile;
   window.copyTsplToClipboard = copyTsplToClipboard;
   window.convertExcelSheetToRows = convertExcelSheetToRows;
