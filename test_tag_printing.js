@@ -176,7 +176,7 @@ assert(defaultDoc.includes('padding-top:0.50mm'), 'Missing padding-top:0.50mm');
 assert(defaultDoc.includes('padding-left:0.50mm'), 'Missing padding-left:0.50mm');
 assert(defaultDoc.includes('padding-bottom:0.50mm'), 'Missing padding-bottom:0.50mm');
 assert(defaultDoc.includes('tag-customer-header'), 'Missing left-aligned tag-customer-header');
-assert(defaultDoc.includes('width:31.36mm'), 'Missing 64% (31.36mm) left column for combined meta line');
+assert(defaultDoc.includes('width:24.5mm'), 'Missing 50/50 split left half (24.5mm at exact 25mm fold)');
 assert(defaultDoc.includes('tag-head'), 'Missing tag-head container');
 assert(defaultDoc.includes('tag-tail'), 'Missing tag-tail container');
 assert(defaultDoc.includes('ROYCO JEWELLERS'), 'Missing customer name');
