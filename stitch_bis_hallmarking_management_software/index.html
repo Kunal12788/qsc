@@ -2977,6 +2977,26 @@
                         </select>
                       </div>
                     </div>
+
+                    <!-- QZ Tray Printer Selector & Status Bar -->
+                    <div id="tag-qz-tray-bar" class="mt-2.5 pt-2.5 border-t border-amber-200/70 flex flex-wrap items-center justify-between gap-2">
+                      <div class="flex items-center gap-2">
+                        <span class="text-[10.5px] font-extrabold text-slate-800 uppercase flex items-center gap-1">
+                          <span class="material-symbols-outlined text-[15px] text-emerald-700">print_connect</span>
+                          <span>QZ Tray Printer:</span>
+                        </span>
+                        <span id="tag-qz-status-badge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-200 text-slate-700">NOT CONNECTED</span>
+                      </div>
+                      <div class="flex items-center gap-2 flex-1 max-w-md justify-end">
+                        <select id="tag-qz-printer-select" onchange="selectQzPrinter(this.value)" class="h-8 px-2.5 bg-white rounded-md text-xs font-semibold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container flex-1 min-w-[160px]">
+                          <option value="">-- Click Connect QZ Tray --</option>
+                        </select>
+                        <button type="button" id="btn-tag-qz-connect" onclick="connectQzTray(false)" class="h-8 px-3 rounded-md bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[10.5px] uppercase tracking-wider cursor-pointer transition-all shrink-0 flex items-center gap-1">
+                          <span class="material-symbols-outlined text-[14px]">refresh</span>
+                          <span>Connect QZ</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -6480,6 +6500,41 @@
         </div>
 
         <div class="grid grid-cols-1 gap-3">
+          <!-- QZ Tray Direct Raw TSPL2 Printing (Works with Windows TSC Driver!) -->
+          <div id="modal-qz-tray-panel" class="p-3.5 rounded-xl border-2 border-primary-container bg-slate-900 text-white space-y-2.5 shadow-sm">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-amber-400 text-[18px]">print_connect</span>
+                <div>
+                  <div class="font-extrabold text-xs uppercase tracking-wider text-amber-300">QZ TRAY • CRISP TSPL2 PRINTING</div>
+                  <div class="text-[10px] text-slate-300">Direct 1-click raw TSPL2 to Windows TSC printer (zero grains/haze)</div>
+                </div>
+              </div>
+              <span id="modal-qz-status-badge" class="px-2 py-0.5 rounded text-[9.5px] font-mono font-bold bg-slate-700 text-slate-200 shrink-0">CHECKING QZ...</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <select id="modal-qz-printer-select" onchange="selectQzPrinter(this.value)" class="flex-1 h-8 px-2.5 rounded-lg bg-slate-800 border border-slate-600 text-white text-xs font-semibold focus:outline-none">
+                <option value="">-- Click Connect to list printers --</option>
+              </select>
+              <button type="button" id="btn-modal-qz-refresh" onclick="connectQzTray(false)" class="h-8 px-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-amber-300 font-bold text-[10.5px] uppercase tracking-wider cursor-pointer transition-all flex items-center gap-1 shrink-0">
+                <span class="material-symbols-outlined text-[14px]">refresh</span>
+                <span>Connect / Refresh</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="btn-qz-print-with-tag" onclick="printTagsViaQzTray('with')" class="px-3 py-2.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs">
+                <span class="material-symbols-outlined text-[16px]">print</span>
+                <span>QZ Print WITH Tag No</span>
+              </button>
+              <button type="button" id="btn-qz-print-without-tag" onclick="printTagsViaQzTray('without')" class="px-3 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs">
+                <span class="material-symbols-outlined text-[16px]">print</span>
+                <span>QZ Print WITHOUT Tag No</span>
+              </button>
+            </div>
+          </div>
+
           <!-- TSC Native TSPL2 Direct Print Section (Solves Grainy / Hazy Thermal Output) -->
           <div class="p-3.5 rounded-xl border-2 border-emerald-500/70 bg-emerald-50/70 space-y-2.5">
             <div class="flex items-center justify-between gap-2">
@@ -6543,9 +6598,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-client.js"></script>
   <!-- Application Engine Script -->
+  <script src="js/qz-tray.js"></script>
   <script src="js/qrcode.min.js"></script>
   <script src="js/jsQR.js"></script>
-  <script src="js/app.js?v=2.2"></script>
+  <script src="js/app.js?v=2.3"></script>
 </body>
 </html>
 

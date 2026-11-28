@@ -1788,6 +1788,9 @@
         onTagPresetChanged('50-15');
       }
     }
+    if (typeof connectQzTray === 'function') {
+      connectQzTray(true);
+    }
   }
 
   let tagQueueSearchQuery = '';
@@ -3525,6 +3528,9 @@
         modalTsplSelect.value = document.getElementById('tag-no-without')?.checked ? 'without' : 'with';
       }
       modal.classList.remove('hidden');
+      if (typeof connectQzTray === 'function') {
+        connectQzTray(true);
+      }
     } else {
       printCustomTags();
     }
@@ -3870,6 +3876,153 @@
   }
 
   let rememberedTscUsbDevice = null;
+  let qzSecurityConfigured = false;
+  let selectedQzPrinter = '';
+
+  function updateQzUiStatus(connected, labelText = null) {
+    const text = labelText || (connected ? 'QZ CONNECTED' : 'QZ NOT RUNNING');
+    const cls = connected
+      ? 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300'
+      : 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-300';
+    const b1 = document.getElementById('tag-qz-status-badge');
+    const b2 = document.getElementById('modal-qz-status-badge');
+    if (b1) { b1.textContent = text; b1.className = cls; }
+    if (b2) { b2.textContent = text; b2.className = cls; }
+  }
+
+  function initQzTraySecurity() {
+    if (qzSecurityConfigured || typeof qz === 'undefined' || !qz.security) return;
+    qzSecurityConfigured = true;
+    try {
+      qz.security.setCertificatePromise(function(resolve) {
+        resolve('');
+      });
+      qz.security.setSignaturePromise(function() {
+        return function(resolve) {
+          resolve('');
+        };
+      });
+    } catch (e) {}
+  }
+
+  function populateQzPrinterSelects(printers) {
+    const list = Array.isArray(printers) ? printers : (printers ? [printers] : []);
+    let saved = '';
+    try {
+      if (typeof localStorage !== 'undefined') saved = localStorage.getItem('tag_qz_saved_printer') || '';
+    } catch (e) {}
+
+    let chosen = selectedQzPrinter;
+    if (!chosen || !list.includes(chosen)) {
+      if (saved && list.includes(saved)) {
+        chosen = saved;
+      } else {
+        chosen = list.find(p => /tsc|ttp|te2|ta2|thermal|barcode|label/i.test(p)) || list[0] || '';
+      }
+    }
+    selectedQzPrinter = chosen;
+
+    ['tag-qz-printer-select', 'modal-qz-printer-select'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      if (list.length === 0) {
+        sel.innerHTML = '<option value="">-- No Printers Found --</option>';
+      } else {
+        sel.innerHTML = list.map(p => `<option value="${escapeHtmlStr(p)}">${escapeHtmlStr(p)}</option>`).join('');
+        sel.value = chosen;
+      }
+    });
+  }
+
+  function selectQzPrinter(printerName) {
+    selectedQzPrinter = printerName || '';
+    try {
+      if (typeof localStorage !== 'undefined') {
+        if (selectedQzPrinter) localStorage.setItem('tag_qz_saved_printer', selectedQzPrinter);
+        else localStorage.removeItem('tag_qz_saved_printer');
+      }
+    } catch (e) {}
+    ['tag-qz-printer-select', 'modal-qz-printer-select'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel && sel.value !== selectedQzPrinter) sel.value = selectedQzPrinter;
+    });
+  }
+
+  async function connectQzTray(silent = false) {
+    if (typeof qz === 'undefined' || !qz.websocket) {
+      updateQzUiStatus(false, 'QZ SDK MISSING');
+      if (!silent) showToast('QZ TRAY LIBRARY NOT LOADED.', 'error');
+      return false;
+    }
+    initQzTraySecurity();
+    try {
+      if (!qz.websocket.isActive()) {
+        await qz.websocket.connect({ retries: silent ? 0 : 1, delay: 0.5 });
+      }
+      const printers = await qz.printers.find();
+      populateQzPrinterSelects(printers);
+      updateQzUiStatus(true, 'QZ CONNECTED');
+      if (!silent) {
+        showToast(`QZ TRAY CONNECTED (${(printers || []).length} PRINTERS FOUND).`, 'success');
+      }
+      return true;
+    } catch (err) {
+      updateQzUiStatus(false, 'START QZ TRAY APP');
+      if (!silent) {
+        showToast('QZ TRAY APP NOT RUNNING ON THIS PC. INSTALL/OPEN QZ TRAY (qz.io/download) AND CLICK CONNECT.', 'warning');
+      }
+      return false;
+    }
+  }
+
+  async function printTagsViaQzTray(tagNoMode = null) {
+    const rows = getActiveRowsForTagOutput();
+    if (!rows.length) {
+      showToast('NO TAG DATA AVAILABLE TO PRINT. PLEASE PASTE OR SUBMIT DATA FIRST.', 'warning');
+      return;
+    }
+
+    if (tagNoMode) {
+      const withRadio = document.getElementById('tag-no-with');
+      const withoutRadio = document.getElementById('tag-no-without');
+      if (withRadio && withoutRadio) {
+        withRadio.checked = (tagNoMode !== 'without');
+        withoutRadio.checked = (tagNoMode === 'without');
+      }
+      const modalTsplSelect = document.getElementById('modal-tspl-tag-no-mode');
+      if (modalTsplSelect) modalTsplSelect.value = tagNoMode;
+      updateTagMiniPreview();
+    }
+
+    const connected = await connectQzTray(false);
+    if (!connected) return;
+
+    const modalSel = document.getElementById('modal-qz-printer-select');
+    const mainSel = document.getElementById('tag-qz-printer-select');
+    const printerName = (modalSel && modalSel.value) || (mainSel && mainSel.value) || selectedQzPrinter;
+    if (!printerName) {
+      showToast('PLEASE SELECT YOUR TSC PRINTER FROM THE QZ TRAY DROPDOWN.', 'warning');
+      return;
+    }
+
+    try {
+      const resolvedMode = tagNoMode || (document.getElementById('tag-no-without')?.checked ? 'without' : 'with');
+      const tsplScript = buildTsplTagCommands(resolvedMode);
+      const config = qz.configs.create(printerName);
+      const printData = [{
+        type: 'raw',
+        format: 'command',
+        flavor: 'plain',
+        data: tsplScript
+      }];
+      await qz.print(config, printData);
+      closeTagPrintOptionsModal();
+      showToast(`PRINTED ${rows.length} CRISP TSPL2 TAG(S) TO "${printerName}" VIA QZ TRAY!`, 'success');
+    } catch (err) {
+      console.error('QZ Tray print error:', err);
+      showToast(`QZ TRAY PRINT FAILED: ${(err && err.message) ? err.message : 'Check QZ Tray & printer connection'}`, 'error');
+    }
+  }
 
   async function printTagsTsplDirect(transport = 'usb') {
     const rows = getActiveRowsForTagOutput();
@@ -15542,6 +15695,9 @@
   window.buildTsplTagCommands = buildTsplTagCommands;
   window.getTsplPrinterConfig = getTsplPrinterConfig;
   window.printTagsTsplDirect = printTagsTsplDirect;
+  window.connectQzTray = connectQzTray;
+  window.selectQzPrinter = selectQzPrinter;
+  window.printTagsViaQzTray = printTagsViaQzTray;
   window.downloadTsplPrintFile = downloadTsplPrintFile;
   window.copyTsplToClipboard = copyTsplToClipboard;
   window.convertExcelSheetToRows = convertExcelSheetToRows;

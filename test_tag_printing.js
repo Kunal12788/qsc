@@ -57,7 +57,12 @@ assert(htmlContent.includes('id="tag-tspl-dpi"'), 'Missing tag-tspl-dpi');
 assert(htmlContent.includes('id="tag-tspl-density"'), 'Missing tag-tspl-density');
 assert(htmlContent.includes('id="btn-tspl-print-usb"'), 'Missing btn-tspl-print-usb');
 assert(htmlContent.includes('id="btn-tspl-download-prn"'), 'Missing btn-tspl-download-prn');
-console.log('  ✓ Print Tags, Weight Display Mode, Tag No Display Mode (With vs Without), Print Prompt Modal & TSC TSPL2 controls verified.');
+assert(htmlContent.includes('src="js/qz-tray.js"'), 'Missing js/qz-tray.js script tag');
+assert(htmlContent.includes('id="tag-qz-printer-select"'), 'Missing tag-qz-printer-select');
+assert(htmlContent.includes('id="modal-qz-printer-select"'), 'Missing modal-qz-printer-select');
+assert(htmlContent.includes('id="btn-qz-print-with-tag"'), 'Missing btn-qz-print-with-tag');
+assert(htmlContent.includes('id="btn-qz-print-without-tag"'), 'Missing btn-qz-print-without-tag');
+console.log('  ✓ Print Tags, Weight Display Mode, Tag No Display Mode, TSC TSPL2 & QZ Tray controls verified.');
 
 // Test Suite 2: Mock DOM Execution of Tag Engine & Real app.js Loading
 console.log('\n[Suite 2] JS Tag Engine Execution & Calibration Logic:');
@@ -80,6 +85,11 @@ const mockElements = {
   'tag-tspl-speed': { value: '3' },
   'tag-tspl-gap': { value: '2' },
   'tag-tspl-baud': { value: '9600' },
+  'tag-qz-status-badge': { textContent: '', className: '' },
+  'modal-qz-status-badge': { textContent: '', className: '' },
+  'tag-qz-printer-select': { value: '', innerHTML: '' },
+  'modal-qz-printer-select': { value: '', innerHTML: '' },
+  'modal-tspl-tag-no-mode': { value: 'with' },
   'tag-opt-cust': { checked: true },
   'tag-opt-ornament': { checked: true },
   'tag-opt-huid': { checked: true },
@@ -301,4 +311,32 @@ const cfg300 = window.getTsplPrinterConfig();
 assert.strictEqual(cfg300.dpm, 12, '300 DPI must map to 12 dots/mm');
 console.log('  ✓ TSC Brand TSPL2 generation (203/300 DPI, SIZE, GAP, DENSITY, TEXT, QRCODE, WITH/WITHOUT Tag No) verified.');
 
-console.log('\n=== ALL JEWELLERY TAG PRINTING & CALIBRATION TESTS PASSED SUCCESSFULLY! ===');
+// Case 7: QZ Tray Integration (Auto-discover TSC Printer & Print TSPL2 Raw Commands)
+window.initTagGenerationView();
+window.handleExcelGridPaste({
+  clipboardData: {
+    getData: () => 'S No.\tItem Category\tNo Of Unit\tHUID\tTag Id\tWeight of Article(Gms)\n1\tRING\t1\t45GNA3\tQ1\t11.990'
+  },
+  preventDefault() {}
+});
+window.saveTagData();
+
+let lastQzPrintCfg = null;
+let lastQzPrintData = null;
+global.qz = {
+  security: { setCertificatePromise() {}, setSignaturePromise() {} },
+  websocket: { isActive: () => false, connect: async () => {} },
+  printers: { find: async () => ['Microsoft Print to PDF', 'TSC TE244'] },
+  configs: { create: (p) => ({ printer: p }) },
+  print: async (cfg, data) => { lastQzPrintCfg = cfg; lastQzPrintData = data; }
+};
+(async () => {
+  await window.printTagsViaQzTray('with');
+  assert.strictEqual(lastQzPrintCfg.printer, 'TSC TE244', 'QZ Tray must auto-select TSC printer');
+  assert.strictEqual(lastQzPrintData[0].type, 'raw', 'QZ Tray must send raw TSPL commands');
+  assert(lastQzPrintData[0].data.includes('TAG:Q1'), 'QZ Print WITH Tag No must include TAG:Q1');
+  await window.printTagsViaQzTray('without');
+  assert(!lastQzPrintData[0].data.includes('TAG:Q1'), 'QZ Print WITHOUT Tag No must omit TAG:');
+  console.log('  ✓ QZ Tray integration (TSC printer discovery & TSPL2 raw printing WITH/WITHOUT Tag No) verified.');
+  console.log('\n=== ALL JEWELLERY TAG PRINTING & CALIBRATION TESTS PASSED SUCCESSFULLY! ===');
+})();
