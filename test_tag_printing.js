@@ -176,12 +176,11 @@ assert(defaultDoc.includes('padding-top:0.50mm'), 'Missing padding-top:0.50mm');
 assert(defaultDoc.includes('padding-left:0.50mm'), 'Missing padding-left:0.50mm');
 assert(defaultDoc.includes('padding-bottom:0.50mm'), 'Missing padding-bottom:0.50mm');
 assert(defaultDoc.includes('tag-customer-header'), 'Missing left-aligned tag-customer-header');
-assert(defaultDoc.includes('width:24.5mm'), 'Missing equal 24.5mm left half');
-assert(defaultDoc.includes('gap:0.18mm'), 'Missing uniform detail row spacing');
+assert(defaultDoc.includes('width:31.36mm'), 'Missing 64% (31.36mm) left column for combined meta line');
 assert(defaultDoc.includes('tag-head'), 'Missing tag-head container');
 assert(defaultDoc.includes('tag-tail'), 'Missing tag-tail container');
 assert(defaultDoc.includes('ROYCO JEWELLERS'), 'Missing customer name');
-assert(defaultDoc.includes('Q1') && defaultDoc.includes('22K 916'), 'Missing Tag No Q1 & Purity 22K 916');
+assert(defaultDoc.includes('Gold') && defaultDoc.includes('Q1') && defaultDoc.includes('22K 916'), 'Missing Date + Gold + Q1 + 22K 916 on same line');
 assert(!defaultDoc.includes('TAG NO :'), 'TAG NO label text must be removed');
 assert(defaultDoc.includes('GROSS WEIGHT:'), 'Missing GROSS WEIGHT');
 assert(defaultDoc.includes('NET WEIGHT:'), 'Missing NET WEIGHT in Both mode');
@@ -319,7 +318,7 @@ assert(tsplWithTag.includes('DENSITY 12\r\n'), 'TSPL missing DENSITY 12 command'
 assert(tsplWithTag.includes('CLS\r\n'), 'TSPL missing CLS command');
 assert(tsplWithTag.includes('TEXT '), 'TSPL missing TEXT command');
 assert(tsplWithTag.includes('QRCODE '), 'TSPL missing hardware QRCODE command');
-assert(tsplWithTag.includes('"Q'), 'TSPL WITH tag mode must start Tag+Purity line with Q...');
+assert(tsplWithTag.includes('Gold  Q'), 'TSPL WITH tag mode must include Date  Metal  Q... on same line');
 assert(tsplWithTag.includes('PRINT 1,1\r\n'), 'TSPL missing PRINT 1,1 command');
 
 // Negative X shift & positive Y shift calibration check
@@ -361,10 +360,10 @@ global.qz = {
   await window.printTagsViaQzTray('with');
   assert.strictEqual(lastQzPrintCfg.printer, 'TSC TE244', 'QZ Tray must auto-select TSC printer');
   assert.strictEqual(lastQzPrintData[0].type, 'raw', 'QZ Tray must send raw TSPL commands');
-  assert(lastQzPrintData[0].data.includes('"Q1  22K 916"'), 'QZ Print WITH Tag No must include Q1  22K 916');
+  assert(lastQzPrintData[0].data.includes('Gold  Q1  22K 916'), 'QZ Print WITH Tag No must include Date  Gold  Q1  22K 916');
   await window.printTagsViaQzTray('without');
-  assert(!lastQzPrintData[0].data.includes('"Q1  22K 916"'), 'QZ Print WITHOUT Tag No must omit Q1');
-  assert(lastQzPrintData[0].data.includes('"22K 916"'), 'QZ Print WITHOUT Tag No must show Purity 22K 916');
+  assert(!lastQzPrintData[0].data.includes('Q1  22K 916'), 'QZ Print WITHOUT Tag No must omit Q1');
+  assert(lastQzPrintData[0].data.includes('Gold  22K 916'), 'QZ Print WITHOUT Tag No must show Date  Gold  22K 916');
   console.log('  ✓ QZ Tray integration (TSC printer discovery & TSPL2 raw printing WITH/WITHOUT Tag No) verified.');
 
   // Case 8: 1200 DPI Ultra-HD Image & Direct-Printable Exact-mm PDF Export

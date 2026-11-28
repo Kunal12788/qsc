@@ -3017,20 +3017,28 @@
 
       const hasBridge = gapMm > 0 && width > gapMm + 15;
       const gapPct = hasBridge ? Math.max(1, Math.min(18, Math.round((gapMm / width) * 100))) : 0;
-      const headPct = Math.floor((100 - gapPct) / 2);
+      const headPct = hasBridge ? Math.floor((100 - gapPct) / 2) : 64;
       const tailPct = 100 - headPct - gapPct;
 
+      const metaLinePreview = [
+        escapeHtmlStr(dateStr),
+        escapeHtmlStr(cleanArticle),
+        ...(showTagNoPreview ? [escapeHtmlStr(tagNoVal)] : []),
+        escapeHtmlStr(purityVal)
+      ].filter(Boolean).join(' &nbsp; ');
+
       miniPreview.innerHTML = `
-        <!-- FULL-HEIGHT 50/50 EQUAL SPLIT ROW -->
+        <!-- FULL-HEIGHT SPLIT ROW -->
         <div style="display: flex; flex-direction: row; align-items: stretch; flex: 1; min-height: 0; width: 100%;">
-          <!-- Left Half (${headPct}%): Customer Name + Date+Metal + TagNo+Purity + GW + NW + Ornament -->
+          <!-- Left (${headPct}%): Customer Name + Date/Metal/Tag/Purity + GW + NW + Ornament -->
           <div style="width: ${headPct}%; max-width: ${headPct}%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-start; gap: 1.5px; padding-right: 2px; overflow: hidden; background: #ffffff; border-right: 1px dashed #e2e8f0; color: #000000; font-size: ${previewDataPx}px; font-weight: 700; line-height: 1.1; font-family: Arial, Helvetica, sans-serif; text-align: left;">
             ${optCust ? `
               <div class="tag-customer-header" style="font-weight: 800; text-transform: uppercase; text-align: left; word-break: break-word;">${escapeHtmlStr(custName)}</div>
-              <div style="word-break: break-word;">${escapeHtmlStr(dateStr)} &nbsp; ${escapeHtmlStr(cleanArticle)}</div>
+            ` : ''}
+            ${(optCust || optOrnament) ? `
+              <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 800;">${metaLinePreview}</div>
             ` : ''}
             ${optOrnament ? `
-              <div style="word-break: break-word; font-weight: 800;">${showTagNoPreview ? `${escapeHtmlStr(tagNoVal)} &nbsp; ` : ''}${escapeHtmlStr(purityVal)}</div>
               <div style="word-break: break-word;">GROSS WEIGHT: ${escapeHtmlStr(grossVal)}</div>
               ${showNetWtPreview ? `<div style="word-break: break-word;">NET WEIGHT: ${escapeHtmlStr(netVal)}</div>` : ''}
               <div style="word-break: break-word;">ORNAMENT: ${escapeHtmlStr(ornamentVal)}</div>
@@ -3062,7 +3070,7 @@
     } else {
       // COMPACT: Side-by-side within single head
       miniPreview.style.display = 'grid';
-      miniPreview.style.gridTemplateColumns = '52% 46%';
+      miniPreview.style.gridTemplateColumns = '62% 37%';
       miniPreview.style.justifyContent = 'space-between';
       miniPreview.style.alignItems = 'stretch';
       miniPreview.style.padding = '2px 4px';
@@ -3071,21 +3079,20 @@
       const previewQrDim = Math.max(34, Math.min(targetH - 14, 64));
 
       miniPreview.innerHTML = `
-        <!-- Left Column (52%): Customer Name + Date+Metal + TagNo+Purity + GW + NW -->
+        <!-- Left Column (62%): Customer Name + Date+Metal+TagNo+Purity + GW + NW -->
         <div style="width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; padding-right: 2px; font-size: ${previewDataPx}px; font-weight: 800; line-height: 1.06; font-family: Arial, Helvetica, sans-serif; text-align: left;">
           ${optCust ? `
             <div class="tag-customer-header truncate font-black uppercase text-left">${escapeHtmlStr(custName)}</div>
-            <div class="truncate">${escapeHtmlStr(dateStr)} &nbsp; ${escapeHtmlStr(cleanArticle)}</div>
+            <div class="truncate">${escapeHtmlStr(dateStr)} &nbsp; ${escapeHtmlStr(cleanArticle)}${showTagNoPreview ? ` &nbsp; ${escapeHtmlStr(tagNoVal)}` : ''} &nbsp; ${escapeHtmlStr(purityVal)}</div>
           ` : ''}
           ${optOrnament ? `
-            <div class="truncate font-black">${showTagNoPreview ? `${escapeHtmlStr(tagNoVal)} &nbsp; ` : ''}${escapeHtmlStr(purityVal)}</div>
             <div class="truncate">GW: ${escapeHtmlStr(grossVal)}</div>
             ${showNetWtPreview ? `<div class="truncate">NW: ${escapeHtmlStr(netVal)}</div>` : ''}
             <div class="truncate">ORN: ${escapeHtmlStr(ornamentVal)}</div>
           ` : ''}
         </div>
 
-        <!-- Right Column (46%): Larger Full-Height QR on Right Side -->
+        <!-- Right Column (37%): Larger Full-Height QR on Right Side -->
         <div style="width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; overflow: hidden;">
           ${optQr ? `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
@@ -3237,9 +3244,17 @@
         }
         const hasBridge = gapMm > 0 && usableW > gapMm + 15;
         const bridgeWMm = hasBridge ? gapMm : 0;
-        const halfWMm = Math.round(((usableW - bridgeWMm) / 2) * 100) / 100;
-        const headWMm = halfWMm;
+        const headWMm = hasBridge
+          ? Math.round(((usableW - bridgeWMm) / 2) * 100) / 100
+          : Math.round((usableW * 0.64) * 100) / 100;
         const tailWMm = Math.round((usableW - bridgeWMm - headWMm) * 100) / 100;
+
+        const metaHtmlLine = [
+          escapeHtmlStr(dateStr),
+          escapeHtmlStr(articleVal),
+          ...(showTagNo ? [escapeHtmlStr(tagNoStr)] : []),
+          escapeHtmlStr(purityVal)
+        ].filter(Boolean).join(' &nbsp; ');
 
         // Crisp monochrome thermal sans-serif typography (larger legible print text)
         // Customer Name left-aligned at exact detail font size; Right Half gets full height for larger QR Code
@@ -3263,14 +3278,11 @@
             <!-- FULL-HEIGHT 50/50 EQUAL SPLIT ROW -->
             <div style="display:flex; flex-direction:row; align-items:stretch; flex:1; min-height:0; width:100%;">
               
-              <!-- LEFT HALF (50% CUSTOMER NAME + DATE+METAL + TAG+PURITY + GW + NW + ORNAMENT): ${headWMm}mm -->
-              <div class="tag-head" style="width:${headWMm}mm; max-width:${headWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:flex-start; gap:0.18mm; padding-right:0.4mm; overflow:hidden; font-family:Arial,Helvetica,sans-serif; font-size:${dataPt}pt; font-weight:700; line-height:1.1; color:#000000; text-align:left;">
-                ${incCust ? `
-                  <div class="tag-customer-header" style="font-size:${dataPt}pt; font-weight:800; text-transform:uppercase; text-align:left; word-break:break-word; color:#000000;">${escapeHtmlStr(customerName)}</div>
-                  <div style="word-break:break-word;">${escapeHtmlStr(dateStr)} &nbsp; ${escapeHtmlStr(articleVal)}</div>
-                ` : ''}
+              <!-- LEFT (${headWMm}mm): CUSTOMER NAME + DATE/METAL/TAG/PURITY + GW + NW + ORNAMENT -->
+              <div class="tag-head" style="width:${headWMm}mm; max-width:${headWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:flex-start; gap:0.22mm; padding-right:0.4mm; overflow:hidden; font-family:Arial,Helvetica,sans-serif; font-size:${dataPt}pt; font-weight:700; line-height:1.12; color:#000000; text-align:left;">
+                ${incCust ? `<div class="tag-customer-header" style="font-size:${dataPt}pt; font-weight:800; text-transform:uppercase; text-align:left; word-break:break-word; color:#000000;">${escapeHtmlStr(customerName)}</div>` : ''}
+                ${(incCust || incOrnament) ? `<div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:800;">${metaHtmlLine}</div>` : ''}
                 ${incOrnament ? `
-                  <div style="word-break:break-word; font-weight:800;">${showTagNo ? `${escapeHtmlStr(tagNoStr)} &nbsp; ` : ''}${escapeHtmlStr(purityVal)}</div>
                   <div style="word-break:break-word;">GROSS WEIGHT: ${escapeHtmlStr(grossVal)}</div>
                   ${showNetWt ? `<div style="word-break:break-word;">NET WEIGHT: ${escapeHtmlStr(netVal)}</div>` : ''}
                   <div style="word-break:break-word;">ORNAMENT: ${escapeHtmlStr(ornamentsType)}</div>
@@ -3316,14 +3328,13 @@
         const pageBreakCss = isLastTag ? '' : 'page-break-after:always; break-after:page;';
 
         return `
-          <div class="print-tag tag-compact-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:grid; grid-template-columns:52% 47%; justify-content:space-between; align-items:stretch; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:Arial,Helvetica,sans-serif; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm;">
+          <div class="print-tag tag-compact-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:grid; grid-template-columns:62% 37%; justify-content:space-between; align-items:stretch; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:Arial,Helvetica,sans-serif; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm;">
             
-            <!-- Left Column: 52% -->
+            <!-- Left Column: 62% -->
             <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:column; justify-content:space-between; height:100%; box-sizing:border-box; overflow:hidden; padding-right:0.6mm; font-size:${dataPt}pt; font-weight:800; line-height:1.06; text-align:left;">
               ${incCust ? `<div class="tag-customer-header" style="font-size:${dataPt}pt; font-weight:800; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left;">${escapeHtmlStr(customerName)}</div>` : ''}
-              ${incCust ? `<div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtmlStr(dateStr)} &nbsp; ${escapeHtmlStr(articleVal)}</div>` : ''}
+              ${(incCust || incOrnament) ? `<div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:900;">${[escapeHtmlStr(dateStr), escapeHtmlStr(articleVal), ...(showTagNo ? [escapeHtmlStr(tagNoStr)] : []), escapeHtmlStr(purityVal)].filter(Boolean).join(' &nbsp; ')}</div>` : ''}
               ${incOrnament ? `
-                <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:900;">${showTagNo ? `${escapeHtmlStr(tagNoStr)} &nbsp; ` : ''}${escapeHtmlStr(purityVal)}</div>
                 <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">GW: ${escapeHtmlStr(grossVal)}</div>
                 ${showNetWt ? `<div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">NW: ${escapeHtmlStr(netVal)}</div>` : ''}
                 <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">ORN: ${escapeHtmlStr(ornamentsType)}</div>
@@ -3537,8 +3548,8 @@
       const hasBridge = opts.gapMm > 0 && usableW > opts.gapMm + 15;
       const bridgeDots = hasBridge ? Math.round(opts.gapMm * dpm) : 0;
       const headDots = opts.layout === 'compact'
-        ? Math.round(usableWDots * 0.54)
-        : Math.round((usableWDots - bridgeDots) * 0.5);
+        ? Math.round(usableWDots * 0.62)
+        : (hasBridge ? Math.round((usableWDots - bridgeDots) * 0.5) : Math.round(usableWDots * 0.64));
       const tailX = x0 + headDots + bridgeDots + Math.max(2, Math.round(0.4 * dpm));
       const tailDots = Math.max(24, usableWDots - headDots - bridgeDots - Math.max(2, Math.round(0.4 * dpm)));
 
@@ -3547,10 +3558,17 @@
       const dataLines = [];
       if (opts.incCust) {
         dataLines.push(String(opts.customerName || '').toUpperCase());
-        dataLines.push(`${opts.dateStr}  ${opts.articleVal || 'Gold'}`);
+      }
+      if (opts.incCust || opts.incOrnament) {
+        const metaRow = [
+          opts.dateStr,
+          opts.articleVal || 'Gold',
+          ...(opts.showTagNo ? [opts.tagNoStr] : []),
+          opts.purityVal || ''
+        ].filter(Boolean).join('  ');
+        dataLines.push(metaRow);
       }
       if (opts.incOrnament) {
-        dataLines.push(opts.showTagNo ? `${opts.tagNoStr}  ${opts.purityVal || ''}`.trim() : `${opts.purityVal || ''}`.trim());
         dataLines.push(`GROSS WEIGHT: ${opts.grossVal}`);
         if (opts.showNetWt) dataLines.push(`NET WEIGHT: ${opts.netVal}`);
         dataLines.push(`ORNAMENT: ${opts.ornamentsType}`);
@@ -4031,27 +4049,33 @@
 
       const hasBridge = bridgeGapMm > 0 && usableW > bridgeGapMm + 15;
       const bridgeDots = hasBridge ? Math.round(bridgeGapMm * dpm) : 0;
-      // Allocate 55% to Left Details column (accommodates larger font) & 45% to Full-Height QR Tail
-      const headDots = layout === 'split'
-        ? Math.round((usableWDots - bridgeDots) * 0.55)
-        : Math.round(usableWDots * 0.56);
+      // Allocate 64% to Left Details column (fits Date + Metal + TagNo + Purity cleanly on 1 line) & 36% to Right-Aligned QR
+      const headDots = hasBridge
+        ? Math.round((usableWDots - bridgeDots) * 0.52)
+        : Math.round(usableWDots * 0.64);
       const tailX = x0 + headDots + bridgeDots + Math.round(0.5 * dpm);
       const tailDots = Math.max(32, usableWDots - headDots - bridgeDots - Math.round(0.5 * dpm));
 
       lines.push('CLS');
 
-      // Use TSC built-in bold condensed scalable vector Font "0" so text prints visibly larger (~6pt with Net Wt / ~7pt without Net Wt)
+      // Use TSC built-in bold condensed scalable vector Font "0" so text prints visibly larger
       const dataFont = '0';
 
-      // Customer Name on Left Side; Date + Gold/Silver; TagNo + Purity; GW; NW; Ornament
+      // Customer Name; Date + Metal + TagNo + Purity (same line with clear space); GW; NW; Ornament
       const detailLines = [];
       if (incCust) {
         detailLines.push(customerName);
-        detailLines.push(`${dateStr}  ${articleVal}`);
+      }
+      if (incCust || incOrnament) {
+        const metaTsplLine = [
+          dateStr,
+          articleVal,
+          ...(showTagNo ? [tagNoStr] : []),
+          purityVal
+        ].filter(Boolean).join('  ');
+        detailLines.push(metaTsplLine);
       }
       if (incOrnament) {
-        const tagPurityLine = showTagNo ? `${tagNoStr}  ${purityVal}` : `${purityVal}`;
-        if (tagPurityLine.trim()) detailLines.push(tagPurityLine.trim());
         detailLines.push(showNetWt ? `GW:${grossVal}` : `WEIGHT:${grossVal}`);
         if (showNetWt) detailLines.push(`NW:${netVal}`);
         detailLines.push(`ORN:${ornamentsType}`);
@@ -4063,13 +4087,18 @@
       // TSPL2 Font "0" uses points: 1pt ≈ dpm * 25.4 / 72 dots (~2.82 dots @ 203 DPI, ~4.23 dots @ 300 DPI)
       const dotsPerPt = (dpm * 25.4) / 72;
       const tsplFontPt = Math.max(5, Math.min(10, Math.round((stepY / dotsPerPt) * 0.92)));
-      const approxCharW = tsplFontPt * (dpm === 12 ? 2.1 : 1.45);
-      const maxDataChars = Math.max(10, Math.floor(headDots / approxCharW));
+      // TSPL Font "0" is condensed (~0.42 * pt height per char advance): condense X-pt slightly if a line is long rather than cutting off purity/HUID
+      const charDotsPerPt = dpm === 12 ? 1.75 : 1.15;
+      const maxFitAtFullPt = Math.max(12, Math.floor(headDots / (tsplFontPt * charDotsPerPt)));
 
       let dy = y0;
       detailLines.forEach((lineText) => {
         if (dy + Math.round(tsplFontPt * dotsPerPt * 0.65) <= bottomYLimit) {
-          lines.push(`TEXT ${x0},${dy},"${dataFont}",0,${tsplFontPt},${tsplFontPt},"${escapeTsplString(lineText.slice(0, maxDataChars))}"`);
+          const lineFontX = lineText.length > maxFitAtFullPt
+            ? Math.max(4, Math.min(tsplFontPt, Math.floor(headDots / (Math.max(1, lineText.length) * charDotsPerPt))))
+            : tsplFontPt;
+          const maxLineChars = Math.max(maxFitAtFullPt, Math.floor(headDots / (lineFontX * charDotsPerPt)));
+          lines.push(`TEXT ${x0},${dy},"${dataFont}",0,${lineFontX},${tsplFontPt},"${escapeTsplString(lineText.slice(0, maxLineChars))}"`);
           dy += stepY;
         }
       });
