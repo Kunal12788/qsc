@@ -1737,16 +1737,17 @@
       try {
         let qr;
         try {
-          qr = qrcode(0, 'L');
-          qr.addData(cleanText);
-          qr.make();
-        } catch (e1) {
           qr = qrcode(0, 'M');
           qr.addData(cleanText);
           qr.make();
+        } catch (e1) {
+          qr = qrcode(0, 'L');
+          qr.addData(cleanText);
+          qr.make();
         }
-        const svgTag = qr.createSvgTag({ cellSize: 2, margin: 2, scalable: true });
-        return svgTag.replace('<svg ', `<svg width="${size}" height="${size}" shape-rendering="crispEdges" style="width:100%;height:100%;max-width:100%;max-height:100%;display:block;shape-rendering:crispEdges;image-rendering:pixelated;background:#ffffff;" `);
+        // margin: 6 with cellSize: 2 guarantees a full 3-module white quiet zone around all 4 sides for instant Google Lens / phone camera detection
+        const svgTag = qr.createSvgTag({ cellSize: 2, margin: 6, scalable: true });
+        return svgTag.replace('<svg ', `<svg width="${size}" height="${size}" shape-rendering="crispEdges" style="width:100%;height:100%;max-width:100%;max-height:100%;display:block;shape-rendering:crispEdges;background:#ffffff;" `);
       } catch (err) {
         console.error('qrcode-generator error:', err);
       }
@@ -2992,17 +2993,15 @@
 
     const cleanArticle = articleVal.replace(purityVal, '').trim() || 'Gold';
 
-    // QR payload and SVG
+    // Concise camera-optimized QR payload matching printed output (ECC M, Version 3 open modules)
     const samplePayload = [
-      'CUSTOMER: ' + custName,
-      'DATE: ' + dateStr,
-      'ARTICLE: ' + cleanArticle,
-      ...(showTagNoPreview ? ['TAG NO: ' + tagNoVal] : []),
-      'ORNAMENT: ' + ornamentVal,
-      'GROSS WEIGHT: ' + grossVal,
-      ...(showNetWtPreview ? ['NET WEIGHT: ' + netVal] : []),
-      'HUID NUMBER: ' + huidVal
-    ].join('\n');
+      huidVal,
+      ...(showTagNoPreview ? [tagNoVal] : []),
+      dateStr,
+      cleanArticle,
+      purityVal,
+      grossVal
+    ].filter(Boolean).join('|');
 
     if (layout === 'split') {
       miniPreview.style.display = 'flex';
@@ -3220,24 +3219,7 @@
 
       if (layout === 'split') {
         const pageBreakCss = isLastTag ? '' : 'page-break-after:always; break-after:page;';
-        // On real browsers printing directly to Windows TSC thermal driver, render 1-bit pure #000/#FFF bitmap at 600 DPI with bar-width reduction so text is non-bold and QR scans cleanly
-        if (!forNewTab) {
-          const monoUrl = renderMonochromeThermalTagDataUrl({
-            wMm, hMm, padTopMm: parseFloat(padTopMm), padLeftMm: parseFloat(padLeftMm),
-            padBotMm: parseFloat(padBotMm), gapMm, fontScaleFactor,
-            dpi: Math.max(600, getTsplPrinterConfig().dpm * 25.4),
-            incCust, incOrnament, incHuid, incQr, showNetWt, showTagNo,
-            purityVal,
-            customerName, dateStr, articleVal, ornamentsType, grossVal, netVal, huidStr, tagNoStr, qrPayload
-          });
-          if (monoUrl) {
-            return `
-              <div class="print-tag tag-split-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; margin:0; padding:0; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; overflow:hidden;">
-                <img src="${monoUrl}" alt="${escapeHtmlStr(huidStr)}" style="width:${wMm}mm; height:${hMm}mm; display:block; image-rendering:pixelated; -ms-interpolation-mode:nearest-neighbor;" />
-              </div>
-            `;
-          }
-        }
+        // Always output pure native Vector HTML + SVG QR so browser/thermal drivers print max-sharp text and distortion-free 1:1:3:1:1 QR modules
         const hasBridge = gapMm > 0 && usableW > gapMm + 15;
         const bridgeWMm = hasBridge ? gapMm : 0;
         // Strict 50% / 50% split at the exact 25mm fold line on 50x15mm tags
@@ -3250,8 +3232,23 @@
           ...(showTagNo ? [escapeHtmlStr(tagNoStr)] : []),
           escapeHtmlStr(purityVal)
         ].filter(Boolean).join('&nbsp; ');
+        const metaPlainText = [
+          dateStr,
+          articleVal,
+          ...(showTagNo ? [tagNoStr] : []),
+          purityVal
+        ].filter(Boolean).join('  ');
 
-        // Uniform 8 pt non-bold sans-serif typography across BOTH With & Without Net Weight
+        const renderVectorFitLine = (htmlText, plainLen, extraClass = '') => {
+          const sx = plainLen > 19 ? Math.max(0.62, Math.min(1.0, 20.5 / plainLen)) : 1.0;
+          const clsAttr = extraClass ? ` class="${extraClass}"` : '';
+          if (sx < 0.99) {
+            return `<div${clsAttr} style="white-space:nowrap; overflow:hidden; font-size:${dataPt}pt; font-weight:400; color:#000000;"><span style="display:inline-block; transform:scaleX(${sx.toFixed(2)}); transform-origin:left center; width:${(100 / sx).toFixed(1)}%;">${htmlText}</span></div>`;
+          }
+          return `<div${clsAttr} style="white-space:nowrap; overflow:hidden; font-size:${dataPt}pt; font-weight:400; color:#000000;">${htmlText}</div>`;
+        };
+
+        // Uniform 8 pt non-bold sans-serif vector typography across BOTH With & Without Net Weight
         const baseDataPt = (usableH <= 11.0)
           ? Math.min(8.0, (usableH / 11.0) * 6.5)
           : Math.min(8.0, (usableH / 14.0) * 8.0);
@@ -3259,27 +3256,27 @@
         const metaPt = dataPt;
 
         const qrFooterPt = dataPt;
-        // With HUID moved vertically beside (before) QR, QR expands to ~92% of total tag height matching illustration
-        const maxQrDim = Math.max(6.5, hMm - 1.1);
+        // Full-height QR with built-in 3-module vector quiet zone for instant Google Lens / phone camera detection
+        const maxQrDim = Math.max(6.5, hMm - 0.8);
         const qrBoxDimMm = Math.max(6.5, Math.min(maxQrDim, tailWMm - 3.0, 14.2)).toFixed(2);
         const qrPixelDim = Math.max(64, Math.round(parseFloat(qrBoxDimMm) * 10));
 
         const qrSvg = incQr ? generateQrCodeSvg(qrPayload, qrPixelDim) : '';
 
         return `
-          <div class="print-tag tag-split-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:'Arial Narrow',Arial,Helvetica,sans-serif; font-weight:400; -webkit-font-smoothing:none;">
+          <div class="print-tag tag-split-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:Arial,Helvetica,sans-serif; font-weight:400; text-rendering:geometricPrecision;">
 
             <!-- FULL-HEIGHT 50/50 EQUAL SPLIT ROW (EXACT 25mm HALF) -->
             <div style="display:flex; flex-direction:row; align-items:stretch; flex:1; min-height:0; width:100%;">
               
-              <!-- LEFT HALF (${headWMm}mm / 0-25mm): NON-BOLD 8pt REGULAR DETAILS -->
-              <div class="tag-head" style="width:${headWMm}mm; max-width:${headWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; gap:0mm; padding-right:0.3mm; overflow:hidden; font-family:'Arial Narrow',Arial,Helvetica,sans-serif; font-size:${dataPt}pt; font-weight:400; line-height:1.0; color:#000000; text-align:left;">
-                ${incCust ? `<div class="tag-customer-header" style="font-size:${dataPt}pt; font-weight:400; text-transform:uppercase; text-align:left; white-space:nowrap; overflow:hidden; color:#000000;">${escapeHtmlStr(customerName)}</div>` : ''}
-                ${(incCust || incOrnament) ? `<div style="white-space:nowrap; overflow:hidden; font-family:'Arial Narrow',Arial,Helvetica,sans-serif; font-size:${metaPt}pt; letter-spacing:-0.25px; font-weight:400;">${metaHtmlLine}</div>` : ''}
+              <!-- LEFT HALF (${headWMm}mm / 0-25mm): MAX-QUALITY VECTOR NON-BOLD 8pt REGULAR DETAILS -->
+              <div class="tag-head" style="width:${headWMm}mm; max-width:${headWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; gap:0mm; padding-right:0.3mm; overflow:hidden; font-family:Arial,Helvetica,sans-serif; font-size:${dataPt}pt; font-weight:400; line-height:1.0; color:#000000; text-align:left; text-rendering:geometricPrecision;">
+                ${incCust ? renderVectorFitLine(escapeHtmlStr(customerName).toUpperCase(), String(customerName).length, 'tag-customer-header') : ''}
+                ${(incCust || incOrnament) ? renderVectorFitLine(metaHtmlLine, metaPlainText.length) : ''}
                 ${incOrnament ? `
-                  <div style="white-space:nowrap; overflow:hidden; font-weight:400;">GROSS WEIGHT: ${escapeHtmlStr(grossVal)}</div>
-                  ${showNetWt ? `<div style="white-space:nowrap; overflow:hidden; font-weight:400;">NET WEIGHT: ${escapeHtmlStr(netVal)}</div>` : ''}
-                  <div style="white-space:nowrap; overflow:hidden; font-weight:400;">ORNAMENT: ${escapeHtmlStr(ornamentsType)}</div>
+                  ${renderVectorFitLine(`GROSS WEIGHT: ${escapeHtmlStr(grossVal)}`, `GROSS WEIGHT: ${grossVal}`.length)}
+                  ${showNetWt ? renderVectorFitLine(`NET WEIGHT: ${escapeHtmlStr(netVal)}`, `NET WEIGHT: ${netVal}`.length) : ''}
+                  ${renderVectorFitLine(`ORNAMENT: ${escapeHtmlStr(ornamentsType)}`, `ORNAMENT: ${ornamentsType}`.length)}
                 ` : ''}
               </div>
 
@@ -3288,10 +3285,10 @@
                 <div class="tag-bridge" style="width:${bridgeWMm}mm; max-width:${bridgeWMm}mm; height:100%; box-sizing:border-box; flex-shrink:0;"></div>
               ` : ''}
 
-              <!-- RIGHT HALF (${tailWMm}mm / 25-50mm): VERTICAL HUID (8pt NON-BOLD) BEFORE CAMERA-SCANNABLE QR -->
+              <!-- RIGHT HALF (${tailWMm}mm / 25-50mm): VERTICAL HUID (8pt NON-BOLD) BEFORE GOOGLE-LENS-READY QR -->
               ${incQr ? `
-                <div class="tag-tail" style="width:${tailWMm}mm; max-width:${tailWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:0.4mm; padding-left:0.2mm; padding-right:0.2mm; overflow:hidden; color:#000000;">
-                  <div style="writing-mode:vertical-rl; transform:rotate(180deg); font-family:'Arial Narrow',Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:400; letter-spacing:0.3px; line-height:1; text-align:center; white-space:nowrap; color:#000000;">
+                <div class="tag-tail" style="width:${tailWMm}mm; max-width:${tailWMm}mm; min-width:0; height:100%; box-sizing:border-box; display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:0.35mm; padding-left:0.2mm; padding-right:0.2mm; overflow:hidden; color:#000000;">
+                  <div style="writing-mode:vertical-rl; transform:rotate(180deg); font-family:Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:400; letter-spacing:0.25px; line-height:1; text-align:center; white-space:nowrap; color:#000000; text-rendering:geometricPrecision;">
                     ${escapeHtmlStr(huidStr)}
                   </div>
                   <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0; background:#ffffff;">
@@ -3305,7 +3302,7 @@
           </div>
         `;
       } else {
-        // COMPACT: Side-by-side within single head (uniform 8pt non-bold)
+        // COMPACT: Side-by-side within single head (uniform 8pt non-bold crisp vector Arial)
         const baseDataPt = (usableH <= 10.5)
           ? Math.min(8.0, (usableH / 10.5) * 6.5)
           : Math.min(8.0, (usableH / 12.0) * 8.0);
@@ -3313,7 +3310,7 @@
         const compactMetaPt = dataPt;
 
         const qrFooterPt = dataPt;
-        const maxQrDim = Math.max(6.5, hMm - 1.1);
+        const maxQrDim = Math.max(6.5, hMm - 0.8);
         const qrBoxDimMm = Math.max(6.5, Math.min(maxQrDim, (usableW * 0.49) - 2.6, 14.0)).toFixed(2);
         const qrPixelDim = Math.max(48, Math.round(parseFloat(qrBoxDimMm) * 8));
 
@@ -3321,12 +3318,12 @@
         const pageBreakCss = isLastTag ? '' : 'page-break-after:always; break-after:page;';
 
         return `
-          <div class="print-tag tag-compact-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:grid; grid-template-columns:50% 49%; justify-content:space-between; align-items:stretch; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:'Arial Narrow',Arial,Helvetica,sans-serif; font-weight:400; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm;">
+          <div class="print-tag tag-compact-mode" style="width:${wMm}mm; height:${hMm}mm; max-width:${wMm}mm; max-height:${hMm}mm; display:grid; grid-template-columns:50% 49%; justify-content:space-between; align-items:stretch; ${pageBreakCss} page-break-inside:avoid; break-inside:avoid; box-sizing:border-box; background:#ffffff; color:#000000; overflow:hidden; font-family:Arial,Helvetica,sans-serif; font-weight:400; text-rendering:geometricPrecision; padding-top:${padTopMm}mm; padding-bottom:${padBotMm}mm; padding-left:${padLeftMm}mm; padding-right:${padRightMm}mm;">
             
             <!-- Left Half: 50% (0-25mm) Non-Bold 8pt -->
             <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:column; justify-content:space-between; height:100%; box-sizing:border-box; overflow:hidden; padding-right:0.35mm; font-size:${dataPt}pt; font-weight:400; line-height:1.0; text-align:left;">
               ${incCust ? `<div class="tag-customer-header" style="font-size:${dataPt}pt; font-weight:400; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left;">${escapeHtmlStr(customerName)}</div>` : ''}
-              ${(incCust || incOrnament) ? `<div style="white-space:nowrap; overflow:hidden; font-family:'Arial Narrow',Arial,Helvetica,sans-serif; font-size:${compactMetaPt}pt; letter-spacing:-0.25px; font-weight:400;">${[escapeHtmlStr(dateStr), escapeHtmlStr(articleVal), ...(showTagNo ? [escapeHtmlStr(tagNoStr)] : []), escapeHtmlStr(purityVal)].filter(Boolean).join('&nbsp; ')}</div>` : ''}
+              ${(incCust || incOrnament) ? `<div style="white-space:nowrap; overflow:hidden; font-family:Arial,Helvetica,sans-serif; font-size:${compactMetaPt}pt; letter-spacing:-0.25px; font-weight:400;">${[escapeHtmlStr(dateStr), escapeHtmlStr(articleVal), ...(showTagNo ? [escapeHtmlStr(tagNoStr)] : []), escapeHtmlStr(purityVal)].filter(Boolean).join('&nbsp; ')}</div>` : ''}
               ${incOrnament ? `
                 <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:400;">GW: ${escapeHtmlStr(grossVal)}</div>
                 ${showNetWt ? `<div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:400;">NW: ${escapeHtmlStr(netVal)}</div>` : ''}
@@ -3337,7 +3334,7 @@
             <!-- Right Half: 49% (25-50mm): Vertical HUID Before Camera-Scannable QR Code -->
             ${incQr ? `
               <div style="width:100%; max-width:100%; min-width:0; display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:0.4mm; height:100%; box-sizing:border-box; overflow:hidden; padding-right:0.2mm;">
-                <div style="writing-mode:vertical-rl; transform:rotate(180deg); font-family:'Arial Narrow',Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:400; letter-spacing:0.3px; line-height:1; text-align:center; white-space:nowrap;">
+                <div style="writing-mode:vertical-rl; transform:rotate(180deg); font-family:Arial,Helvetica,sans-serif; font-size:${qrFooterPt}pt; font-weight:400; letter-spacing:0.25px; line-height:1; text-align:center; white-space:nowrap;">
                   ${escapeHtmlStr(huidStr)}
                 </div>
                 <div style="display:flex; align-items:center; justify-content:center; width:${qrBoxDimMm}mm; height:${qrBoxDimMm}mm; flex-shrink:0; background:#ffffff;">
@@ -3357,9 +3354,6 @@
         <head>
           <meta charset="utf-8">
           <title>TAGS - ${escapeHtmlStr((activeTagBatch ? activeTagBatch.jobDocket : '') || 'TAG-PRINT')}</title>
-          <link rel="preconnect" href="https://fonts.googleapis.com">
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-          <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
           <style>
             @page {
               size: ${wMm}mm ${hMm}mm;
@@ -3412,7 +3406,9 @@
               padding: 0;
               background: ${forNewTab ? '#f1f5f9' : '#ffffff'};
               color: #000000;
-              font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
+              font-family: Arial, Helvetica, sans-serif;
+              font-weight: 400;
+              text-rendering: geometricPrecision;
             }
             ${forNewTab ? `
               .preview-wrapper {
@@ -3566,79 +3562,77 @@
       const availH = Math.max(10, bottomY - yCur);
       const lineStep = Math.floor(availH / Math.max(1, dataLines.length));
       const ptInDots = (dpm * 25.4) / 72;
-      // Uniform non-bold 8 pt regular weight for BOTH With & Without Net Weight
+      // Uniform non-bold 8 pt crisp sans-serif text for BOTH With & Without Net Weight
       const dataPx = Math.max(Math.round(10 * dpiScale), Math.min(Math.round(lineStep * 0.94), Math.round(8 * ptInDots * (opts.fontScaleFactor || 1))));
-      ctx.font = `400 ${dataPx}px 'Arial Narrow', Arial, Helvetica, sans-serif`;
+      ctx.font = `400 ${dataPx}px Arial, Helvetica, sans-serif`;
       ctx.textAlign = 'left';
 
       let dy = yCur;
       dataLines.forEach((txt) => {
-        ctx.font = `400 ${dataPx}px 'Arial Narrow', Arial, Helvetica, sans-serif`;
+        ctx.font = `400 ${dataPx}px Arial, Helvetica, sans-serif`;
         ctx.fillText(txt, x0, dy, headDots - Math.max(2, Math.round(0.25 * dpm)));
         dy += lineStep;
       });
 
-      // Pixel-exact 1-bit QR modules with quiet zone & neighbor-aware Bar Width Reduction (never bold, camera-scannable!)
+      // Exact ISO-proportion QR modules (1:1:3:1:1 undamaged finder ratio) + >= 2-module white quiet zone + ECC M for Google Lens & phones
       if (opts.incQr && typeof qrcode === 'function') {
         try {
-          const quietPad = Math.max(3, Math.round(0.75 * dpm));
-          const qrAvailH = Math.max(24, hDots - (quietPad * 2));
           let qrText = String(opts.qrPayload || opts.huidStr || 'TAG');
-          let qr = qrcode(0, 'L');
+          let qr = qrcode(0, 'M');
           qr.addData(qrText);
           qr.make();
-          if (qr.getModuleCount() > 29 && qrText.length > 52) {
-            qrText = [opts.huidStr, opts.tagNoStr, opts.dateStr, opts.articleVal, opts.purityVal, opts.grossVal].filter(Boolean).join('|');
-            qr = qrcode(0, 'L');
+          if (qr.getModuleCount() > 29 && qrText.length > 42) {
+            qrText = [opts.huidStr, opts.tagNoStr, opts.dateStr, opts.purityVal, opts.grossVal].filter(Boolean).join('|');
+            qr = qrcode(0, 'M');
             qr.addData(qrText);
             qr.make();
           }
           const modCount = qr.getModuleCount();
           const huidVertPx = dataPx;
-          const huidReserveW = huidVertPx + Math.max(4, Math.round(0.7 * dpm));
-          const maxQrPx = Math.max(28, Math.min(tailDots - huidReserveW - quietPad, qrAvailH));
-          const cellPx = Math.max(1, Math.floor(maxQrPx / modCount));
-          const qrSizePx = cellPx * modCount;
-          const rightMarginPx = quietPad;
-          const qrX = Math.max(tailX + huidReserveW, (x0 + usableWDots) - qrSizePx - rightMarginPx);
-          const qrY = Math.max(quietPad, Math.floor((hDots - qrSizePx) / 2));
+          const huidReserveW = huidVertPx + Math.max(6, Math.round(1.0 * dpm));
+          const quietModules = 2; // ISO quiet zone = 2 full modules on each side
+          const totalGridMods = modCount + (quietModules * 2);
+          const availHForTotal = Math.max(24, hDots - Math.max(2, Math.round(0.3 * dpm)));
+          const availWForTotal = Math.max(28, tailDots - huidReserveW);
+          const cellPx = Math.max(1, Math.floor(Math.min(availWForTotal, availHForTotal) / totalGridMods));
+          const qrMatrixPx = cellPx * modCount;
+          const quietPx = cellPx * quietModules;
+          const qrX = Math.max(tailX + huidReserveW + quietPx, (x0 + usableWDots) - qrMatrixPx - quietPx);
+          const qrY = Math.max(quietPx, Math.floor((hDots - qrMatrixPx) / 2));
 
-          // Trim only black edges facing white neighbors so thermal ink bleed never shuts white scanner channels
-          const trimPx = cellPx >= 10 ? 2 : (cellPx >= 4 ? 1 : 0);
+          // Draw explicit pure white quiet-zone box behind QR matrix so dark text/borders never touch finder corners
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(qrX - quietPx, qrY - quietPx, qrMatrixPx + (quietPx * 2), qrMatrixPx + (quietPx * 2));
+          ctx.fillStyle = '#000000';
+
           for (let r = 0; r < modCount; r++) {
             for (let c = 0; c < modCount; c++) {
               if (qr.isDark(r, c)) {
-                const padL = (c > 0 && qr.isDark(r, c - 1)) ? 0 : trimPx;
-                const padR = (c < modCount - 1 && qr.isDark(r, c + 1)) ? 0 : trimPx;
-                const padT = (r > 0 && qr.isDark(r - 1, c)) ? 0 : trimPx;
-                const padB = (r < modCount - 1 && qr.isDark(r + 1, c)) ? 0 : trimPx;
-                const drawW = Math.max(1, cellPx - padL - padR);
-                const drawH = Math.max(1, cellPx - padT - padB);
-                ctx.fillRect(qrX + c * cellPx + padL, qrY + r * cellPx + padT, drawW, drawH);
+                ctx.fillRect(qrX + c * cellPx, qrY + r * cellPx, cellPx, cellPx);
               }
             }
           }
 
-          // Vertical regular (non-bold) HUID immediately before the QR code
+          // Vertical regular (non-bold) HUID cleanly outside the white quiet zone before QR code
           ctx.save();
-          ctx.font = `400 ${huidVertPx}px 'Arial Narrow', Arial, Helvetica, sans-serif`;
+          ctx.font = `400 ${huidVertPx}px Arial, Helvetica, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'bottom';
-          const huidCenterY = qrY + Math.floor(qrSizePx / 2);
-          const huidX = Math.max(tailX + huidVertPx, qrX - quietPad);
+          const huidCenterY = qrY + Math.floor(qrMatrixPx / 2);
+          const huidX = Math.max(tailX + huidVertPx, qrX - quietPx - Math.max(2, Math.round(0.4 * dpm)));
           ctx.translate(huidX, huidCenterY);
           ctx.rotate(-Math.PI / 2);
-          ctx.fillText(String(opts.huidStr || ''), 0, 0, qrSizePx);
+          ctx.fillText(String(opts.huidStr || ''), 0, 0, qrMatrixPx);
           ctx.restore();
         } catch (eQr) {}
       }
 
-      // Clean high-contrast binary threshold (< 95 keeps 400-weight thin glyphs sharp without faux-bolding)
+      // Clean threshold (< 150) preserves full glyph stems at 400 regular weight without breaking thin strokes
       const imgData = ctx.getImageData(0, 0, wDots, hDots);
       const px = imgData.data;
       for (let i = 0; i < px.length; i += 4) {
         const lum = (px[i] * 0.299) + (px[i + 1] * 0.587) + (px[i + 2] * 0.114);
-        const bin = lum < 95 ? 0 : 255;
+        const bin = lum < 150 ? 0 : 255;
         px[i] = bin;
         px[i + 1] = bin;
         px[i + 2] = bin;
@@ -4126,18 +4120,18 @@
         }
       });
 
-      // Camera-scannable Hardware QRCODE on Right Half (Version 3: 29x29 wider white channels + 0.7mm quiet zone + large modules!)
+      // Camera & Google-Lens-scannable Hardware QRCODE on Right Half (ECC M, Version 3 open modules + >=1.1mm 4-sided quiet zone)
       if (incQr) {
         const totalTagHDots = Math.round(hMm * dpm);
-        const qrQuietDots = Math.max(3, Math.round(0.65 * dpm));
+        const qrQuietDots = Math.max(4, Math.round(1.1 * dpm));
         const capFontPt = tsplFontPt;
         const huidGlyphThick = Math.round(capFontPt * dotsPerPt * 0.85);
-        const huidGapDots = Math.max(4, Math.round(0.65 * dpm));
+        const huidGapDots = Math.max(6, Math.round(1.0 * dpm));
         const huidReserveDots = huidGlyphThick + huidGapDots;
         const qrAvailH = Math.max(40, totalTagHDots - (qrQuietDots * 2));
         const qrBoxDots = Math.min(Math.max(40, tailDots - huidReserveDots - qrQuietDots), qrAvailH);
 
-        // Concise <= 48 char QR string -> Version 3 (29x29 modules): larger individual blocks & crisp white scanner channels
+        // Concise <= 42 char QR string -> Version 3 (29x29 modules) at ECC M: 15% recovery + large scannable squares
         let qrStr = [
           huidStr,
           ...(showTagNo ? [tagNoStr] : []),
@@ -4150,27 +4144,27 @@
         let modCount = 29;
         if (typeof qrcode === 'function') {
           try {
-            let qrProbe = qrcode(0, 'L');
+            let qrProbe = qrcode(0, 'M');
             qrProbe.addData(qrStr);
             qrProbe.make();
             modCount = Math.max(21, qrProbe.getModuleCount());
             if (modCount > 29) {
               qrStr = [huidStr, ...(showTagNo ? [tagNoStr] : []), dateStr, purityVal, grossVal].filter(Boolean).join('|');
-              qrProbe = qrcode(0, 'L');
+              qrProbe = qrcode(0, 'M');
               qrProbe.addData(qrStr);
               qrProbe.make();
               modCount = Math.max(21, qrProbe.getModuleCount());
             }
           } catch (eM) {}
         }
-        const cellSize = Math.max(2, Math.min(dpm === 12 ? 6 : 4, Math.floor(qrBoxDots / modCount)));
+        const cellSize = Math.max(2, Math.min(dpm === 12 ? 5 : 4, Math.floor(qrBoxDots / modCount)));
         const approxQrSize = cellSize * modCount;
         const qrX = Math.max(tailX + huidReserveDots, (x0 + usableWDots) - approxQrSize - qrQuietDots);
         const qrY = Math.max(qrQuietDots, Math.floor((totalTagHDots - approxQrSize) / 2));
 
-        lines.push(`QRCODE ${qrX},${qrY},L,${cellSize},A,0,"${escapeTsplString(qrStr)}"`);
+        lines.push(`QRCODE ${qrX},${qrY},M,${cellSize},A,0,"${escapeTsplString(qrStr)}"`);
 
-        // Vertical HUID immediately BEFORE (to the left of) the QR code (270 deg = bottom-to-top)
+        // Vertical HUID immediately BEFORE (to the left of) the QR quiet zone (270 deg = bottom-to-top)
         const estHuidLen = Math.round(huidStr.length * capFontPt * charDotsPerPt);
         const capX = Math.max(tailX, qrX - huidGlyphThick - huidGapDots);
         const capY = Math.min(totalTagHDots - 1, Math.round(qrY + (approxQrSize + estHuidLen) / 2));

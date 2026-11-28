@@ -189,6 +189,7 @@ assert(!defaultDoc.includes('ARTICLE:'), 'ARTICLE: text label must be removed fr
 assert(!defaultDoc.includes('HUID NUMBER:'), 'HUID NUMBER and its number must be removed from left details');
 assert(defaultDoc.includes('font-size:8.00pt'), 'WITH Net Weight tag must use 8.00pt font size');
 assert(defaultDoc.includes('font-weight:400') && !defaultDoc.includes('font-weight:800') && !defaultDoc.includes('font-weight:900'), 'Tag text must NOT be bold (font-weight:400)');
+assert(!defaultDoc.includes('<img src="data:image/png'), 'Website print document must use pure native vector HTML+SVG rather than downscaled PNG');
 assert(defaultDoc.includes('justify-content:flex-end'), 'QR code container must align to right side with minimal margin');
 assert(defaultDoc.includes('writing-mode:vertical-rl'), 'HUID must render vertically before the QR code');
 assert(!defaultDoc.includes('SCAN QR'), 'SCAN QR should be removed from right half');
@@ -322,7 +323,7 @@ assert(tsplWithTag.includes('DENSITY 5\r\n'), 'TSPL must use low DENSITY 5 to av
 assert(tsplWithTag.includes('CLS\r\n'), 'TSPL missing CLS command');
 assert(tsplWithTag.includes('TEXT '), 'TSPL missing TEXT command');
 assert(tsplWithTag.includes('QRCODE '), 'TSPL missing hardware QRCODE command');
-assert(/QRCODE \d+,\d+,L,[345],A,0,/.test(tsplWithTag), 'TSPL 203 DPI QR code must use large cellSize >= 3 (matching full-height illustration)');
+assert(/QRCODE \d+,\d+,[LM],[345],A,0,/.test(tsplWithTag), 'TSPL QR code must use large cellSize >= 3 and high reliability ECC');
 assert(tsplWithTag.includes('"0",270,'), 'TSPL HUID must be rotated 270 deg vertically before QR code');
 assert(tsplWithTag.includes('Gold  Q'), 'TSPL WITH tag mode must include Date  Metal  Q... on same line');
 assert(tsplWithTag.includes('PRINT 1,1\r\n'), 'TSPL missing PRINT 1,1 command');
