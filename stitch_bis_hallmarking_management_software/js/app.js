@@ -3919,19 +3919,19 @@
         density: document.getElementById('tag-tspl-density')?.value || '12',
         speed: document.getElementById('tag-tspl-speed')?.value || '3',
         gap: document.getElementById('tag-tspl-gap')?.value ?? '2',
-        direction: document.getElementById('tag-tspl-direction')?.value ?? '0',
+        direction: document.getElementById('tag-tspl-direction')?.value ?? '1',
         shiftX: document.getElementById('tag-tspl-shift-x')?.value ?? '0',
         shiftY: document.getElementById('tag-tspl-shift-y')?.value ?? '0',
         baud: document.getElementById('tag-tspl-baud')?.value || '9600'
       };
-      localStorage.setItem('tsc_tspl_settings_v1', JSON.stringify(cfg));
+      localStorage.setItem('tsc_tspl_settings_v2', JSON.stringify(cfg));
     } catch (e) {}
   }
 
   function loadTsplSettings() {
     try {
       if (typeof localStorage === 'undefined') return;
-      const raw = localStorage.getItem('tsc_tspl_settings_v1');
+      const raw = localStorage.getItem('tsc_tspl_settings_v2');
       if (!raw) return;
       const cfg = JSON.parse(raw);
       if (!cfg) return;
@@ -3961,7 +3961,7 @@
     const density = Math.min(15, Math.max(1, parseInt(document.getElementById('tag-tspl-density')?.value || '12', 10) || 12));
     const speed = Math.min(6, Math.max(1, parseInt(document.getElementById('tag-tspl-speed')?.value || '3', 10) || 3));
     const gapSensorMm = Math.max(0, parseFloat(document.getElementById('tag-tspl-gap')?.value ?? '2') || 0);
-    const direction = document.getElementById('tag-tspl-direction')?.value === '1' ? 1 : 0;
+    const direction = document.getElementById('tag-tspl-direction')?.value === '0' ? 0 : 1;
     const shiftXMm = parseFloat(document.getElementById('tag-tspl-shift-x')?.value ?? '0') || 0;
     const shiftYMm = parseFloat(document.getElementById('tag-tspl-shift-y')?.value ?? '0') || 0;
     const shiftXDots = Math.round(shiftXMm * dpm);

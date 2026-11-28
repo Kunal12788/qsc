@@ -89,7 +89,7 @@ const mockElements = {
   'tag-tspl-density': { value: '12' },
   'tag-tspl-speed': { value: '3' },
   'tag-tspl-gap': { value: '2' },
-  'tag-tspl-direction': { value: '0' },
+  'tag-tspl-direction': { value: '1' },
   'tag-tspl-shift-x': { value: '0' },
   'tag-tspl-shift-y': { value: '0' },
   'tag-tspl-baud': { value: '9600' },
@@ -304,7 +304,7 @@ mockElements['tag-cal-gap'].value = '0';
 const tsplWithTag = window.buildTsplTagCommands('with');
 assert(tsplWithTag.includes('SIZE 50.0 mm, 15.0 mm\r\n'), 'TSPL missing SIZE command with CRLF');
 assert(tsplWithTag.includes('GAP 2.0 mm, 0 mm\r\n'), 'TSPL missing GAP command');
-assert(tsplWithTag.includes('DIRECTION 0,0\r\n'), 'TSPL default must use DIRECTION 0,0');
+assert(tsplWithTag.includes('DIRECTION 1,0\r\n'), 'TSPL default must restore DIRECTION 1,0');
 assert(tsplWithTag.includes('OFFSET 0 mm\r\n'), 'TSPL must reset OFFSET 0 mm');
 assert(tsplWithTag.includes('SHIFT 0,0\r\n'), 'TSPL must send SHIFT command');
 assert(tsplWithTag.includes('DENSITY 12\r\n'), 'TSPL missing DENSITY 12 command');
