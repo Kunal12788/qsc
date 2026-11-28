@@ -3535,6 +3535,7 @@
       if (modalTsplSelect) modalTsplSelect.value = isWithout ? 'without' : 'with';
       const modalExpSelect = document.getElementById('modal-export-1200-tag-no-mode');
       if (modalExpSelect) modalExpSelect.value = isWithout ? 'without' : 'with';
+      if (typeof syncTsplModalControls === 'function') syncTsplModalControls();
       modal.classList.remove('hidden');
       if (typeof connectQzTray === 'function') {
         connectQzTray(true);
@@ -3920,18 +3921,18 @@
         speed: document.getElementById('tag-tspl-speed')?.value || '3',
         gap: document.getElementById('tag-tspl-gap')?.value ?? '2',
         direction: document.getElementById('tag-tspl-direction')?.value ?? '1',
-        shiftX: document.getElementById('tag-tspl-shift-x')?.value ?? '0',
-        shiftY: document.getElementById('tag-tspl-shift-y')?.value ?? '0',
+        shiftX: document.getElementById('tag-tspl-shift-x')?.value ?? '-19',
+        shiftY: document.getElementById('tag-tspl-shift-y')?.value ?? '3.5',
         baud: document.getElementById('tag-tspl-baud')?.value || '9600'
       };
-      localStorage.setItem('tsc_tspl_settings_v2', JSON.stringify(cfg));
+      localStorage.setItem('tsc_tspl_settings_v3', JSON.stringify(cfg));
     } catch (e) {}
   }
 
   function loadTsplSettings() {
     try {
       if (typeof localStorage === 'undefined') return;
-      const raw = localStorage.getItem('tsc_tspl_settings_v2');
+      const raw = localStorage.getItem('tsc_tspl_settings_v3');
       if (!raw) return;
       const cfg = JSON.parse(raw);
       if (!cfg) return;
@@ -3951,7 +3952,40 @@
           el.value = String(map[id]);
         }
       });
+      syncTsplModalControls();
     } catch (e) {}
+  }
+
+  function syncTsplModalControls() {
+    const xMain = document.getElementById('tag-tspl-shift-x');
+    const yMain = document.getElementById('tag-tspl-shift-y');
+    const xMod = document.getElementById('modal-tspl-shift-x');
+    const yMod = document.getElementById('modal-tspl-shift-y');
+    if (xMain && xMod) xMod.value = xMain.value;
+    if (yMain && yMod) yMod.value = yMain.value;
+  }
+
+  function onModalTsplShiftInput() {
+    const xMain = document.getElementById('tag-tspl-shift-x');
+    const yMain = document.getElementById('tag-tspl-shift-y');
+    const xMod = document.getElementById('modal-tspl-shift-x');
+    const yMod = document.getElementById('modal-tspl-shift-y');
+    if (xMain && xMod) xMain.value = xMod.value;
+    if (yMain && yMod) yMain.value = yMod.value;
+    saveTsplSettings();
+  }
+
+  function applyTsplShiftPreset(xMm, yMm) {
+    const xMain = document.getElementById('tag-tspl-shift-x');
+    const yMain = document.getElementById('tag-tspl-shift-y');
+    const xMod = document.getElementById('modal-tspl-shift-x');
+    const yMod = document.getElementById('modal-tspl-shift-y');
+    if (xMain) xMain.value = String(xMm);
+    if (yMain) yMain.value = String(yMm);
+    if (xMod) xMod.value = String(xMm);
+    if (yMod) yMod.value = String(yMm);
+    saveTsplSettings();
+    showToast(`TSPL SHIFT SET TO X=${xMm} MM, Y=${yMm} MM`, 'info');
   }
 
   function getTsplPrinterConfig() {
@@ -3962,8 +3996,10 @@
     const speed = Math.min(6, Math.max(1, parseInt(document.getElementById('tag-tspl-speed')?.value || '3', 10) || 3));
     const gapSensorMm = Math.max(0, parseFloat(document.getElementById('tag-tspl-gap')?.value ?? '2') || 0);
     const direction = document.getElementById('tag-tspl-direction')?.value === '0' ? 0 : 1;
-    const shiftXMm = parseFloat(document.getElementById('tag-tspl-shift-x')?.value ?? '0') || 0;
-    const shiftYMm = parseFloat(document.getElementById('tag-tspl-shift-y')?.value ?? '0') || 0;
+    const shiftXRaw = document.getElementById('tag-tspl-shift-x')?.value;
+    const shiftYRaw = document.getElementById('tag-tspl-shift-y')?.value;
+    const shiftXMm = (shiftXRaw !== undefined && shiftXRaw !== '') ? (parseFloat(shiftXRaw) || 0) : -19;
+    const shiftYMm = (shiftYRaw !== undefined && shiftYRaw !== '') ? (parseFloat(shiftYRaw) || 0) : 3.5;
     const shiftXDots = Math.round(shiftXMm * dpm);
     const shiftYDots = Math.round(shiftYMm * dpm);
     return { dpi, dpm, density, speed, gapSensorMm, direction, shiftXMm, shiftYMm, shiftXDots, shiftYDots };
@@ -15984,6 +16020,9 @@
   window.getTsplPrinterConfig = getTsplPrinterConfig;
   window.saveTsplSettings = saveTsplSettings;
   window.loadTsplSettings = loadTsplSettings;
+  window.syncTsplModalControls = syncTsplModalControls;
+  window.onModalTsplShiftInput = onModalTsplShiftInput;
+  window.applyTsplShiftPreset = applyTsplShiftPreset;
   window.printTagsTsplDirect = printTagsTsplDirect;
   window.connectQzTray = connectQzTray;
   window.selectQzPrinter = selectQzPrinter;

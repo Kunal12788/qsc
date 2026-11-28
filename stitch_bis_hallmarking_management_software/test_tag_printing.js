@@ -90,8 +90,10 @@ const mockElements = {
   'tag-tspl-speed': { value: '3' },
   'tag-tspl-gap': { value: '2' },
   'tag-tspl-direction': { value: '1' },
-  'tag-tspl-shift-x': { value: '0' },
-  'tag-tspl-shift-y': { value: '0' },
+  'tag-tspl-shift-x': { value: '-19' },
+  'tag-tspl-shift-y': { value: '3.5' },
+  'modal-tspl-shift-x': { value: '-19' },
+  'modal-tspl-shift-y': { value: '3.5' },
   'tag-tspl-baud': { value: '9600' },
   'tag-qz-status-badge': { textContent: '', className: '' },
   'modal-qz-status-badge': { textContent: '', className: '' },
@@ -306,7 +308,7 @@ assert(tsplWithTag.includes('SIZE 50.0 mm, 15.0 mm\r\n'), 'TSPL missing SIZE com
 assert(tsplWithTag.includes('GAP 2.0 mm, 0 mm\r\n'), 'TSPL missing GAP command');
 assert(tsplWithTag.includes('DIRECTION 1,0\r\n'), 'TSPL default must restore DIRECTION 1,0');
 assert(tsplWithTag.includes('OFFSET 0 mm\r\n'), 'TSPL must reset OFFSET 0 mm');
-assert(tsplWithTag.includes('SHIFT 0,0\r\n'), 'TSPL must send SHIFT command');
+assert(tsplWithTag.includes('SHIFT -152,28\r\n'), 'TSPL default calibrated shift (-19mm, +3.5mm) must emit SHIFT -152,28');
 assert(tsplWithTag.includes('DENSITY 12\r\n'), 'TSPL missing DENSITY 12 command');
 assert(tsplWithTag.includes('CLS\r\n'), 'TSPL missing CLS command');
 assert(tsplWithTag.includes('TEXT '), 'TSPL missing TEXT command');
