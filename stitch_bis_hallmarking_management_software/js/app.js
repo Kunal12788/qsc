@@ -1788,6 +1788,9 @@
         onTagPresetChanged('50-15');
       }
     }
+    if (typeof loadTsplSettings === 'function') {
+      loadTsplSettings();
+    }
     if (typeof connectQzTray === 'function') {
       connectQzTray(true);
     }
@@ -3908,6 +3911,49 @@
       .trim();
   }
 
+  function saveTsplSettings() {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      const cfg = {
+        dpi: document.getElementById('tag-tspl-dpi')?.value || '203',
+        density: document.getElementById('tag-tspl-density')?.value || '12',
+        speed: document.getElementById('tag-tspl-speed')?.value || '3',
+        gap: document.getElementById('tag-tspl-gap')?.value ?? '2',
+        direction: document.getElementById('tag-tspl-direction')?.value ?? '0',
+        shiftX: document.getElementById('tag-tspl-shift-x')?.value ?? '0',
+        shiftY: document.getElementById('tag-tspl-shift-y')?.value ?? '0',
+        baud: document.getElementById('tag-tspl-baud')?.value || '9600'
+      };
+      localStorage.setItem('tsc_tspl_settings_v1', JSON.stringify(cfg));
+    } catch (e) {}
+  }
+
+  function loadTsplSettings() {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      const raw = localStorage.getItem('tsc_tspl_settings_v1');
+      if (!raw) return;
+      const cfg = JSON.parse(raw);
+      if (!cfg) return;
+      const map = {
+        'tag-tspl-dpi': cfg.dpi,
+        'tag-tspl-density': cfg.density,
+        'tag-tspl-speed': cfg.speed,
+        'tag-tspl-gap': cfg.gap,
+        'tag-tspl-direction': cfg.direction,
+        'tag-tspl-shift-x': cfg.shiftX,
+        'tag-tspl-shift-y': cfg.shiftY,
+        'tag-tspl-baud': cfg.baud
+      };
+      Object.keys(map).forEach(id => {
+        const el = document.getElementById(id);
+        if (el && map[id] !== undefined && map[id] !== null && map[id] !== '') {
+          el.value = String(map[id]);
+        }
+      });
+    } catch (e) {}
+  }
+
   function getTsplPrinterConfig() {
     const dpiVal = parseInt(document.getElementById('tag-tspl-dpi')?.value || '203', 10);
     const dpi = dpiVal === 300 ? 300 : 203;
@@ -3915,7 +3961,12 @@
     const density = Math.min(15, Math.max(1, parseInt(document.getElementById('tag-tspl-density')?.value || '12', 10) || 12));
     const speed = Math.min(6, Math.max(1, parseInt(document.getElementById('tag-tspl-speed')?.value || '3', 10) || 3));
     const gapSensorMm = Math.max(0, parseFloat(document.getElementById('tag-tspl-gap')?.value ?? '2') || 0);
-    return { dpi, dpm, density, speed, gapSensorMm };
+    const direction = document.getElementById('tag-tspl-direction')?.value === '1' ? 1 : 0;
+    const shiftXMm = parseFloat(document.getElementById('tag-tspl-shift-x')?.value ?? '0') || 0;
+    const shiftYMm = parseFloat(document.getElementById('tag-tspl-shift-y')?.value ?? '0') || 0;
+    const shiftXDots = Math.round(shiftXMm * dpm);
+    const shiftYDots = Math.round(shiftYMm * dpm);
+    return { dpi, dpm, density, speed, gapSensorMm, direction, shiftXMm, shiftYMm, shiftXDots, shiftYDots };
   }
 
   function getActiveRowsForTagOutput() {
@@ -3957,9 +4008,9 @@
       ? (tagNoModeOverride !== 'without')
       : !(document.getElementById('tag-no-without')?.checked);
 
-    const { dpm, density, speed, gapSensorMm } = getTsplPrinterConfig();
-    const x0 = Math.round(leftOffsetMm * dpm);
-    const y0 = Math.round(topOffsetMm * dpm);
+    const { dpm, density, speed, gapSensorMm, direction, shiftXDots, shiftYDots } = getTsplPrinterConfig();
+    const x0 = Math.max(0, Math.round(leftOffsetMm * dpm));
+    const y0 = Math.max(0, Math.round(topOffsetMm * dpm));
     const usableW = Math.max(12, wMm - (leftOffsetMm * 2));
     const usableH = Math.max(5, hMm - (topOffsetMm + botOffsetMm));
     const usableWDots = Math.round(usableW * dpm);
@@ -3989,8 +4040,10 @@
     const lines = [
       `SIZE ${wMm.toFixed(1)} mm, ${hMm.toFixed(1)} mm`,
       `GAP ${gapSensorMm.toFixed(1)} mm, 0 mm`,
-      'DIRECTION 1,0',
+      `DIRECTION ${direction},0`,
       'REFERENCE 0,0',
+      'OFFSET 0 mm',
+      `SHIFT ${shiftXDots},${shiftYDots}`,
       `SPEED ${speed}`,
       `DENSITY ${density}`,
       'SET TEAR ON'
@@ -4078,11 +4131,20 @@
         ];
         const qrStr = qrPayloadParts.join('; ');
         const qrTopY = layout === 'split' && incCust ? yCur : y0;
-        const qrAvailH = Math.max(36, bottomYLimit - qrTopY - (dpm === 12 ? 22 : 15));
+        const captionH = dpm === 12 ? 20 : 13;
+        const qrAvailH = Math.max(32, bottomYLimit - qrTopY - captionH);
         const qrBoxDots = Math.min(tailDots, qrAvailH);
-        // Estimate module count (~33-37 modules for typical payload) -> cell width 2 or 3 dots
-        const cellSize = Math.max(2, Math.min(dpm === 12 ? 4 : 3, Math.floor(qrBoxDots / 35)));
-        const approxQrSize = cellSize * 33;
+        let modCount = 35;
+        if (typeof qrcode === 'function') {
+          try {
+            const qrProbe = qrcode(0, 'L');
+            qrProbe.addData(qrStr);
+            qrProbe.make();
+            modCount = Math.max(21, qrProbe.getModuleCount());
+          } catch (eM) {}
+        }
+        const cellSize = Math.max(1, Math.min(dpm === 12 ? 4 : 3, Math.floor(qrBoxDots / modCount)));
+        const approxQrSize = cellSize * modCount;
         const qrX = Math.max(tailX, tailX + Math.floor((tailDots - approxQrSize) / 2));
         const qrY = Math.max(qrTopY, qrTopY + Math.floor((qrAvailH - approxQrSize) / 2));
 
@@ -4091,7 +4153,7 @@
         // HUID caption right underneath QR code
         const capW = huidStr.length * dataCharW;
         const capX = Math.max(tailX, tailX + Math.floor((tailDots - capW) / 2));
-        const capY = Math.min(bottomYLimit - (dpm === 12 ? 18 : 12), qrY + approxQrSize + 2);
+        const capY = Math.min(bottomYLimit - captionH + 1, qrY + approxQrSize + 2);
         lines.push(`TEXT ${capX},${capY},"${dataFont}",0,1,1,"${escapeTsplString(huidStr)}"`);
       }
 
@@ -15920,6 +15982,8 @@
   window.confirmTagPrintWithMode = confirmTagPrintWithMode;
   window.buildTsplTagCommands = buildTsplTagCommands;
   window.getTsplPrinterConfig = getTsplPrinterConfig;
+  window.saveTsplSettings = saveTsplSettings;
+  window.loadTsplSettings = loadTsplSettings;
   window.printTagsTsplDirect = printTagsTsplDirect;
   window.connectQzTray = connectQzTray;
   window.selectQzPrinter = selectQzPrinter;

@@ -2955,29 +2955,44 @@
                       </span>
                       <span class="text-[9.5px] font-mono font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">TSPL2 READY</span>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                       <div>
                         <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-dpi">TSC PRINTER DPI</label>
-                        <select id="tag-tspl-dpi" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container cursor-pointer">
+                        <select id="tag-tspl-dpi" onchange="saveTsplSettings()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container cursor-pointer">
                           <option value="203" selected>203 DPI (8 dots/mm)</option>
                           <option value="300">300 DPI (12 dots/mm)</option>
                         </select>
                       </div>
                       <div>
                         <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-density">DARKNESS (DENSITY 1-15)</label>
-                        <input type="number" id="tag-tspl-density" value="12" min="1" max="15" step="1" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                        <input type="number" id="tag-tspl-density" value="12" min="1" max="15" step="1" onchange="saveTsplSettings()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
                       </div>
                       <div>
                         <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-speed">PRINT SPEED (1-6)</label>
-                        <input type="number" id="tag-tspl-speed" value="3" min="1" max="6" step="1" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                        <input type="number" id="tag-tspl-speed" value="3" min="1" max="6" step="1" onchange="saveTsplSettings()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
                       </div>
                       <div>
                         <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-gap">LABEL GAP (MM)</label>
-                        <input type="number" id="tag-tspl-gap" value="2" min="0" max="10" step="0.5" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                        <input type="number" id="tag-tspl-gap" value="2" min="0" max="10" step="0.5" onchange="saveTsplSettings()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-direction">PRINT DIRECTION</label>
+                        <select id="tag-tspl-direction" onchange="saveTsplSettings()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container cursor-pointer">
+                          <option value="0" selected>0 - Normal (Top-Left)</option>
+                          <option value="1">1 - Flipped 180°</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-shift-x" title="Negative (-) pulls tag Left; Positive (+) pushes Right">TSPL X SHIFT (MM) <span class="text-amber-700 font-normal">(- Left / + Right)</span></label>
+                        <input type="number" id="tag-tspl-shift-x" value="0" min="-40" max="40" step="0.5" oninput="saveTsplSettings()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-shift-y" title="Negative (-) moves Up; Positive (+) moves Down">TSPL Y SHIFT (MM) <span class="text-amber-700 font-normal">(- Up / + Down)</span></label>
+                        <input type="number" id="tag-tspl-shift-y" value="0" min="-25" max="25" step="0.5" oninput="saveTsplSettings()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container"/>
                       </div>
                       <div>
                         <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1" for="tag-tspl-baud">SERIAL BAUD RATE</label>
-                        <select id="tag-tspl-baud" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container cursor-pointer">
+                        <select id="tag-tspl-baud" onchange="saveTsplSettings()" class="w-full h-8 px-2 bg-white rounded-md text-xs font-mono font-bold text-slate-900 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-container cursor-pointer">
                           <option value="9600" selected>9600 (TSC Default)</option>
                           <option value="19200">19200</option>
                           <option value="38400">38400</option>
@@ -2985,6 +3000,7 @@
                         </select>
                       </div>
                     </div>
+                    <p class="text-[10px] text-amber-900/90 mt-1.5 font-medium">Tip: If printed text shifts right on QZ Tray, use negative <strong>TSPL X SHIFT</strong> (e.g. <code>-20</code> mm pulls 20mm left) and adjust <strong>TSPL Y SHIFT</strong> (e.g. <code>+3</code> mm pulls down).</p>
 
                     <!-- QZ Tray Printer Selector & Status Bar -->
                     <div id="tag-qz-tray-bar" class="mt-2.5 pt-2.5 border-t border-amber-200/70 flex flex-wrap items-center justify-between gap-2">
