@@ -197,6 +197,7 @@ mockElements['tag-weight-gross-only'].checked = true;
 const grossOnlyDoc = window.buildTagPrintDocument(false);
 assert(grossOnlyDoc.includes('GROSS WEIGHT:'), 'Missing GROSS WEIGHT in Gross Only mode');
 assert(!grossOnlyDoc.includes('NET WEIGHT:'), 'NET WEIGHT must not appear in Gross Weight Only mode');
+assert(grossOnlyDoc.includes('font-size:7.00pt'), 'WITHOUT Net Weight tag must set all text font size to 7.00pt');
 mockElements['tag-weight-both'].checked = true;
 mockElements['tag-weight-gross-only'].checked = false;
 // Test Without Tag No mode
@@ -366,6 +367,12 @@ global.qz = {
   await window.printTagsViaQzTray('without');
   assert(!lastQzPrintData[0].data.includes('Q1  22K 916'), 'QZ Print WITHOUT Tag No must omit Q1');
   assert(lastQzPrintData[0].data.includes('Gold  22K 916'), 'QZ Print WITHOUT Tag No must show Date  Gold  22K 916');
+  mockElements['tag-weight-both'].checked = false;
+  mockElements['tag-weight-gross-only'].checked = true;
+  await window.printTagsViaQzTray('without');
+  assert(lastQzPrintData[0].data.includes(',7,"7SN') || lastQzPrintData[0].data.includes(',7,"45GNA3"') && lastQzPrintData[0].data.includes(',7,"ORN:RING"'), 'QZ Print WITHOUT Net Weight must use uniform 7pt Font 0 size');
+  mockElements['tag-weight-both'].checked = true;
+  mockElements['tag-weight-gross-only'].checked = false;
   console.log('  ✓ QZ Tray integration (TSC printer discovery & TSPL2 raw printing WITH/WITHOUT Tag No) verified.');
 
   // Case 8: 1200 DPI Ultra-HD Image & Direct-Printable Exact-mm PDF Export
