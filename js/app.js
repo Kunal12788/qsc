@@ -3011,9 +3011,9 @@
       miniPreview.style.alignItems = 'stretch';
       miniPreview.style.justifyContent = 'flex-start';
 
-      // Customer Name on Left Half (same font size as details) + Full-Height Larger QR + HUID on Right Half
-      const previewDataPx = Math.max(5.5, Math.min(7.5, targetH * 0.085 * fontZoom)).toFixed(1);
-      const previewQrDim = Math.max(38, Math.min(targetH - 16, 76));
+      // Customer Name on Left Half (larger font matching details) + Full-Height Larger QR + HUID on Right Half
+      const previewDataPx = Math.max(6.8, Math.min(9.5, (showNetWtPreview ? targetH * 0.105 : targetH * 0.118) * fontZoom)).toFixed(1);
+      const previewQrDim = Math.max(40, Math.min(targetH - 14, 78));
 
       const hasBridge = gapMm > 0 && width > gapMm + 15;
       const gapPct = hasBridge ? Math.max(1, Math.min(18, Math.round((gapMm / width) * 100))) : 0;
@@ -3066,8 +3066,8 @@
       miniPreview.style.alignItems = 'stretch';
       miniPreview.style.padding = '2px 4px';
 
-      const previewDataPx = Math.max(6.4, Math.min(8.0, targetH * 0.12 * fontZoom)).toFixed(1);
-      const previewQrDim = Math.max(32, Math.min(targetH - 14, 62));
+      const previewDataPx = Math.max(7.2, Math.min(9.4, targetH * 0.138 * fontZoom)).toFixed(1);
+      const previewQrDim = Math.max(34, Math.min(targetH - 14, 64));
 
       miniPreview.innerHTML = `
         <!-- Left Column (52%): Customer Name left-aligned at detail font size -->
@@ -3241,9 +3241,11 @@
         const headWMm = halfWMm;
         const tailWMm = Math.round((usableW - bridgeWMm - headWMm) * 100) / 100;
 
-        // Crisp monochrome thermal sans-serif typography
+        // Crisp monochrome thermal sans-serif typography (larger legible print text)
         // Customer Name left-aligned at exact detail font size; Right Half gets full height for larger QR Code
-        const baseDataPt = (usableH <= 11.0) ? 3.2 : Math.min(4.6, (usableH / 14.0) * 4.0);
+        const baseDataPt = (usableH <= 11.0)
+          ? (showNetWt ? 4.0 : 4.5)
+          : Math.min(5.8, (usableH / 14.0) * (showNetWt ? 4.9 : 5.5));
         const dataPt = (baseDataPt * fontScaleFactor).toFixed(2);
 
         const qrFooterPt = (usableH <= 10.0) ? '4.0' : (Math.max(4.2, Math.min(5.6, usableH * 0.28)) * fontScaleFactor).toFixed(1);
@@ -3300,8 +3302,8 @@
           </div>
         `;
       } else {
-        // COMPACT: Side-by-side inside single head (Customer Name left-aligned at detail font size + Larger QR)
-        const baseDataPt = (usableH <= 10.5) ? 4.8 : Math.min(5.8, (usableH / 12.0) * 5.4);
+        // COMPACT: Side-by-side inside single head (Customer Name left-aligned at larger detail font size + Larger QR)
+        const baseDataPt = (usableH <= 10.5) ? 5.5 : Math.min(6.8, (usableH / 12.0) * 6.3);
         const dataPt = (baseDataPt * fontScaleFactor).toFixed(2);
 
         const qrFooterPt = (Math.max(4.5, Math.min(5.8, usableH * 0.36)) * fontScaleFactor).toFixed(1);
@@ -3560,14 +3562,14 @@
 
       const availH = Math.max(10, bottomY - yCur);
       const lineStep = Math.floor(availH / Math.max(1, dataLines.length));
-      const dataPx = Math.max(Math.round(8 * dpiScale), Math.min(Math.round(13 * dpiScale), Math.round((lineStep - Math.max(1, dpiScale * 0.4)) * (opts.fontScaleFactor || 1))));
-      ctx.font = `700 ${dataPx}px Arial, Helvetica, sans-serif`;
+      const dataPx = Math.max(Math.round(9.5 * dpiScale), Math.min(Math.round(16.5 * dpiScale), Math.round((lineStep - Math.max(1, dpiScale * 0.15)) * (opts.fontScaleFactor || 1))));
+      ctx.font = `800 ${dataPx}px Arial, Helvetica, sans-serif`;
       ctx.textAlign = 'left';
 
       let dy = yCur;
       dataLines.forEach((txt, i) => {
         const isBoldRow = (opts.incCust && i === 0) || (i === dataLines.length - 1 && opts.incHuid);
-        ctx.font = `${isBoldRow ? 900 : 700} ${dataPx}px Arial, Helvetica, sans-serif`;
+        ctx.font = `${isBoldRow ? 900 : 800} ${dataPx}px Arial, Helvetica, sans-serif`;
         ctx.fillText(txt, x0, dy, headDots - Math.max(2, Math.round(0.25 * dpm)));
         dy += lineStep;
       });
@@ -4032,20 +4034,19 @@
 
       const hasBridge = bridgeGapMm > 0 && usableW > bridgeGapMm + 15;
       const bridgeDots = hasBridge ? Math.round(bridgeGapMm * dpm) : 0;
+      // Allocate 55% to Left Details column (accommodates larger font) & 45% to Full-Height QR Tail
       const headDots = layout === 'split'
-        ? Math.round((usableWDots - bridgeDots) * 0.5)
-        : Math.round(usableWDots * 0.54);
-      const tailX = x0 + headDots + bridgeDots + Math.round(0.8 * dpm);
-      const tailDots = Math.max(32, usableWDots - headDots - bridgeDots - Math.round(0.8 * dpm));
+        ? Math.round((usableWDots - bridgeDots) * 0.55)
+        : Math.round(usableWDots * 0.56);
+      const tailX = x0 + headDots + bridgeDots + Math.round(0.5 * dpm);
+      const tailDots = Math.max(32, usableWDots - headDots - bridgeDots - Math.round(0.5 * dpm));
 
       lines.push('CLS');
 
-      const dataFont = dpm === 12 ? '2' : '1';
-      const dataCharW = dataFont === '2' ? 12 : 8;
-      const dataRowH = dpm === 12 ? 22 : (usableH <= 11 ? 11 : 14);
+      // Use TSC built-in bold condensed scalable vector Font "0" so text prints visibly larger (~6pt with Net Wt / ~7pt without Net Wt)
+      const dataFont = '0';
 
-      // Customer Name on Left Side using the EXACT same font size as details rows
-      const maxDataChars = Math.max(8, Math.floor(headDots / dataCharW));
+      // Customer Name on Left Side using the EXACT same larger font size as details rows
       const detailLines = [];
       if (incCust) {
         detailLines.push(customerName);
@@ -4060,13 +4061,18 @@
       if (incHuid) detailLines.push(`HUID: ${huidStr}`);
 
       const bottomYLimit = y0 + usableHDots;
-      const availDetailDots = Math.max(dataRowH, bottomYLimit - y0);
-      const stepY = Math.max(dpm === 12 ? 18 : 11, Math.min(dataRowH, Math.floor(availDetailDots / Math.max(1, detailLines.length))));
+      const availDetailDots = Math.max(14, bottomYLimit - y0);
+      const stepY = Math.max(dpm === 12 ? 20 : 14, Math.floor(availDetailDots / Math.max(1, detailLines.length)));
+      // TSPL2 Font "0" uses points: 1pt ≈ dpm * 25.4 / 72 dots (~2.82 dots @ 203 DPI, ~4.23 dots @ 300 DPI)
+      const dotsPerPt = (dpm * 25.4) / 72;
+      const tsplFontPt = Math.max(5, Math.min(10, Math.round((stepY / dotsPerPt) * 0.92)));
+      const approxCharW = tsplFontPt * (dpm === 12 ? 2.1 : 1.45);
+      const maxDataChars = Math.max(10, Math.floor(headDots / approxCharW));
 
       let dy = y0;
       detailLines.forEach((lineText) => {
-        if (dy + (dpm === 12 ? 14 : 10) <= bottomYLimit) {
-          lines.push(`TEXT ${x0},${dy},"${dataFont}",0,1,1,"${escapeTsplString(lineText.slice(0, maxDataChars))}"`);
+        if (dy + Math.round(tsplFontPt * dotsPerPt * 0.65) <= bottomYLimit) {
+          lines.push(`TEXT ${x0},${dy},"${dataFont}",0,${tsplFontPt},${tsplFontPt},"${escapeTsplString(lineText.slice(0, maxDataChars))}"`);
           dy += stepY;
         }
       });
@@ -4105,10 +4111,11 @@
         lines.push(`QRCODE ${qrX},${qrY},L,${cellSize},A,0,"${escapeTsplString(qrStr)}"`);
 
         // HUID caption right underneath QR code
-        const capW = huidStr.length * dataCharW;
+        const capFontPt = Math.max(5, Math.min(8, tsplFontPt));
+        const capW = huidStr.length * capFontPt * (dpm === 12 ? 2.1 : 1.45);
         const capX = Math.max(tailX, tailX + Math.floor((tailDots - capW) / 2));
         const capY = Math.min(bottomYLimit - captionH + 1, qrY + approxQrSize + 2);
-        lines.push(`TEXT ${capX},${capY},"${dataFont}",0,1,1,"${escapeTsplString(huidStr)}"`);
+        lines.push(`TEXT ${capX},${capY},"0",0,${capFontPt},${capFontPt},"${escapeTsplString(huidStr)}"`);
       }
 
       lines.push('PRINT 1,1');
